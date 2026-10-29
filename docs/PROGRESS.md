@@ -7,7 +7,7 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - `src/theme.css`: Tokens aus `tokens.json` als CSS-Variablen (Light, Dark per `prefers-color-scheme`) plus Tailwind-Theme; Dark-Werte, die tokens.json nicht nennt, nach dem Dark-Muster abgeleitet. Inter variabel selbst gehostet (`@fontsource-variable/inter`)
 - 45 Icons (`src/assets/icons`) und 24 Illustrationen samt Dark-Varianten (`src/assets/illustrations`) byte-genau aus `tmp/svg/` kopiert, per `vite-plugin-svgr` als Komponenten `Icon` / `Illustration`; geändert nur Wurzel-Farben (`currentColor`, Aussparung `--icon-cutout`) und absolute Positionierung
 - App-Icon, Favicon, PNGs, `manifest.webmanifest`, theme-color, Safe-Area-Utilities; Galerie `/dev/fundament` nur im Dev-Build, in `shots` aufgenommen
-- `formatEuro` (`src/lib/money.ts`): de-DE-Zahl plus geschütztes Leerzeichen und €, weil `de-AT` „€ 1 175,00“ liefert (OPEN_ISSUES). Splash: erst mit Capacitor (S10)
+- `formatEuro` (`src/lib/money.ts`): `de-AT`-Zahl mit Punkt als Tausendertrenner, geschütztes Leerzeichen und € (wie die Referenz). Splash: erst mit Capacitor (S10)
 
 ## 2026-10-29 · S2b · Härtung Preis-Modul · abgeschlossen
 - Deno 2.9 (npm-Dev-Dependency `deno`): `check:deno` (deno check + 60 Golden-Fälle unter Deno) ist Teil von `npm run check`; Golden-Test in `tests/unit/golden.ts` für Vitest und Deno geteilt

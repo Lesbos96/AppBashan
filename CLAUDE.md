@@ -94,7 +94,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - OpenStreetMap-Attribution sichtbar.
 
 ### UI
-- Deutsch (de-AT), per Du, kurz und ruhig. Beträge `de-AT` EUR mit `tabular-nums`, formatiert über `Intl.NumberFormat`.
+- Deutsch (de-AT), per Du, kurz und ruhig. Beträge `de-AT` mit `tabular-nums`, formatiert nur über `formatEuro` (`src/lib/money.ts`, Ausgabe wie in der Referenz: „1.175,00 €“).
 - Beträge brechen nie um: Zahl und € bleiben in einer Zeile (`white-space: nowrap`), lange Beschreibungen umbrechen stattdessen. Die Referenz zeigt solche Umbrüche in 05 („354,00 €") und 14 („689,61 €"); diesen Fehler nicht übernehmen.
 - Kein Gerätemockup, keine Intro-Spalte, keine „Prototyp"/„Konzeptdemo"-Texte.
 - Tab-Bar: Start · Miete · Aufträge · Profil. In Buchungsflows ausgeblendet, dort die fixierte Aktionsleiste.

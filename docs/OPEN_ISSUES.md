@@ -12,7 +12,6 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S2b · `quote` speichert nur geprüfte Felder (Abnahmekriterium S8a):** `parse*Input` verwirft unbekannte Schlüssel; `quote` darf nur diese und die Snapshot-Felder speichern. Eingetragen in der ROADMAP bei S8a, `it.todo` in `tests/unit/pricing.test.ts`.
 
 ## UI
-- **S3a · Betragsformat:** CLAUDE.md verlangt `de-AT` EUR über `Intl.NumberFormat`. Das liefert „€ 1 175,00“ (Symbol vorn, Leerzeichen als Tausendertrenner), die Referenz zeigt „1.175,00 €“. `formatEuro` nimmt die Referenz. Entscheidung Beks: dabei bleiben oder CLAUDE.md anpassen.
 - **S3a · Icon-Namen ungeprüft:** `Icon` und `Illustration` nehmen Dateinamen als String; ein falscher Name wirft zur Laufzeit statt beim Typecheck. Bei Bedarf Namen als Union generieren.
 
 ## Prototyp
