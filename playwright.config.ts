@@ -11,6 +11,8 @@ const schemes = ['light', 'dark'] as const
 export default defineConfig({
   testDir: 'tests',
   outputDir: 'tmp/playwright',
+  // ponytail: 2 Worker, weil acht parallele Chromium-Starts hier das 30-s-Setup reißen; in CI anheben
+  workers: 2,
   reporter: [['list'], ['json', { outputFile: 'tmp/reports/playwright.json' }]],
   use: { baseURL: 'http://localhost:5173' },
   webServer: {
