@@ -58,7 +58,7 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [ ] Datenschutz, Impressum und AGB als markierte Platzhalter
 - [ ] Lade-, Fehler- und Offline-Zustand
 
-**Akzeptanz:** jeder Screen ohne „hoch"-Findings gegen seine Referenz.
+**Akzeptanz:** jeder Screen ohne „hoch"-Findings gegen seine Referenz. Dazu eine Migration mit dem DB-Check `price_config.value >= 0` und ein Seed-Test `clearance.rate_low ≤ clearance.rate ≤ clearance.rate_high` (ersetzt das `it.todo` in `tests/unit/pricing.test.ts`).
 
 ## S5 · Routing-Dienst und Wiener Stadtgrenze
 - [ ] Wiener Grenze (OSM, ODbL) als Geometrie in `geo_boundaries`, Import-Skript dokumentiert; es schreibt über die service_role, keine Geometrie in Migrationen
@@ -86,7 +86,7 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 - [ ] Supabase Auth: E-Mail-Magic-Link, Code in derselben Mail als Ausweichweg, Konto erst beim Absenden, „Mit Apple anmelden" vorbereitet; Auth-Modul in der App
 - [ ] Integrationstests (sequenziell): manipulierter Client-Preis wird ignoriert; `fee_splits` stimmt centgenau mit der Gebührenfunktion überein und ist für den Kunden unlesbar; Bearbeiten außerhalb von „angefragt" wird abgelehnt. Fremde Anfragen, Fotos und Status sind bereits durch `tests/rls/` abgedeckt und bleiben grün.
 
-**Akzeptanz:** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul.
+**Akzeptanz:** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`).
 
 ## S8b · Termin, Anfrage, Aufträge
 - [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`

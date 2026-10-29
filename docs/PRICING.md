@@ -19,8 +19,26 @@ Modul: `supabase/functions/_shared/pricing/` (rein, ohne Abhängigkeiten, Import
 | Gründe für „Persönliches Angebot" | deutsche Texte im Code | Codes (`OfferReason`); Texte in der UI (S6, S7) | Modul bleibt textfrei |
 | Route fehlt | prüft zusätzlich, ob die Route zu den Adressen passt | `route === null` | Passung prüft der Server beim Aufruf von `route` |
 | Mindeststunden | `s.hours \|\| 3` | `hours` muss 0,5–100 sein | Keine stille Vorgabe von 3 h |
-| Eingabegrenzen | keine | Personen 1–8, Fahrzeuge 1–3, Stunden 0,5–100, Kartons ≤ 200, Halteverbote ≤ 2, Etagen ≤ 20, Montage ≤ 50 lfm, Fläche 1–2000 m², Miete ≤ 10.000 km und ≤ 90 Tage | Server prüft Kundenwahl (`parse*Input`) |
+| Eingabegrenzen | keine | siehe Abschnitt Eingabegrenzen | Server prüft Kundenwahl (`parse*Input`) |
 | Fläche → Volumen | nur mit gesetztem Objekt | immer (Objekt ist Pflichtfeld) | |
+
+## Eingabegrenzen
+Alle Grenzen stehen an einer Stelle: `limits.ts` (`LIMITS`, exportiert über `@pricing`). Sie sind Obergrenzen gegen unsinnige oder bösartige Eingaben, keine Preisregeln; Änderungen nur dort.
+
+| Feld | Grenze |
+| --- | --- |
+| Personen | 1–8 |
+| Fahrzeuge | 1–3 |
+| Stunden | 0,5–100 |
+| Etagen | 0–20 |
+| Kartons | 0–200 |
+| Halteverbotszonen | 0–2 |
+| Montage (lfm je Teil) | 0–50 |
+| Entrümpelung Fläche | 1–2000 m² |
+| Miete Kilometer | 0–10.000 |
+| Mietdauer | höchstens 90 Tage |
+
+Miettage zählen nach Wanduhrzeit (`YYYY-MM-DDTHH:mm` ohne Zeitzone, `Date.UTC`); die Rechnung hängt damit nicht von der Zeitzone des Servers ab. Tests für beide Umstellungen 2026 (29.03. und 25.10.) stehen in `tests/unit/pricing.test.ts`.
 
 ## Stichproben-Richtwerte und Quellen
 Alle Tarife sind Stichproben-Richtwerte (Recherche 28.10.2026), keine Marktdurchschnitte. Einzelquellen, Label und URL stehen je Schlüssel in `supabase/seed.sql` (`price_config.sources`); die App zeigt sie im Info-Sheet „Wie rechnet MoveNow?" (S4).
@@ -40,4 +58,6 @@ Alle Tarife sind Stichproben-Richtwerte (Recherche 28.10.2026), keine Marktdurch
 Miete: Tarife stehen je Fahrzeug in `rental_offers` (Vermieter), nicht in `price_config`. Kaution und Kraftstoff sind nie Teil des Gesamtpreises.
 
 ## Tests
-`tests/unit/pricing.test.ts`: fünf README-Beispiele centgenau, 60 Golden-Fälle (`tests/unit/fixtures/prototype-golden.json`, erzeugt aus dem Prototyp mit `npm run fixtures:pricing`), Gebührenaufteilung inkl. Halb-Cent-Fälle, Zeilensumme = Total, Angebotspflicht, Tarif- und Eingabeprüfung.
+- `tests/unit/pricing.test.ts`: fünf README-Beispiele centgenau, 60 Golden-Fälle (`tests/unit/fixtures/prototype-golden.json`, erzeugt aus dem Prototyp mit `npm run fixtures:pricing`), Gebührenaufteilung inkl. Halb-Cent-Fälle, Angebotspflicht, Tarif- und Eingabeprüfung, Sommerzeit.
+- `tests/unit/pricing.property.test.ts` (fast-check, je 1000 Läufe): Zeilensumme = Gesamtpreis, Gebühr + Partner = Gesamtpreis, netto + USt. = Gebühr, keine NaN, negativen oder unganzen Beträge, ungültige Eingabe wirft `InputError`.
+- Deno: `npm run check:deno` prüft das Modul mit `deno check` und lässt dieselben Golden-Fälle unter Deno laufen (`tests/unit/golden-deno.ts`, Teil von `npm run check`). Deno kommt als npm-Dev-Dependency `deno`.

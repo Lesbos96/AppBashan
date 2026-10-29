@@ -1,6 +1,7 @@
 // Möbeltransport und Umzug (transportRate, transportNeedsQuote, transportCalc im Prototyp, Zeilen 98–100).
 import { type AssemblyInput, assemblyPrice, parseAssembly } from './assembly.ts'
 import { bool, dec, int, oneOf, rec } from './input.ts'
+import { LIMITS } from './limits.ts'
 import { type Tariffs, money, num, toCents, toLines } from './money.ts'
 import type { OfferReason, OfferResult, PriceResult } from './result.ts'
 
@@ -29,16 +30,16 @@ export function parseTransportInput(raw: unknown): TransportInput {
   return {
     service: oneOf(r, 'service', ['transport', 'move']),
     goods: oneOf(r, 'goods', ['normal', 'piano', 'grand', 'safe']),
-    crew: int(r, 'crew', 1, 8),
-    vehicles: int(r, 'vehicles', 1, 3),
+    crew: int(r, 'crew', ...LIMITS.crew),
+    vehicles: int(r, 'vehicles', ...LIMITS.vehicles),
     vehicleType: oneOf(r, 'vehicleType', ['van', 'truck', 'large']),
-    hours: dec(r, 'hours', 0.5, 100),
-    fromFloor: int(r, 'fromFloor', 0, 20),
-    toFloor: int(r, 'toFloor', 0, 20),
+    hours: dec(r, 'hours', ...LIMITS.hours),
+    fromFloor: int(r, 'fromFloor', ...LIMITS.floor),
+    toFloor: int(r, 'toFloor', ...LIMITS.floor),
     fromLift: bool(r, 'fromLift'),
     toLift: bool(r, 'toLift'),
-    boxes: int(r, 'boxes', 0, 200),
-    parking: int(r, 'parking', 0, 2),
+    boxes: int(r, 'boxes', ...LIMITS.boxes),
+    parking: int(r, 'parking', ...LIMITS.parking),
     packing: bool(r, 'packing'),
     assembly: r['assembly'] === null ? null : parseAssembly(r['assembly']),
   }

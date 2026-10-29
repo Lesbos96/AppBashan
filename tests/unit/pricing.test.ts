@@ -1,100 +1,24 @@
-import { readFileSync } from 'node:fs'
 import {
   InputError,
-  type RentalOffer,
   type RouteFacts,
-  type Tariffs,
   computeAssembly,
   computeClearance,
   computeRental,
   computeTransport,
   parseClearanceInput,
   parseRentalInput,
+  rentalDays,
   parseTransportInput,
   splitFee,
   toLines,
 } from '@pricing'
 import { describe, expect, it } from 'vitest'
+import { goldenCases, offers, rates, tariffs, transportOf } from './golden.ts'
 
-// Tarife aus dem Seed: dieselben Werte wie in price_config, ein Schlüssel-Tippfehler im Modul fällt hier auf.
-const seed = readFileSync(new URL('../../supabase/seed.sql', import.meta.url), 'utf8')
-const tariffs: Tariffs = Object.fromEntries([...seed.matchAll(/\(1, '([\w.]+)', ([\d.]+),/g)].map((m) => [m[1]!, Number(m[2])]))
-const rates = { feeRate: 0.15, vatRate: 0.2 }
-
-// sampleOffers (Prototyp Zeile 26) in Cent, wie im Seed.
-const offers: Record<string, RentalOffer> = {
-  small: { dailyCents: 7900, kmPerDay: 100, extraKmCents: 35, coverDailyCents: 1900, driverDailyCents: 900, bookingFeeCents: 0, oneWayCents: 4900, depositCents: 30000 },
-  medium: { dailyCents: 9900, kmPerDay: 150, extraKmCents: 40, coverDailyCents: 2400, driverDailyCents: 1000, bookingFeeCents: 1000, oneWayCents: 5900, depositCents: 50000 },
-  large: { dailyCents: 12900, kmPerDay: 200, extraKmCents: 45, coverDailyCents: 2900, driverDailyCents: 1200, bookingFeeCents: 0, oneWayCents: 7900, depositCents: 70000 },
-}
-
-type S = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any -- Prototyp-state
-const assemblyOf = (s: S) => (s.mount ? (s.kind === 'kitchen' ? { kind: 'kitchen' as const, lm: s.lm, upper: s.upper, tall: s.tall } : { kind: 'standard' as const, lm: s.lm }) : null)
-const routeOf = (s: S): RouteFacts | null => (s.route === null ? null : { region: s.moveRegion, outsideKm: s.outsideKm, driveHours: s.driveHours })
-const transportOf = (s: S) =>
-  parseTransportInput({ service: s.service, goods: s.goods, crew: s.crew, vehicles: s.vehicles, vehicleType: s.vehicleType, hours: s.hours, fromFloor: s.fromFloor, toFloor: s.toFloor, fromLift: s.fromLift, toLift: s.toLift, boxes: s.boxes, parking: s.parking, packing: s.packing, assembly: assemblyOf(s) })
-const clearanceOf = (s: S) =>
-  parseClearanceInput({ object: s.object, area: s.area, fill: s.fill, lift: s.lift, floor: s.floor, special: !!s.special, assembly: assemblyOf(s) })
-const wall = (d: string, t: string) => `${d}T${t}`
-const rentalOf = (s: S) => {
-  const pickupAt = s.date ? wall(s.date, s.pickTime) : '2026-06-10T09:00'
-  const returnAt = s.date ? wall(s.returnDate, s.returnTime) : new Date(Date.UTC(2026, 5, 10 + s.days, 9)).toISOString().slice(0, 16)
-  return { pickupAt, returnAt, km: s.km, cover: !!s.cover, driver: !!s.driver, oneWay: s.returnStation === 'other' }
-}
-const cents = (euro: number) => Math.round(euro * 100)
-
-// Echte Halb-Cent-Fälle: der Prototyp rundet per Float (11150 × 0,15 = 1672,5 → 1672), das Modul half-up (siehe PRICING.md).
-const halfCent: Record<number, { feeCents: number; feeNetCents: number; feeVatCents: number; payoutCents: number }> = {
-  11150: { feeCents: 1673, feeNetCents: 1394, feeVatCents: 279, payoutCents: 9477 },
-}
-function expectFee(totalCents: number, expected: S) {
-  const exact = halfCent[totalCents] ?? { feeCents: cents(expected.fee), feeNetCents: cents(expected.feeNet), feeVatCents: cents(expected.feeVat), payoutCents: cents(expected.partner) }
-  expect(splitFee(totalCents, rates)).toMatchObject(exact)
-}
-
-type Golden = { name: string; state: S; expected: S }
-const golden = JSON.parse(readFileSync(new URL('./fixtures/prototype-golden.json', import.meta.url), 'utf8')) as Golden[]
-
-describe('Golden-Fixtures aus dem Prototyp', () => {
-  it('hat mindestens 40 Fälle', () => expect(golden.length).toBeGreaterThanOrEqual(40))
-
-  for (const { name, state, expected } of golden) {
-    it(name, () => {
-      const s = state
-      if (s.service === 'rent') {
-        const input = rentalOf(s)
-        if (input.returnAt <= input.pickupAt) {
-          // Prototyp rechnet mit mindestens 1 Tag; das Modul lehnt eine Rückgabe vor der Abholung ab.
-          expect(() => parseRentalInput(input)).toThrow(InputError)
-          return
-        }
-        const r = computeRental(offers[s.van]!, parseRentalInput(input))
-        expect(r.totalCents).toBe(cents(expected.total))
-        expect(r.days).toBe(expected.days)
-        expect(r.depositCents).toBe(cents(expected.deposit))
-        expect(r.lines.reduce((sum, l) => sum + l.cents, 0)).toBe(r.totalCents)
-        expectFee(r.totalCents, expected)
-        return
-      }
-      let r
-      if (s.service === 'assembly') r = computeAssembly(tariffs, assemblyOf({ ...s, mount: true })!)
-      else if (s.service === 'clear') r = computeClearance(tariffs, clearanceOf(s))
-      else r = computeTransport(tariffs, transportOf(s), routeOf(s))
-
-      if (expected.needsVisit || expected.needsQuote) {
-        expect(r.kind).toBe('offer')
-        return
-      }
-      expect(r.kind).toBe('price')
-      if (r.kind !== 'price') return
-      expect(r.totalCents).toBe(cents(expected.total))
-      expect(r.lowCents).toBe(cents(expected.low))
-      expect(r.highCents).toBe(cents(expected.high))
-      expect(r.lines.reduce((sum, l) => sum + l.cents, 0)).toBe(r.totalCents)
-      if (s.service === 'clear') expect((r as { volumeM3: number }).volumeM3).toBe(expected.volume)
-      expectFee(r.totalCents, expected)
-    })
-  }
+describe('Golden-Fälle aus dem Prototyp', () => {
+  const cases = goldenCases()
+  it('hat mindestens 40 Fälle', () => expect(cases.length).toBeGreaterThanOrEqual(40))
+  for (const c of cases) it(c.name, () => expect(c.actual()).toEqual(c.expected))
 })
 
 describe('Preisbeispiele aus docs/reference/design/README.md', () => {
@@ -269,4 +193,31 @@ describe('Tarife und Eingaben', () => {
     expect(r.days).toBe(2)
     expect(r.totalCents).toBe(15800)
   })
+})
+
+describe('Sommerzeit (Wanduhrzeit, keine Zeitzone)', () => {
+  const days = (pickupAt: string, returnAt: string) => rentalDays({ pickupAt, returnAt })
+  it('Frühjahr 2026-03-29 (23-h-Tag): 24 Wanduhr-Stunden = 1 Tag, 2 Tage über die Umstellung', () => {
+    expect(days('2026-03-28T09:00', '2026-03-29T09:00')).toBe(1)
+    expect(days('2026-03-28T09:00', '2026-03-30T09:00')).toBe(2)
+    expect(days('2026-03-29T01:00', '2026-03-29T04:00')).toBe(1)
+    expect(days('2026-03-28T09:00', '2026-03-29T09:01')).toBe(2)
+  })
+  it('Herbst 2026-10-25 (25-h-Tag): 24 Wanduhr-Stunden = 1 Tag, 2 Tage über die Umstellung', () => {
+    expect(days('2026-10-25T01:00', '2026-10-26T01:00')).toBe(1)
+    expect(days('2026-10-24T09:00', '2026-10-26T09:00')).toBe(2)
+    expect(days('2026-10-24T09:00', '2026-10-25T09:01')).toBe(2)
+  })
+  it('Preis über die Umstellung: Cargo Van 3 Tage', () => {
+    const spring = computeRental(offers.medium!, parseRentalInput({ pickupAt: '2026-03-27T09:00', returnAt: '2026-03-30T09:00', km: 0, cover: false, driver: false, oneWay: false }))
+    const autumn = computeRental(offers.medium!, parseRentalInput({ pickupAt: '2026-10-23T09:00', returnAt: '2026-10-26T09:00', km: 0, cover: false, driver: false, oneWay: false }))
+    expect([spring.days, autumn.days]).toEqual([3, 3])
+    expect(spring.totalCents).toBe(autumn.totalCents)
+  })
+})
+
+// Abnahmekriterien für spätere Sessions, damit sie nicht verloren gehen (siehe docs/ROADMAP.md, S4 und S8a)
+describe('Offen für S4 und S8a', () => {
+  it.todo('S8a: quote speichert neben den Snapshot-Feldern nur Felder, die parse*Input geprüft hat')
+  it.todo('S4: price_config.value >= 0 als DB-Check und Seed-Test clearance.rate_low <= clearance.rate <= clearance.rate_high')
 })

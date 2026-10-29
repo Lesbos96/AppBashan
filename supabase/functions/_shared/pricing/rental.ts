@@ -1,5 +1,6 @@
 // Transportermiete (rentCalc im Prototyp, Zeile 40). Kaution und Kraftstoff sind nie Teil des Gesamtpreises.
 import { InputError, bool, dec, rec } from './input.ts'
+import { LIMITS } from './limits.ts'
 import { toLines } from './money.ts'
 import type { PriceResult } from './result.ts'
 
@@ -25,7 +26,6 @@ export type RentalInput = {
   oneWay: boolean
 }
 
-const MAX_DAYS = 90
 const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 
 function minutesOf(s: unknown, key: string): number {
@@ -45,7 +45,7 @@ export function parseRentalInput(raw: unknown): RentalInput {
   const input: RentalInput = {
     pickupAt: r['pickupAt'] as string,
     returnAt: r['returnAt'] as string,
-    km: dec(r, 'km', 0, 10000),
+    km: dec(r, 'km', ...LIMITS.rentalKm),
     cover: bool(r, 'cover'),
     driver: bool(r, 'driver'),
     oneWay: bool(r, 'oneWay'),
@@ -59,7 +59,7 @@ export function rentalDays({ pickupAt, returnAt }: Pick<RentalInput, 'pickupAt' 
   const minutes = minutesOf(returnAt, 'returnAt') - minutesOf(pickupAt, 'pickupAt')
   if (minutes <= 0) throw new InputError('Rückgabe muss nach der Abholung liegen')
   const days = Math.ceil(minutes / 1440)
-  if (days > MAX_DAYS) throw new InputError(`Mietdauer höchstens ${MAX_DAYS} Tage`)
+  if (days > LIMITS.rentalMaxDays) throw new InputError(`Mietdauer höchstens ${LIMITS.rentalMaxDays} Tage`)
   return days
 }
 

@@ -21,10 +21,12 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "deno": "^2.9.6",
     "dotenv-cli": "^11.1.0",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "fast-check": "^4.10.2",
     "globals": "^17.13.0",
     "supabase": "^2.122.0",
     "tailwindcss": "^4.3.3",
@@ -40,7 +42,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run --project unit",
-    "check": "npm run lint && npm run typecheck && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json",
+    "check": "npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json",
     "test:rls": "dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json",
     "test:e2e": "playwright test --project=e2e",
     "shots": "playwright test --project=shots-390-light --project=shots-390-dark",
@@ -50,6 +52,7 @@
     "fixtures:pricing": "node scripts/gen-golden.mjs",
     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
     "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",
-    "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts"
+    "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts",
+    "check:deno": "deno check supabase/functions/_shared/pricing/index.ts tests/unit/golden-deno.ts && deno run --allow-read tests/unit/golden-deno.ts"
   }
 }

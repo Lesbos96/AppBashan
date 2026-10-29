@@ -8,7 +8,8 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S1 · Seed vor dem Launch:** `db:push` spielt `supabase/seed.sql` mit ein (`--include-seed`). Ändert sich der Seed, überschreibt er Tarife und Gebührensatz und legt die Demo-Angebote wieder an. Für das Produktivprojekt den Seed nicht pushen bzw. Demo-Angebote nur in Dev.
 - **S1 · Foto-Limit nicht atomar:** Die Grenze von 8 Fotos prüft je eine Policy per `count(*)`. Parallele Uploads können sie knapp überschreiten. Akzeptiert; ein Löschjob räumt nach den Fristen auf.
 
-- **S2 · Tarif-Constraints:** `price_config.value >= 0` als DB-Check und ein Seed-Test `clearance.rate_low ≤ rate ≤ rate_high` fehlen; das Modul wirft bei Verletzung. Neue Migration, z. B. mit S4 oder S8a.
+- **S2 · Tarif-Constraints (Abnahmekriterium S4):** `price_config.value >= 0` als DB-Check und ein Seed-Test `clearance.rate_low ≤ rate ≤ rate_high` fehlen; das Modul wirft bei Verletzung. Eingetragen in der ROADMAP bei S4, `it.todo` in `tests/unit/pricing.test.ts`.
+- **S2b · `quote` speichert nur geprüfte Felder (Abnahmekriterium S8a):** `parse*Input` verwirft unbekannte Schlüssel; `quote` darf nur diese und die Snapshot-Felder speichern. Eingetragen in der ROADMAP bei S8a, `it.todo` in `tests/unit/pricing.test.ts`.
 
 ## Prototyp
 - **S1 · `moveRouteHTML` fehlt:** Ein Klick auf „Umzug" im Prototyp wirft einen ReferenceError, weil `moveRouteHTML` in Zeile 51 aufgerufen, aber nirgends definiert wird. Die Preislogik von Umzug (`transportCalc`, Zeile 100) ist nicht betroffen. Die App übernimmt den Fehler nicht (S2, S6).

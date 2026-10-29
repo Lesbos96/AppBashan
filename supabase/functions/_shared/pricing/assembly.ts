@@ -1,5 +1,6 @@
 // Montage / Demontage (mountPrice im Prototyp, Zeile 32) und der Service „Montage".
 import { type Raw, dec, oneOf, rec } from './input.ts'
+import { LIMITS } from './limits.ts'
 import { type Tariffs, money, num, toLines } from './money.ts'
 import type { PriceResult } from './result.ts'
 
@@ -10,8 +11,8 @@ export type AssemblyInput =
 export function parseAssembly(raw: unknown): AssemblyInput {
   const r: Raw = rec(raw, 'Montage')
   const kind = oneOf(r, 'kind', ['standard', 'kitchen'])
-  const lm = dec(r, 'lm', 0, 50)
-  return kind === 'standard' ? { kind, lm } : { kind, lm, upper: dec(r, 'upper', 0, 50), tall: dec(r, 'tall', 0, 50) }
+  const lm = dec(r, 'lm', ...LIMITS.assemblyLm)
+  return kind === 'standard' ? { kind, lm } : { kind, lm, upper: dec(r, 'upper', ...LIMITS.assemblyLm), tall: dec(r, 'tall', ...LIMITS.assemblyLm) }
 }
 
 /** Montagepreis in Euro, ungerundet. */

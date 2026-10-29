@@ -1,6 +1,7 @@
 // Entrümpelung (calc im Prototyp, Zeile 38; needsVisit Zeile 70; clearVolume Zeile 71).
 import { type AssemblyInput, assemblyPrice, parseAssembly } from './assembly.ts'
 import { bool, dec, int, oneOf, rec } from './input.ts'
+import { LIMITS } from './limits.ts'
 import { type Tariffs, money, num, toCents, toLines } from './money.ts'
 import type { OfferReason, OfferResult, PriceResult } from './result.ts'
 
@@ -19,10 +20,10 @@ export function parseClearanceInput(raw: unknown): ClearanceInput {
   const r = rec(raw, 'Entrümpelung')
   return {
     object: oneOf(r, 'object', ['flat', 'house', 'attic', 'cellar', 'office', 'heavy']),
-    area: dec(r, 'area', 1, 2000),
+    area: dec(r, 'area', ...LIMITS.clearanceArea),
     fill: oneOf(r, 'fill', ['light', 'normal', 'full']),
     lift: bool(r, 'lift'),
-    floor: int(r, 'floor', 0, 20),
+    floor: int(r, 'floor', ...LIMITS.floor),
     special: bool(r, 'special'),
     assembly: r['assembly'] === null ? null : parseAssembly(r['assembly']),
   }

@@ -3,6 +3,12 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-29 · S2b · Härtung Preis-Modul · abgeschlossen
+- Deno 2.9 (npm-Dev-Dependency `deno`): `check:deno` (deno check + 60 Golden-Fälle unter Deno) ist Teil von `npm run check`; Golden-Test in `tests/unit/golden.ts` für Vitest und Deno geteilt
+- Property-Tests (fast-check, 1000 Läufe je Invariante), Sommerzeit-Tests beider Umstellungen, Grenzen in `limits.ts`; Preisergebnisse unverändert. Mutationsprobe: Fehler in Rundung und Gebühr werden erkannt
+- Abnahmekriterien als `it.todo` und in ROADMAP: S8a (`quote` speichert nur geprüfte Felder), S4 (DB-Check `value >= 0`, Seed-Test Spanne)
+- Zeitzone: nicht nötig, Miettage zählen nach Wanduhrzeit ohne Zeitzone
+
 ## 2026-10-29 · S2 · Preis-Engine · abgeschlossen
 - Modul `supabase/functions/_shared/pricing/` (Transport/Umzug, Entrümpelung, Montage, Miete, `splitFee`, `parse*Input`), 81 Unit-Tests grün: 5 README-Beispiele centgenau, 60 Golden-Fälle aus dem Prototyp (`npm run fixtures:pricing`)
 - Entscheidungen (advisor): Gebühr in Ganzzahl half-up statt Float; Zeilen per Largest-Remainder; Serverfakten (`RouteFacts`, `RentalOffer`) getrennt von der Kundenwahl. Abweichungen in `docs/PRICING.md`
