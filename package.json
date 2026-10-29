@@ -55,6 +55,6 @@
     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
     "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",
     "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts",
-    "check:deno": "deno check supabase/functions/_shared/pricing/index.ts tests/unit/golden-deno.ts && deno run --allow-read tests/unit/golden-deno.ts"
+    "check:deno": "deno check supabase/functions/_shared/pricing/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts"
   }
 }

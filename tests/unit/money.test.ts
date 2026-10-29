@@ -1,11 +1,13 @@
-import { expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { formatEuro } from '../../src/lib/money'
+import { moneyCases } from './money-cases'
 
-const nbsp = String.fromCharCode(160)
+describe('formatEuro', () => {
+  it.each(moneyCases)('%i Cent', (cents, expected) => {
+    expect(formatEuro(cents)).toBe(expected)
+  })
 
-it('formatiert Cent wie die Referenz', () => {
-  expect(formatEuro(68961)).toBe(`689,61${nbsp}€`)
-  expect(formatEuro(117500)).toBe(`1.175,00${nbsp}€`)
-  expect(formatEuro(0)).toBe(`0,00${nbsp}€`)
-  expect(formatEuro(5)).toBe(`0,05${nbsp}€`)
+  it.each([0.5, 12.34, NaN, Infinity, 2 ** 53])('lehnt %s ab', (value) => {
+    expect(() => formatEuro(value)).toThrow(RangeError)
+  })
 })
