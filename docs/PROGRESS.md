@@ -46,6 +46,10 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - App-Variablen mit Präfix `NEXT_PUBLIC_` (Vite `envPrefix`, Entscheidung Beks), passend zur vorhandenen `.env.local`. Repo: github.com/bekhanidrisov74-hub/movenow (privat).
 - Offen: Löschfristen und Freigabe geänderter Angebote (Entscheidung); Quellen ohne Einzelnachweis (OPEN_ISSUES.md)
 
+## 2026-10-30 · S5b · Code fertig, Live-Test offen
+- Migration 0009 `route_cleanup()` + stündlicher Job (Cache ≤ 25 h); RLS-Test prüft 42501 exakt (Beweis mit gelockerten Grants rot, zurückgenommen); Body-Limit per Stream; IP-Tageslimit 80/160; Konsolen-Erfassung belegt; check, test:rls (55) und E2E (14) grün
+- `route` deployt, Secrets fehlen (Auto-Modus verweigert, Beks setzt sie), Live-Test Wien→Graz, R1, R3 offen: OPEN_ISSUES „S5b"
+
 <!-- Beispiel:
 ## 2026-10-30 · S1 · abgeschlossen
 - Gerüst, Migration 0001, RLS-Tests (12/12) grün

@@ -49,29 +49,55 @@ const geoArgs = (line: [number, number][]) => ({
   to_lon: line.at(-1)![0]!,
 })
 
+// Rechte sind für anon/authenticated widerrufen (0001, 0006, 0009): PostgREST antwortet mit 42501, nicht mit leerem Ergebnis.
+const DENIED = '42501'
+const ROUTE_TABLES = ['route_cache', 'route_rate_limits', 'geo_boundaries'] as const
+
 describe('Zugriff nur für service_role', () => {
-  it.each([['anon'], ['authenticated']])('%s liest und schreibt weder Tabellen noch ruft Funktionen auf', async (who) => {
+  it.each([['anon'], ['authenticated']])('%s: Tabellen und Funktionen mit 42501 verweigert', async (who) => {
     const db = who === 'anon' ? anon : customer
-    for (const table of ['route_cache', 'route_rate_limits', 'geo_boundaries'] as const) {
-      expect((await db.from(table).select('*')).data ?? []).toEqual([])
+    for (const table of ROUTE_TABLES) {
+      expect((await db.from(table).select('*')).error?.code, `select ${table}`).toBe(DENIED)
     }
-    expect((await db.from('route_cache').insert({ key: `test-${run}-x`, value: {}, expires_at: new Date().toISOString() })).error).not.toBeNull()
-    expect((await db.from('route_rate_limits').insert({ bucket: `test-${run}-x`, window_start: new Date().toISOString() })).error).not.toBeNull()
-    expect((await db.rpc('take_rate_tokens', { checks: [] })).error).not.toBeNull()
-    expect((await db.rpc('route_geo_facts', geoArgs([[16.37, 48.2], [16.3, 48.18]]))).error).not.toBeNull()
+    expect((await db.from('route_cache').insert({ key: `test-${run}-x`, value: {}, expires_at: new Date().toISOString() })).error?.code).toBe(DENIED)
+    expect((await db.from('route_rate_limits').insert({ bucket: `test-${run}-x`, window_start: new Date().toISOString() })).error?.code).toBe(DENIED)
+    expect((await db.rpc('take_rate_tokens', { checks: [] })).error?.code).toBe(DENIED)
+    expect((await db.rpc('route_cleanup')).error?.code).toBe(DENIED)
+    expect((await db.rpc('route_geo_facts', geoArgs([[16.37, 48.2], [16.3, 48.18]]))).error?.code).toBe(DENIED)
   })
 
-  it('service_role darf alles davon', async () => {
+  it('service_role darf dieselben Aufrufe', async () => {
+    for (const table of ROUTE_TABLES) expect((await service.from(table).select('*').limit(1)).error).toBeNull()
     expect((await service.from('geo_boundaries').select('slug').order('slug')).data?.map((r) => r.slug)).toEqual(['austria', 'vienna'])
     const key = `test-${run}-cache`
-    expect((await service.from('route_cache').upsert({ key, value: { a: 1 }, expires_at: new Date().toISOString() })).error).toBeNull()
+    expect((await service.from('route_cache').upsert({ key, value: { a: 1 }, expires_at: new Date(Date.now() + 60_000).toISOString() })).error).toBeNull()
     expect((await service.from('route_cache').select('value').eq('key', key).single()).data?.value).toEqual({ a: 1 })
     expect((await service.rpc('take_rate_tokens', { checks: [] })).data).toBe(true)
+    expect((await service.rpc('route_cleanup')).error).toBeNull()
+  })
+})
+
+describe('Löschung (route_cleanup, stündlicher Job)', () => {
+  it('entfernt abgelaufene Cache-Zeilen und alte Zähler, lässt frische stehen', async () => {
+    const old = `test-${run}-old`
+    const fresh = `test-${run}-fresh`
+    const day = 86_400_000
+    must(await service.from('route_cache').upsert([
+      { key: old, value: {}, expires_at: new Date(Date.now() - 60_000).toISOString() },
+      { key: fresh, value: {}, expires_at: new Date(Date.now() + day).toISOString() },
+    ]))
+    must(await service.from('route_rate_limits').upsert([
+      { bucket: old, window_start: new Date(Date.now() - 3 * day).toISOString(), hits: 1 },
+      { bucket: fresh, window_start: new Date(Date.now() - day / 2).toISOString(), hits: 1 },
+    ]))
+    must(await service.rpc('route_cleanup'))
+    expect((await service.from('route_cache').select('key').like('key', `test-${run}-%`).in('key', [old, fresh])).data?.map((r) => r.key)).toEqual([fresh])
+    expect((await service.from('route_rate_limits').select('bucket').in('bucket', [old, fresh])).data?.map((r) => r.bucket)).toEqual([fresh])
   })
 })
 
 describe('Grenzen', () => {
-  it('sind gültige MultiPolygone mit passender Größe', async () => {
+  it('Punkte in Wien und Österreich liegen in den Grenzen (Geometrie gültig, brauchbar)', async () => {
     const { data } = await service.rpc('route_geo_facts', geoArgs([[16.3731, 48.2086], [16.3122, 48.1845]]))
     expect(data).toHaveLength(1)
     // Eine ungültige oder zu kleine Geometrie ließe diesen Punkt-Test nicht bestehen.
@@ -128,6 +154,12 @@ const FIXTURES: Record<string, { pr: ProviderRoute; region: string; outside: [nu
     },
     region: 'austria',
     outside: [150, 190],
+  },
+  // Knapp außerhalb Wiens (Vösendorf/SCS): wenige km, aber über der 0,05-km-Schwelle.
+  'Wien → Vösendorf': {
+    pr: { legMeters: [12_000], durationSeconds: 1200, line: [[16.3731, 48.2086], [16.35, 48.15], [16.3195, 48.1135]] },
+    region: 'austria',
+    outside: [0.1, 6],
   },
 }
 

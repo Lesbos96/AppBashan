@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { collectErrors } from './console'
 
 // Hauptflow nur mit der Tastatur: Onboarding, Tabs, Info-Sheet.
 test('Erster Start: Onboarding per Tastatur, danach direkt Start', async ({ page }) => {
@@ -91,9 +92,7 @@ test.describe('App-Shell', () => {
   })
 
   test('Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf', async ({ page }) => {
-    const errors: string[] = []
-    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
-    page.on('pageerror', (e) => errors.push(e.message))
+    const errors = collectErrors(page)
     for (const path of ['/', '/miete', '/auftraege', '/profil', '/profil/preise', '/profil/datenschutz', '/profil/impressum', '/umzug', '/gibt-es-nicht']) {
       await page.goto(path, { waitUntil: 'networkidle' })
       const overflow = await page.evaluate<boolean>('document.documentElement.scrollWidth > document.documentElement.clientWidth')

@@ -153,12 +153,34 @@ describe('Handler', () => {
     const { deps, geocode } = makeDeps({ takeTokens })
     expect((await handleRoute(post('x'.repeat(5000)), deps)).status).toBe(413)
     expect((await handleRoute(post('{}', { apikey: 'pk', 'content-length': '5000' }), deps)).status).toBe(413)
+    // Ohne content-length (Stream): der Handler bricht beim Lesen ab, statt alles zu puffern.
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        c.enqueue(new TextEncoder().encode('x'.repeat(3000)))
+      },
+    })
+    const streamed = new Request('http://x/route', { method: 'POST', body: stream, headers: { apikey: 'pk' }, duplex: 'half' } as RequestInit)
+    expect((await handleRoute(streamed, deps)).status).toBe(413)
+    // Gültige Streams werden angenommen, auch wenn ein Multi-Byte-Zeichen („ü“ = 2 Byte) über die Chunk-Grenze reicht.
+    const bytes = new TextEncoder().encode(JSON.stringify({ mode: 'geocode', q: 'Mödling' }))
+    const split = bytes.indexOf(0xc3) + 1
+    const chunked = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(bytes.slice(0, split))
+        c.enqueue(bytes.slice(split))
+        c.close()
+      },
+    })
+    const ok = new Request('http://x/route', { method: 'POST', body: chunked, headers: { apikey: 'pk' }, duplex: 'half' } as RequestInit)
+    expect((await handleRoute(ok, deps)).status).toBe(200)
+    expect(geocode).toHaveBeenLastCalledWith('Mödling')
+    expect((await handleRoute(new Request('http://x/route', { method: 'POST', headers: { apikey: 'pk' } }), deps)).status).toBe(400)
     expect((await handleRoute(post('{kaputt'), deps)).status).toBe(400)
     expect((await handleRoute(post({ mode: 'x' }), deps)).status).toBe(400)
     expect((await handleRoute(post({ mode: 'geocode', q: 'a' }), deps)).status).toBe(400)
     expect((await handleRoute(post({ mode: 'route', from: A }), deps)).status).toBe(400)
-    expect(takeTokens).not.toHaveBeenCalled()
-    expect(geocode).not.toHaveBeenCalled()
+    expect(takeTokens).toHaveBeenCalledTimes(1) // nur der gültige Stream oben
+    expect(geocode).toHaveBeenCalledTimes(1)
   })
 
   it('liefert Kandidaten und Routenfakten', async () => {

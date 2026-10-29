@@ -18,12 +18,37 @@ const DAY = 86400
 // Je Modus: pro IP und global. Global bleibt unter dem Kontingent des ORS-Plans (Directions 2000/Tag, Geocode 1000/Tag, je ca. 80 %).
 // ponytail: feste Konstanten, bei Planwechsel hier anpassen.
 const LIMITS = {
-  geocode: { ip: [30, 300], global: [35, 800] },
-  route: { ip: [20, 200], global: [35, 1600] },
+  geocode: { ip: [10, 80], global: [35, 800] },
+  route: { ip: [10, 160], global: [35, 1600] },
 } as const
 
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...headers } })
+
+// Liest den Body und bricht bei mehr als MAX_BODY_BYTES ab, auch ohne content-length.
+async function readLimited(req: Request): Promise<string> {
+  const reader = req.body?.getReader()
+  if (!reader) return ''
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.length
+    if (size > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => {})
+      throw new HttpError(413, 'body_too_large')
+    }
+    chunks.push(value)
+  }
+  const all = new Uint8Array(size)
+  let at = 0
+  for (const c of chunks) {
+    all.set(c, at)
+    at += c.length
+  }
+  return new TextDecoder().decode(all)
+}
 
 export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Response> {
   const started = Date.now()
@@ -48,8 +73,7 @@ export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Resp
     if (req.headers.get('apikey') !== deps.publishableKey) throw new HttpError(401, 'unauthorized')
 
     if (Number(req.headers.get('content-length')) > MAX_BODY_BYTES) throw new HttpError(413, 'body_too_large')
-    const text = await req.text()
-    if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) throw new HttpError(413, 'body_too_large')
+    const text = await readLimited(req)
     let body: { mode?: unknown } | null
     try {
       body = JSON.parse(text)

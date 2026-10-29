@@ -106,6 +106,7 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
 - [ ] Politur-Loop aus Schritt E, höchstens 3 globale Runden
 - [ ] Supabase Security- und Performance-Advisor ohne Warnungen, Rate-Limits auf allen Edge Functions
+- [ ] **Pflicht vor Livegang (Routing):** bezahltes ORS-Kontingent mit Auftragsverarbeitungsvertrag (oder Ausweichanbieter) und eine Bot-Bremse vor `route` (z. B. Turnstile/Captcha-Token); das IP-Limit (10/min, 80 bzw. 160/Tag) trifft Mobilfunk-CGNAT hart, weil viele Kunden eine IP teilen, und schützt allein nicht gegen verteilte Bots, das globale Tageslimit ist die letzte Grenze
 - [ ] Übergabe nach Schritt F: README.md (Setup, Start, Tests, Supabase), Screenshots aller Hauptscreens in `docs/screens/`, Liste der offenen Punkte
 
 ---

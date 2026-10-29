@@ -576,6 +576,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {
         Args: {
           from_lat: number
