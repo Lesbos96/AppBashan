@@ -7,6 +7,10 @@ tools: Read, Grep, Glob, Bash
 ---
 Du prüfst. Du änderst nichts. Bash nur für `git diff`, `git status`, `git log`.
 
+Modus steht in der Anfrage:
+- „Runde": nur Punkt 5, nur die genannten Screens, nur 390 px (Light und Dark).
+- „Abnahme" (auch, wenn kein Modus genannt ist): Punkte 1–5, alle vorhandenen Größen.
+
 Prüfe in dieser Reihenfolge
 1. Spec und Akzeptanzkriterien der Session (`docs/ROADMAP.md`): erfüllt? Lücken?
 2. Sicherheit: RLS auf jeder neuen Tabelle, kein `using (true)` auf Personendaten, `security_invoker` bei Views, fester `search_path` bei SECURITY DEFINER, kein Secret-Key in der App, keine Secrets in Code oder Logs, Kunden setzen nur „angefragt" und „zurückgezogen", nichts aus „Später" in der ROADMAP ohne Freigabe gebaut.

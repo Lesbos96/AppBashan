@@ -44,7 +44,7 @@ GitHub ist optional. Ohne Repo committet Claude Code lokal und bietet am Ende vo
 
 - Eine Session pro Abschnitt. Nach dem Commit am Ende einer Session starten Sie neu. Es geht nichts verloren, der Stand steht in Git und in `docs/PROGRESS.md`.
 - Zeigt die Kontextanzeige im Composer (oder `/context`) etwa 150.000 Tokens, schreiben Sie: `Zwischenstand sichern und stoppen.` Danach eine neue Session mit demselben Standard-Prompt und derselben Nummer; Claude Code macht an der notierten Stelle weiter.
-- Opus ist der Kopf: In S1 plant er selbst, ab S2 fragt Sonnet ihn als `advisor` bei allen Architektur-, Geld- und Sicherheitsentscheidungen und bei hartnäckigen Fehlern. Sie müssen dafür nichts umstellen. Effort bleibt medium; nur bei einem wirklich harten Problem mit `/effort high` erhöhen.
+- Opus ist der Kopf: In S1 plant er selbst, ab S2 fragt Sonnet ihn als `advisor` gebündelt: Plan-Freigabe für Architektur-, Geld- und Sicherheitsentscheidungen, Abnahme vor dem Commit in S2, S8a und S9, und bei hartnäckigen Fehlern. Sie müssen dafür nichts umstellen. Effort bleibt medium, außer in S8a (`/effort high`); sonst nur bei einem wirklich harten Problem erhöhen.
 
 ## Wichtig
 

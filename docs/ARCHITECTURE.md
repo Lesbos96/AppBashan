@@ -70,9 +70,9 @@ Tab-Bar: Start · Miete · Aufträge · Profil. Flow-Zustand je Service im `sess
 | `/miete`, `/miete/gesendet` | 09, 12 | ja / nein |
 | `/auftraege`, `/auftraege/:art/:id` | 13 bzw. 15 leer, 14 Detail | ja |
 | `/profil`, `/preise`, `/profil/vermieter` | 16, 17 Info-Sheet, 18 Vermieter | ja / Sheet / nein |
-| `/anmelden` | Magic-Link-Rückkehr und Code-Eingabe (S8) | nein |
+| `/anmelden` | Magic-Link-Rückkehr und Code-Eingabe (S8b) | nein |
 | `/datenschutz`, `/impressum` | markierte Platzhalter | ja |
-| `/dev/fundament` | Komponenten-Galerie, nur Dev-Build (S3) | nein |
+| `/dev/fundament` | Komponenten-Galerie, nur Dev-Build (S3a) | nein |
 
 ## Entscheidungen
 1. Anfragen und Mietanfragen schreibt nur `quote`: Preis und Gebühr sind nicht fälschbar. Die DB prüft `inputs` nur auf „Objekt", das Schema prüft der einzige Schreiber.

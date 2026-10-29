@@ -82,7 +82,7 @@ Wenn dich etwas blockiert, das nur ich lösen kann (Schlüssel, Login, Passwort,
 
 ## Standard-Prompt · ab Session S2 (Sonnet 5.5, Effort medium)
 
-Vorher: neue Session starten. Sonnet 5.5 und Effort medium kommen aus `.claude/settings.json` (sonst `/model sonnet`). `<N>` ersetzen.
+Vorher: neue Session starten. Sonnet 5.5 und Effort medium kommen aus `.claude/settings.json` (sonst `/model sonnet`). `<N>` ersetzen (z. B. `3a`). Für S8a vorher `/effort high`.
 
 ```
 Session S<N> aus docs/ROADMAP.md. Läufst du nicht als Sonnet 5.5, sag es mir und warte.
@@ -91,9 +91,9 @@ Steht in docs/PROGRESS.md, dass S<N> schon begonnen wurde, mach an der dort noti
 
 Lies CLAUDE.md, docs/PROGRESS.md und in docs/ROADMAP.md nur den Abschnitt S<N>. Aus docs/ARCHITECTURE.md und docs/DESIGN_BRIEF.md nur die Teile, die S<N> betrifft. Bei UI-Arbeit: die in S<N> genannten Referenz-Screens aus docs/reference/design/screens/ ansehen und Werte aus dem passenden HTML in docs/reference/design/html/ über Explore holen.
 
-1. Plane in höchstens 10 Zeilen: Dateien, Tests, Akzeptanzkriterien, Referenz-Screens. Betrifft der Plan Datenmodell, RLS, Rollen, Preis- oder Gebührenlogik, Auth oder Edge Functions, lass ihn vorher vom advisor (Opus) prüfen und übernimm seine Entscheidung. Dann ohne Rückfrage anfangen.
+1. Plane in höchstens 10 Zeilen: Dateien, Tests, Akzeptanzkriterien, Referenz-Screens. Betrifft der Plan Datenmodell, RLS, Rollen, Preis- oder Gebührenlogik, Auth oder Edge Functions, lass ihn vorher vom advisor (Opus) freigeben, alle Entscheidungen dazu in einer Frage, und übernimm seine Entscheidung. Dann ohne Rückfrage anfangen.
 2. Arbeite nach dem Loop in CLAUDE.md, höchstens 5 Runden je Screen bzw. Aufgabe. Prüfläufe nur über test-runner, Suche über Explore, mechanische Arbeit über mech-editor.
-3. Zum Schluss reviewer über den Gesamt-Diff. Bei UI vorher einmal shots:all, damit der reviewer alle Größen in Light und Dark sieht. Findings „hoch" beheben und erneut prüfen.
+3. Zum Schluss reviewer im Modus „Abnahme" über den Gesamt-Diff. Bei UI vorher einmal shots:all, damit der reviewer alle Größen in Light und Dark sieht. In S2, S8a und S9 zusätzlich advisor-Abnahme der Dateien mit Geld- oder Sicherheitslogik. Findings „hoch" beheben und erneut prüfen.
 4. ROADMAP abhaken, PROGRESS.md 3–5 Zeilen, Offenes in OPEN_ISSUES.md, Commit „S<N>: <Titel>", Push, falls ein Remote gesetzt ist.
 5. Bericht an mich: was fertig ist, Nachweise (Exit-Codes, Testzahlen, Report-Pfade, Screenshot-Pfade), offene Punkte, Entscheidungen für mich mit Empfehlung. Dann stoppen.
 
@@ -103,7 +103,7 @@ Bleibt ein Fehler nach 2 Runden rot: Ursache und Hypothesen an den advisor geben
 
 ## Rolle von Opus
 - S1: Opus ist Hauptmodell und legt die Architektur fest.
-- Ab S2: Opus ist der `advisor`-Subagent. Sonnet baut und fragt ihn bei Datenmodell, RLS, Rollen, Preis- und Gebührenlogik, Auth, Edge Functions und bei Fehlern, die nach 2 Runden rot bleiben.
+- Ab S2: Opus ist der `advisor`-Subagent. Sonnet baut und fragt ihn gebündelt: Plan-Freigabe (Datenmodell, RLS, Rollen, Preis- und Gebührenlogik, Auth, Edge Functions), Abnahme vor dem Commit in S2, S8a und S9, und bei Fehlern, die nach 2 Runden rot bleiben.
 - Große Architektur-Änderungen später (z. B. Einführung der Zahlung): wieder eine eigene Session mit `/model opus`.
 
-Effort bleibt auch dann medium (`effortLevel` in `.claude/settings.json`). Nur bei einem wirklich harten Problem mit `/effort high` erhöhen.
+Effort bleibt medium (`effortLevel` in `.claude/settings.json`), außer in S8a (`/effort high`, steht in der ROADMAP). Sonst nur bei einem wirklich harten Problem mit `/effort high` erhöhen.

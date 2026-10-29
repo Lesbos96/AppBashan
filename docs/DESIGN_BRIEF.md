@@ -19,7 +19,7 @@ Die Plattformgebühr von 15 % wird in der App nirgends erwähnt. Sie steht nur a
 Das Design ist bereits fertig gestaltet. docs/reference/design/ (Screens, Quelltext, Tokens) ist die verbindliche Vorlage, siehe Abschnitt 3a. Setze sie um, statt neu zu entwerfen.
 Nutze den frontend-design-Skill (Anthropic-Designguidance für markante, bewusste Gestaltung ohne Template-Look). Lies ihn, bevor du die erste Oberfläche baust, und nutze ihn für alle Zustände, die die Design-Referenz nicht zeigt. Rangfolge bei Konflikten: zuerst die Design-Referenz, dann der Apple-Look aus Abschnitt 3, dann der Skill.
 1. Rollen und Modelle
-[MoveNow] Ersetzt durch `CLAUDE.md`: Die Hauptsession läuft mit Sonnet 5.5 (Effort medium), Opus 5.5 nur in S1 und auf ausdrückliche Anfrage. Haiku 5.5 übernimmt Suche (`Explore`), Prüfläufe und Screenshots (`test-runner`) und mechanische Arbeit wie die SVG-Extraktion (`mech-editor`); Sonnet 5.5 prüft als `reviewer`. Nur ein editierender Agent zur selben Zeit. Jede Delegation bekommt einen vollständigen Auftrag mit Dateipfaden, Akzeptanzkriterien und den passenden Referenz-Screens aus docs/reference/design/screens/.
+[MoveNow] Ersetzt durch `CLAUDE.md`: Die Hauptsession läuft mit Sonnet 5.5 (Effort medium), Opus 5.5 nur in S1 und auf ausdrückliche Anfrage. Haiku 5.5 übernimmt Suche (`Explore`), Prüfläufe und Screenshots (`test-runner`) und mechanische Arbeit wie die Farbumstellung der SVGs (`mech-editor`); Sonnet 5.5 prüft als `reviewer`. Nur ein editierender Agent zur selben Zeit. Jede Delegation bekommt einen vollständigen Auftrag mit Dateipfaden, Akzeptanzkriterien und den passenden Referenz-Screens aus docs/reference/design/screens/.
 2. Technik
 
 Entscheide dich begründet und kurz im Plan für diesen Stack (Abweichung nur mit guter Begründung):
@@ -154,7 +154,7 @@ Secrets nie im Frontend. [MoveNow] .env.example und .gitignore liegen bereits im
 
 Schritt A: Plan. [MoveNow] Ersetzt durch S1 in docs/ROADMAP.md, Ergebnis ist docs/ARCHITECTURE.md statt PLAN.md. Große Referenzdateien werden nicht komplett gelesen; `Explore` holt die nötigen Stellen.
 
-Schritt B: Fundament. [MoveNow] Verteilt auf S1 (Projekt-Setup), S3 (Tokens, Icons, Illustrationen, Basiskomponenten) und S4 (App-Shell ohne Prototyp-Wrapper).
+Schritt B: Fundament. [MoveNow] Verteilt auf S1 (Projekt-Setup), S3a (Tokens, Icons, Illustrationen), S3b (Basiskomponenten) und S4 (App-Shell ohne Prototyp-Wrapper).
 
 Schritt C: Feature-Loop, pro Screen und Service ([MoveNow] innerhalb der jeweiligen Session aus docs/ROADMAP.md):
 

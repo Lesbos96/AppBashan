@@ -5,7 +5,7 @@ Jede Session endet mit grünen Checks, abgehakten Checkboxen, einem Eintrag in `
 UI-Sessions: Jeder fertige Screen besteht den Prüf-Loop aus `CLAUDE.md` gegen seinen Referenz-Screen in `docs/reference/design/screens/`, in Light und Dark. Vor dem Commit einmal `shots:all` (alle vier Größen), Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 Preisbeispiele aus `docs/reference/design/README.md` in E2E-Tests: geprüft werden Gesamtpreis und Positionen, die Kunden sehen. Die Gebührenwerte der Beispiele gelten nur für das Modul und die Vermieter-Abrechnung.
 Umfang: genau das Briefing in `docs/DESIGN_BRIEF.md`. In dieser Phase keine echten Zahlungen, keine echten Buchungsbestätigungen, keine erfundenen Verfügbarkeiten. Alles darüber hinaus steht unter „Später" und wird nur nach Freigabe gebaut.
-Reihenfolge: S2, S3 und S5 hängen nur von S1 ab; S4 nach S3; S6 nach S2–S5; S7 nach S2–S4; S8 nach S6 und S7; S9 nach S8; S10 zuletzt. Schema, Rechte und Routen stehen in `docs/ARCHITECTURE.md`.
+Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6 nach S2–S5; S7 nach S2–S4; S8a nach S2 und S5; S8b nach S6, S7 und S8a; S9 nach S8b; S10 zuletzt. Schema, Rechte und Routen stehen in `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -26,7 +26,7 @@ Reihenfolge: S2, S3 und S5 hängen nur von S1 ab; S4 nach S3; S6 nach S2–S5; S
 ## S2 · Preis-Engine
 - [ ] Reine TS-Funktionen ohne Abhängigkeiten in `supabase/functions/_shared/pricing/`: Transport/Umzug, Entrümpelung, Montage, Miete, Plattformgebühr, Angebotspflicht mit Gründen
 - [ ] Tarife kommen als Parameter aus `price_config`, nicht als Konstanten (Schlüssel wie in `supabase/seed.sql`, Geldwerte in Cent, das Modul rechnet `value / 100` in Euro wie der Prototyp); der Gebührensatz kommt als Parameter aus `platform_settings` (kein fester 15-%-Wert im App-Code, die Tests übergeben ihn)
-- [ ] Importe im Modul mit `.ts`-Endung (läuft in Vite und Deno); Eingabetypen je Service exportiert, als Grundlage für die `inputs`-Prüfung in `quote` (S8)
+- [ ] Importe im Modul mit `.ts`-Endung (läuft in Vite und Deno); Eingabetypen je Service exportiert, als Grundlage für die `inputs`-Prüfung in `quote` (S8a)
 - [ ] Feste Testfälle: die fünf Preisbeispiele aus `docs/reference/design/README.md` (gegen den laufenden Prototyp-Code geprüft, centgenau)
 - [ ] Golden-Fixtures: Prototyp in Playwright laden, `window.MoveNowDemo.*` mit mindestens 40 Eingaben aufrufen, Ergebnis als JSON speichern
 - [ ] Abdeckung: Mindestdauern, 1–8 Personen, mehrere Fahrzeuge, Personen < Fahrzeuge, Spezialgut, Groß-LKW, Einpackservice, Wien / Österreich / international, Entrümpelung mit Mindestpreis und Etagen, Küche vs. Standardmontage, Miete mit angebrochenem Tag, Mehr-km, Einweg, Bereitstellungsgebühr, halbe Cents bei der Gebührenaufteilung
@@ -36,13 +36,19 @@ Reihenfolge: S2, S3 und S5 hängen nur von S1 ab; S4 nach S3; S6 nach S2–S5; S
 
 **Akzeptanz:** alle Tests grün, keine Preislogik außerhalb des Moduls; Umzug-Beispiel centgenau inklusive Aufteilung (689,61 € → Gebühr 103,44, netto 86,20, USt. 17,24, Partner 586,17).
 
-## S3 · Design-System
+## S3a · Tokens, Icons, Illustrationen
 - [ ] `tokens.json` → CSS-Variablen (Light/Dark) und Tailwind-Theme
-- [ ] Icon-Set (Outline und Filled) als SVG-Komponenten mit `currentColor` und Tokens (Extraktion über `mech-editor`)
+- [ ] SVGs über `npm run svg:extract` (byte-genau nach `tmp/svg/`, Fundstellen in `index.tsv`), Dateien per Kopie übernommen und als React-Komponenten eingebunden, ohne Pfade abzutippen (z. B. `vite-plugin-svgr`); Farbumstellung über `mech-editor`
+- [ ] Icon-Set (Outline und Filled) als SVG-Komponenten mit `currentColor` und Tokens
 - [ ] Alle Illustrationen als SVG-Komponenten in den Materialfarben der Palette `illustration`, weiche Kontaktschatten, Dark-Varianten aus `02_Start_Dark.html`
-- [ ] Basiskomponenten: Primär-/Sekundärbutton, Karte, Service-Karte, Inset Grouped List, Segmented Control, Stepper, Toggle, Feld, Status-Chip, Bottom Sheet (Griff, Detents, Drag-to-Dismiss), Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, fixierte Aktionsleiste, Fortschrittsanzeige, Betragszeile ohne Umbruch
-- [ ] Komponenten-Galerie unter `/dev/fundament` (nur im Dev-Build), verglichen mit `00_Fundament.png`
 - [ ] App-Icon, Favicon, Splash aus `00_Fundament`; PWA-Manifest, theme-color, Safe Areas
+- [ ] Galerie unter `/dev/fundament` (nur im Dev-Build) mit Farben, Typografie, Icons und Illustrationen
+
+**Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png` (Farben, Typografie, Icons) und `01`/`02` (Illustrationen), Light und Dark.
+
+## S3b · Basiskomponenten
+- [ ] Basiskomponenten: Primär-/Sekundärbutton, Karte, Service-Karte, Inset Grouped List, Segmented Control, Stepper, Toggle, Feld, Status-Chip, Bottom Sheet (Griff, Detents, Drag-to-Dismiss), Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, fixierte Aktionsleiste, Fortschrittsanzeige, Betragszeile ohne Umbruch
+- [ ] In der Galerie `/dev/fundament` ergänzt, verglichen mit `00_Fundament.png`
 
 **Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png`, Light und Dark.
 
@@ -73,13 +79,20 @@ Reihenfolge: S2, S3 und S5 hängen nur von S1 ab; S4 nach S3; S6 nach S2–S5; S
 - [ ] Montage: Küche wie `08`, Standardmöbel im selben Stil
 - [ ] E2E: Entrümpelungs- (1.175,00 €, Spanne 950–1.550 €) und Küchen-Preisbeispiel (770,40 €) aus dem README exakt in der UI, ohne Gebühr
 
-## S8 · Termin, Login, Anfrage, Aufträge
+## S8a · Anfrage-Backend und Login (Effort high)
+Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
+- [ ] Edge Function `quote`: prüft `inputs` je Service, rechnet neu und speichert Snapshot mit `price_version`, schreibt `fee_splits` mit dem Satz aus `platform_settings`; Status „angefragt" bzw. „Besichtigung angefragt"; „Anfrage bearbeiten" rechnet neu und ist nur bei „angefragt" erlaubt
+- [ ] Foto-Upload in den privaten Bucket (Pfad `{user}/{request}/{datei}`, signierte URLs) als App-Modul
+- [ ] Supabase Auth: E-Mail-Magic-Link, Code in derselben Mail als Ausweichweg, Konto erst beim Absenden, „Mit Apple anmelden" vorbereitet; Auth-Modul in der App
+- [ ] Integrationstests (sequenziell): manipulierter Client-Preis wird ignoriert; `fee_splits` stimmt centgenau mit der Gebührenfunktion überein und ist für den Kunden unlesbar; Bearbeiten außerhalb von „angefragt" wird abgelehnt. Fremde Anfragen, Fotos und Status sind bereits durch `tests/rls/` abgedeckt und bleiben grün.
+
+**Akzeptanz:** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul.
+
+## S8b · Termin, Anfrage, Aufträge
 - [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`
-- [ ] Supabase Auth mit E-Mail-Magic-Link wie in `16` („Mit E-Mail-Link anmelden"), Code in derselben Mail als Ausweichweg, Konto erst beim Absenden, „Mit Apple anmelden" vorbereitet
-- [ ] Absenden: Edge Function `quote` prüft `inputs` je Service, rechnet neu und speichert Snapshot mit `price_version`, schreibt `fee_splits` mit dem Satz aus `platform_settings`; Status „angefragt" bzw. „Besichtigung angefragt"; Fotos in privaten Bucket (Pfad `{user}/{request}/{datei}`, signierte URLs)
+- [ ] Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
 - [ ] Aufträge-Liste wie `13` (Anfragen und Mietanfragen, Aktiv/Erledigt), Detail mit Timeline und Tarifstand wie `14`
 - [ ] „Anfrage bearbeiten" (über `quote`, rechnet neu) und „Anfrage zurückziehen" (direktes Status-Update) wie `14`, solange der Status „angefragt" ist. Alle weiteren Status setzt in dieser Phase nur admin (vorerst im Supabase-Dashboard).
-- [ ] Integrationstests (sequenziell): manipulierter Client-Preis wird ignoriert; `fee_splits` stimmt centgenau mit der Gebührenfunktion überein und ist für den Kunden unlesbar; Bearbeiten außerhalb von „angefragt" wird abgelehnt. Fremde Anfragen, Fotos und Status sind bereits durch `tests/rls/` abgedeckt und bleiben grün.
 
 ## S9 · Transportermiete und Vermieterbereich
 - [ ] Miete wie `09` (ohne Gebühr, Kaution separat); die Mietanfrage wird über `quote` als „angefragt" gespeichert (Server rechnet aus dem Angebot neu, `fee_splits` mit `payee_id` = Vermieter), ohne Bestätigung in der App und ohne echte Verfügbarkeit

@@ -46,6 +46,7 @@
     "shots": "playwright test --project=shots-390-light --project=shots-390-dark",
     "shots:all": "playwright test tests/shots",
     "env:check": "dotenv -e .env.local -- node scripts/env-check.mjs",
+    "svg:extract": "node scripts/extract-svg.mjs",
     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
     "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",
     "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts"

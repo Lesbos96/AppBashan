@@ -27,28 +27,35 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 - `npm run shots:all`: zusätzlich 430×932, 768×1024, 1280×800, je Light und Dark
 - `npm run db:types`, `npm run db:push`: Supabase-Typen bzw. Migrationen (laufen über dotenv-cli)
 - `npm run env:check`: meldet nur, welche Variablennamen gesetzt sind
+- `npm run svg:extract`: alle SVGs aus `docs/reference/design/html/` byte-genau nach `tmp/svg/`, Fundstellen in `tmp/svg/index.tsv`
 - Neue Migration: `npx supabase migration new <name>`
 
 ## Sessions und Modelle
 - Eine Session = ein Abschnitt aus `docs/ROADMAP.md`. Am Ende: Checks grün, ROADMAP abhaken, 3–5 Zeilen in `docs/PROGRESS.md`, Commit, Push (falls ein Remote gesetzt ist), Bericht, Stopp.
 - Ein Commit beendet die Session. Danach keine weitere Aufgabe beginnen; die nächste Session starte ich.
 - Ab etwa 150.000 Tokens Kontext: Zwischenstand committen, in PROGRESS.md festhalten, wo es weitergeht, Bescheid geben, Stopp. Ich setze die Session in einer neuen Session fort.
-- Hauptsession: Sonnet 5.5, Effort medium (beides in `.claude/settings.json`). Opus 5.5 nur auf meine ausdrückliche Anfrage (Architektur, harte Fehlersuche). Höhere Effort-Stufen nur bei harten Problemen.
-- Zu Beginn prüfen, ob du mit dem vorgesehenen Modell läufst (S1: Opus 5.5, sonst Sonnet 5.5). Wenn nicht: sag es mir und warte.
+- Hauptsession: Sonnet 5.5, Effort medium (beides in `.claude/settings.json`). Opus 5.5 nur auf meine ausdrückliche Anfrage (Architektur, harte Fehlersuche). Effort high nur, wo die ROADMAP-Überschrift es vermerkt, sonst nur bei harten Problemen.
+- Zu Beginn prüfen, ob du mit dem vorgesehenen Modell läufst (S1: Opus 5.5, sonst Sonnet 5.5). Wenn nicht: sag es mir und warte. Vermerkt die ROADMAP-Überschrift „Effort high", erinnere mich im ersten Satz daran.
 - Mechanische Arbeit gibst du an Haiku 5.5 (`mech-editor`), Prüfläufe und Screenshots an Haiku 5.5 (`test-runner`), Reviews an Sonnet 5.5 (`reviewer`). Der Hauptkontext bleibt klein.
 - Subagents aus `.claude/agents/`, immer die benannten, nie general-purpose:
   - `Explore` (Haiku): Suche, liefert Pfade und Zeilen
   - `test-runner` (Haiku): `check`, `test:e2e`, `shots`, `shots:all`, `build`. Diese Befehle laufen nie im Hauptkontext.
-  - `mech-editor` (Haiku): mechanische Arbeit nach exakter Vorgabe (SVG aus der Referenz extrahieren, Texte, Umbenennungen, Formatierung, Fixtures, Doku)
+  - `mech-editor` (Haiku): mechanische Arbeit nach exakter Vorgabe (SVG-Farben auf Tokens umstellen, Texte, Umbenennungen, Formatierung, Fixtures, Doku)
   - `reviewer` (Sonnet): prüft Diff und Screenshots gegen Spec, diese Regeln und die Referenz-Screens
-  - `advisor` (Opus): der Kopf. Entscheidet Architektur-, Geld- und Sicherheitsfragen, schreibt keinen Code
-- Den `advisor` fragst du vor jeder Entscheidung zu Datenmodell, Migrationen, RLS und Rollen, Preis- und Gebührenlogik, Edge Functions mit Vertrauensbedarf und Auth, außerdem, wenn ein Fehler nach 2 Runden rot bleibt. Gib ihm eine kurze Frage mit den betroffenen Dateien, nicht die ganze Session. Seine Entscheidung gilt; weichst du ab, sag mir warum. Für UI, Texte und Routinearbeit fragst du ihn nicht.
+  - `advisor` (Opus): der Kopf. Entscheidet Architektur-, Geld- und Sicherheitsfragen und nimmt Geld- und Sicherheitslogik vor dem Commit ab, schreibt keinen Code
+- Den `advisor` fragst du gebündelt, nicht je Einzelentscheidung:
+  - Plan-Freigabe zu Beginn jeder Session, die Datenmodell, Migrationen, RLS und Rollen, Preis- und Gebührenlogik, Edge Functions mit Vertrauensbedarf oder Auth berührt: alle Entscheidungen dazu in einer Frage.
+  - Abnahme vor dem Commit in S2, S8a und S9: nur die Dateien mit Geld- oder Sicherheitslogik, nicht der ganze Diff.
+  - Wenn ein Fehler nach 2 Runden rot bleibt oder unterwegs eine solche Entscheidung auftaucht, die der Plan nicht abdeckt.
+- Gib ihm eine kurze Frage mit den betroffenen Dateien, nicht die ganze Session. Seine Entscheidung gilt; weichst du ab, sag mir warum. Für UI, Texte und Routinearbeit fragst du ihn nicht.
+- „advisor" meint immer diesen Subagent (Agent-Tool). Ein eingebautes `advisor`-Tool ohne Parameter, das den ganzen Verlauf weitergibt, benutzt du nicht; steht es in deiner Tool-Liste, sag es mir zu Beginn.
 - Jede Delegation hat eine schriftliche Spec: Ziel, Dateien, Akzeptanzkriterien, auszuführende Tests, passende Referenz-Screens.
 - Wenige große Delegationen statt vieler kleiner. Nur ein editierender Agent zur selben Zeit.
 
 ## Arbeits-Loop
 bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/reference/design/screens/`) → fixen. Wiederholen, bis alles grün ist, höchstens 5 Runden je Screen bzw. Aufgabe. Was danach rot bleibt: in `docs/OPEN_ISSUES.md` mit Begründung, dann weiter oder Blocker einmal berichten.
-- In jeder Runde: `shots` (390 px, Light und Dark). Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft die übrigen Größen auf Überlauf, Abschneiden und Safe Areas.
+- In jeder Runde: `shots` (390 px, Light und Dark). Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
+- Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und alle Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
 
@@ -91,7 +98,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Beträge brechen nie um: Zahl und € bleiben in einer Zeile (`white-space: nowrap`), lange Beschreibungen umbrechen stattdessen. Die Referenz zeigt solche Umbrüche in 05 („354,00 €") und 14 („689,61 €"); diesen Fehler nicht übernehmen.
 - Kein Gerätemockup, keine Intro-Spalte, keine „Prototyp"/„Konzeptdemo"-Texte.
 - Tab-Bar: Start · Miete · Aufträge · Profil. In Buchungsflows ausgeblendet, dort die fixierte Aktionsleiste.
-- Icons und Illustrationen aus der Referenz als SVG-Komponenten, Pfade unverändert. Icons über `currentColor` und Tokens. Illustrationen in den natürlichen Materialfarben der Palette `illustration` aus `tokens.json`, Teal nur als Marken-Akzent, Dark-Varianten aus `02_Start_Dark.html`. Keine Emojis, keine Rasterbilder, wo Vektor reicht.
+- Icons und Illustrationen aus der Referenz als SVG-Komponenten, Pfade unverändert: Pfaddaten tippt kein Modell ab, sie werden aus `tmp/svg/` kopiert (`npm run svg:extract`). Icons über `currentColor` und Tokens. Illustrationen in den natürlichen Materialfarben der Palette `illustration` aus `tokens.json`, Teal nur als Marken-Akzent, Dark-Varianten aus `02_Start_Dark.html`. Keine Emojis, keine Rasterbilder, wo Vektor reicht.
 - Kein Hinweis auf „15 %", „Plattformgebühr", „Provision" oder „MoveNow-Gebühr" in Kunden-Screens.
 - Für Zustände ohne Referenz-Screen: im selben Stil ergänzen, `frontend-design`-Skill nutzen, falls installiert.
 - Touch-Ziele ≥ 44 px, Fokus sichtbar, jedes Feld mit Label, Kontrast AA, `prefers-reduced-motion` (dann nur Fades).
