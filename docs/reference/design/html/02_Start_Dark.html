@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Start · Dark</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#8FD6CF;text-decoration:none}a:hover{color:#B5E6E0}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(143,214,207,.6);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnMesh{0%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}50%{transform:translate3d(5%,-4%,0) rotate(9deg) scale(1.08)}100%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}}
+@keyframes mnDraw{from{stroke-dashoffset:220}to{stroke-dashoffset:0}}
+@keyframes mnPulse{0%{opacity:.55;transform:scale(.85)}70%{opacity:0;transform:scale(1.35)}100%{opacity:0;transform:scale(1.35)}}
+.mn-mesh{animation:mnMesh 32s ease-in-out infinite}
+.mn-route{stroke-dasharray:220;stroke-dashoffset:220;animation:mnDraw 1.8s cubic-bezier(.22,.8,.2,1) .4s forwards}
+.mn-pulse{transform-box:fill-box;transform-origin:center;animation:mnPulse 2.8s ease-out 1.6s infinite}
+@media (prefers-reduced-motion: reduce){.mn-mesh,.mn-pulse{animation:none}.mn-route{animation:none;stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 1000px; position: relative; overflow: hidden; background: #071B1F; color: #ECF3F3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased">
+
+  <div style="position: absolute; inset: 0; padding: 54px 20px 0; display: flex; flex-direction: column">
+
+    <div style="height: 44px; display: flex; align-items: center; justify-content: flex-end">
+      <button aria-label="Region ändern, aktuell Wien, Österreich" style="height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; cursor: pointer">
+        <span style="height: 34px; padding: 0 12px 0 10px; border-radius: 17px; background: rgba(143,214,207,.12); color: #8FD6CF; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; letter-spacing: -0.2px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"></path><circle cx="12" cy="10" r="2.3"></circle></svg>
+          Wien, AT
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"></path></svg>
+        </span>
+      </button>
+    </div>
+
+    <h1 style="margin: 0 0 16px; font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.5px">Start</h1>
+
+    <section aria-label="MoveNow" style="position: relative; height: 204px; border-radius: 24px; overflow: hidden; background: #03181B; color: #FFFFFF; box-shadow: inset 0 0 0 0.5px rgba(143,214,207,.14)">
+      <div class="mn-mesh" aria-hidden="true" style="position: absolute; inset: -40%; background: radial-gradient(34% 42% at 24% 30%, rgba(14,111,116,.85) 0%, rgba(14,111,116,0) 70%), radial-gradient(40% 46% at 76% 70%, rgba(7,70,76,.95) 0%, rgba(7,70,76,0) 70%), radial-gradient(26% 30% at 68% 26%, rgba(143,214,207,.26) 0%, rgba(143,214,207,0) 70%), radial-gradient(36% 38% at 32% 82%, rgba(2,30,34,.95) 0%, rgba(2,30,34,0) 70%), #03181B"></div>
+      <svg aria-hidden="true" width="350" height="204" style="position: absolute; inset: 0; opacity: .18; mix-blend-mode: overlay"><filter id="mnGrainD"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix></filter><rect width="350" height="204" filter="url(#mnGrainD)"></rect></svg>
+      <svg aria-hidden="true" width="350" height="204" viewBox="0 0 350 204" fill="none" style="position: absolute; inset: 0">
+        <defs>
+          <linearGradient id="mnRouteD" x1="196" y1="94" x2="316" y2="36" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8FD6CF" stop-opacity=".35"></stop><stop offset="1" stop-color="#8FD6CF"></stop></linearGradient>
+        </defs>
+        <circle cx="316" cy="36" r="40" stroke="#8FD6CF" stroke-opacity=".10"></circle>
+        <circle cx="316" cy="36" r="25" stroke="#8FD6CF" stroke-opacity=".18"></circle>
+        <circle class="mn-pulse" cx="316" cy="36" r="14" stroke="#8FD6CF" stroke-opacity=".7"></circle>
+        <path d="M196 94C228 94 236 66 262 60S300 50 316 36" stroke="#8FD6CF" stroke-opacity=".16" stroke-width="5" stroke-linecap="round"></path>
+        <path class="mn-route" d="M196 94C228 94 236 66 262 60S300 50 316 36" stroke="url(#mnRouteD)" stroke-width="1.8" stroke-linecap="round"></path>
+        <circle cx="196" cy="94" r="4.5" fill="#03181B" stroke="#8FD6CF" stroke-width="1.6"></circle>
+        <circle cx="316" cy="36" r="6" fill="#8FD6CF"></circle>
+        <circle cx="316" cy="36" r="2.2" fill="#03181B"></circle>
+      </svg>
+      <p style="position: absolute; left: 20px; top: 20px; margin: 0; font-size: 11px; line-height: 13px; font-weight: 600; letter-spacing: 1.1px; color: #8FD6CF">ALLES FÜR DEINEN NÄCHSTEN MOVE</p>
+      <div style="position: absolute; left: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px">
+        <h2 style="margin: 0; font-size: 27px; line-height: 31px; font-weight: 700; letter-spacing: -0.6px">Mehr bewegen.<br>Weniger Aufwand.</h2>
+        <p style="margin: 0; font-size: 13px; line-height: 18px; color: rgba(255,255,255,.72)">Dein Service. Dein Termin. Klar geplant.</p>
+      </div>
+    </section>
+
+    <h2 style="margin: 30px 0 12px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px">Was hast du vor?</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+
+      <a href="04_Umzug_Konfigurator.html" class="press" style="display: flex; flex-direction: column; padding: 6px; border-radius: 22px; background: #0F272B; color: #ECF3F3; box-shadow: inset 0 0 0 0.5px rgba(236,243,243,.07)">
+        <span style="height: 92px; border-radius: 17px; background: linear-gradient(160deg, #1A3439 0%, #132A2E 100%); display: flex; align-items: center; justify-content: center; overflow: hidden">
+          <svg width="140" height="84" viewBox="0 0 140 84" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="mnSofaBackD" x1="0" y1="20" x2="0" y2="54" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#D9D2C6"></stop><stop offset="1" stop-color="#C2B9AB"></stop></linearGradient>
+              <linearGradient id="mnSofaCushD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8E2D8"></stop><stop offset="1" stop-color="#CFC6B8"></stop></linearGradient>
+              <linearGradient id="mnSofaArmD" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#D5CDC0"></stop><stop offset="1" stop-color="#BBB1A2"></stop></linearGradient>
+              <filter id="mnSoftSofaD" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2.4"></feGaussianBlur></filter>
+            </defs>
+            <ellipse cx="70" cy="73" rx="52" ry="3.6" fill="#000000" fill-opacity=".5" filter="url(#mnSoftSofaD)"></ellipse>
+            <path d="M40 66h3l-.6 5h-1.8zM97 66h3l-.6 5h-1.8z" fill="#6E4A2F"></path>
+            <path d="M27 28a8 8 0 0 1 8-8h70a8 8 0 0 1 8 8v26H27z" fill="url(#mnSofaBackD)"></path>
+            <rect x="31" y="23" width="25.5" height="25" rx="6" fill="url(#mnSofaCushD)"></rect>
+            <rect x="57.25" y="23" width="25.5" height="25" rx="6" fill="url(#mnSofaCushD)"></rect>
+            <rect x="83.5" y="23" width="25.5" height="25" rx="6" fill="url(#mnSofaCushD)"></rect>
+            <path d="M34 24.6h19.5M60.25 24.6h19.5M86.5 24.6h19.5" stroke="#FFFFFF" stroke-opacity=".45" stroke-linecap="round"></path>
+            <rect x="36" y="31" width="15" height="15" rx="4" transform="rotate(-9 43.5 38.5)" fill="#4E7A76"></rect>
+            <path d="M38.6 33.6c3-1 7-1.2 10-.4" stroke="#FFFFFF" stroke-opacity=".22" stroke-linecap="round"></path>
+            <rect x="30" y="56" width="80" height="10" rx="3" fill="#B1A797"></rect>
+            <rect x="31" y="45.5" width="26" height="12" rx="4.5" fill="url(#mnSofaCushD)"></rect>
+            <rect x="57" y="45.5" width="26" height="12" rx="4.5" fill="url(#mnSofaCushD)"></rect>
+            <rect x="83" y="45.5" width="26" height="12" rx="4.5" fill="url(#mnSofaCushD)"></rect>
+            <path d="M33.5 46.9h21M59.5 46.9h21M85.5 46.9h21" stroke="#FFFFFF" stroke-opacity=".5" stroke-linecap="round"></path>
+            <path d="M31 57.5h78" stroke="#9C9282" stroke-opacity=".5" stroke-width=".8"></path>
+            <rect x="19" y="35" width="15" height="31" rx="6.5" fill="url(#mnSofaArmD)"></rect>
+            <rect x="106" y="35" width="15" height="31" rx="6.5" fill="url(#mnSofaArmD)"></rect>
+            <path d="M22 36.7h9M109 36.7h9" stroke="#FFFFFF" stroke-opacity=".5" stroke-linecap="round"></path>
+            <path d="M23.5 66h4l-.8 7h-2.4zM112.5 66h4l-.8 7h-2.4z" fill="#8A5D3B"></path>
+          </svg>
+        </span>
+        <span style="padding: 11px 10px 8px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.2px">Möbeltransport</span>
+          <span style="font-size: 12.5px; line-height: 16px; color: #9FB4B7">Einzelne Möbel</span>
+        </span>
+      </a>
+
+      <a href="04_Umzug_Konfigurator.html" class="press" style="display: flex; flex-direction: column; padding: 6px; border-radius: 22px; background: #0F272B; color: #ECF3F3; box-shadow: inset 0 0 0 0.5px rgba(236,243,243,.07)">
+        <span style="height: 92px; border-radius: 17px; background: linear-gradient(160deg, #1A3439 0%, #132A2E 100%); display: flex; align-items: center; justify-content: center; overflow: hidden">
+          <svg width="140" height="84" viewBox="0 0 140 84" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="mnKraftD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0A46F"></stop><stop offset="1" stop-color="#BA8B55"></stop></linearGradient>
+              <filter id="mnSoftBoxD" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2.4"></feGaussianBlur></filter>
+            </defs>
+            <ellipse cx="72" cy="75" rx="52" ry="3.6" fill="#000000" fill-opacity=".5" filter="url(#mnSoftBoxD)"></ellipse>
+            <path d="M22 46h40v28H22z" fill="url(#mnKraftD)"></path>
+            <path d="M22 46l8-7h40l-8 7z" fill="#DDBA88"></path>
+            <path d="M62 46l8-7v28l-8 7z" fill="#A87842"></path>
+            <path d="M26 42.5h40" stroke="#EADDC2" stroke-width="3.2"></path>
+            <path d="M66 42.5v9.5" stroke="#D9C8A4" stroke-width="3"></path>
+            <path d="M64.6 56.4l2.8-2.4v3l-2.8 2.4z" fill="#6E4D2A"></path>
+            <path d="M22.4 46.5h39.2" stroke="#F1DDB9" stroke-opacity=".8" stroke-width=".8"></path>
+            <path d="M28.5 64v-5M26.8 60.7l1.7-1.7 1.7 1.7M33.5 64v-5M31.8 60.7l1.7-1.7 1.7 1.7" stroke="#4A3826" stroke-opacity=".55" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M72 46h40v28H72z" fill="url(#mnKraftD)"></path>
+            <path d="M72 46l8-7h40l-8 7z" fill="#DDBA88"></path>
+            <path d="M112 46l8-7v28l-8 7z" fill="#A87842"></path>
+            <path d="M76 42.5h40" stroke="#EADDC2" stroke-width="3.2"></path>
+            <path d="M116 42.5v9.5" stroke="#D9C8A4" stroke-width="3"></path>
+            <path d="M114.6 56.4l2.8-2.4v3l-2.8 2.4z" fill="#6E4D2A"></path>
+            <path d="M72.4 46.5h39.2" stroke="#F1DDB9" stroke-opacity=".8" stroke-width=".8"></path>
+            <rect x="80" y="54" width="17" height="11" rx="1" fill="#F6F2E9"></rect>
+            <path d="M82.5 58h11M82.5 61.5h7" stroke="#2F2A24" stroke-opacity=".7" stroke-width="1" stroke-linecap="round"></path>
+            <path d="M44 18h38v25H44z" fill="url(#mnKraftD)"></path>
+            <path d="M44 18l8-7h38l-8 7z" fill="#E2C292"></path>
+            <path d="M82 18l8-7v25l-8 7z" fill="#A87842"></path>
+            <path d="M48 14.5h38" stroke="#EADDC2" stroke-width="3.2"></path>
+            <path d="M86 14.5v9" stroke="#D9C8A4" stroke-width="3"></path>
+            <path d="M84.6 28.4l2.8-2.4v3l-2.8 2.4z" fill="#6E4D2A"></path>
+            <path d="M44.4 18.5h37.2" stroke="#F1DDB9" stroke-opacity=".8" stroke-width=".8"></path>
+            <path d="M50.5 36v-5M48.8 32.7l1.7-1.7 1.7 1.7M55.5 36v-5M53.8 32.7l1.7-1.7 1.7 1.7" stroke="#4A3826" stroke-opacity=".55" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <span style="padding: 11px 10px 8px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.2px">Umzug</span>
+          <span style="font-size: 12.5px; line-height: 16px; color: #9FB4B7">Ganzes Zuhause</span>
+        </span>
+      </a>
+
+      <a href="06_Entruempelung_Wizard.html" class="press" style="display: flex; flex-direction: column; padding: 6px; border-radius: 22px; background: #0F272B; color: #ECF3F3; box-shadow: inset 0 0 0 0.5px rgba(236,243,243,.07)">
+        <span style="height: 92px; border-radius: 17px; background: linear-gradient(160deg, #1A3439 0%, #132A2E 100%); display: flex; align-items: center; justify-content: center; overflow: hidden">
+          <svg width="140" height="84" viewBox="0 0 140 84" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="mnSkipD" x1="0" y1="41" x2="0" y2="71" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6E8D85"></stop><stop offset="1" stop-color="#52706A"></stop></linearGradient>
+              <filter id="mnSoftSkipD" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2.4"></feGaussianBlur></filter>
+            </defs>
+            <ellipse cx="70" cy="75" rx="56" ry="3.4" fill="#000000" fill-opacity=".5" filter="url(#mnSoftSkipD)"></ellipse>
+            <path d="M31 40 49 21" stroke="#D3BF9B" stroke-width="7" stroke-linecap="round"></path>
+            <path d="M33 41.6 51 22.6" stroke="#B9A07A" stroke-width="2.2" stroke-linecap="round"></path>
+            <circle cx="49.2" cy="20.8" r="3.4" fill="#E7DABF"></circle>
+            <path d="M49.2 19.4a1.4 1.4 0 1 1-1.4 1.4" stroke="#B9A07A" stroke-width=".8" stroke-linecap="round"></path>
+            <path d="M58 40V22.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5V40" stroke="#B07F52" stroke-width="2.6"></path>
+            <path d="M59.4 26.5h12.2M59.4 31h12.2" stroke="#C29365" stroke-width="2"></path>
+            <g transform="rotate(-8 91 33)"><rect x="80" y="25" width="22" height="16" fill="#C99C66"></rect><rect x="80" y="25" width="22" height="3" fill="#DDBA88"></rect><path d="M91 25v16" stroke="#E7D7B6" stroke-width="2.2"></path></g>
+            <path d="M104.5 27h11l3 8.5h-17z" fill="#F0E9DC"></path>
+            <path d="M110 35.5v5" stroke="#9AA0A2" stroke-width="1.6"></path>
+            <path d="M12 41h116l-11 29H23z" fill="url(#mnSkipD)"></path>
+            <rect x="8.5" y="37.5" width="123" height="6" rx="1.5" fill="#46635C"></rect>
+            <path d="M10 38.7h120" stroke="#FFFFFF" stroke-opacity=".25" stroke-linecap="round"></path>
+            <path d="M40 45.5v22M58 45.5v23M76 45.5v23M94 45.5v23M110 45.5v20" stroke="#46635C" stroke-width="2.2"></path>
+            <path d="M41.5 46.5v20M59.5 46.5v21M77.5 46.5v21M95.5 46.5v21" stroke="#93AEA7" stroke-opacity=".45" stroke-width=".8"></path>
+            <circle cx="22.5" cy="50" r="3" fill="#33504A"></circle>
+            <circle cx="117.5" cy="50" r="3" fill="#33504A"></circle>
+            <path d="M48 61.5l6-1.6M84 64l5-1" stroke="#B4C6C1" stroke-opacity=".35" stroke-linecap="round"></path>
+            <rect x="28" y="70" width="18" height="3" rx="1" fill="#2C423D"></rect>
+            <rect x="94" y="70" width="18" height="3" rx="1" fill="#2C423D"></rect>
+          </svg>
+        </span>
+        <span style="padding: 11px 10px 8px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.2px">Entrümpelung</span>
+          <span style="font-size: 12.5px; line-height: 16px; color: #9FB4B7">Räumen &amp; entsorgen</span>
+        </span>
+      </a>
+
+      <a href="08_Montage_Kueche.html" class="press" style="display: flex; flex-direction: column; padding: 6px; border-radius: 22px; background: #0F272B; color: #ECF3F3; box-shadow: inset 0 0 0 0.5px rgba(236,243,243,.07)">
+        <span style="height: 92px; border-radius: 17px; background: linear-gradient(160deg, #1A3439 0%, #132A2E 100%); display: flex; align-items: center; justify-content: center; overflow: hidden">
+          <svg width="140" height="84" viewBox="0 0 140 84" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="mnWardD" x1="24" y1="0" x2="84" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F2F2EF"></stop><stop offset="1" stop-color="#D9DAD5"></stop></linearGradient>
+              <filter id="mnSoftWardD" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2.4"></feGaussianBlur></filter>
+            </defs>
+            <ellipse cx="72" cy="75" rx="54" ry="3.4" fill="#000000" fill-opacity=".5" filter="url(#mnSoftWardD)"></ellipse>
+            <rect x="24" y="10" width="60" height="62" rx="2" fill="url(#mnWardD)"></rect>
+            <rect x="24" y="68" width="60" height="4" fill="#C9CAC5"></rect>
+            <rect x="25.5" y="11.5" width="28.5" height="56" rx="1" fill="#F5F5F2"></rect>
+            <path d="M54.5 12v55.5" stroke="#CDCEC9"></path>
+            <rect x="50.4" y="35" width="1.6" height="10" rx=".8" fill="#8F9695"></rect>
+            <rect x="55.5" y="11.5" width="27" height="56" fill="#DCD9D2"></rect>
+            <path d="M55.5 12h27" stroke="#C9C4BA"></path>
+            <path d="M55.5 31h27M55.5 50h27" stroke="#C9AE85" stroke-width="2"></path>
+            <path d="M58.5 16.5h21" stroke="#9AA1A0" stroke-width="1.4" stroke-linecap="round"></path>
+            <path d="M63 16.5l-2.5 3.5h5zM71 16.5l-2.5 3.5h5z" fill="#9AA1A0"></path>
+            <rect x="60" y="25" width="5" height="6" rx="1" fill="#C8B79A"></rect>
+            <rect x="58" y="44" width="10" height="6" rx="1" fill="#9FAFAB"></rect>
+            <rect x="70" y="45.5" width="9" height="4.5" rx="1" fill="#D6C8AE"></rect>
+            <path d="M88 22.5l9-3.5 8 52-9 2z" fill="#F5F5F2"></path>
+            <path d="M97 19l8 52" stroke="#C6C7C2"></path>
+            <path d="M88.4 22.6l8.4-3.3" stroke="#FFFFFF" stroke-linecap="round"></path>
+            <path d="M89.5 30.5l2-.8M93.4 57l2-.8" stroke="#8F9695" stroke-width="1.2" stroke-linecap="round"></path>
+            <path d="M95 49h7" stroke="#8C9497" stroke-width="1.6" stroke-linecap="round"></path>
+            <rect x="102" y="45.5" width="6" height="7" rx="1.5" fill="#9AA3A6"></rect>
+            <rect x="108" y="44" width="22" height="10" rx="4" fill="#3A8380"></rect>
+            <path d="M111 45.7h15" stroke="#FFFFFF" stroke-opacity=".3" stroke-linecap="round"></path>
+            <path d="M116 54h7l-1.5 10h-6z" fill="#3A4245"></path>
+            <rect x="114.2" y="55" width="2" height="4" rx="1" fill="#4B5458"></rect>
+            <rect x="111.5" y="63.5" width="16" height="7.5" rx="2" fill="#343C3F"></rect>
+            <path d="M113 66.2h13" stroke="#3A8380" stroke-width="1.2"></path>
+            <circle cx="99" cy="72.5" r="1.1" fill="#9AA3A6"></circle>
+            <circle cx="103.5" cy="73.2" r="1.1" fill="#9AA3A6"></circle>
+          </svg>
+        </span>
+        <span style="padding: 11px 10px 8px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.2px">Montage</span>
+          <span style="font-size: 12.5px; line-height: 16px; color: #9FB4B7">Auf- und Abbau</span>
+        </span>
+      </a>
+    </div>
+
+    <a href="09_Transporter_Miete.html" class="press" style="margin-top: 12px; position: relative; height: 104px; border-radius: 22px; overflow: hidden; background: linear-gradient(135deg, #105E64 0%, #0A474D 60%, #083B41 100%); color: #FFFFFF; display: flex; align-items: center; box-shadow: inset 0 0 0 0.5px rgba(143,214,207,.16)">
+      <span aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(60% 90% at 85% 20%, rgba(143,214,207,.20) 0%, rgba(143,214,207,0) 70%)"></span>
+      <span style="position: relative; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; width: 190px">
+        <span style="font-size: 11px; line-height: 13px; font-weight: 600; letter-spacing: 1px; color: #8FD6CF">SELBST FAHREN</span>
+        <span style="font-size: 19px; line-height: 23px; font-weight: 700; letter-spacing: -0.3px">Transporter mieten</span>
+        <span style="font-size: 12.5px; line-height: 16px; color: rgba(255,255,255,.74)">Tageweise, von 6 bis 17 m³</span>
+      </span>
+      <svg width="170" height="85" viewBox="0 0 200 100" fill="none" aria-hidden="true" style="position: absolute; right: -14px; bottom: 6px">
+        <defs>
+          <linearGradient id="mnVanBodyD" x1="0" y1="12" x2="0" y2="80" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F7F9F9"></stop><stop offset=".55" stop-color="#E4E9E9"></stop><stop offset="1" stop-color="#C8D0D0"></stop></linearGradient>
+          <linearGradient id="mnVanGlassD" x1="141" y1="18" x2="158" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#405359"></stop><stop offset="1" stop-color="#141D20"></stop></linearGradient>
+          <linearGradient id="mnVanRimD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DCE1E3"></stop><stop offset="1" stop-color="#8E989B"></stop></linearGradient>
+          <filter id="mnVanSoftD" x="-10%" y="-150%" width="120%" height="400%"><feGaussianBlur stdDeviation="2.6"></feGaussianBlur></filter>
+        </defs>
+        <ellipse cx="100" cy="91" rx="86" ry="3.8" fill="#000000" fill-opacity=".5" filter="url(#mnVanSoftD)"></ellipse>
+        <path d="M18 12h118c4 0 7.4 2.3 9 5.9L158 44c1.3 2.8 4 4.6 7 5.1l16.6 2.8c4 .7 6.4 4 6.4 8V76a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V18a6 6 0 0 1 6-6z" fill="url(#mnVanBodyD)"></path>
+        <path d="M20 13.3h114" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"></path>
+        <path d="M14 30h122" stroke="#FFFFFF" stroke-opacity=".4" stroke-width="5"></path>
+        <path d="M14 47.5h152" stroke="#BCC5C5" stroke-width=".8"></path>
+        <path d="M16.5 15v55M98 15v55M139 15v55" stroke="#BAC3C3" stroke-width=".9"></path>
+        <path d="M58 26.5h39" stroke="#C6CECE" stroke-width="1.6" stroke-linecap="round"></path>
+        <path d="M141 18h2.8c2.2 0 4.1 1.3 5 3.3l9.4 21c.4 1-.3 2-1.3 2H141z" fill="url(#mnVanGlassD)"></path>
+        <path d="M144.5 19l6 25.3h3.2L147.5 19z" fill="#FFFFFF" fill-opacity=".14"></path>
+        <rect x="143" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+        <rect x="101" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+        <path d="M151 36.5h5.5a2 2 0 0 1 2 2V43H153a2 2 0 0 1-2-2z" fill="#2A3134"></path>
+        <path d="M178 54.5l8 1.4c1 .2 1.6 1 1.6 2V61l-10.2-.9z" fill="#FBF6E6" stroke="#B5BFC1" stroke-width=".8"></path>
+        <path d="M177.6 61.2l6 .5v1.8l-6-.4z" fill="#E3A03A"></path>
+        <rect x="12" y="29" width="3" height="14" rx="1" fill="#A8382C"></rect>
+        <path d="M12 70h176v6a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z" fill="#394245"></path>
+        <path d="M28 42l9-9M29.6 33H37v7.4" stroke="#075C61" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <text x="41.5" y="41" font-family="-apple-system, BlinkMacSystemFont, Inter, sans-serif" font-size="9.5" font-weight="700" letter-spacing="-0.2" fill="#102F35">MoveNow</text>
+        <circle cx="44" cy="80" r="15.5" fill="#22282B"></circle>
+        <circle cx="156" cy="80" r="15.5" fill="#22282B"></circle>
+        <circle cx="44" cy="80" r="13" fill="#171B1D"></circle>
+        <circle cx="156" cy="80" r="13" fill="#171B1D"></circle>
+        <circle cx="44" cy="80" r="7.6" fill="url(#mnVanRimD)"></circle>
+        <circle cx="156" cy="80" r="7.6" fill="url(#mnVanRimD)"></circle>
+        <path d="M44 75.6v.01M48.2 78.6v.01M46.6 83.6v.01M41.4 83.6v.01M39.8 78.6v.01M156 75.6v.01M160.2 78.6v.01M158.6 83.6v.01M153.4 83.6v.01M151.8 78.6v.01" stroke="#6B7477" stroke-width="2.6" stroke-linecap="round"></path>
+        <circle cx="44" cy="80" r="1.8" fill="#4D5659"></circle>
+        <circle cx="156" cy="80" r="1.8" fill="#4D5659"></circle>
+      </svg>
+    </a>
+
+    <p style="margin: 16px 4px 0; font-size: 13px; line-height: 18px; color: #9FB4B7; text-align: center">Richtpreis ohne Konto. Anmelden erst beim Absenden.</p>
+  </div>
+
+  <nav aria-label="Hauptnavigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; padding: 0 8px; box-sizing: border-box; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; background: rgba(9,28,32,.74); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 0.5px solid rgba(236,243,243,.10)">
+    <a href="01_Start_Light.html" aria-current="page" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #8FD6CF; font-size: 10.5px; line-height: 12px; font-weight: 600">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.4 12 4.3l7.5 6.1V19a1 1 0 0 1-1 1H15v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5H5.5a1 1 0 0 1-1-1z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+      Start
+    </a>
+    <a href="09_Transporter_Miete.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #9FB4B7; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 15.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7.5a1 1 0 0 0 1 1h.6M9.4 15.5h5.2M14 9h3.5a1 1 0 0 1 .8.4l2.5 3.2a1 1 0 0 1 .2.6v1.3a1 1 0 0 1-1 1h-.6"></path><circle cx="7" cy="16" r="2.2"></circle><circle cx="17" cy="16" r="2.2"></circle></svg>
+      Miete
+    </a>
+    <a href="13_Auftraege.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #9FB4B7; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3"></rect><path d="M9 8.5h6M9 12h6M9 15.5h3.5"></path></svg>
+      Aufträge
+    </a>
+    <a href="16_Profil.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #9FB4B7; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M5 19.6c1.1-3.4 3.8-5.3 7-5.3s5.9 1.9 7 5.3a.6.6 0 0 1-.6.8H5.6a.6.6 0 0 1-.6-.8z"></path></svg>
+      Profil
+    </a>
+  </nav>
+</div>
+</body>
+</html>

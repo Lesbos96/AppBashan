@@ -1,0 +1,26 @@
+# Zugangsdaten
+.env
+.env.*
+!.env.example
+supabase/functions/.env
+
+# Abhängigkeiten und Builds
+node_modules/
+dist/
+dev-dist/
+coverage/
+
+# Prüfausgaben
+tmp/
+test-results/
+playwright-report/
+blob-report/
+
+# Supabase lokal
+supabase/.temp/
+supabase/.branches/
+
+# System
+.DS_Store
+Thumbs.db
+*.log

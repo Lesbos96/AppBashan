@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrümpelung · Schritt 3 von 6</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#075C61;text-decoration:none}a:hover{color:#03464B}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(7,92,97,.45);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes mnIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mn-fill{transform-origin:left center;animation:mnFill .7s cubic-bezier(.25,1.2,.4,1) .15s both}
+.mn-in{animation:mnIn .5s cubic-bezier(.2,1,.3,1) both}
+.mn-d1{animation-delay:.04s}.mn-d2{animation-delay:.08s}.mn-d3{animation-delay:.12s}
+@media (prefers-reduced-motion: reduce){.mn-fill{animation:none}.mn-in{animation:mnFade .3s both}}
+@keyframes mnFade{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F2F4F4; color: #102F35; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.2px">
+
+  <div style="padding: 54px 20px 0; display: flex; flex-direction: column">
+    <div style="height: 44px; margin: 0 -12px; position: relative; display: flex; align-items: center; justify-content: center">
+      <a href="01_Start_Light.html" aria-label="Zurück" style="position: absolute; left: 0; top: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #075C61">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"></path></svg>
+      </a>
+      <span style="font-size: 17px; font-weight: 600">Entrümpelung</span>
+    </div>
+
+    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; font-size: 13px; line-height: 16px; color: #5B7074; font-variant-numeric: tabular-nums"><span>Schritt 3 von 6</span><span>50 %</span></div>
+      <div role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="3" aria-label="Fortschritt" style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+        <span style="height: 6px; border-radius: 3px; background: #075C61"></span>
+        <span style="height: 6px; border-radius: 3px; background: #075C61"></span>
+        <span style="height: 6px; border-radius: 3px; background: rgba(16,47,53,.10); overflow: hidden; display: block"><span class="mn-fill" style="display: block; height: 6px; border-radius: 3px; background: #075C61"></span></span>
+        <span style="height: 6px; border-radius: 3px; background: rgba(16,47,53,.10)"></span>
+        <span style="height: 6px; border-radius: 3px; background: rgba(16,47,53,.10)"></span>
+        <span style="height: 6px; border-radius: 3px; background: rgba(16,47,53,.10)"></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 14px; display: flex; gap: 8px">
+      <button style="height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(7,92,97,.09); color: #075C61; font: inherit; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px">Wohnung<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg></button>
+      <button style="height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(7,92,97,.09); color: #075C61; font: inherit; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums">60 m²<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg></button>
+    </div>
+
+    <h1 style="margin: 18px 0 6px; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.6px">Wie voll ist der Bereich?</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 20px; color: #5B7074">Eine grobe Einschätzung reicht.</p>
+
+    <div role="radiogroup" aria-label="Füllgrad" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px">
+
+      <button role="radio" aria-checked="false" class="press mn-in mn-d1" style="width: 100%; border: 0; padding: 12px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; gap: 14px; text-align: left; font: inherit; color: inherit; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+        <span style="width: 92px; height: 92px; border-radius: 16px; overflow: hidden; flex-shrink: 0; display: block">
+          <svg width="92" height="92" viewBox="0 0 92 92" fill="none" aria-hidden="true">
+            <rect width="92" height="92" fill="#F1EFEA"></rect>
+            <rect x="52" y="10" width="26" height="22" rx="1.5" fill="#FFFFFF"></rect>
+            <rect x="54" y="12" width="22" height="18" fill="#DCE7EA"></rect>
+            <path d="M65 12v18M54 21h22" stroke="#FFFFFF" stroke-width="1.4"></path>
+            <rect y="64" width="92" height="28" fill="#D9C19B"></rect>
+            <path d="M0 72.5h92M0 81.5h92M16 64v8.5M44 72.5v9M70 64v8.5M28 81.5V92M60 81.5V92M86 72.5v9" stroke="#C8AD85" stroke-width=".8"></path>
+            <rect y="62" width="92" height="2.5" fill="#FFFFFF"></rect>
+            <ellipse cx="28" cy="77" rx="24" ry="4.5" fill="#E7E0D3"></ellipse>
+            <ellipse cx="28" cy="70.5" rx="17" ry="2.2" fill="#2F2A22" fill-opacity=".14"></ellipse>
+            <rect x="15" y="40" width="26" height="20" rx="6" fill="#C7BEAF"></rect>
+            <rect x="12" y="51" width="32" height="12" rx="4.5" fill="#D9D1C4"></rect>
+            <rect x="9.5" y="47" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <rect x="39.5" y="47" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <path d="M13.5 64v5.5M42.5 64v5.5" stroke="#8A5D3B" stroke-width="2" stroke-linecap="round"></path>
+            <ellipse cx="68" cy="70.6" rx="5" ry="1.4" fill="#2E3335"></ellipse>
+            <path d="M68 70V36" stroke="#2E3335" stroke-width="1.5"></path>
+            <path d="M61 36h14l-2.5-9h-9z" fill="#EFE7D6"></path>
+            <path d="M61.6 35.4h12.8" stroke="#D9CDB6" stroke-width=".8"></path>
+          </svg>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 17px; line-height: 22px; font-weight: 600">Wenig gefüllt</span>
+          <span style="font-size: 15px; line-height: 20px; color: #5B7074">Einige Möbel, viel freie Bodenfläche</span>
+        </span>
+        <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.6px rgba(16,47,53,.25); flex-shrink: 0"></span>
+      </button>
+
+      <button role="radio" aria-checked="true" class="press mn-in mn-d2" style="width: 100%; border: 0; padding: 12px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; gap: 14px; text-align: left; font: inherit; color: inherit; box-shadow: inset 0 0 0 2px #075C61, 0 6px 18px rgba(7,92,97,.12)">
+        <span style="width: 92px; height: 92px; border-radius: 16px; overflow: hidden; flex-shrink: 0; display: block">
+          <svg width="92" height="92" viewBox="0 0 92 92" fill="none" aria-hidden="true">
+            <rect width="92" height="92" fill="#F1EFEA"></rect>
+            <rect x="8" y="10" width="24" height="22" rx="1.5" fill="#FFFFFF"></rect>
+            <rect x="10" y="12" width="20" height="18" fill="#DCE7EA"></rect>
+            <path d="M20 12v18M10 21h20" stroke="#FFFFFF" stroke-width="1.4"></path>
+            <rect y="64" width="92" height="28" fill="#D9C19B"></rect>
+            <path d="M0 72.5h92M0 81.5h92M16 64v8.5M44 72.5v9M70 64v8.5M28 81.5V92M60 81.5V92M86 72.5v9" stroke="#C8AD85" stroke-width=".8"></path>
+            <rect y="62" width="92" height="2.5" fill="#FFFFFF"></rect>
+            <ellipse cx="29" cy="78" rx="27" ry="4.5" fill="#E7E0D3"></ellipse>
+            <rect x="58" y="20" width="27" height="50" rx="1.5" fill="#C49A6C"></rect>
+            <rect x="60" y="22" width="23" height="46" fill="#AE8456"></rect>
+            <path d="M60 33.5h23M60 45.5h23M60 57.5h23" stroke="#C49A6C" stroke-width="2"></path>
+            <path d="M62.2 32.5v-7" stroke="#5B7C77" stroke-width="2.2"></path>
+            <path d="M64.8 32.5v-8" stroke="#E4D8BE" stroke-width="2.2"></path>
+            <path d="M67.4 32.5v-6.5" stroke="#8C6A4E" stroke-width="2.2"></path>
+            <rect x="74" y="27.5" width="7" height="5" rx="1" fill="#EDE6D8"></rect>
+            <path d="M62.6 44.5l2.2-7" stroke="#A9B4B0" stroke-width="2.2"></path>
+            <path d="M67 44.5v-7.5M69.6 44.5v-7" stroke="#D8C9AB" stroke-width="2.2"></path>
+            <rect x="72" y="51" width="6" height="5.5" rx="1" fill="#E3DACB"></rect>
+            <path d="M75 51c-1.5-3-4-3.6-5-2.6M75 51c.6-3.4 2.4-4.4 4.2-3.4M75 51v-4" stroke="#6E8A63" stroke-width="1.4" stroke-linecap="round"></path>
+            <rect x="62" y="60" width="9" height="7" rx="1" fill="#D8C7A6"></rect>
+            <rect x="73" y="60" width="9" height="7" rx="1" fill="#D8C7A6"></rect>
+            <ellipse cx="29" cy="70.5" rx="25" ry="2.2" fill="#2F2A22" fill-opacity=".14"></ellipse>
+            <rect x="6" y="42" width="46" height="16" rx="5" fill="#C7BEAF"></rect>
+            <rect x="11" y="44" width="10" height="10" rx="2.5" transform="rotate(-8 16 49)" fill="#4E7A76"></rect>
+            <rect x="4" y="52" width="50" height="12" rx="4.5" fill="#D9D1C4"></rect>
+            <rect x="1.5" y="48" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <rect x="49.5" y="48" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <path d="M5 65v4.5M53 65v4.5" stroke="#8A5D3B" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 17px; line-height: 22px; font-weight: 600">Normal möbliert</span>
+          <span style="font-size: 15px; line-height: 20px; color: #5B7074">Übliche Einrichtung und Hausrat</span>
+        </span>
+        <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; background: #075C61; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+      </button>
+
+      <button role="radio" aria-checked="false" class="press mn-in mn-d3" style="width: 100%; border: 0; padding: 12px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; gap: 14px; text-align: left; font: inherit; color: inherit; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+        <span style="width: 92px; height: 92px; border-radius: 16px; overflow: hidden; flex-shrink: 0; display: block">
+          <svg width="92" height="92" viewBox="0 0 92 92" fill="none" aria-hidden="true">
+            <rect width="92" height="92" fill="#F1EFEA"></rect>
+            <rect y="64" width="92" height="28" fill="#D9C19B"></rect>
+            <path d="M0 72.5h92M0 81.5h92M16 64v8.5M44 72.5v9M70 64v8.5M28 81.5V92M60 81.5V92M86 72.5v9" stroke="#C8AD85" stroke-width=".8"></path>
+            <rect y="62" width="92" height="2.5" fill="#FFFFFF"></rect>
+            <ellipse cx="46" cy="70" rx="44" ry="2.4" fill="#2F2A22" fill-opacity=".14"></ellipse>
+            <rect x="3" y="14" width="27" height="54" rx="1.5" fill="#F6F6F3"></rect>
+            <path d="M16.5 15v52" stroke="#D8D9D4"></path>
+            <rect x="13.4" y="36" width="1.4" height="7" rx=".7" fill="#8F9695"></rect>
+            <rect x="18.2" y="36" width="1.4" height="7" rx=".7" fill="#8F9695"></rect>
+            <rect x="28.5" y="14" width="1.5" height="54" fill="#E1E2DD"></rect>
+            <path d="M6 8h20v6H6z" fill="#C99C66"></path>
+            <path d="M6 8h20v1.6H6z" fill="#DDBA88"></path>
+            <path d="M80 68l6-40" stroke="#CDB894" stroke-width="6" stroke-linecap="round"></path>
+            <path d="M81.9 68.3l6-40" stroke="#B49D75" stroke-width="1.6" stroke-linecap="round"></path>
+            <rect x="32" y="50" width="22" height="18" fill="#C99C66"></rect>
+            <rect x="32" y="50" width="22" height="2.6" fill="#DDBA88"></rect>
+            <path d="M43 50v7" stroke="#E7D7B6" stroke-width="2"></path>
+            <rect x="56" y="53" width="19" height="15" fill="#BC8E57"></rect>
+            <rect x="56" y="53" width="19" height="2.6" fill="#D1AC78"></rect>
+            <path d="M65.5 53v6" stroke="#E7D7B6" stroke-width="2"></path>
+            <rect x="34" y="34" width="19" height="16" fill="#CDA16C"></rect>
+            <rect x="34" y="34" width="19" height="2.6" fill="#E2C292"></rect>
+            <path d="M43.5 34v6" stroke="#E7D7B6" stroke-width="2"></path>
+            <rect x="38" y="42" width="9" height="5" fill="#F4EFE5"></rect>
+            <path d="M59 53l2-6h9l2 6z" fill="#EFE7D6"></path>
+            <path d="M40 79c-6 0-9-3-8-7 1-3 4-4 6-6l2-3 2 3c2 2 5 3 6 6 1 4-2 7-8 7z" fill="#3E4346"></path>
+            <path d="M36 70c1.5-1.4 3-2.2 4-3.6" stroke="#FFFFFF" stroke-opacity=".18" stroke-linecap="round"></path>
+            <path d="M62 80c-5.5 0-8-2.6-7.2-6.2.9-2.7 3.6-3.7 5.4-5.4l1.8-2.6 1.8 2.6c1.8 1.7 4.5 2.7 5.4 5.4.8 3.6-1.7 6.2-7.2 6.2z" fill="#56595B"></path>
+          </svg>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 17px; line-height: 22px; font-weight: 600">Sehr voll</span>
+          <span style="font-size: 15px; line-height: 20px; color: #5B7074">Viele Gegenstände, gefüllte Schränke</span>
+        </span>
+        <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.6px rgba(16,47,53,.25); flex-shrink: 0"></span>
+      </button>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 34px; display: flex; flex-direction: column; gap: 10px">
+    <p style="margin: 0; text-align: center; font-size: 13px; line-height: 18px; color: #5B7074">Unverbindlich · ohne Kontaktdaten</p>
+    <a href="07_Entruempelung_Ergebnis.html" class="press" style="height: 54px; border-radius: 16px; corner-shape: squircle; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #0C6E73 0%, #075C61 55%, #04494E 100%); color: #FFFFFF; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 16px rgba(7,92,97,.22)">Weiter</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Onboarding · 1 von 3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#075C61;text-decoration:none}a:hover{color:#03464B}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(143,214,207,.7);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnMesh{0%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}50%{transform:translate3d(4%,-3%,0) rotate(7deg) scale(1.06)}100%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}}
+@keyframes mnDraw{from{stroke-dashoffset:620}to{stroke-dashoffset:0}}
+@keyframes mnPulse{0%{opacity:.6;transform:scale(.85)}70%{opacity:0;transform:scale(1.4)}100%{opacity:0;transform:scale(1.4)}}
+@keyframes mnFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.mn-mesh{animation:mnMesh 36s ease-in-out infinite}
+.mn-route{stroke-dasharray:620;stroke-dashoffset:620;animation:mnDraw 2.2s cubic-bezier(.22,.8,.2,1) .3s forwards}
+.mn-pulse{transform-box:fill-box;transform-origin:center;animation:mnPulse 2.8s ease-out 2s infinite}
+.mn-float{animation:mnFloat 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.mn-mesh,.mn-pulse,.mn-float{animation:none}.mn-route{animation:none;stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F2F4F4; color: #102F35; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased">
+
+  <div style="position: absolute; left: 0; top: 0; width: 390px; height: 490px; overflow: hidden; background: #04252A">
+    <div class="mn-mesh" aria-hidden="true" style="position: absolute; inset: -35%; background: radial-gradient(30% 34% at 30% 34%, rgba(18,128,132,.85) 0%, rgba(18,128,132,0) 70%), radial-gradient(36% 40% at 72% 62%, rgba(9,86,92,.95) 0%, rgba(9,86,92,0) 70%), radial-gradient(22% 24% at 76% 28%, rgba(143,214,207,.30) 0%, rgba(143,214,207,0) 70%), radial-gradient(34% 30% at 24% 84%, rgba(3,40,45,.95) 0%, rgba(3,40,45,0) 70%), #04252A"></div>
+    <svg aria-hidden="true" width="390" height="490" style="position: absolute; inset: 0; opacity: .16; mix-blend-mode: overlay"><filter id="mnGrainO"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix></filter><rect width="390" height="490" filter="url(#mnGrainO)"></rect></svg>
+
+    <svg aria-hidden="true" width="390" height="490" viewBox="0 0 390 490" fill="none" style="position: absolute; inset: 0">
+      <defs>
+        <linearGradient id="mnRouteO" x1="0" y1="420" x2="336" y2="128" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8FD6CF" stop-opacity="0"></stop><stop offset=".35" stop-color="#8FD6CF" stop-opacity=".55"></stop><stop offset="1" stop-color="#8FD6CF"></stop></linearGradient>
+      </defs>
+      <circle cx="336" cy="128" r="58" stroke="#8FD6CF" stroke-opacity=".08"></circle>
+      <circle cx="336" cy="128" r="36" stroke="#8FD6CF" stroke-opacity=".16"></circle>
+      <circle class="mn-pulse" cx="336" cy="128" r="18" stroke="#8FD6CF" stroke-opacity=".7"></circle>
+      <path d="M-10 420C60 404 92 366 150 360S286 344 304 262 330 156 336 128" stroke="#8FD6CF" stroke-opacity=".12" stroke-width="7" stroke-linecap="round"></path>
+      <path class="mn-route" d="M-10 420C60 404 92 366 150 360S286 344 304 262 330 156 336 128" stroke="url(#mnRouteO)" stroke-width="2" stroke-linecap="round"></path>
+      <circle cx="336" cy="128" r="8" fill="#8FD6CF"></circle>
+      <circle cx="336" cy="128" r="3" fill="#04252A"></circle>
+    </svg>
+
+    <svg class="mn-float" width="260" height="130" viewBox="0 0 200 100" fill="none" aria-hidden="true" style="position: absolute; left: 52px; top: 214px">
+      <defs>
+        <linearGradient id="mnVanBodyO" x1="0" y1="12" x2="0" y2="80" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FDFEFE"></stop><stop offset=".55" stop-color="#EDF0F0"></stop><stop offset="1" stop-color="#D3DADA"></stop></linearGradient>
+        <linearGradient id="mnVanGlassO" x1="141" y1="18" x2="158" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#405359"></stop><stop offset="1" stop-color="#141D20"></stop></linearGradient>
+        <linearGradient id="mnVanRimO" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DCE1E3"></stop><stop offset="1" stop-color="#8E989B"></stop></linearGradient>
+        <filter id="mnVanSoftO" x="-10%" y="-150%" width="120%" height="400%"><feGaussianBlur stdDeviation="2.6"></feGaussianBlur></filter>
+      </defs>
+      <ellipse cx="100" cy="91" rx="86" ry="3.8" fill="#000000" fill-opacity=".45" filter="url(#mnVanSoftO)"></ellipse>
+      <path d="M18 12h118c4 0 7.4 2.3 9 5.9L158 44c1.3 2.8 4 4.6 7 5.1l16.6 2.8c4 .7 6.4 4 6.4 8V76a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V18a6 6 0 0 1 6-6z" fill="url(#mnVanBodyO)"></path>
+      <path d="M20 13.3h114" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"></path>
+      <path d="M14 30h122" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="5"></path>
+      <path d="M14 47.5h152" stroke="#C5CDCD" stroke-width=".8"></path>
+      <path d="M16.5 15v55M98 15v55M139 15v55" stroke="#C3CBCB" stroke-width=".9"></path>
+      <path d="M58 26.5h39" stroke="#CDD4D4" stroke-width="1.6" stroke-linecap="round"></path>
+      <path d="M141 18h2.8c2.2 0 4.1 1.3 5 3.3l9.4 21c.4 1-.3 2-1.3 2H141z" fill="url(#mnVanGlassO)"></path>
+      <path d="M144.5 19l6 25.3h3.2L147.5 19z" fill="#FFFFFF" fill-opacity=".14"></path>
+      <rect x="143" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+      <rect x="101" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+      <path d="M151 36.5h5.5a2 2 0 0 1 2 2V43H153a2 2 0 0 1-2-2z" fill="#2A3134"></path>
+      <path d="M178 54.5l8 1.4c1 .2 1.6 1 1.6 2V61l-10.2-.9z" fill="#FBF6E6" stroke="#B5BFC1" stroke-width=".8"></path>
+      <path d="M177.6 61.2l6 .5v1.8l-6-.4z" fill="#E3A03A"></path>
+      <rect x="12" y="29" width="3" height="14" rx="1" fill="#A8382C"></rect>
+      <path d="M12 70h176v6a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z" fill="#394245"></path>
+      <path d="M28 42l9-9M29.6 33H37v7.4" stroke="#075C61" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      <text x="41.5" y="41" font-family="-apple-system, BlinkMacSystemFont, Inter, sans-serif" font-size="9.5" font-weight="700" letter-spacing="-0.2" fill="#102F35">MoveNow</text>
+      <circle cx="44" cy="80" r="15.5" fill="#22282B"></circle>
+      <circle cx="156" cy="80" r="15.5" fill="#22282B"></circle>
+      <circle cx="44" cy="80" r="13" fill="#171B1D"></circle>
+      <circle cx="156" cy="80" r="13" fill="#171B1D"></circle>
+      <circle cx="44" cy="80" r="7.6" fill="url(#mnVanRimO)"></circle>
+      <circle cx="156" cy="80" r="7.6" fill="url(#mnVanRimO)"></circle>
+      <path d="M44 75.6v.01M48.2 78.6v.01M46.6 83.6v.01M41.4 83.6v.01M39.8 78.6v.01M156 75.6v.01M160.2 78.6v.01M158.6 83.6v.01M153.4 83.6v.01M151.8 78.6v.01" stroke="#6B7477" stroke-width="2.6" stroke-linecap="round"></path>
+      <circle cx="44" cy="80" r="1.8" fill="#4D5659"></circle>
+      <circle cx="156" cy="80" r="1.8" fill="#4D5659"></circle>
+    </svg>
+
+    <svg width="96" height="72" viewBox="0 0 96 72" fill="none" aria-hidden="true" style="position: absolute; left: 22px; top: 280px">
+      <defs>
+        <linearGradient id="mnKraftO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0A46F"></stop><stop offset="1" stop-color="#B78852"></stop></linearGradient>
+        <filter id="mnSoftBoxO" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2"></feGaussianBlur></filter>
+      </defs>
+      <ellipse cx="48" cy="66" rx="42" ry="3.2" fill="#000000" fill-opacity=".45" filter="url(#mnSoftBoxO)"></ellipse>
+      <path d="M10 36h34v28H10z" fill="url(#mnKraftO)"></path>
+      <path d="M10 36l7-6h34l-7 6z" fill="#DDBA88"></path>
+      <path d="M44 36l7-6v28l-7 6z" fill="#A87842"></path>
+      <path d="M13.5 33h34" stroke="#EADDC2" stroke-width="2.8"></path>
+      <path d="M47.5 33v8" stroke="#D9C8A4" stroke-width="2.6"></path>
+      <path d="M15 54v-4.5M13.5 51l1.5-1.5 1.5 1.5M19.5 54v-4.5M18 51l1.5-1.5 1.5 1.5" stroke="#4A3826" stroke-opacity=".55" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M48 44h30v20H48z" fill="url(#mnKraftO)"></path>
+      <path d="M48 44l6-5h30l-6 5z" fill="#E2C292"></path>
+      <path d="M78 44l6-5v20l-6 5z" fill="#A87842"></path>
+      <path d="M51 41.5h30" stroke="#EADDC2" stroke-width="2.6"></path>
+      <path d="M81 41.5v7" stroke="#D9C8A4" stroke-width="2.4"></path>
+      <rect x="54" y="50" width="13" height="8" rx="1" fill="#F6F2E9"></rect>
+      <path d="M56 53h9M56 55.6h5.5" stroke="#2F2A24" stroke-opacity=".7" stroke-width=".9" stroke-linecap="round"></path>
+    </svg>
+
+    <div style="position: absolute; left: 0; right: 0; top: 54px; height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between">
+      <span style="display: flex; align-items: center; gap: 8px; padding-left: 8px; color: #FFFFFF; font-size: 17px; font-weight: 700; letter-spacing: -0.4px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; corner-shape: squircle; display: flex; align-items: center; justify-content: center; background: linear-gradient(150deg, #0E7A7F 0%, #075C61 50%, #03464B 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 0.5px rgba(255,255,255,.12)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"></path></svg></span>
+        MoveNow
+      </span>
+      <a href="01_Start_Light.html" style="height: 44px; padding: 0 10px; display: flex; align-items: center; color: rgba(255,255,255,.86); font-size: 16px; font-weight: 500">Überspringen</a>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 458px; bottom: 0; border-radius: 32px 32px 0 0; background: #F2F4F4; padding: 28px 24px 34px; box-sizing: border-box; display: flex; flex-direction: column">
+    <div role="img" aria-label="Seite 1 von 3" style="display: flex; gap: 6px; margin-bottom: 20px">
+      <span style="width: 22px; height: 6px; border-radius: 3px; background: #075C61"></span>
+      <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(16,47,53,.18)"></span>
+      <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(16,47,53,.18)"></span>
+    </div>
+    <h1 style="margin: 0 0 12px; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.6px">Alles für deinen Move.<br>In einer App.</h1>
+    <p style="margin: 0; font-size: 17px; line-height: 24px; color: #5B7074; letter-spacing: -0.2px">Transport, Umzug, Entrümpelung, Montage und Transporter. Mit Richtpreis, bevor du dich anmeldest.</p>
+    <a href="01_Start_Light.html" class="press" style="margin-top: auto; height: 54px; border-radius: 16px; corner-shape: squircle; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #0C6E73 0%, #075C61 55%, #04494E 100%); color: #FFFFFF; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 16px rgba(7,92,97,.22)">Weiter</a>
+  </div>
+</div>
+</body>
+</html>

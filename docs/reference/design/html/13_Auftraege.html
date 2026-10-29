@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aufträge</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#075C61;text-decoration:none}a:hover{color:#03464B}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(7,92,97,.45);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mn-in{animation:mnIn .5s cubic-bezier(.2,1,.3,1) both}
+.mn-d1{animation-delay:.04s}.mn-d2{animation-delay:.08s}.mn-d3{animation-delay:.12s}
+@media (prefers-reduced-motion: reduce){.mn-in{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F2F4F4; color: #102F35; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.2px">
+
+  <div style="padding: 98px 20px 0; display: flex; flex-direction: column">
+    <h1 style="margin: 0 0 16px; font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.5px">Aufträge</h1>
+
+    <div role="tablist" aria-label="Filter" style="height: 36px; padding: 2px; box-sizing: border-box; border-radius: 10px; background: rgba(16,47,53,.07); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px">
+      <button role="tab" aria-selected="true" style="border: 0; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; color: #102F35; box-shadow: 0 1px 3px rgba(16,47,53,.12), 0 0 0 0.5px rgba(16,47,53,.06)">Aktiv · 3</button>
+      <button role="tab" aria-selected="false" style="border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #102F35">Erledigt</button>
+    </div>
+
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px">
+
+      <a href="14_Auftrag_Detail.html" class="press mn-in mn-d1" style="background: #FFFFFF; border-radius: 22px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; color: #102F35; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(7,92,97,.10); color: #075C61; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h8v8h-8zM12.5 12.5h8v8h-8zM8 4.5h8v8H8z"></path><path d="M7.5 12.5v2.5M16.5 12.5v2.5M12 4.5V7"></path></svg></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 17px; font-weight: 600">Umzug</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Fr., 13. Nov. · Neubaugasse → Praterstraße</span></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(16,47,53,.35)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"></path></svg>
+        </span>
+        <span style="height: 0.5px; background: rgba(16,47,53,.12)"></span>
+        <span style="display: flex; align-items: center; justify-content: space-between">
+          <span style="height: 26px; padding: 0 10px; border-radius: 13px; background: #F3ECDC; color: #6A5524; font-size: 12.5px; font-weight: 600; display: flex; align-items: center">Angefragt</span>
+          <span style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums">689,61 €</span>
+        </span>
+      </a>
+
+      <a href="14_Auftrag_Detail.html" class="press mn-in mn-d2" style="background: #FFFFFF; border-radius: 22px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; color: #102F35; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(7,92,97,.10); color: #075C61; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 15.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7.5a1 1 0 0 0 1 1h.6M9.4 15.5h5.2M14 9h3.5a1 1 0 0 1 .8.4l2.5 3.2a1 1 0 0 1 .2.6v1.3a1 1 0 0 1-1 1h-.6"></path><circle cx="7" cy="16" r="2.2"></circle><circle cx="17" cy="16" r="2.2"></circle></svg></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 17px; font-weight: 600">Cargo Van · 2 Tage</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Fr., 6. Nov. bis So., 8. Nov. · Standort Süd</span></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(16,47,53,.35)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"></path></svg>
+        </span>
+        <span style="height: 0.5px; background: rgba(16,47,53,.12)"></span>
+        <span style="display: flex; align-items: center; justify-content: space-between">
+          <span style="height: 26px; padding: 0 10px; border-radius: 13px; background: #F3ECDC; color: #6A5524; font-size: 12.5px; font-weight: 600; display: flex; align-items: center">Angefragt</span>
+          <span style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums">276,00 €</span>
+        </span>
+      </a>
+
+      <a href="14_Auftrag_Detail.html" class="press mn-in mn-d3" style="background: #FFFFFF; border-radius: 22px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; color: #102F35; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+        <span style="display: flex; align-items: center; gap: 12px">
+          <span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(7,92,97,.10); color: #075C61; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9h19l-2.2 9.4a1.5 1.5 0 0 1-1.46 1.1H6.16a1.5 1.5 0 0 1-1.46-1.1z"></path><path d="M8 12.5v3.5M12 12.5v3.5M16 12.5v3.5M8.5 9l1.5-4h4l1.5 4"></path></svg></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 17px; font-weight: 600">Entrümpelung · Keller</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Wunschtermin Mi., 18. Nov.</span></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(16,47,53,.35)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"></path></svg>
+        </span>
+        <span style="height: 0.5px; background: rgba(16,47,53,.12)"></span>
+        <span style="display: flex; align-items: center; justify-content: space-between">
+          <span style="height: 26px; padding: 0 10px; border-radius: 13px; background: rgba(7,92,97,.10); color: #075C61; font-size: 12.5px; font-weight: 600; display: flex; align-items: center">Besichtigung angefragt</span>
+          <span style="font-size: 15px; color: #5B7074">Preis nach Prüfung</span>
+        </span>
+      </a>
+    </div>
+
+    <p style="margin: 14px 4px 0; text-align: center; font-size: 13px; line-height: 18px; color: #5B7074">Richtpreise sind unverbindlich. Termin und Preis bestätigt der Partner.</p>
+  </div>
+
+  <nav aria-label="Hauptnavigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; padding: 0 8px; box-sizing: border-box; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; background: rgba(247,250,250,.78); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 0.5px solid rgba(16,47,53,.12)">
+    <a href="01_Start_Light.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.4 12 4.3l7.5 6.1V19a1 1 0 0 1-1 1H15v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5H5.5a1 1 0 0 1-1-1z"></path></svg>
+      Start
+    </a>
+    <a href="09_Transporter_Miete.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 15.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7.5a1 1 0 0 0 1 1h.6M9.4 15.5h5.2M14 9h3.5a1 1 0 0 1 .8.4l2.5 3.2a1 1 0 0 1 .2.6v1.3a1 1 0 0 1-1 1h-.6"></path><circle cx="7" cy="16" r="2.2"></circle><circle cx="17" cy="16" r="2.2"></circle></svg>
+      Miete
+    </a>
+    <a href="13_Auftraege.html" aria-current="page" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #075C61; font-size: 10.5px; line-height: 12px; font-weight: 600">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3" fill="currentColor" stroke="currentColor" stroke-width="1.6"></rect><path d="M9 8.5h6M9 12h6M9 15.5h3.5" stroke="#F4F8F8" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      Aufträge
+    </a>
+    <a href="16_Profil.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M5 19.6c1.1-3.4 3.8-5.3 7-5.3s5.9 1.9 7 5.3a.6.6 0 0 1-.6.8H5.6a.6.6 0 0 1-.6-.8z"></path></svg>
+      Profil
+    </a>
+  </nav>
+</div>
+</body>
+</html>

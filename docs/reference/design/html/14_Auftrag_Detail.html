@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auftrag · Detail mit Timeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#075C61;text-decoration:none}a:hover{color:#03464B}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(7,92,97,.45);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnPulse{0%{transform:scale(1);opacity:.5}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+@keyframes mnGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.mn-pulse{animation:mnPulse 2.2s ease-out infinite}
+.mn-grow{transform-origin:top center;animation:mnGrow .7s cubic-bezier(.25,1.1,.4,1) .2s both}
+@media (prefers-reduced-motion: reduce){.mn-pulse,.mn-grow{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 1000px; position: relative; overflow: hidden; background: #F2F4F4; color: #102F35; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.2px">
+
+  <div style="padding: 54px 20px 0; display: flex; flex-direction: column">
+    <div style="height: 44px; margin: 0 -12px; display: flex; align-items: center; justify-content: space-between">
+      <a href="13_Auftraege.html" style="height: 44px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 2px; font-size: 17px; color: #075C61">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"></path></svg>
+        Aufträge
+      </a>
+      <button aria-label="Weitere Aktionen" style="width: 44px; height: 44px; border: 0; background: transparent; color: #075C61; display: flex; align-items: center; justify-content: center">
+        <span style="width: 30px; height: 30px; border-radius: 15px; background: rgba(7,92,97,.09); display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="18" cy="12" r="1.7"></circle></svg></span>
+      </button>
+    </div>
+
+    <h1 style="margin: 0; font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.5px">Umzug</h1>
+    <p style="margin: 4px 0 0; font-size: 15px; line-height: 20px; color: #5B7074">Fr., 13. November 2026 · ca. 5 h</p>
+
+    <div style="margin-top: 16px; background: #FFFFFF; border-radius: 20px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+      <span style="height: 26px; padding: 0 10px; border-radius: 13px; background: #F3ECDC; color: #6A5524; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; flex-shrink: 0">Angefragt</span>
+      <span style="font-size: 15px; line-height: 20px; color: #5B7074">Der Partner prüft gerade deine Angaben.</span>
+    </div>
+
+    <section aria-label="Verlauf" style="margin-top: 12px; background: #FFFFFF; border-radius: 22px; padding: 16px; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+      <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+        <li style="position: relative; min-height: 52px; display: flex; gap: 14px">
+          <span aria-hidden="true" class="mn-grow" style="position: absolute; left: 11px; top: 26px; width: 2px; height: 30px; border-radius: 1px; background: #075C61"></span>
+          <span aria-hidden="true" style="position: relative; width: 24px; height: 24px; border-radius: 12px; background: #075C61; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 1px; padding-top: 2px"><span style="font-size: 17px; line-height: 20px; font-weight: 600">Anfrage gesendet</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Do., 29. Okt., 11:24</span></span>
+        </li>
+        <li style="position: relative; min-height: 52px; display: flex; gap: 14px">
+          <span aria-hidden="true" style="position: absolute; left: 11px; top: 26px; width: 2px; height: 30px; background-image: linear-gradient(rgba(16,47,53,.22) 50%, rgba(0,0,0,0) 50%); background-size: 2px 5px"></span>
+          <span aria-hidden="true" style="position: relative; width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 2px #075C61; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+            <span class="mn-pulse" style="position: absolute; width: 8px; height: 8px; border-radius: 4px; background: #075C61"></span>
+            <span style="position: relative; width: 8px; height: 8px; border-radius: 4px; background: #075C61"></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 1px; padding-top: 2px"><span style="font-size: 17px; line-height: 20px; font-weight: 600">Partner prüft</span><span style="font-size: 13px; line-height: 16px; color: #075C61">Läuft</span></span>
+        </li>
+        <li style="position: relative; min-height: 52px; display: flex; gap: 14px">
+          <span aria-hidden="true" style="position: absolute; left: 11px; top: 26px; width: 2px; height: 30px; background-image: linear-gradient(rgba(16,47,53,.22) 50%, rgba(0,0,0,0) 50%); background-size: 2px 5px"></span>
+          <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.6px rgba(16,47,53,.22); background: #FFFFFF; flex-shrink: 0"></span>
+          <span style="display: flex; flex-direction: column; gap: 1px; padding-top: 2px"><span style="font-size: 17px; line-height: 20px; color: #4A5F63">Termin und Preis bestätigt</span></span>
+        </li>
+        <li style="position: relative; min-height: 52px; display: flex; gap: 14px">
+          <span aria-hidden="true" style="position: absolute; left: 11px; top: 26px; width: 2px; height: 30px; background-image: linear-gradient(rgba(16,47,53,.22) 50%, rgba(0,0,0,0) 50%); background-size: 2px 5px"></span>
+          <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.6px rgba(16,47,53,.22); background: #FFFFFF; flex-shrink: 0"></span>
+          <span style="display: flex; flex-direction: column; gap: 1px; padding-top: 2px"><span style="font-size: 17px; line-height: 20px; color: #4A5F63">Umzugstag</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Fr., 13. Nov.</span></span>
+        </li>
+        <li style="position: relative; min-height: 28px; display: flex; gap: 14px">
+          <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.6px rgba(16,47,53,.22); background: #FFFFFF; flex-shrink: 0"></span>
+          <span style="display: flex; flex-direction: column; gap: 1px; padding-top: 2px"><span style="font-size: 17px; line-height: 20px; color: #4A5F63">Abgeschlossen</span></span>
+        </li>
+      </ol>
+    </section>
+
+    <div style="margin-top: 12px; background: #FFFFFF; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 4px 14px rgba(16,47,53,.04)">
+      <a href="05_Preis_Sheet.html" style="height: 56px; padding: 0 12px 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #102F35">
+        <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 17px; line-height: 22px">Richtpreis</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Gespeichert mit Tarifstand 28.10.2026</span></span>
+        <span style="display: flex; align-items: center; gap: 4px; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums">689,61 €<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(16,47,53,.35)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"></path></svg></span>
+      </a>
+      <div style="margin-left: 16px; height: 0.5px; background: rgba(16,47,53,.12)"></div>
+      <div style="height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+        <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 17px; line-height: 22px">Strecke</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Neubaugasse 12 → Praterstraße 30</span></span>
+        <span style="font-size: 17px; color: #5B7074; font-variant-numeric: tabular-nums">4,8 km</span>
+      </div>
+      <div style="margin-left: 16px; height: 0.5px; background: rgba(16,47,53,.12)"></div>
+      <div style="height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+        <span style="font-size: 17px">Fotos</span>
+        <span style="display: flex; gap: 6px">
+          <svg role="img" aria-label="Foto: Sofa" width="40" height="40" viewBox="0 0 58 58" style="border-radius: 10px"><defs><linearGradient id="mnPd1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EDE8DF"></stop><stop offset="1" stop-color="#DCD4C7"></stop></linearGradient><radialGradient id="mnPd1v" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000000" stop-opacity="0"></stop><stop offset="1" stop-color="#000000" stop-opacity=".22"></stop></radialGradient></defs><rect width="58" height="58" fill="url(#mnPd1)"></rect><path d="M38 0h20v24L46 42H28z" fill="#FFFFFF" fill-opacity=".3"></path><rect x="20" y="7" width="15" height="11" fill="#FAF8F3" stroke="#3A3F41" stroke-width=".8"></rect><rect x="22" y="9" width="11" height="7" fill="#AFC2BC"></rect><rect y="42" width="58" height="16" fill="#C9AD86"></rect><rect x="7" y="24" width="44" height="13" rx="3.5" fill="#8F9694"></rect><rect x="10" y="25.5" width="9" height="8" rx="2" transform="rotate(-8 14.5 29.5)" fill="#CDB995"></rect><rect x="5" y="31" width="48" height="10" rx="3" fill="#A4ABA9"></rect><rect x="3" y="28" width="6" height="14" rx="2.5" fill="#878E8C"></rect><rect x="49" y="28" width="6" height="14" rx="2.5" fill="#878E8C"></rect><rect width="58" height="58" fill="url(#mnPd1v)"></rect></svg>
+          <svg role="img" aria-label="Foto: Schrank" width="40" height="40" viewBox="0 0 58 58" style="border-radius: 10px"><defs><linearGradient id="mnPd2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EBE9E4"></stop><stop offset="1" stop-color="#D9D6CE"></stop></linearGradient><radialGradient id="mnPd2v" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000000" stop-opacity="0"></stop><stop offset="1" stop-color="#000000" stop-opacity=".22"></stop></radialGradient></defs><rect width="58" height="58" fill="url(#mnPd2)"></rect><rect y="47" width="58" height="11" fill="#CDB38D"></rect><rect x="14" y="6" width="30" height="43" rx="1" fill="#F7F7F4"></rect><rect x="42" y="6" width="2" height="43" fill="#E0E1DC"></rect><path d="M28.6 6.5v42" stroke="#D2D3CE" stroke-width=".8"></path><rect x="26.2" y="24" width="1.2" height="6" rx=".6" fill="#7E8584"></rect><rect x="30" y="24" width="1.2" height="6" rx=".6" fill="#7E8584"></rect><rect width="58" height="58" fill="url(#mnPd2v)"></rect></svg>
+          <svg role="img" aria-label="Foto: Kartons" width="40" height="40" viewBox="0 0 58 58" style="border-radius: 10px"><defs><linearGradient id="mnPd3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAE5DC"></stop><stop offset="1" stop-color="#D8D1C4"></stop></linearGradient><radialGradient id="mnPd3v" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000000" stop-opacity="0"></stop><stop offset="1" stop-color="#000000" stop-opacity=".22"></stop></radialGradient></defs><rect width="58" height="58" fill="url(#mnPd3)"></rect><rect y="45" width="58" height="13" fill="#BFA07A"></rect><rect x="6" y="29" width="21" height="17" fill="#C79A64"></rect><rect x="6" y="29" width="21" height="2.4" fill="#D8B583"></rect><rect x="29" y="31" width="22" height="15" fill="#BC8E57"></rect><rect x="29" y="31" width="22" height="2.4" fill="#D1AC78"></rect><rect x="12" y="14" width="22" height="15.5" fill="#CDA16C"></rect><rect x="12" y="14" width="22" height="2.4" fill="#DDBA88"></rect><path d="M16.5 29v6M40 31v5M23 14v6" stroke="#E6D6B4" stroke-width="2"></path><rect width="58" height="58" fill="url(#mnPd3v)"></rect></svg>
+        </span>
+      </div>
+    </div>
+
+    <button class="press" style="margin-top: 16px; height: 50px; border: 0; border-radius: 16px; background: rgba(7,92,97,.10); color: #075C61; font: inherit; font-size: 17px; font-weight: 600">Anfrage bearbeiten</button>
+    <button style="margin-top: 4px; height: 44px; border: 0; background: transparent; color: #B3261E; font: inherit; font-size: 17px; font-weight: 500">Anfrage zurückziehen</button>
+  </div>
+
+  <nav aria-label="Hauptnavigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; padding: 0 8px; box-sizing: border-box; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; background: rgba(247,250,250,.78); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 0.5px solid rgba(16,47,53,.12)">
+    <a href="01_Start_Light.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.4 12 4.3l7.5 6.1V19a1 1 0 0 1-1 1H15v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5H5.5a1 1 0 0 1-1-1z"></path></svg>
+      Start
+    </a>
+    <a href="09_Transporter_Miete.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 15.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v7.5a1 1 0 0 0 1 1h.6M9.4 15.5h5.2M14 9h3.5a1 1 0 0 1 .8.4l2.5 3.2a1 1 0 0 1 .2.6v1.3a1 1 0 0 1-1 1h-.6"></path><circle cx="7" cy="16" r="2.2"></circle><circle cx="17" cy="16" r="2.2"></circle></svg>
+      Miete
+    </a>
+    <a href="13_Auftraege.html" aria-current="page" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #075C61; font-size: 10.5px; line-height: 12px; font-weight: 600">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3" fill="currentColor" stroke="currentColor" stroke-width="1.6"></rect><path d="M9 8.5h6M9 12h6M9 15.5h3.5" stroke="#F4F8F8" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      Aufträge
+    </a>
+    <a href="16_Profil.html" style="height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #5B7074; font-size: 10.5px; line-height: 12px; font-weight: 500">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M5 19.6c1.1-3.4 3.8-5.3 7-5.3s5.9 1.9 7 5.3a.6.6 0 0 1-.6.8H5.6a.6.6 0 0 1-.6-.8z"></path></svg>
+      Profil
+    </a>
+  </nav>
+</div>
+</body>
+</html>

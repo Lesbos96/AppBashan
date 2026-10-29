@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bestätigung</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#075C61;text-decoration:none}a:hover{color:#03464B}
+a:focus-visible,button:focus-visible{outline:3px solid rgba(7,92,97,.45);outline-offset:2px}
+.press{transition:transform .45s cubic-bezier(.3,1.35,.5,1)}
+.press:active{transform:scale(.98)}
+@keyframes mnScale{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes mnCheck{from{stroke-dashoffset:40}to{stroke-dashoffset:0}}
+@keyframes mnRing{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes mnUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mn-scale{animation:mnScale .6s cubic-bezier(.3,1.5,.5,1) .05s both}
+.mn-check{stroke-dasharray:40;stroke-dashoffset:40;animation:mnCheck .45s cubic-bezier(.4,0,.2,1) .45s forwards}
+.mn-ring1{animation:mnRing .8s cubic-bezier(.2,1,.3,1) .2s both}
+.mn-ring2{animation:mnRing .9s cubic-bezier(.2,1,.3,1) .32s both}
+.mn-up{animation:mnUp .6s cubic-bezier(.2,1,.3,1) .5s both}
+.mn-up2{animation:mnUp .6s cubic-bezier(.2,1,.3,1) .6s both}
+@media (prefers-reduced-motion: reduce){.mn-scale,.mn-ring1,.mn-ring2,.mn-up,.mn-up2{animation:none}.mn-check{animation:none;stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F2F4F4; color: #102F35; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.2px">
+
+  <div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 420px; background: radial-gradient(60% 50% at 50% 34%, rgba(143,214,207,.30) 0%, rgba(143,214,207,0) 70%)"></div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 150px; display: flex; justify-content: center">
+    <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center">
+      <span class="mn-ring2" aria-hidden="true" style="position: absolute; inset: 0; border-radius: 80px; box-shadow: inset 0 0 0 1px rgba(7,92,97,.10)"></span>
+      <span class="mn-ring1" aria-hidden="true" style="position: absolute; inset: 18px; border-radius: 62px; background: rgba(7,92,97,.06)"></span>
+      <span class="mn-scale" role="img" aria-label="Erfolgreich gesendet" style="position: relative; width: 96px; height: 96px; border-radius: 48px; display: flex; align-items: center; justify-content: center; background: radial-gradient(90% 90% at 30% 20%, #13868A 0%, rgba(19,134,138,0) 60%), linear-gradient(160deg, #0B6E73 0%, #075C61 50%, #03464B 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 14px 30px rgba(7,92,97,.30)">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="mn-check" d="m5 12.5 4.5 4.5L19 7.5" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </span>
+    </div>
+  </div>
+
+  <div class="mn-up" style="position: absolute; left: 28px; right: 28px; top: 336px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+    <h1 style="margin: 0; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.6px">Anfrage gesendet.</h1>
+    <p style="margin: 0; font-size: 17px; line-height: 24px; color: #5B7074">Der Partner prüft deine Angaben und bestätigt Termin und Preis. Wir melden uns, sobald er antwortet.</p>
+  </div>
+
+  <a href="14_Auftrag_Detail.html" class="mn-up2 press" style="position: absolute; left: 20px; right: 20px; top: 500px; background: #FFFFFF; border-radius: 22px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; color: #102F35; box-shadow: 0 1px 1px rgba(16,47,53,.04), 0 8px 24px rgba(16,47,53,.06)">
+    <span style="display: flex; align-items: center; gap: 12px">
+      <span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(7,92,97,.10); color: #075C61; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h8v8h-8zM12.5 12.5h8v8h-8zM8 4.5h8v8H8z"></path><path d="M7.5 12.5v2.5M16.5 12.5v2.5M12 4.5V7"></path></svg></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 17px; font-weight: 600">Umzug</span><span style="font-size: 13px; line-height: 16px; color: #5B7074">Fr., 13. Nov. 2026 · Neubaugasse → Praterstraße</span></span>
+    </span>
+    <span style="height: 0.5px; background: rgba(16,47,53,.12)"></span>
+    <span style="display: flex; align-items: center; justify-content: space-between">
+      <span style="height: 26px; padding: 0 10px; border-radius: 13px; background: #F3ECDC; color: #6A5524; font-size: 12.5px; font-weight: 600; display: flex; align-items: center">Angefragt</span>
+      <span style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 13px; color: #5B7074">Richtpreis</span><span style="font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums">689,61 €</span></span>
+    </span>
+  </a>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 34px; display: flex; flex-direction: column; gap: 6px">
+    <a href="13_Auftraege.html" class="press" style="height: 54px; border-radius: 16px; corner-shape: squircle; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #0C6E73 0%, #075C61 55%, #04494E 100%); color: #FFFFFF; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 16px rgba(7,92,97,.22)">Zu meinen Aufträgen</a>
+    <a href="01_Start_Light.html" style="height: 48px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 500; color: #075C61">Zur Startseite</a>
+  </div>
+</div>
+</body>
+</html>
