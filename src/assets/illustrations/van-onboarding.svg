@@ -1,0 +1,35 @@
+<svg width="260" height="130" viewBox="0 0 200 100" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="mnVanBodyO" x1="0" y1="12" x2="0" y2="80" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FDFEFE"></stop><stop offset=".55" stop-color="#EDF0F0"></stop><stop offset="1" stop-color="#D3DADA"></stop></linearGradient>
+        <linearGradient id="mnVanGlassO" x1="141" y1="18" x2="158" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#405359"></stop><stop offset="1" stop-color="#141D20"></stop></linearGradient>
+        <linearGradient id="mnVanRimO" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DCE1E3"></stop><stop offset="1" stop-color="#8E989B"></stop></linearGradient>
+        <filter id="mnVanSoftO" x="-10%" y="-150%" width="120%" height="400%"><feGaussianBlur stdDeviation="2.6"></feGaussianBlur></filter>
+      </defs>
+      <ellipse cx="100" cy="91" rx="86" ry="3.8" fill="#000000" fill-opacity=".45" filter="url(#mnVanSoftO)"></ellipse>
+      <path d="M18 12h118c4 0 7.4 2.3 9 5.9L158 44c1.3 2.8 4 4.6 7 5.1l16.6 2.8c4 .7 6.4 4 6.4 8V76a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V18a6 6 0 0 1 6-6z" fill="url(#mnVanBodyO)"></path>
+      <path d="M20 13.3h114" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"></path>
+      <path d="M14 30h122" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="5"></path>
+      <path d="M14 47.5h152" stroke="#C5CDCD" stroke-width=".8"></path>
+      <path d="M16.5 15v55M98 15v55M139 15v55" stroke="#C3CBCB" stroke-width=".9"></path>
+      <path d="M58 26.5h39" stroke="#CDD4D4" stroke-width="1.6" stroke-linecap="round"></path>
+      <path d="M141 18h2.8c2.2 0 4.1 1.3 5 3.3l9.4 21c.4 1-.3 2-1.3 2H141z" fill="url(#mnVanGlassO)"></path>
+      <path d="M144.5 19l6 25.3h3.2L147.5 19z" fill="#FFFFFF" fill-opacity=".14"></path>
+      <rect x="143" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+      <rect x="101" y="51" width="7" height="2" rx="1" fill="#8E989B"></rect>
+      <path d="M151 36.5h5.5a2 2 0 0 1 2 2V43H153a2 2 0 0 1-2-2z" fill="#2A3134"></path>
+      <path d="M178 54.5l8 1.4c1 .2 1.6 1 1.6 2V61l-10.2-.9z" fill="#FBF6E6" stroke="#B5BFC1" stroke-width=".8"></path>
+      <path d="M177.6 61.2l6 .5v1.8l-6-.4z" fill="#E3A03A"></path>
+      <rect x="12" y="29" width="3" height="14" rx="1" fill="#A8382C"></rect>
+      <path d="M12 70h176v6a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z" fill="#394245"></path>
+      <path d="M28 42l9-9M29.6 33H37v7.4" stroke="#075C61" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      <text x="41.5" y="41" font-family="-apple-system, BlinkMacSystemFont, Inter, sans-serif" font-size="9.5" font-weight="700" letter-spacing="-0.2" fill="#102F35">MoveNow</text>
+      <circle cx="44" cy="80" r="15.5" fill="#22282B"></circle>
+      <circle cx="156" cy="80" r="15.5" fill="#22282B"></circle>
+      <circle cx="44" cy="80" r="13" fill="#171B1D"></circle>
+      <circle cx="156" cy="80" r="13" fill="#171B1D"></circle>
+      <circle cx="44" cy="80" r="7.6" fill="url(#mnVanRimO)"></circle>
+      <circle cx="156" cy="80" r="7.6" fill="url(#mnVanRimO)"></circle>
+      <path d="M44 75.6v.01M48.2 78.6v.01M46.6 83.6v.01M41.4 83.6v.01M39.8 78.6v.01M156 75.6v.01M160.2 78.6v.01M158.6 83.6v.01M153.4 83.6v.01M151.8 78.6v.01" stroke="#6B7477" stroke-width="2.6" stroke-linecap="round"></path>
+      <circle cx="44" cy="80" r="1.8" fill="#4D5659"></circle>
+      <circle cx="156" cy="80" r="1.8" fill="#4D5659"></circle>
+    </svg>

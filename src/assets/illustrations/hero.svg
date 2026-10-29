@@ -1,0 +1,13 @@
+<svg aria-hidden="true" width="350" height="204" viewBox="0 0 350 204" fill="none">
+        <defs>
+          <linearGradient id="mnRouteA" x1="196" y1="94" x2="316" y2="36" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8FD6CF" stop-opacity=".35"></stop><stop offset="1" stop-color="#8FD6CF"></stop></linearGradient>
+        </defs>
+        <circle cx="316" cy="36" r="40" stroke="#8FD6CF" stroke-opacity=".10"></circle>
+        <circle cx="316" cy="36" r="25" stroke="#8FD6CF" stroke-opacity=".18"></circle>
+        <circle class="mn-pulse" cx="316" cy="36" r="14" stroke="#8FD6CF" stroke-opacity=".7"></circle>
+        <path d="M196 94C228 94 236 66 262 60S300 50 316 36" stroke="#8FD6CF" stroke-opacity=".16" stroke-width="5" stroke-linecap="round"></path>
+        <path class="mn-route" d="M196 94C228 94 236 66 262 60S300 50 316 36" stroke="url(#mnRouteA)" stroke-width="1.8" stroke-linecap="round"></path>
+        <circle cx="196" cy="94" r="4.5" fill="#05292E" stroke="#8FD6CF" stroke-width="1.6"></circle>
+        <circle cx="316" cy="36" r="6" fill="#8FD6CF"></circle>
+        <circle cx="316" cy="36" r="2.2" fill="#05292E"></circle>
+      </svg>

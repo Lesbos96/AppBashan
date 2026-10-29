@@ -1,0 +1,41 @@
+<svg role="img" aria-label="Küche mit Unter-, Ober- und Hochschränken" width="350" height="150" viewBox="0 0 350 150" fill="none">
+        <defs>
+          <linearGradient id="mnSageK" x1="0" y1="90" x2="0" y2="134" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86A79F"></stop><stop offset="1" stop-color="#729790"></stop></linearGradient>
+          <linearGradient id="mnOakK" x1="270" y1="0" x2="312" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#CDA372"></stop><stop offset="1" stop-color="#B98D5C"></stop></linearGradient>
+          <pattern id="mnSubwayK" width="14" height="7.33" patternUnits="userSpaceOnUse"><path d="M0 .35h14M0 4h14M.35 0v3.66M7 4v3.33" stroke="#E3E0D9" stroke-width=".7"></path></pattern>
+          <filter id="mnSoftK" x="-10%" y="-150%" width="120%" height="400%"><feGaussianBlur stdDeviation="2.5"></feGaussianBlur></filter>
+        </defs>
+        <rect width="350" height="150" fill="#F1EFEA"></rect>
+        <rect x="40" y="62" width="226" height="22" fill="#F8F7F3"></rect>
+        <rect x="40" y="62" width="226" height="22" fill="url(#mnSubwayK)"></rect>
+        <rect y="134" width="350" height="16" fill="#D8D5CE"></rect>
+        <path d="M0 141.5h350M40 134v16M100 134v16M160 134v16M220 134v16M280 134v16" stroke="#CAC6BE" stroke-width=".8"></path>
+        <ellipse cx="176" cy="135.5" rx="142" ry="3" fill="#2F2A22" fill-opacity=".22" filter="url(#mnSoftK)"></ellipse>
+        <g class="mn-rise mn-r2">
+          <rect x="40" y="20" width="168" height="40" rx="1.5" fill="#F8F8F5"></rect>
+          <path d="M96 20v40M152 20v40" stroke="#DCDDD8" stroke-width="1.2"></path>
+          <path d="M207.4 20.5v39" stroke="#E2E3DE"></path>
+          <path d="M64 54.5h8M120 54.5h8M176 54.5h8" stroke="#2E3335" stroke-width="1.6" stroke-linecap="round"></path>
+          <rect x="40" y="60" width="168" height="1.6" fill="#FFF3D6"></rect>
+        </g>
+        <g class="mn-rise">
+          <rect x="40" y="90" width="224" height="44" fill="url(#mnSageK)"></rect>
+          <path d="M96 90v40M152 90v40M208 90v40" stroke="#678A83" stroke-width="1.2"></path>
+          <path d="M62 96h12M118 96h12M174 96h12M230 96h12" stroke="#2E3335" stroke-width="1.8" stroke-linecap="round"></path>
+          <rect x="40" y="130" width="224" height="4" fill="#5B7A73"></rect>
+          <rect x="36" y="84" width="234" height="6" rx="1" fill="#C9A06E"></rect>
+          <path d="M36.5 84.6h233" stroke="#DDBB8D" stroke-linecap="round"></path>
+          <path d="M36 89.4h234" stroke="#A57C4C" stroke-width=".8"></path>
+          <rect x="126" y="84.4" width="40" height="2" rx="1" fill="#B5BCBE"></rect>
+          <path d="M146 84V73a5 5 0 0 1 5-5h4" stroke="#2E3335" stroke-width="2.2" stroke-linecap="round"></path>
+          <rect x="196" y="84.4" width="40" height="1.8" rx=".9" fill="#2E3335"></rect>
+          <rect x="56" y="76" width="8" height="8" rx="1.5" fill="#DCD2C0"></rect>
+          <path d="M60 76c-2-4-5-5-6-4M60 76c1-5 3-6 5-5M60 76v-6" stroke="#6E8A63" stroke-width="1.6" stroke-linecap="round"></path>
+        </g>
+        <g class="mn-rise mn-r3">
+          <rect x="270" y="20" width="42" height="114" rx="1.5" fill="url(#mnOakK)"></rect>
+          <path d="M277 22v110M285 22v110M296 22v110M305 22v110" stroke="#A97F50" stroke-opacity=".35" stroke-width=".7"></path>
+          <path d="M270 77h42" stroke="#A3794A" stroke-width="1.2"></path>
+          <path d="M275.5 64v9M275.5 81v9" stroke="#2E3335" stroke-width="1.8" stroke-linecap="round"></path>
+        </g>
+      </svg>

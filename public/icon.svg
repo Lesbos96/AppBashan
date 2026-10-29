@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" fill="none">
+  <defs>
+    <linearGradient id="base" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#0B6E73"/><stop offset="0.45" stop-color="#075C61"/><stop offset="1" stop-color="#03464B"/></linearGradient>
+    <radialGradient id="light" cx="0.18" cy="0" r="0.86" gradientTransform="translate(0.18 0) scale(1 0.75) translate(-0.18 0)"><stop offset="0" stop-color="#16898D"/><stop offset="0.58" stop-color="#16898D" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#8FD6CF" stop-opacity="0.3"/><stop offset="1" stop-color="#8FD6CF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="arrow" x1="7" y1="17" x2="17" y2="7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#D9F2EE"/><stop offset="1" stop-color="#FFFFFF"/></linearGradient>
+  </defs>
+  <rect width="150" height="150" rx="34" fill="url(#base)"/>
+  <rect width="150" height="150" rx="34" fill="url(#light)"/>
+  <circle cx="75" cy="75" r="55" fill="url(#glow)"/>
+  <path transform="translate(33 33) scale(3.5)" d="M7 17 17 7M8.5 7H17v8.5" stroke="url(#arrow)" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -37,16 +37,17 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** alle Tests grün, keine Preislogik außerhalb des Moduls; Umzug-Beispiel centgenau inklusive Aufteilung (689,61 € → Gebühr 103,44, netto 86,20, USt. 17,24, Partner 586,17).
 
 ## S3a · Tokens, Icons, Illustrationen
-- [ ] `tokens.json` → CSS-Variablen (Light/Dark) und Tailwind-Theme
-- [ ] SVGs über `npm run svg:extract` (byte-genau nach `tmp/svg/`, Fundstellen in `index.tsv`), Dateien per Kopie übernommen und als React-Komponenten eingebunden, ohne Pfade abzutippen (z. B. `vite-plugin-svgr`); Farbumstellung über `mech-editor`
-- [ ] Icon-Set (Outline und Filled) als SVG-Komponenten mit `currentColor` und Tokens
-- [ ] Alle Illustrationen als SVG-Komponenten in den Materialfarben der Palette `illustration`, weiche Kontaktschatten, Dark-Varianten aus `02_Start_Dark.html`
-- [ ] App-Icon, Favicon, Splash aus `00_Fundament`; PWA-Manifest, theme-color, Safe Areas
-- [ ] Galerie unter `/dev/fundament` (nur im Dev-Build) mit Farben, Typografie, Icons und Illustrationen
+- [x] `tokens.json` → CSS-Variablen (Light/Dark) und Tailwind-Theme
+- [x] SVGs über `npm run svg:extract` (byte-genau nach `tmp/svg/`, Fundstellen in `index.tsv`), Dateien per Kopie übernommen und als React-Komponenten eingebunden, ohne Pfade abzutippen (z. B. `vite-plugin-svgr`); Farbumstellung über `mech-editor`
+- [x] Icon-Set (Outline und Filled) als SVG-Komponenten mit `currentColor` und Tokens
+- [x] Alle Illustrationen als SVG-Komponenten in den Materialfarben der Palette `illustration`, weiche Kontaktschatten, Dark-Varianten aus `02_Start_Dark.html`
+- [x] App-Icon, Favicon, Splash aus `00_Fundament`; PWA-Manifest, theme-color, Safe Areas (Splash: Android erzeugt ihn aus Icon, Name und `background_color`; iOS-Splash-Bilder kommen mit Capacitor in S10)
+- [x] Galerie unter `/dev/fundament` (nur im Dev-Build) mit Farben, Typografie, Icons und Illustrationen
 
 **Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png` (Farben, Typografie, Icons) und `01`/`02` (Illustrationen), Light und Dark.
 
 ## S3b · Basiskomponenten
+- [ ] Zu Beginn: Gradienten (Primär-Button, Mietkarte, App-Icon), Layout-Maße (Touch-Ziel 44, Button 54, Spalte 520) und Motion-Werte aus `tokens.json` als CSS-Variablen ergänzen
 - [ ] Basiskomponenten: Primär-/Sekundärbutton, Karte, Service-Karte, Inset Grouped List, Segmented Control, Stepper, Toggle, Feld, Status-Chip, Bottom Sheet (Griff, Detents, Drag-to-Dismiss), Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, fixierte Aktionsleiste, Fortschrittsanzeige, Betragszeile ohne Umbruch
 - [ ] In der Galerie `/dev/fundament` ergänzt, verglichen mit `00_Fundament.png`
 
@@ -54,6 +55,7 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 
 ## S4 · App-Shell und ruhige Screens
 - [ ] App-Shell mit Tab-Bar (Start · Miete · Aufträge · Profil), Seitenübergänge, Desktop-Spalte max. ca. 520 px; Routen wie in `docs/ARCHITECTURE.md` (App-Struktur), neue Routen in `tests/shots/shots.spec.ts` eingetragen
+- [ ] Hero-Mesh (`041`/`052`, Korn und Verlauf) und Onboarding-Hintergründe (`059`/`060`) aus `tmp/svg/` mitnehmen; sie gehören nicht zu den S3a-Illustrationen
 - [ ] Start Light/Dark (`01`, `02`), Onboarding 1–3 (`03`, Seiten 2 und 3 im selben Stil), Profil (`16`), „Wie rechnet MoveNow?" als Info-Sheet mit Werten, Labels und `sources` aus `price_config` (aktuelle `price_version`), ohne Plattformgebühr (`17`), Aufträge leer (`15`)
 - [ ] Datenschutz, Impressum und AGB als markierte Platzhalter
 - [ ] Lade-, Fehler- und Offline-Zustand

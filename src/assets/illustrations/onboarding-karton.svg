@@ -1,0 +1,20 @@
+<svg width="96" height="72" viewBox="0 0 96 72" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="mnKraftO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0A46F"></stop><stop offset="1" stop-color="#B78852"></stop></linearGradient>
+        <filter id="mnSoftBoxO" x="-20%" y="-150%" width="140%" height="400%"><feGaussianBlur stdDeviation="2"></feGaussianBlur></filter>
+      </defs>
+      <ellipse cx="48" cy="66" rx="42" ry="3.2" fill="#000000" fill-opacity=".45" filter="url(#mnSoftBoxO)"></ellipse>
+      <path d="M10 36h34v28H10z" fill="url(#mnKraftO)"></path>
+      <path d="M10 36l7-6h34l-7 6z" fill="#DDBA88"></path>
+      <path d="M44 36l7-6v28l-7 6z" fill="#A87842"></path>
+      <path d="M13.5 33h34" stroke="#EADDC2" stroke-width="2.8"></path>
+      <path d="M47.5 33v8" stroke="#D9C8A4" stroke-width="2.6"></path>
+      <path d="M15 54v-4.5M13.5 51l1.5-1.5 1.5 1.5M19.5 54v-4.5M18 51l1.5-1.5 1.5 1.5" stroke="#4A3826" stroke-opacity=".55" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M48 44h30v20H48z" fill="url(#mnKraftO)"></path>
+      <path d="M48 44l6-5h30l-6 5z" fill="#E2C292"></path>
+      <path d="M78 44l6-5v20l-6 5z" fill="#A87842"></path>
+      <path d="M51 41.5h30" stroke="#EADDC2" stroke-width="2.6"></path>
+      <path d="M81 41.5v7" stroke="#D9C8A4" stroke-width="2.4"></path>
+      <rect x="54" y="50" width="13" height="8" rx="1" fill="#F6F2E9"></rect>
+      <path d="M56 53h9M56 55.6h5.5" stroke="#2F2A24" stroke-opacity=".7" stroke-width=".9" stroke-linecap="round"></path>
+    </svg>

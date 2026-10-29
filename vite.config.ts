@@ -1,10 +1,11 @@
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
+import svgr from 'vite-plugin-svgr'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), svgr()],
   // Nur Variablen mit diesem Präfix landen im Client-Bundle (URL und Publishable Key, nie der Secret-Key).
   envPrefix: 'NEXT_PUBLIC_',
   resolve: {

@@ -1,0 +1,20 @@
+<svg width="92" height="92" viewBox="0 0 92 92" fill="none" aria-hidden="true">
+            <rect width="92" height="92" fill="#F1EFEA"></rect>
+            <rect x="52" y="10" width="26" height="22" rx="1.5" fill="#FFFFFF"></rect>
+            <rect x="54" y="12" width="22" height="18" fill="#DCE7EA"></rect>
+            <path d="M65 12v18M54 21h22" stroke="#FFFFFF" stroke-width="1.4"></path>
+            <rect y="64" width="92" height="28" fill="#D9C19B"></rect>
+            <path d="M0 72.5h92M0 81.5h92M16 64v8.5M44 72.5v9M70 64v8.5M28 81.5V92M60 81.5V92M86 72.5v9" stroke="#C8AD85" stroke-width=".8"></path>
+            <rect y="62" width="92" height="2.5" fill="#FFFFFF"></rect>
+            <ellipse cx="28" cy="77" rx="24" ry="4.5" fill="#E7E0D3"></ellipse>
+            <ellipse cx="28" cy="70.5" rx="17" ry="2.2" fill="#2F2A22" fill-opacity=".14"></ellipse>
+            <rect x="15" y="40" width="26" height="20" rx="6" fill="#C7BEAF"></rect>
+            <rect x="12" y="51" width="32" height="12" rx="4.5" fill="#D9D1C4"></rect>
+            <rect x="9.5" y="47" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <rect x="39.5" y="47" width="7" height="17" rx="3.5" fill="#BDB3A4"></rect>
+            <path d="M13.5 64v5.5M42.5 64v5.5" stroke="#8A5D3B" stroke-width="2" stroke-linecap="round"></path>
+            <ellipse cx="68" cy="70.6" rx="5" ry="1.4" fill="#2E3335"></ellipse>
+            <path d="M68 70V36" stroke="#2E3335" stroke-width="1.5"></path>
+            <path d="M61 36h14l-2.5-9h-9z" fill="#EFE7D6"></path>
+            <path d="M61.6 35.4h12.8" stroke="#D9CDB6" stroke-width=".8"></path>
+          </svg>
