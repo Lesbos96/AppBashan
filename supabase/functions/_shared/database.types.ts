@@ -431,6 +431,42 @@ export type Database = {
           },
         ]
       }
+      route_cache: {
+        Row: {
+          expires_at: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          expires_at: string
+          key: string
+          value: Json
+        }
+        Update: {
+          expires_at?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      route_rate_limits: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           created_at: string
@@ -540,6 +576,21 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      route_geo_facts: {
+        Args: {
+          from_lat: number
+          from_lon: number
+          line_geojson: string
+          to_lat: number
+          to_lon: number
+        }
+        Returns: {
+          from_in_austria: boolean
+          outside_km: number
+          to_in_austria: boolean
+        }[]
+      }
+      take_rate_tokens: { Args: { checks: Json }; Returns: boolean }
     }
     Enums: {
       offer_status: "pending" | "approved" | "archived"

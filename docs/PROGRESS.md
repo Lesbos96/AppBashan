@@ -3,6 +3,12 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-29 · S5 · Routing-Dienst und Wiener Stadtgrenze · abgeschlossen (Deploy offen)
+- Migrationen 0006–0008: `route_cache`, `route_rate_limits`, RPC `route_geo_facts` (km außerhalb Wiens per PostGIS, Punkt in Österreich, fehlende Grenze = Fehler) und `take_rate_tokens` (nur service_role, bricht beim ersten überschrittenen Zähler ab), pg_cron-Aufräumjob; Grenzen Wien und Österreich importiert (`npm run geo:import`, 415 und ca. 83.900 km², gültig)
+- Edge Function `route` (Logik in `_shared/route/`): Geocode-Kandidaten, Routenfakten (Region, outsideKm, driveHours, Strecken), ORS hinter Adapter, Cache nur Rohantwort (24 h, HMAC-Schlüssel), Rate-Limit je IP und global. Tests: 27 Unit, Integration mit PostGIS-Fixtures (Wien→Wien, Graz, München, Salzburg→Innsbruck), Zugriff verweigert/erlaubt, parallele Zähler
+- Entscheidungen (advisor): ORS nur mit AVV und geklärtem Kontingent; Länder serverseitig über das Österreich-Polygon; Geocoding ungecacht; kein Depot. Abweichung: Die Function liest `SUPABASE_SERVICE_ROLE_KEY` (Plattformvariable), Prüfung beim Deploy
+- Offen: Function-Secrets und Deploy ins Dev-Projekt (vom Auto-Modus blockiert), Live-Test gegen ORS, IP-Ermittlung prüfen; Auflagen für `quote` (S8a). Alles in OPEN_ISSUES.md
+
 ## 2026-10-29 · S4 · App-Shell und ruhige Screens · abgeschlossen
 - Migration 0004 (`price_config.value >= 0`, View `current_price_version`: höchste Version mit `effective_on` ≤ heute, Wiener Datum) und 0005 (Rechte der View); echte Tests statt `it.todo` (DB-Check, Seed-Spanne, Version 9999 mit `effective_on` 2999 gilt nie als aktuell); Seed-Labels ohne „Prototyp", Zeile `rental.reference` für die Quellen der Transportermiete
 - App-Shell (`src/app/`): Tab-Bar, Seitenübergänge im iOS-Stil, Spalte 520 px, Offline-Hinweis; Screens Start, Onboarding (3 Seiten, einmalig), Aufträge leer, Profil, Info-Sheet „Wie rechnet MoveNow?" (Werte, Labels, Quellen aus `price_config`, Fehlerzustand statt Ersatzwerte), Datenschutz und Impressum & AGB als markierte Platzhalter, Fehlerseite; Flows (Transport, Umzug, Entrümpelung, Montage, Miete, Vermieter) zeigen bis S6–S9 „noch nicht verfügbar"

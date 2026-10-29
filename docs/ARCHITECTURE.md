@@ -48,13 +48,16 @@ S/I/U/D = select/insert/update/delete. „Eigene" = Eigentum per `auth.uid()`. S
 | rental_offers | S approved | S approved | S eigene; I/U eigene ohne status, is_demo, provider_id (neu = pending) | S alle |
 | rental_bookings | – | S eigene; U (status) nur requested → withdrawn | – | S, U (status) |
 | fee_splits | – | – | S mit payee_id = ich | S |
-| geo_boundaries | – | – | – | – |
+| geo_boundaries, route_cache, route_rate_limits | – | – | – | – |
+| RPC `route_geo_facts`, `take_rate_tokens` | – | – | – | – |
+
+Die drei Tabellen und beide Funktionen (Migration 0006) nutzt nur die Edge Function `route` über service_role; Tests in `tests/rls/route.test.ts`.
 
 Abgesichert in `tests/rls/rls.test.ts` (`npm run test:rls`, gegen das Dev-Projekt, Nutzer je Lauf neu und danach gelöscht).
 
 ## Datenschutz
 - Fotos: privater Bucket `request-photos`, JPEG/PNG/WebP, ≤ 10 MB, ≤ 8 je Anfrage. EXIF wird vor dem Upload entfernt (Neu-Encodierung im Client). Anzeige nur über signierte URLs mit kurzer Laufzeit (10 min).
-- Löschfristen (Vorschlag, Entscheidung offen): Fotos 90 Tage nach `completed`/`withdrawn`/`expired`; zurückgezogene und abgelaufene Anfragen 12 Monate; abgeschlossene Aufträge 3 Jahre, ab Rechnungen 7 Jahre (BAO § 132) und dann Anonymisieren statt Löschen. Konto löschen: kaskadiert auf Profil, Anfragen, Mietanfragen, Fotos. Routen-Cache ohne Klartextadressen, 30 Tage.
+- Löschfristen (Vorschlag, Entscheidung offen): Fotos 90 Tage nach `completed`/`withdrawn`/`expired`; zurückgezogene und abgelaufene Anfragen 12 Monate; abgeschlossene Aufträge 3 Jahre, ab Rechnungen 7 Jahre (BAO § 132) und dann Anonymisieren statt Löschen. Konto löschen: kaskadiert auf Profil, Anfragen, Mietanfragen, Fotos. Routen-Cache ohne Klartextadressen, 24 Stunden (Schlüssel = HMAC über die Koordinaten, Wert = Rohantwort des Anbieters; ein täglicher pg_cron-Job `route-cleanup` räumt ab). Die Cache-Zeilen enthalten Routenkoordinaten (adressgenau, ohne Nutzerbezug, nur service_role). Geocoding wird nicht gecacht, Logs der Function enthalten weder Adressen noch Koordinaten noch IPs.
 - Später für Partner: vor Annahme nur PLZ/Bezirk, Service, Umfang aus `inputs` ohne Freitext, Fotos, Wunschtermin. Kein Name, keine Hausnummer, keine Kontaktdaten. Umsetzung über eine RPC mit fester Spaltenliste, nach Annahme volle Adresse und Kontakt.
 
 ## App-Struktur
@@ -74,6 +77,16 @@ Tab-Bar: Start · Miete · Aufträge · Profil. Flow-Zustand je Service im `sess
 | `/anmelden` | Magic-Link-Rückkehr und Code-Eingabe (S8b) | nein |
 | `/profil/datenschutz`, `/profil/impressum` | markierte Platzhalter (Impressum und AGB zusammen) | ja |
 | `/dev/fundament` | Komponenten-Galerie, nur Dev-Build (S3a) | nein |
+
+## Routing (S5)
+Edge Function `route` (`supabase/functions/route`, Logik in `_shared/route/`), anonym aufrufbar (`verify_jwt = false`, Konto erst beim Absenden), Header `apikey` muss der Publishable Key sein (nur Missbrauchsfilter). Zwei Modi per POST:
+- `geocode` `{q}` → bis zu 5 Kandidaten `{label, lat, lon, postcode, country}`; `country` dient nur der Anzeige.
+- `route` `{from:{lat,lon}, to:{lat,lon}, returnTrip?}` → `{region, outsideKm, driveHours, distanceKm (einfache Strecke), totalKm, geometry (≤ 500 Punkte)}`. Die Fakten kommen nur aus Koordinaten und eigenen Daten: Anbieter liefert Legs, Dauer und Linie; km außerhalb Wiens (`ST_Difference`, geodätisch) und „Punkt in Österreich" berechnet `route_geo_facts` aus `geo_boundaries` (`vienna`, `austria`, OSM, ODbL, Import mit `npm run geo:import`). Region: Abholung oder Ziel nicht in Österreich → `international`; sonst `outsideKm > 0,05` → `austria`; sonst `vienna`. Eine Route über das Deutsche Eck bleibt `austria`, die deutschen km zählen in `outsideKm`. Fehlt eine Grenze, bricht die Function ab (nie stillschweigend „Wien").
+- `quote` (S8a) ruft `computeRouteFacts` serverseitig mit den Koordinaten auf und übernimmt nie Fakten vom Client. Es gibt kein Depot; Rückfahrt ist ein Flag.
+- Limits: je IP (HMAC) geocode 30/min und 300/Tag, route 20/min und 200/Tag; global je Modus 35/min, Tag 800 (geocode) bzw. 1600 (route), unter dem Kontingent des ORS-Plans. Ein Limiter-Ausfall lehnt ab (503). CORS nur für `ALLOWED_ORIGINS`.
+- Function-Secrets: `ORS_API_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`.
+
+**Anbieter (Entscheidung advisor):** openrouteservice (HeiGIT, Deutschland) hinter dem Interface `RouteProvider`. In Produktion erst, wenn (1) ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO besteht (Adresstexte gehen an den Anbieter) und (2) kommerzielle Nutzung samt Kontingent schriftlich geklärt ist. Ausweichanbieter: Geoapify (DE). Weder Client-Header noch IP gehen an den Anbieter; Timeout 8 s, bei Fehler 502 ohne Schätzwert.
 
 ## Entscheidungen
 1. Anfragen und Mietanfragen schreibt nur `quote`: Preis und Gebühr sind nicht fälschbar. Die DB prüft `inputs` nur auf „Objekt", das Schema prüft der einzige Schreiber.

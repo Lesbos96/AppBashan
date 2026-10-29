@@ -21,6 +21,9 @@ Modul: `supabase/functions/_shared/pricing/` (rein, ohne Abhängigkeiten, Import
 | Mindeststunden | `s.hours \|\| 3` | `hours` muss 0,5–100 sein | Keine stille Vorgabe von 3 h |
 | Eingabegrenzen | keine | siehe Abschnitt Eingabegrenzen | Server prüft Kundenwahl (`parse*Input`) |
 | Fläche → Volumen | nur mit gesetztem Objekt | immer (Objekt ist Pflichtfeld) | |
+| km außerhalb Wiens | Abtasten in ca. 50-m-Schritten gegen die Nominatim-Grenze | PostGIS: `ST_Difference` mit der Wiener Grenze, geodätische Länge, auf 0,1 km gerundet und auf die Gesamtstrecke begrenzt | Exakt statt Näherung; Abweichung höchstens im Bereich der Abtastschritte |
+| Region „international" | irgendeine Adresse mit Land ≠ AT (Länderkürzel der Nominatim-Treffer) | Abholung oder Ziel liegt nicht im Österreich-Polygon (serverseitig) | Ländercodes vom Client sind nicht verifizierbar |
+| Depot (Partnerstandort) | optionaler Startpunkt der Route | entfällt | Keine Partner in dieser Phase; Rückfahrt zur Abholung bleibt als Flag `returnTrip` |
 
 ## Eingabegrenzen
 Alle Grenzen stehen an einer Stelle: `limits.ts` (`LIMITS`, exportiert über `@pricing`). Sie sind Obergrenzen gegen unsinnige oder bösartige Eingaben, keine Preisregeln; Änderungen nur dort.

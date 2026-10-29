@@ -63,10 +63,10 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** jeder Screen ohne „hoch"-Findings gegen seine Referenz. Dazu eine Migration mit dem DB-Check `price_config.value >= 0` und ein Seed-Test `clearance.rate_low ≤ clearance.rate ≤ clearance.rate_high` (ersetzt das `it.todo` in `tests/unit/pricing.test.ts`).
 
 ## S5 · Routing-Dienst und Wiener Stadtgrenze
-- [ ] Wiener Grenze (OSM, ODbL) als Geometrie in `geo_boundaries`, Import-Skript dokumentiert; es schreibt über die service_role, keine Geometrie in Migrationen
-- [ ] Edge Function `route`: Geocoding (Kandidaten zur Bestätigung), Route, Gesamt-km, einfache Strecke, km außerhalb Wiens per PostGIS, Fahrzeit, Region, Länder
-- [ ] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
-- [ ] Tests mit gemocktem Anbieter und festen Fixtures
+- [x] Wiener Grenze (OSM, ODbL) als Geometrie in `geo_boundaries`, Import-Skript dokumentiert; es schreibt über die service_role, keine Geometrie in Migrationen
+- [x] Edge Function `route`: Geocoding (Kandidaten zur Bestätigung), Route, Gesamt-km, einfache Strecke, km außerhalb Wiens per PostGIS, Fahrzeit, Region, Länder — Code und Tests fertig; Deploy und Live-Test gegen ORS offen (OPEN_ISSUES)
+- [x] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
+- [x] Tests mit gemocktem Anbieter und festen Fixtures
 
 **Akzeptanz:** Wien→Wien, Wien→Graz, Wien→München liefern die erwartete Region und plausible km-Anteile.
 
