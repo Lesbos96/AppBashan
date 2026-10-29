@@ -1,0 +1,665 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.18"
+  }
+  public: {
+    Tables: {
+      fee_splits: {
+        Row: {
+          created_at: string
+          fee_cents: number
+          fee_net_cents: number
+          fee_rate: number
+          fee_vat_cents: number
+          fee_vat_rate: number
+          id: string
+          payee_id: string | null
+          payout_cents: number
+          price_version: number
+          rental_booking_id: string | null
+          service_request_id: string | null
+          total_cents: number
+        }
+        Insert: {
+          created_at?: string
+          fee_cents: number
+          fee_net_cents: number
+          fee_rate: number
+          fee_vat_cents: number
+          fee_vat_rate: number
+          id?: string
+          payee_id?: string | null
+          payout_cents: number
+          price_version: number
+          rental_booking_id?: string | null
+          service_request_id?: string | null
+          total_cents: number
+        }
+        Update: {
+          created_at?: string
+          fee_cents?: number
+          fee_net_cents?: number
+          fee_rate?: number
+          fee_vat_cents?: number
+          fee_vat_rate?: number
+          id?: string
+          payee_id?: string | null
+          payout_cents?: number
+          price_version?: number
+          rental_booking_id?: string | null
+          service_request_id?: string | null
+          total_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_splits_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_splits_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "price_versions"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "fee_splits_rental_booking_id_fkey"
+            columns: ["rental_booking_id"]
+            isOneToOne: true
+            referencedRelation: "rental_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_splits_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: true
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      geo_boundaries: {
+        Row: {
+          geom: unknown
+          imported_at: string
+          name: string
+          slug: string
+          source: string
+        }
+        Insert: {
+          geom: unknown
+          imported_at?: string
+          name: string
+          slug: string
+          source: string
+        }
+        Update: {
+          geom?: unknown
+          imported_at?: string
+          name?: string
+          slug?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          created_at: string
+          key: string
+          note: string | null
+          value: number
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          note?: string | null
+          value: number
+          version: number
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          note?: string | null
+          value?: number
+          version?: number
+        }
+        Relationships: []
+      }
+      price_config: {
+        Row: {
+          key: string
+          label: string
+          researched_at: string | null
+          sources: Json
+          unit: string
+          value: number
+          version: number
+        }
+        Insert: {
+          key: string
+          label: string
+          researched_at?: string | null
+          sources?: Json
+          unit: string
+          value: number
+          version: number
+        }
+        Update: {
+          key?: string
+          label?: string
+          researched_at?: string | null
+          sources?: Json
+          unit?: string
+          value?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_config_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "price_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      price_versions: {
+        Row: {
+          created_at: string
+          effective_on: string
+          note: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          effective_on: string
+          note?: string | null
+          version: number
+        }
+        Update: {
+          created_at?: string
+          effective_on?: string
+          note?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rental_bookings: {
+        Row: {
+          cover: boolean
+          created_at: string
+          customer_id: string
+          deposit_cents: number
+          extra_driver: boolean
+          id: string
+          km: number
+          offer_id: string
+          one_way: boolean
+          pickup_at: string
+          price_snapshot: Json
+          price_version: number
+          return_at: string
+          status: Database["public"]["Enums"]["request_status"]
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          cover?: boolean
+          created_at?: string
+          customer_id: string
+          deposit_cents: number
+          extra_driver?: boolean
+          id?: string
+          km: number
+          offer_id: string
+          one_way?: boolean
+          pickup_at: string
+          price_snapshot: Json
+          price_version: number
+          return_at: string
+          status?: Database["public"]["Enums"]["request_status"]
+          total_cents: number
+          updated_at?: string
+        }
+        Update: {
+          cover?: boolean
+          created_at?: string
+          customer_id?: string
+          deposit_cents?: number
+          extra_driver?: boolean
+          id?: string
+          km?: number
+          offer_id?: string
+          one_way?: boolean
+          pickup_at?: string
+          price_snapshot?: Json
+          price_version?: number
+          return_at?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_bookings_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "rental_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_bookings_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "price_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      rental_offers: {
+        Row: {
+          booking_fee_cents: number
+          cover_daily_cents: number
+          cover_excess_cents: number
+          created_at: string
+          daily_cents: number
+          deposit_cents: number
+          driver_daily_cents: number
+          excess_cents: number
+          extra_km_cents: number
+          id: string
+          is_demo: boolean
+          km_per_day: number
+          name: string
+          one_way_cents: number
+          provider_id: string | null
+          provider_name: string
+          size_m3: number
+          station: string
+          status: Database["public"]["Enums"]["offer_status"]
+          updated_at: string
+        }
+        Insert: {
+          booking_fee_cents?: number
+          cover_daily_cents: number
+          cover_excess_cents: number
+          created_at?: string
+          daily_cents: number
+          deposit_cents: number
+          driver_daily_cents: number
+          excess_cents: number
+          extra_km_cents: number
+          id?: string
+          is_demo?: boolean
+          km_per_day: number
+          name: string
+          one_way_cents: number
+          provider_id?: string | null
+          provider_name: string
+          size_m3: number
+          station: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Update: {
+          booking_fee_cents?: number
+          cover_daily_cents?: number
+          cover_excess_cents?: number
+          created_at?: string
+          daily_cents?: number
+          deposit_cents?: number
+          driver_daily_cents?: number
+          excess_cents?: number
+          extra_km_cents?: number
+          id?: string
+          is_demo?: boolean
+          km_per_day?: number
+          name?: string
+          one_way_cents?: number
+          provider_id?: string | null
+          provider_name?: string
+          size_m3?: number
+          station?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_offers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_photos: {
+        Row: {
+          created_at: string
+          id: string
+          request_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_photos_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          created_at: string
+          customer_id: string
+          estimate_cents: number | null
+          from_address: string | null
+          from_point: unknown
+          from_postcode: string | null
+          id: string
+          inputs: Json
+          needs_quote: boolean
+          preferred_date: string | null
+          price_snapshot: Json
+          price_version: number
+          region: Database["public"]["Enums"]["region"] | null
+          route: Json | null
+          service: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["request_status"]
+          time_window: string | null
+          to_address: string | null
+          to_point: unknown
+          to_postcode: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          estimate_cents?: number | null
+          from_address?: string | null
+          from_point?: unknown
+          from_postcode?: string | null
+          id?: string
+          inputs: Json
+          needs_quote?: boolean
+          preferred_date?: string | null
+          price_snapshot: Json
+          price_version: number
+          region?: Database["public"]["Enums"]["region"] | null
+          route?: Json | null
+          service: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["request_status"]
+          time_window?: string | null
+          to_address?: string | null
+          to_point?: unknown
+          to_postcode?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          estimate_cents?: number | null
+          from_address?: string | null
+          from_point?: unknown
+          from_postcode?: string | null
+          id?: string
+          inputs?: Json
+          needs_quote?: boolean
+          preferred_date?: string | null
+          price_snapshot?: Json
+          price_version?: number
+          region?: Database["public"]["Enums"]["region"] | null
+          route?: Json | null
+          service?: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["request_status"]
+          time_window?: string | null
+          to_address?: string | null
+          to_point?: unknown
+          to_postcode?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "price_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      become_rental_provider: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+    }
+    Enums: {
+      offer_status: "pending" | "approved" | "archived"
+      region: "vienna" | "austria" | "international"
+      request_status:
+        | "requested"
+        | "inspection_requested"
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "withdrawn"
+        | "expired"
+      service_type: "transport" | "move" | "clearance" | "assembly"
+      user_role: "customer" | "rental_provider" | "admin" | "partner"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      offer_status: ["pending", "approved", "archived"],
+      region: ["vienna", "austria", "international"],
+      request_status: [
+        "requested",
+        "inspection_requested",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "withdrawn",
+        "expired",
+      ],
+      service_type: ["transport", "move", "clearance", "assembly"],
+      user_role: ["customer", "rental_provider", "admin", "partner"],
+    },
+  },
+} as const

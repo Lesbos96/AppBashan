@@ -1,0 +1,437 @@
+// RLS-Integrationstests gegen das Dev-Projekt. Start: npm run test:rls (Werte per dotenv-cli).
+// Ein durch USING geblocktes UPDATE liefert 0 Zeilen ohne Fehler, daher wird der Zustand
+// danach über die Service-Role nachgelesen. Jede Sperre hat eine Positivkontrolle.
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { Database } from '../../supabase/functions/_shared/database.types.ts'
+
+type Db = SupabaseClient<Database>
+
+function env(name: string): string {
+  const value = process.env[name]
+  if (!value) throw new Error(`${name} fehlt. Tests über npm run test:rls starten.`)
+  return value
+}
+
+const url = env('VITE_SUPABASE_URL')
+const publishableKey = env('VITE_SUPABASE_PUBLISHABLE_KEY')
+const secretKey = env('SUPABASE_SECRET_KEY')
+
+const client = (key: string): Db =>
+  createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const service = client(secretKey)
+const anon = client(publishableKey)
+
+// Gepaced wegen der Auth-Rate-Limits.
+const pause = () => new Promise((resolve) => setTimeout(resolve, 400))
+const run = Date.now().toString(36)
+const created: string[] = []
+
+async function makeUser(tag: string): Promise<{ id: string; db: Db }> {
+  const email = `rls-${tag}-${run}@movenow.test`
+  const password = `${crypto.randomUUID()}Aa1!`
+  const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true })
+  if (error) throw error
+  created.push(data.user.id)
+  await pause()
+  const db = client(publishableKey)
+  const signIn = await db.auth.signInWithPassword({ email, password })
+  if (signIn.error) throw signIn.error
+  await pause()
+  return { id: data.user.id, db }
+}
+
+const must = <T>(result: { data: T; error: unknown }): NonNullable<T> => {
+  if (result.error || result.data == null) throw result.error ?? new Error('keine Daten')
+  return result.data
+}
+
+const CARGO_VAN = '00000000-0000-4000-8000-000000000002'
+const png = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))], { type: 'image/png' })
+
+let a: Awaited<ReturnType<typeof makeUser>>
+let b: Awaited<ReturnType<typeof makeUser>>
+let provider: Awaited<ReturnType<typeof makeUser>>
+let otherProvider: Awaited<ReturnType<typeof makeUser>>
+let admin: Awaited<ReturnType<typeof makeUser>>
+let requestA: string
+let requestB: string
+let bookingA: string
+let bookingB: string
+let photoPathB: string
+let approvedOffer: string
+const extraPhotos: string[] = []
+const testKey = `rls.test.${run}`
+
+const requestRow = (customerId: string) => ({
+  customer_id: customerId,
+  service: 'move' as const,
+  inputs: { crew: 3 },
+  price_snapshot: { positions: [] },
+  price_version: 1,
+  estimate_cents: 68961,
+})
+
+const bookingRow = (customerId: string, offerId: string) => ({
+  offer_id: offerId,
+  customer_id: customerId,
+  pickup_at: '2026-11-06T08:00:00Z',
+  return_at: '2026-11-08T08:00:00Z',
+  km: 350,
+  cover: true,
+  price_snapshot: { positions: [] },
+  price_version: 1,
+  total_cents: 27600,
+  deposit_cents: 50000,
+})
+
+const requestStatus = async (id: string) =>
+  must(await service.from('service_requests').select('status').eq('id', id).single()).status
+const bookingStatus = async (id: string) =>
+  must(await service.from('rental_bookings').select('status').eq('id', id).single()).status
+
+beforeAll(async () => {
+  a = await makeUser('kunde-a')
+  b = await makeUser('kunde-b')
+  provider = await makeUser('vermieter')
+  otherProvider = await makeUser('vermieter-2')
+  admin = await makeUser('admin')
+
+  // Vermieter-Rolle über den vorgesehenen Weg, admin nur über die Service-Role (Dashboard).
+  expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+  expect(must(await otherProvider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+  must(await service.from('profiles').update({ role: 'admin' }).eq('id', admin.id).select())
+
+  requestA = must(await service.from('service_requests').insert(requestRow(a.id)).select('id').single()).id
+  requestB = must(await service.from('service_requests').insert(requestRow(b.id)).select('id').single()).id
+
+  // Ablauf wie in der App: erst Eintrag (Limit 8), dann Upload in den eingetragenen Pfad.
+  photoPathB = `${b.id}/${requestB}/foto.png`
+  must(await b.db.from('request_photos').insert({ request_id: requestB, storage_path: photoPathB }).select())
+  must(await b.db.storage.from('request-photos').upload(photoPathB, png, { contentType: 'image/png' }))
+
+  const offer = must(
+    await provider.db
+      .from('rental_offers')
+      .insert({
+        provider_name: 'RLS-Test',
+        name: 'Testvan',
+        station: 'Wien',
+        size_m3: 10,
+        daily_cents: 9900,
+        km_per_day: 150,
+        extra_km_cents: 40,
+        cover_daily_cents: 2400,
+        excess_cents: 180000,
+        cover_excess_cents: 50000,
+        driver_daily_cents: 1000,
+        one_way_cents: 5900,
+        deposit_cents: 50000,
+      })
+      .select('id')
+      .single(),
+  )
+  approvedOffer = offer.id
+  must(await service.from('rental_offers').update({ status: 'approved' }).eq('id', approvedOffer).select())
+
+  bookingA = must(await service.from('rental_bookings').insert(bookingRow(a.id, CARGO_VAN)).select('id').single()).id
+  bookingB = must(await service.from('rental_bookings').insert(bookingRow(b.id, approvedOffer)).select('id').single()).id
+
+  must(
+    await service
+      .from('fee_splits')
+      .insert([
+        {
+          rental_booking_id: bookingB,
+          payee_id: provider.id,
+          total_cents: 27600,
+          fee_rate: 0.15,
+          fee_vat_rate: 0.2,
+          fee_cents: 4140,
+          fee_net_cents: 3450,
+          fee_vat_cents: 690,
+          payout_cents: 23460,
+          price_version: 1,
+        },
+        {
+          service_request_id: requestA,
+          total_cents: 68961,
+          fee_rate: 0.15,
+          fee_vat_rate: 0.2,
+          fee_cents: 10344,
+          fee_net_cents: 8620,
+          fee_vat_cents: 1724,
+          payout_cents: 58617,
+          price_version: 1,
+        },
+      ])
+      .select(),
+  )
+})
+
+afterAll(async () => {
+  await service.from('price_config').delete().eq('version', 1).eq('key', testKey)
+  if (photoPathB) await service.storage.from('request-photos').remove([photoPathB, ...extraPhotos])
+  // Kunden zuerst (Anfragen und Mietanfragen kaskadieren), dann Vermieter (Angebote kaskadieren).
+  for (const id of created) {
+    await service.auth.admin.deleteUser(id)
+    await pause()
+  }
+})
+
+describe('anon', () => {
+  it('liest öffentliche Tarife und freigegebene Angebote', async () => {
+    expect(must(await anon.from('price_config').select('key')).length).toBeGreaterThan(20)
+    const offers = must(await anon.from('rental_offers').select('id, status'))
+    expect(offers.map((o) => o.id)).toContain(CARGO_VAN)
+    expect(offers.every((o) => o.status === 'approved')).toBe(true)
+  })
+
+  it.each(['profiles', 'service_requests', 'request_photos', 'rental_bookings', 'fee_splits', 'platform_settings'] as const)(
+    'liest nichts aus %s',
+    async (table) => {
+      const { data } = await anon.from(table).select('*')
+      expect(data ?? []).toEqual([])
+    },
+  )
+
+  it('lädt keine Fotos und wird nicht Vermieter', async () => {
+    expect((await anon.storage.from('request-photos').download(photoPathB)).error).not.toBeNull()
+    expect((await anon.rpc('become_rental_provider')).error).not.toBeNull()
+  })
+})
+
+describe('Kunden sehen nur Eigenes', () => {
+  it('Anfragen', async () => {
+    const ids = must(await a.db.from('service_requests').select('id')).map((r) => r.id)
+    expect(ids).toContain(requestA)
+    expect(ids).not.toContain(requestB)
+  })
+
+  it('Foto-Einträge und Dateien', async () => {
+    expect(must(await b.db.from('request_photos').select('storage_path'))).toHaveLength(1)
+    expect(must(await a.db.from('request_photos').select('storage_path'))).toEqual([])
+    expect((await b.db.storage.from('request-photos').download(photoPathB)).error).toBeNull()
+    expect((await a.db.storage.from('request-photos').download(photoPathB)).error).not.toBeNull()
+  })
+
+  it('kein Upload und kein Foto-Eintrag in fremde Anfragen', async () => {
+    const foreign = `${b.id}/${requestB}/fremd.png`
+    expect((await a.db.storage.from('request-photos').upload(foreign, png, { contentType: 'image/png' })).error).not.toBeNull()
+    const ownFolder = `${a.id}/${requestB}/fremd.png`
+    expect((await a.db.storage.from('request-photos').upload(ownFolder, png, { contentType: 'image/png' })).error).not.toBeNull()
+    expect((await a.db.from('request_photos').insert({ request_id: requestB, storage_path: ownFolder })).error).not.toBeNull()
+  })
+
+  it('fremde Fotos lassen sich nicht löschen', async () => {
+    const row = await a.db.from('request_photos').delete().eq('storage_path', photoPathB).select()
+    expect(row.data ?? []).toEqual([])
+    await a.db.storage.from('request-photos').remove([photoPathB])
+    expect(must(await service.from('request_photos').select('id').eq('storage_path', photoPathB))).toHaveLength(1)
+    expect((await service.storage.from('request-photos').download(photoPathB)).error).toBeNull()
+  })
+
+  it('höchstens 8 Fotos je Anfrage, in Storage und Tabelle', async () => {
+    for (let i = 2; i <= 8; i++) {
+      const path = `${b.id}/${requestB}/foto-${i}.png`
+      must(await b.db.from('request_photos').insert({ request_id: requestB, storage_path: path }).select())
+      must(await b.db.storage.from('request-photos').upload(path, png, { contentType: 'image/png' }))
+      extraPhotos.push(path)
+    }
+    const ninth = `${b.id}/${requestB}/foto-9.png`
+    expect((await b.db.from('request_photos').insert({ request_id: requestB, storage_path: ninth })).error).not.toBeNull()
+    expect((await b.db.storage.from('request-photos').upload(ninth, png, { contentType: 'image/png' })).error).not.toBeNull()
+    expect(must(await b.db.from('request_photos').select('id'))).toHaveLength(8)
+  })
+
+  it('Mietanfragen', async () => {
+    const ids = must(await a.db.from('rental_bookings').select('id')).map((r) => r.id)
+    expect(ids).toContain(bookingA)
+    expect(ids).not.toContain(bookingB)
+  })
+
+  it('fremde Profile: nicht lesen, nicht ändern', async () => {
+    const ids = must(await a.db.from('profiles').select('id')).map((r) => r.id)
+    expect(ids).toEqual([a.id])
+    const result = await a.db.from('profiles').update({ display_name: 'fremd' }).eq('id', b.id).select()
+    expect(result.data ?? []).toEqual([])
+    expect(must(await service.from('profiles').select('display_name').eq('id', b.id).single()).display_name).toBeNull()
+  })
+})
+
+describe('Kunden setzen nur „zurückgezogen"', () => {
+  it('legen Anfragen nicht selbst an (nur über quote)', async () => {
+    expect((await a.db.from('service_requests').insert(requestRow(a.id))).error).not.toBeNull()
+    expect((await a.db.from('rental_bookings').insert(bookingRow(a.id, CARGO_VAN))).error).not.toBeNull()
+  })
+
+  it('kein anderer Status, keine Preisfelder', async () => {
+    expect((await a.db.from('service_requests').update({ status: 'confirmed' }).eq('id', requestA)).error).not.toBeNull()
+    expect((await a.db.from('service_requests').update({ estimate_cents: 1 }).eq('id', requestA)).error).not.toBeNull()
+    expect(await requestStatus(requestA)).toBe('requested')
+  })
+
+  it('fremde Anfrage bleibt unverändert', async () => {
+    const result = await a.db.from('service_requests').update({ status: 'withdrawn' }).eq('id', requestB).select()
+    expect(result.data ?? []).toEqual([])
+    expect(await requestStatus(requestB)).toBe('requested')
+  })
+
+  it('eigene Anfrage zurückziehen, danach nicht wieder öffnen', async () => {
+    expect(must(await a.db.from('service_requests').update({ status: 'withdrawn' }).eq('id', requestA).select())).toHaveLength(1)
+    const reopen = await a.db.from('service_requests').update({ status: 'requested' }).eq('id', requestA).select()
+    expect(reopen.data ?? []).toEqual([])
+    expect(await requestStatus(requestA)).toBe('withdrawn')
+  })
+
+  it('keine Fotos zu einer zurückgezogenen Anfrage', async () => {
+    const path = `${a.id}/${requestA}/spaet.png`
+    expect((await a.db.storage.from('request-photos').upload(path, png, { contentType: 'image/png' })).error).not.toBeNull()
+    expect((await a.db.from('request_photos').insert({ request_id: requestA, storage_path: path })).error).not.toBeNull()
+  })
+
+  it('Mietanfrage: nur zurückziehen', async () => {
+    expect((await a.db.from('rental_bookings').update({ status: 'confirmed' }).eq('id', bookingA)).error).not.toBeNull()
+    expect(await bookingStatus(bookingA)).toBe('requested')
+    expect(must(await a.db.from('rental_bookings').update({ status: 'withdrawn' }).eq('id', bookingA).select())).toHaveLength(1)
+  })
+})
+
+describe('Vermieter und Fahrzeuge', () => {
+  let pendingOffer: string
+
+  it('Kunden legen keine Fahrzeuge an', async () => {
+    const { error } = await a.db.from('rental_offers').insert({
+      provider_name: 'X', name: 'X', station: 'X', size_m3: 1, daily_cents: 1, km_per_day: 1, extra_km_cents: 1,
+      cover_daily_cents: 1, excess_cents: 1, cover_excess_cents: 1, driver_daily_cents: 1, one_way_cents: 1, deposit_cents: 1,
+    })
+    expect(error).not.toBeNull()
+  })
+
+  it('neues Fahrzeug ist pending, Status und Demo-Flag nicht setzbar', async () => {
+    const offer = must(
+      await provider.db
+        .from('rental_offers')
+        .insert({
+          provider_name: 'RLS-Test', name: 'Neu', station: 'Wien', size_m3: 6, daily_cents: 7900, km_per_day: 100,
+          extra_km_cents: 35, cover_daily_cents: 1900, excess_cents: 150000, cover_excess_cents: 50000,
+          driver_daily_cents: 900, one_way_cents: 4900, deposit_cents: 30000,
+        })
+        .select('id, status, is_demo, provider_id')
+        .single(),
+    )
+    expect(offer).toMatchObject({ status: 'pending', is_demo: false, provider_id: provider.id })
+    pendingOffer = offer.id
+    const { error } = await provider.db.from('rental_offers').insert({
+      provider_name: 'X', name: 'X', station: 'X', size_m3: 1, daily_cents: 1, km_per_day: 1, extra_km_cents: 1,
+      cover_daily_cents: 1, excess_cents: 1, cover_excess_cents: 1, driver_daily_cents: 1, one_way_cents: 1, deposit_cents: 1,
+      status: 'approved',
+    })
+    expect(error).not.toBeNull()
+    expect((await provider.db.from('rental_offers').update({ status: 'approved' }).eq('id', pendingOffer)).error).not.toBeNull()
+  })
+
+  it('ändert nur eigene Fahrzeuge', async () => {
+    expect(must(await provider.db.from('rental_offers').update({ daily_cents: 8900 }).eq('id', pendingOffer).select())).toHaveLength(1)
+    const foreign = await otherProvider.db.from('rental_offers').update({ daily_cents: 1 }).eq('id', pendingOffer).select()
+    expect(foreign.data ?? []).toEqual([])
+    const demo = await provider.db.from('rental_offers').update({ daily_cents: 1 }).eq('id', CARGO_VAN).select()
+    expect(demo.data ?? []).toEqual([])
+    expect(must(await service.from('rental_offers').select('daily_cents').eq('id', pendingOffer).single()).daily_cents).toBe(8900)
+    expect(must(await service.from('rental_offers').select('daily_cents').eq('id', CARGO_VAN).single()).daily_cents).toBe(9900)
+  })
+
+  it('fremde unfreigegebene Fahrzeuge bleiben unsichtbar', async () => {
+    const forOther = must(await otherProvider.db.from('rental_offers').select('id')).map((o) => o.id)
+    const forCustomer = must(await a.db.from('rental_offers').select('id')).map((o) => o.id)
+    expect(forOther).not.toContain(pendingOffer)
+    expect(forCustomer).not.toContain(pendingOffer)
+    expect(forCustomer).toContain(approvedOffer)
+    expect(must(await provider.db.from('rental_offers').select('id')).map((o) => o.id)).toContain(pendingOffer)
+  })
+})
+
+describe('Gebühren', () => {
+  it('Kunden und anon lesen weder fee_splits noch platform_settings', async () => {
+    for (const db of [a.db, b.db, anon]) {
+      expect((await db.from('fee_splits').select('*')).data ?? []).toEqual([])
+      expect((await db.from('platform_settings').select('*')).data ?? []).toEqual([])
+    }
+  })
+
+  it('Vermieter liest nur eigene Aufteilung und den Satz', async () => {
+    const own = must(await provider.db.from('fee_splits').select('rental_booking_id'))
+    expect(own).toEqual([{ rental_booking_id: bookingB }])
+    expect(must(await otherProvider.db.from('fee_splits').select('id'))).toEqual([])
+    const keys = must(await provider.db.from('platform_settings').select('key')).map((s) => s.key)
+    expect(keys).toEqual(expect.arrayContaining(['fee_rate', 'fee_vat_rate']))
+  })
+
+  it('Vermieter ändert den Satz nicht', async () => {
+    expect((await provider.db.from('platform_settings').insert({ key: 'fee_rate', version: 99, value: 0 })).error).not.toBeNull()
+    const result = await provider.db.from('platform_settings').update({ value: 0 }).eq('key', 'fee_rate').select()
+    expect(result.data ?? []).toEqual([])
+    expect(must(await service.from('platform_settings').select('value').eq('key', 'fee_rate').eq('version', 1).single()).value).toBe(0.15)
+  })
+
+  it('admin liest alle Aufteilungen', async () => {
+    expect(must(await admin.db.from('fee_splits').select('id')).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('niemand außer dem Server schreibt Aufteilungen', async () => {
+    const row = {
+      service_request_id: requestB, total_cents: 1, fee_rate: 0, fee_vat_rate: 0, fee_cents: 0,
+      fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, price_version: 1,
+    }
+    expect((await provider.db.from('fee_splits').insert(row)).error).not.toBeNull()
+    expect((await admin.db.from('fee_splits').insert(row)).error).not.toBeNull()
+  })
+})
+
+describe('price_config', () => {
+  // Eigener Testschlüssel, damit echte Tarife im Dev-Projekt nie verändert werden.
+  const row = () => ({ version: 1, key: testKey, value: 100, unit: 'cent', label: 'RLS-Test' })
+  const stored = async () => must(await service.from('price_config').select('value').eq('version', 1).eq('key', testKey))
+
+  it('Kunde, Vermieter und anon legen nichts an', async () => {
+    for (const db of [a.db, provider.db, anon]) {
+      expect((await db.from('price_config').insert(row())).error).not.toBeNull()
+    }
+    expect(await stored()).toEqual([])
+  })
+
+  it('nur admin legt an, ändert und löscht', async () => {
+    must(await admin.db.from('price_config').insert(row()).select())
+    for (const db of [a.db, provider.db]) {
+      expect((await db.from('price_config').update({ value: 1 }).eq('version', 1).eq('key', testKey).select()).data ?? []).toEqual([])
+      expect((await db.from('price_config').delete().eq('version', 1).eq('key', testKey).select()).data ?? []).toEqual([])
+    }
+    expect((await anon.from('price_config').update({ value: 1 }).eq('version', 1).eq('key', testKey)).error).not.toBeNull()
+    expect(await stored()).toEqual([{ value: 100 }])
+    expect(must(await admin.db.from('price_config').update({ value: 101 }).eq('version', 1).eq('key', testKey).select('value'))).toEqual([
+      { value: 101 },
+    ])
+    expect(must(await admin.db.from('price_config').delete().eq('version', 1).eq('key', testKey).select())).toHaveLength(1)
+  })
+})
+
+describe('Rollen', () => {
+  it('niemand setzt die eigene Rolle', async () => {
+    for (const user of [a, provider]) {
+      expect((await user.db.from('profiles').update({ role: 'admin' }).eq('id', user.id)).error).not.toBeNull()
+    }
+    const roles = must(await service.from('profiles').select('id, role').in('id', [a.id, provider.id]))
+    expect(Object.fromEntries(roles.map((r) => [r.id, r.role]))).toEqual({ [a.id]: 'customer', [provider.id]: 'rental_provider' })
+  })
+
+  it('Name und Telefon sind änderbar', async () => {
+    expect(must(await a.db.from('profiles').update({ display_name: 'Kundin A' }).eq('id', a.id).select('display_name'))).toEqual([
+      { display_name: 'Kundin A' },
+    ])
+  })
+
+  it('der Vermieter-Weg macht nie admin und stuft admin nicht herab', async () => {
+    expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+    expect(must(await admin.db.rpc('become_rental_provider'))).toBe('admin')
+  })
+})
