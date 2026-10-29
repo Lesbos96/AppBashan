@@ -3,6 +3,7 @@ import tokens from '../../docs/reference/design/tokens.json'
 import { Icon } from '../components/Icon'
 import { Illustration } from '../components/Illustration'
 import { formatEuro } from '../lib/money'
+import { Komponenten } from './Komponenten'
 
 const names = (glob: Record<string, unknown>) => Object.keys(glob).map((path) => path.slice(path.lastIndexOf('/') + 1, -4))
 const iconNames = names(import.meta.glob('../assets/icons/*.svg'))
@@ -141,6 +142,8 @@ export function Fundament() {
           ))}
         </ul>
       </Card>
+
+      <Komponenten />
     </main>
   )
 }

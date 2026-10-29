@@ -47,9 +47,9 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png` (Farben, Typografie, Icons) und `01`/`02` (Illustrationen), Light und Dark.
 
 ## S3b · Basiskomponenten
-- [ ] Zu Beginn: Gradienten (Primär-Button, Mietkarte, App-Icon), Layout-Maße (Touch-Ziel 44, Button 54, Spalte 520) und Motion-Werte aus `tokens.json` als CSS-Variablen ergänzen
-- [ ] Basiskomponenten: Primär-/Sekundärbutton, Karte, Service-Karte, Inset Grouped List, Segmented Control, Stepper, Toggle, Feld, Status-Chip, Bottom Sheet (Griff, Detents, Drag-to-Dismiss), Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, fixierte Aktionsleiste, Fortschrittsanzeige, Betragszeile ohne Umbruch
-- [ ] In der Galerie `/dev/fundament` ergänzt, verglichen mit `00_Fundament.png`
+- [x] Zu Beginn: Gradienten (Primär-Button, Mietkarte, App-Icon), Layout-Maße (Touch-Ziel 44, Button 54, Spalte 520) und Motion-Werte aus `tokens.json` als CSS-Variablen ergänzen
+- [x] Basiskomponenten: Primär-/Sekundärbutton, Karte, Service-Karte, Inset Grouped List, Segmented Control, Stepper, Toggle, Feld, Status-Chip, Bottom Sheet (Griff, Detents, Drag-to-Dismiss), Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, fixierte Aktionsleiste, Fortschrittsanzeige, Betragszeile ohne Umbruch
+- [x] In der Galerie `/dev/fundament` ergänzt, verglichen mit `00_Fundament.png`
 
 **Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png`, Light und Dark.
 

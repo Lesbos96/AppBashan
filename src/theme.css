@@ -31,6 +31,15 @@
   --sheet-dim: rgba(4, 22, 26, 0.38);
   --illustration-panel: linear-gradient(160deg, #f3f5f4 0%, #e5ebea 100%);
   --icon-cutout: var(--surface);
+  --gradient-primary-button: linear-gradient(180deg, #0c6e73 0%, #075c61 55%, #04494e 100%);
+  --gradient-rent-card: linear-gradient(135deg, #0a5a60 0%, #073e46 60%, #062f35 100%);
+  --gradient-hero-mesh: radial-gradient(34% 42% at 24% 30%, rgba(18, 128, 132, 0.9) 0%, rgba(18, 128, 132, 0) 70%), radial-gradient(40% 46% at 76% 70%, rgba(9, 86, 92, 0.95) 0%, rgba(9, 86, 92, 0) 70%), radial-gradient(26% 30% at 68% 26%, rgba(143, 214, 207, 0.34) 0%, rgba(143, 214, 207, 0) 70%), radial-gradient(36% 38% at 32% 82%, rgba(3, 52, 58, 0.95) 0%, rgba(3, 52, 58, 0) 70%), #05292e;
+  --gradient-app-icon: radial-gradient(120% 90% at 18% 0%, #16898d 0%, rgba(22, 137, 141, 0) 58%), linear-gradient(150deg, #0b6e73 0%, #075c61 45%, #03464b 100%);
+  --touch-target-min: 44px;
+  --button-primary-height: 54px;
+  --content-max-width: 520px;
+  --press-scale: 0.98;
+  --list-stagger: 40ms;
   --shadow-card: 0 1px 1px rgba(16, 47, 53, 0.04), 0 4px 14px rgba(16, 47, 53, 0.04);
   --shadow-card-raised: 0 1px 1px rgba(16, 47, 53, 0.04), 0 8px 24px rgba(16, 47, 53, 0.06);
   --shadow-service-card: 0 1px 1px rgba(16, 47, 53, 0.04), 0 6px 16px rgba(16, 47, 53, 0.05);
@@ -71,6 +80,8 @@
     --status-done-bg: rgba(236, 243, 243, 0.08);
     --status-done-text: #9fb4b7;
     --glass-bar: rgba(9, 28, 32, 0.74);
+    --gradient-primary-button: linear-gradient(180deg, #12797e 0%, #0e6f74 55%, #0a5a5f 100%);
+    --gradient-rent-card: linear-gradient(135deg, #105e64 0%, #0a474d 60%, #083b41 100%);
     --illustration-panel: linear-gradient(160deg, #1a3439 0%, #132a2e 100%);
     --shadow-card: inset 0 0 0 1px var(--hairline);
     --shadow-card-raised: inset 0 0 0 1px var(--hairline);
@@ -209,7 +220,7 @@
 @utility press {
   transition: transform 0.45s var(--ease-spring-press);
   &:active {
-    transform: scale(0.98);
+    transform: scale(var(--press-scale));
   }
 }
 

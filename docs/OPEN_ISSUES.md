@@ -12,6 +12,10 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S2b · `quote` speichert nur geprüfte Felder (Abnahmekriterium S8a):** `parse*Input` verwirft unbekannte Schlüssel; `quote` darf nur diese und die Snapshot-Felder speichern. Eingetragen in der ROADMAP bei S8a, `it.todo` in `tests/unit/pricing.test.ts`.
 
 ## UI
+- **S3b · Sheet bei Größenänderung:** `Sheet` liest `window.innerHeight` nur beim Öffnen; Drehen oder Fenstergröße bei offenem Sheet lässt Höhe und Detents falsch. Bei Bedarf Resize-Listener oder `dvh`.
+- **S3b · Large Title und Safe Area:** Die Schwelle, ab der der kleine Titel in der `NavBar` erscheint, rechnet `--safe-top` nicht ein (Notch: Titel zu spät). Beim Einbau in die App-Shell (S4) prüfen.
+- **S3b · Segmented Control 36 px:** wie die Referenz, unter 44 px Touch-Ziel. Vor S6 entscheiden, ob die Labels auf 44 px Klickfläche gestreckt werden.
+- **S3b · Dark-Varianten abgeleitet:** Primär-Button-Verlauf und Segment-Thumb im Dark Mode ohne Referenz nach dem Dark-Muster. Schatten des Thumbs und Fortschrittsspur (`bg-fill` statt 10 %) nicht eigens als Token.
 - **S3a · Icon-Namen ungeprüft:** `Icon` und `Illustration` nehmen Dateinamen als String; ein falscher Name wirft zur Laufzeit statt beim Typecheck. Bei Bedarf Namen als Union generieren.
 
 ## Prototyp

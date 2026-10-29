@@ -3,6 +3,12 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-29 · S3b · Basiskomponenten · abgeschlossen
+- `src/theme.css`: Gradienten (Primär-Button, Mietkarte, Hero-Mesh, App-Icon; Dark für Button und Mietkarte), Layout- und Motion-Werte als CSS-Variablen; `MotionConfig reducedMotion="user"` in `main.tsx`
+- `src/components/`: `Button`, `Controls` (Segmented als native Radiogruppe, Stepper, Toggle, Status-Chip), `Surfaces` (Karte, Service-Karte, Inset Grouped List mit Zeile und Feld, Betragszeile ohne Umbruch über `formatEuro`), `Bars` (Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, Aktionsleiste, Fortschritt), `Sheet` (nativer `<dialog>`, Detents, Drag am Griff, Esc und Tippen außerhalb schließen)
+- Galerie `/dev/fundament` um Komponenten ergänzt; E2E `tests/e2e/komponenten.spec.ts` (Tastatur: Segmented, Stepper, Schalter, Sheet)
+- Abweichung von der Aufgabe: Die Tab-Bar der Referenz ist 83 px hoch (Eintrag 49 px plus Home-Indicator-Bereich), die Aktionsleiste enthält nur den Button. Dark-Varianten von Primär-Button und Segment-Thumb nach dem Dark-Muster abgeleitet, keine Referenz.
+
 ## 2026-10-29 · S3a · Tokens, Icons, Illustrationen · abgeschlossen
 - `src/theme.css`: Tokens aus `tokens.json` als CSS-Variablen (Light, Dark per `prefers-color-scheme`) plus Tailwind-Theme; Dark-Werte, die tokens.json nicht nennt, nach dem Dark-Muster abgeleitet. Inter variabel selbst gehostet (`@fontsource-variable/inter`)
 - 45 Icons (`src/assets/icons`) und 24 Illustrationen samt Dark-Varianten (`src/assets/illustrations`) byte-genau aus `tmp/svg/` kopiert, per `vite-plugin-svgr` als Komponenten `Icon` / `Illustration`; geändert nur Wurzel-Farben (`currentColor`, Aussparung `--icon-cutout`) und absolute Positionierung
