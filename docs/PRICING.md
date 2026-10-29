@@ -1,3 +1,43 @@
 # MoveNow · Preislogik
 
-Wird in S2 gefüllt: welche Werte Stichproben-Richtwerte sind und aus welcher Quelle, und jede Abweichung des Moduls vom Briefing oder vom Prototyp.
+Modul: `supabase/functions/_shared/pricing/` (rein, ohne Abhängigkeiten, Importe mit `.ts`). Tarife kommen als Parameter aus `price_config` (Seed: `supabase/seed.sql`), der Gebührensatz aus `platform_settings`. Beträge sind ganze Cent. Intern wird wie im Prototyp in Euro gerechnet (Tarif / 100) und erst am Ende gerundet.
+
+## Aufbau
+- `compute*`: Kundenpreis (`price` mit Zeilen, Spanne) oder `offer` mit Gründen. Keine Gebührenfelder.
+- `splitFee(totalCents, {feeRate, vatRate})`: einzige Stelle der Gebührenaufteilung.
+- `parse*Input`: strikte Prüfung der Kundenwahl (Grundlage für `quote`, S8a). Sie liest nur Preisfelder, andere Schlüssel werden verworfen. Region, Kilometer und Fahrzeit (`RouteFacts`, aus `route`) sowie das Mietangebot (`RentalOffer`, per id aus der DB) sind eigene Parameter und nie Teil der Kundeneingabe.
+- Zeilen: Gesamtpreis = Rundung der ungerundeten Summe (wie `cents(total)` im Prototyp); die Zeilen werden nach dem Largest-Remainder-Verfahren so gerundet, dass sie immer das Total ergeben.
+
+## Abweichungen vom Prototyp
+| Stelle | Prototyp | Modul | Grund |
+| --- | --- | --- | --- |
+| Gebührenrundung | Float: `cents(total*.15)`; bei exakten Halb-Cent-Beträgen entscheidet die Binärdarstellung (EPSILON wirkt ab ca. 2 € nicht mehr) | Ganzzahl, half-up; Sätze als Basispunkte | Reproduzierbar und centgenau; Fixture: Total 111,50 € → Prototyp 16,72 €, Modul 16,73 € (16,725 €) |
+| Gebühr bei Entrümpelung und Montage | aus der ungerundeten Summe | aus dem gerundeten Gesamtpreis (in Cent) | Gebühr gehört zum gespeicherten Gesamtpreis |
+| Miettage | `new Date(...)` in Ortszeit; über die Sommerzeitumstellung entsteht ein Tag zu viel | Wanduhrzeit per `Date.UTC`, angebrochene Tage zählen voll | Kein Fehler bei Zeitumstellung (24.–26.10.2026: 2 Tage, nicht 3) |
+| Rückgabe vor Abholung | mindestens 1 Tag | `InputError`; höchstens 90 Tage | Nur gültige Zeiträume, Server prüft |
+| Umzug-Klick | ReferenceError `moveRouteHTML` | nicht übernommen | Prototyp-Fehler, siehe OPEN_ISSUES.md; die Preislogik ist nicht betroffen |
+| Gründe für „Persönliches Angebot" | deutsche Texte im Code | Codes (`OfferReason`); Texte in der UI (S6, S7) | Modul bleibt textfrei |
+| Route fehlt | prüft zusätzlich, ob die Route zu den Adressen passt | `route === null` | Passung prüft der Server beim Aufruf von `route` |
+| Mindeststunden | `s.hours \|\| 3` | `hours` muss 0,5–100 sein | Keine stille Vorgabe von 3 h |
+| Eingabegrenzen | keine | Personen 1–8, Fahrzeuge 1–3, Stunden 0,5–100, Kartons ≤ 200, Halteverbote ≤ 2, Etagen ≤ 20, Montage ≤ 50 lfm, Fläche 1–2000 m², Miete ≤ 10.000 km und ≤ 90 Tage | Server prüft Kundenwahl (`parse*Input`) |
+| Fläche → Volumen | nur mit gesetztem Objekt | immer (Objekt ist Pflichtfeld) | |
+
+## Stichproben-Richtwerte und Quellen
+Alle Tarife sind Stichproben-Richtwerte (Recherche 28.10.2026), keine Marktdurchschnitte. Einzelquellen, Label und URL stehen je Schlüssel in `supabase/seed.sql` (`price_config.sources`); die App zeigt sie im Info-Sheet „Wie rechnet MoveNow?" (S4).
+
+| Bereich | Schlüssel | Herleitung |
+| --- | --- | --- |
+| Team 1 / 3 / 4 Personen | `team_rate.1/3/4` | je ein Anbieter (Extraumzug 48 €, Umzugsprinz 70,80 € / 100,80 €) |
+| Team 2 Personen | `team_rate.2` | Mittel aus Schindler 42, Delta 50, Alpine 59, Wiener Möbelpacker 72 € = 55,75 €/h |
+| Zusatzperson, Zusatzfahrzeug, km, Karton, Halteverbot | `team_rate.extra_person`, `extra_vehicle_rate`, `outside_km_rate`, `box`, `parking_zone` | je ein Anbieter (Schindler, UmzugsPower, Ideal), netto → brutto mit 20 % |
+| Mindestdauer | `min_hours.*` | Alpine 2 h, Delta 3 h |
+| Klavier | `piano.*` | Runiton; nur Preisorientierung im Angebotspfad, kein Preis |
+| Entrümpelung | `clearance.rate*` | Mittel (60 + 65 + 100) / 3 = 75 €/m³, Spanne 60–100 € (Vectura, Kraftpack) |
+| Montage | `assembly.rate_per_lfm`, `kitchen.*` | Mittel (42 + 46,60 + 55) / 3 = 47,87 €/lfm; Küchenwerte DasUmzugsteam |
+| Ohne Einzelquelle | `clearance.minimum`, `clearance.floor_surcharge`, `assembly.min_lfm`, Teil von 47,87 (46,60 €) | Prototyp v13; siehe OPEN_ISSUES.md |
+| Planannahmen | `clearance.volume_factor.*` | Fläche → Volumen, keine Messung |
+
+Miete: Tarife stehen je Fahrzeug in `rental_offers` (Vermieter), nicht in `price_config`. Kaution und Kraftstoff sind nie Teil des Gesamtpreises.
+
+## Tests
+`tests/unit/pricing.test.ts`: fünf README-Beispiele centgenau, 60 Golden-Fälle (`tests/unit/fixtures/prototype-golden.json`, erzeugt aus dem Prototyp mit `npm run fixtures:pricing`), Gebührenaufteilung inkl. Halb-Cent-Fälle, Zeilensumme = Total, Angebotspflicht, Tarif- und Eingabeprüfung.

@@ -24,15 +24,15 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** `npm run check` und `npm run build` grün, Migration eingespielt, RLS-Tests grün, ARCHITECTURE.md vorhanden.
 
 ## S2 · Preis-Engine
-- [ ] Reine TS-Funktionen ohne Abhängigkeiten in `supabase/functions/_shared/pricing/`: Transport/Umzug, Entrümpelung, Montage, Miete, Plattformgebühr, Angebotspflicht mit Gründen
-- [ ] Tarife kommen als Parameter aus `price_config`, nicht als Konstanten (Schlüssel wie in `supabase/seed.sql`, Geldwerte in Cent, das Modul rechnet `value / 100` in Euro wie der Prototyp); der Gebührensatz kommt als Parameter aus `platform_settings` (kein fester 15-%-Wert im App-Code, die Tests übergeben ihn)
-- [ ] Importe im Modul mit `.ts`-Endung (läuft in Vite und Deno); Eingabetypen je Service exportiert, als Grundlage für die `inputs`-Prüfung in `quote` (S8a)
-- [ ] Feste Testfälle: die fünf Preisbeispiele aus `docs/reference/design/README.md` (gegen den laufenden Prototyp-Code geprüft, centgenau)
-- [ ] Golden-Fixtures: Prototyp in Playwright laden, `window.MoveNowDemo.*` mit mindestens 40 Eingaben aufrufen, Ergebnis als JSON speichern
-- [ ] Abdeckung: Mindestdauern, 1–8 Personen, mehrere Fahrzeuge, Personen < Fahrzeuge, Spezialgut, Groß-LKW, Einpackservice, Wien / Österreich / international, Entrümpelung mit Mindestpreis und Etagen, Küche vs. Standardmontage, Miete mit angebrochenem Tag, Mehr-km, Einweg, Bereitstellungsgebühr, halbe Cents bei der Gebührenaufteilung
-- [ ] Gebührenaufteilung als eigene Funktion; Kunden-Preispositionen enthalten keine Gebührenzeile
-- [ ] Prototyp-Fehler „Umzug" (ReferenceError `moveRouteHTML`) nicht übernommen; jede Abweichung vom Briefing in `docs/PRICING.md`
-- [ ] `docs/PRICING.md`: welche Werte Stichproben-Richtwerte sind und aus welcher Quelle
+- [x] Reine TS-Funktionen ohne Abhängigkeiten in `supabase/functions/_shared/pricing/`: Transport/Umzug, Entrümpelung, Montage, Miete, Plattformgebühr, Angebotspflicht mit Gründen
+- [x] Tarife kommen als Parameter aus `price_config`, nicht als Konstanten (Schlüssel wie in `supabase/seed.sql`, Geldwerte in Cent, das Modul rechnet `value / 100` in Euro wie der Prototyp); der Gebührensatz kommt als Parameter aus `platform_settings` (kein fester 15-%-Wert im App-Code, die Tests übergeben ihn)
+- [x] Importe im Modul mit `.ts`-Endung (läuft in Vite und Deno); Eingabetypen je Service exportiert, als Grundlage für die `inputs`-Prüfung in `quote` (S8a)
+- [x] Feste Testfälle: die fünf Preisbeispiele aus `docs/reference/design/README.md` (gegen den laufenden Prototyp-Code geprüft, centgenau)
+- [x] Golden-Fixtures: Prototyp in Playwright laden, `window.MoveNowDemo.*` mit mindestens 40 Eingaben aufrufen, Ergebnis als JSON speichern
+- [x] Abdeckung: Mindestdauern, 1–8 Personen, mehrere Fahrzeuge, Personen < Fahrzeuge, Spezialgut, Groß-LKW, Einpackservice, Wien / Österreich / international, Entrümpelung mit Mindestpreis und Etagen, Küche vs. Standardmontage, Miete mit angebrochenem Tag, Mehr-km, Einweg, Bereitstellungsgebühr, halbe Cents bei der Gebührenaufteilung
+- [x] Gebührenaufteilung als eigene Funktion; Kunden-Preispositionen enthalten keine Gebührenzeile
+- [x] Prototyp-Fehler „Umzug" (ReferenceError `moveRouteHTML`) nicht übernommen; jede Abweichung vom Briefing in `docs/PRICING.md`
+- [x] `docs/PRICING.md`: welche Werte Stichproben-Richtwerte sind und aus welcher Quelle
 
 **Akzeptanz:** alle Tests grün, keine Preislogik außerhalb des Moduls; Umzug-Beispiel centgenau inklusive Aufteilung (689,61 € → Gebühr 103,44, netto 86,20, USt. 17,24, Partner 586,17).
 

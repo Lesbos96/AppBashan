@@ -1,4 +1,10 @@
 // Preismodul (S2). Rein, ohne Abhängigkeiten, läuft in Vite und Deno; Importe mit .ts-Endung.
-
-/** Rundung wie cents() im Prototyp (Zeile 34): erst am Ende auf Cent runden. */
-export const cents = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100
+// Beträge sind ganze Cent. Kundenpreise (compute*) kennen keine Gebühr; die Aufteilung kommt nur aus splitFee.
+export * from './assembly.ts'
+export * from './clearance.ts'
+export * from './fee.ts'
+export * from './input.ts'
+export * from './money.ts'
+export * from './rental.ts'
+export * from './result.ts'
+export * from './transport.ts'
