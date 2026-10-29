@@ -11,7 +11,7 @@ Reihenfolge: S2, S3 und S5 hängen nur von S1 ab; S4 nach S3; S6 nach S2–S5; S
 
 ## S1 · Fundament und Architektur (Opus 5.5 · Effort medium)
 - [x] Agent-Dateien und `.claude/settings.json` validiert, je ein Testlauf von `Explore` und `test-runner`
-- [ ] `npm run env:check` bestätigt alle Variablennamen aus `.env.example` in `.env.local` · offen: `.env.local` führt noch `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, Umbenennung in `VITE_…` durch Beks, danach `npm run env:check` und `npm run test:rls`
+- [x] `npm run env:check` bestätigt alle Variablennamen aus `.env.example` in `.env.local`
 - [x] Gerüst: Vite + React + TS strict, React Router, Tailwind, Motion, ESLint, Vitest, Playwright; Pfad-Alias `@pricing` auf `supabase/functions/_shared/pricing/`
 - [x] Skripte: `check`, `build`, `test:e2e`, `shots`, `shots:all`, `db:types`, `db:push`, `env:check`; Secrets nur über dotenv-cli
 - [x] Supabase initialisiert und mit dem Dev-Projekt verlinkt

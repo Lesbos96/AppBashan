@@ -22,7 +22,7 @@ MoveNow/
 ## Einmalig
 
 1. Ordner an einen festen Platz legen, z. B. `C:\Users\gesch\Projekte\MoveNow`.
-2. Ihre `.env.local` hineinlegen. Die Namen müssen denen in `.env.example` entsprechen; die zwei App-Variablen beginnen mit `VITE_`.
+2. Ihre `.env.local` hineinlegen. Die Namen müssen denen in `.env.example` entsprechen; die zwei App-Variablen beginnen mit `NEXT_PUBLIC_`.
 3. Claude-Desktop-App → Code → diesen Ordner öffnen.
 4. MCP-Server, die das Projekt nicht braucht (z. B. REA), für dieses Projekt abschalten: `/mcp` eingeben und den Server dort deaktivieren. Claude Code merkt sich das nur für dieses Projekt.
 

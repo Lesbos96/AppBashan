@@ -95,3 +95,4 @@ Tab-Bar: Start · Miete · Aufträge · Profil. Flow-Zustand je Service im `sess
 18. Freigegebene Angebote ändert der Vermieter ohne erneute Freigabe („Gespeicherte Werte erscheinen direkt im Mietrechner", 18). Offen zur Entscheidung, siehe OPEN_ISSUES.
 19. anon sieht `provider_id` freigegebener Angebote; die UUID führt zu keinem lesbaren Profil.
 20. Policies lesen nie die eigene Tabelle (Postgres 42P17): Zählen über `private.photo_count()`, Fotos in der App erst in `request_photos` eintragen, dann hochladen.
+21. App-Variablen mit Präfix `NEXT_PUBLIC_` (Vite `envPrefix`): passt zur vorhandenen `.env.local`. Nur dieses Präfix landet im Bundle, nie `SUPABASE_*`.

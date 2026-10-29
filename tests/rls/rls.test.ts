@@ -13,8 +13,8 @@ function env(name: string): string {
   return value
 }
 
-const url = env('VITE_SUPABASE_URL')
-const publishableKey = env('VITE_SUPABASE_PUBLISHABLE_KEY')
+const url = env('NEXT_PUBLIC_SUPABASE_URL')
+const publishableKey = env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
 const secretKey = env('SUPABASE_SECRET_KEY')
 
 const client = (key: string): Db =>

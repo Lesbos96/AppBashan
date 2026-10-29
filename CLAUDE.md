@@ -71,7 +71,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 
 ### Daten und Sicherheit
 - RLS auf jeder Tabelle. Kein `using (true)` auf personenbezogenen Daten. Views mit `security_invoker = true`. SECURITY-DEFINER-Funktionen mit festem `search_path`.
-- Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `VITE_`-Präfix, und davon nur URL und Publishable Key.
+- Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `NEXT_PUBLIC_`-Präfix (Vite `envPrefix`), und davon nur URL und Publishable Key.
 - `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über dotenv-cli an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
 - Kunden setzen nur die Status „angefragt" (beim Absenden) und „zurückgezogen". Alle anderen Status setzt in dieser Phase nur admin.
 - Für später (Partner-Portal): Partner sehen vor Annahme ihres Angebots nur PLZ/Bezirk, Umfang und Fotos. Keine Hausnummer, kein Name, keine Kontaktdaten.

@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Nur Variablen mit diesem Präfix landen im Client-Bundle (URL und Publishable Key, nie der Secret-Key).
+  envPrefix: 'NEXT_PUBLIC_',
   resolve: {
     alias: { '@pricing': fileURLToPath(new URL('./supabase/functions/_shared/pricing', import.meta.url)) },
   },

@@ -5,7 +5,7 @@
 Die Schritte stehen auch in `STARTEN.md` im Projektordner.
 
 1. Ordner `MoveNow` an einen festen Platz legen, z. B. `C:\Users\gesch\Projekte\MoveNow`.
-2. Ihre `.env.local` in diesen Ordner legen. Die Namen stehen in `.env.example`; die zwei App-Variablen beginnen mit `VITE_`.
+2. Ihre `.env.local` in diesen Ordner legen. Die Namen stehen in `.env.example`; die zwei App-Variablen beginnen mit `NEXT_PUBLIC_`.
 3. Das Supabase-Projekt haben Sie schon, wenn Ihre `.env.local` Werte enthält. Empfehlung: Region Frankfurt (eu-central-1), neue API-Schlüssel (Publishable und Secret), Legacy-Schlüssel deaktiviert.
 4. GitHub ist optional. Ohne Remote committet Claude Code lokal und bietet am Ende von S1 an, ein privates Repo anzulegen.
 5. Claude Code (Desktop-App): Ordner öffnen. REA und andere MCP-Server, die das Projekt nicht braucht, für dieses Projekt abschalten (siehe `STARTEN.md`).
@@ -30,7 +30,7 @@ Ziel: lauffähiges Fundament und verbindliche Architektur. Noch keine Feature-Sc
 Aufgaben
 1. Harness prüfen: .claude/settings.json und .claude/agents/* validieren (claude plugin validate .claude/agents, falls verfügbar). Starte Explore (Aufgabe: die Funktionen calc, transportCalc, rentCalc, platform und cents im Prototyp mit Zeilennummern finden) und test-runner (Aufgabe: node --version, npm --version, git --version und npx --yes supabase --version ausführen) je einmal im Hintergrund. Sag mir sofort Bescheid, damit ich die Modelle in /tasks kontrolliere, und arbeite ohne zu warten weiter. Fehlt ein Werkzeug, nenn es mir mit dem Installationsschritt für Windows.
 2. Gerüst: Vite + React + TypeScript strict, React Router, Tailwind CSS, Motion, ESLint, Vitest, Playwright (Chromium; shots mit 390×844 und deviceScaleFactor 2, Full Page, Light und Dark; shots:all zusätzlich 430×932, 768×1024, 1280×800). Pfad-Alias @pricing auf supabase/functions/_shared/pricing/. Skripte check, build, test:e2e, shots, shots:all, db:types, db:push, env:check. Supabase-CLI über npx. Alles, was Secrets braucht, läuft über dotenv-cli mit .env.local, damit du die Datei nie liest. .env.example und .gitignore liegen schon im Ordner: nur ergänzen, nichts entfernen. git init, falls noch kein Repo besteht. Ist kein Remote gesetzt, committe lokal und frag erst im Abschlussbericht danach.
-3. Führe npm run env:check aus. Fehlt ein Name aus .env.example, sag mir genau welcher und warte. Findet env:check stattdessen NEXT_PUBLIC_SUPABASE_URL oder NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, sag mir, dass ich sie in VITE_SUPABASE_URL bzw. VITE_SUPABASE_PUBLISHABLE_KEY umbenennen soll.
+3. Führe npm run env:check aus. Fehlt ein Name aus .env.example, sag mir genau welcher und warte.
 4. Supabase: supabase init, mit dem Dev-Projekt verlinken (SUPABASE_PROJECT_REF, Passwort und Token kommen per dotenv-cli aus .env.local).
 5. docs/ARCHITECTURE.md, höchstens zwei Seiten:
    - Rollen in dieser Phase: customer, rental_provider, admin. partner ist für später vorgesehen (siehe „Später" in der ROADMAP) und wird nur im Enum und als Planung beschrieben.
