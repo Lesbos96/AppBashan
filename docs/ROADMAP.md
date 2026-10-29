@@ -54,11 +54,11 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** Galerie ohne „hoch"-Findings gegen `00_Fundament.png`, Light und Dark.
 
 ## S4 · App-Shell und ruhige Screens
-- [ ] App-Shell mit Tab-Bar (Start · Miete · Aufträge · Profil), Seitenübergänge, Desktop-Spalte max. ca. 520 px; Routen wie in `docs/ARCHITECTURE.md` (App-Struktur), neue Routen in `tests/shots/shots.spec.ts` eingetragen
-- [ ] Hero-Mesh (`041`/`052`, Korn und Verlauf) und Onboarding-Hintergründe (`059`/`060`) aus `tmp/svg/` mitnehmen; sie gehören nicht zu den S3a-Illustrationen
-- [ ] Start Light/Dark (`01`, `02`), Onboarding 1–3 (`03`, Seiten 2 und 3 im selben Stil), Profil (`16`), „Wie rechnet MoveNow?" als Info-Sheet mit Werten, Labels und `sources` aus `price_config` (aktuelle `price_version`), ohne Plattformgebühr (`17`), Aufträge leer (`15`)
-- [ ] Datenschutz, Impressum und AGB als markierte Platzhalter
-- [ ] Lade-, Fehler- und Offline-Zustand
+- [x] App-Shell mit Tab-Bar (Start · Miete · Aufträge · Profil), Seitenübergänge, Desktop-Spalte max. ca. 520 px; Routen wie in `docs/ARCHITECTURE.md` (App-Struktur), neue Routen in `tests/shots/shots.spec.ts` eingetragen
+- [x] Hero-Mesh (`041`/`052`, Korn und Verlauf) und Onboarding-Hintergründe (`059`/`060`) aus `tmp/svg/` mitnehmen; sie gehören nicht zu den S3a-Illustrationen
+- [x] Start Light/Dark (`01`, `02`), Onboarding 1–3 (`03`, Seiten 2 und 3 im selben Stil), Profil (`16`), „Wie rechnet MoveNow?" als Info-Sheet mit Werten, Labels und `sources` aus `price_config` (aktuelle `price_version`), ohne Plattformgebühr (`17`), Aufträge leer (`15`)
+- [x] Datenschutz, Impressum und AGB als markierte Platzhalter
+- [x] Lade-, Fehler- und Offline-Zustand
 
 **Akzeptanz:** jeder Screen ohne „hoch"-Findings gegen seine Referenz. Dazu eine Migration mit dem DB-Check `price_config.value >= 0` und ein Seed-Test `clearance.rate_low ≤ clearance.rate ≤ clearance.rate_high` (ersetzt das `it.todo` in `tests/unit/pricing.test.ts`).
 
@@ -88,7 +88,7 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 - [ ] Supabase Auth: E-Mail-Magic-Link, Code in derselben Mail als Ausweichweg, Konto erst beim Absenden, „Mit Apple anmelden" vorbereitet; Auth-Modul in der App
 - [ ] Integrationstests (sequenziell): manipulierter Client-Preis wird ignoriert; `fee_splits` stimmt centgenau mit der Gebührenfunktion überein und ist für den Kunden unlesbar; Bearbeiten außerhalb von „angefragt" wird abgelehnt. Fremde Anfragen, Fotos und Status sind bereits durch `tests/rls/` abgedeckt und bleiben grün.
 
-**Akzeptanz:** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`).
+**Akzeptanz:** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`). `quote` liest die Tarifversion über die View `current_price_version`, bricht bei fehlenden Schlüsseln ab und übernimmt die `rental.reference`-Zeile (`unit` `ref`) nicht in den Snapshot (Test).
 
 ## S8b · Termin, Anfrage, Aufträge
 - [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`

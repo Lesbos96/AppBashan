@@ -8,12 +8,18 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S1 · Seed vor dem Launch:** `db:push` spielt `supabase/seed.sql` mit ein (`--include-seed`). Ändert sich der Seed, überschreibt er Tarife und Gebührensatz und legt die Demo-Angebote wieder an. Für das Produktivprojekt den Seed nicht pushen bzw. Demo-Angebote nur in Dev.
 - **S1 · Foto-Limit nicht atomar:** Die Grenze von 8 Fotos prüft je eine Policy per `count(*)`. Parallele Uploads können sie knapp überschreiten. Akzeptiert; ein Löschjob räumt nach den Fristen auf.
 
-- **S2 · Tarif-Constraints (Abnahmekriterium S4):** `price_config.value >= 0` als DB-Check und ein Seed-Test `clearance.rate_low ≤ rate ≤ rate_high` fehlen; das Modul wirft bei Verletzung. Eingetragen in der ROADMAP bei S4, `it.todo` in `tests/unit/pricing.test.ts`.
 - **S2b · `quote` speichert nur geprüfte Felder (Abnahmekriterium S8a):** `parse*Input` verwirft unbekannte Schlüssel; `quote` darf nur diese und die Snapshot-Felder speichern. Eingetragen in der ROADMAP bei S8a, `it.todo` in `tests/unit/pricing.test.ts`.
 
+- **S4 · Seed über `db:push`:** Der Push mit `--include-seed` hat den geänderten Seed nicht eingespielt (Dev-Projekt zeigte noch die alten Quellen-Labels). Eingespielt per `supabase db query --linked -f supabase/seed.sql`. Vor dem Launch klären, ob der Seed-Push zuverlässig ist, sonst Tarife per Migration einer neuen `price_version` anlegen.
+- **S4 · Offline-Fehlerzustand verzögert:** `postgrest-js` wiederholt Netzwerkfehler und 5xx mit Wartezeit, der Fehlerzustand des Info-Sheets erscheint ohne Verbindung erst nach einigen Sekunden. Der Offline-Hinweis oben erscheint sofort.
+- **S4 · Bundle über 500 kB:** Der Build meldet einen Chunk über 500 kB (Warnung). Aufteilen per Lazy-Routes vor S10 (Lighthouse).
+
 ## UI
+- **S4 · Profil gegenüber `16`:** „Mitteilungen" fehlt (keine Benachrichtigungen in dieser Phase), „Mit E-Mail-Link anmelden" ist deaktiviert (kommt mit S8b), Darstellung (Automatisch) und Region (Wien, AT) sind Anzeigen ohne Auswahl, ebenso die Region-Pille auf Start (nur Wien).
+- **S4 · Farben im Code:** `#2e918a` (Kachel Region) und `#4a5f63` (Kacheln Datenschutz, Impressum) stehen direkt in `Profil.tsx`; bei Gelegenheit als Tokens in `theme.css`.
+- **S4 · Hero bei 768 px:** Die Startmarke der Route im Hero liegt knapp am Text („Weniger Aufwand."), weil die Grafik mit `slice` skaliert. Bei Bedarf Route nach rechts rücken.
+- **S4 · Tarif-Aktivierung:** Neue Tarife als neue `price_version` mit künftigem `effective_on` anlegen, erst die Zeilen eintragen; `current_price_version` schaltet am Datum (Wiener Zeit) um.
 - **S3b · Sheet bei Größenänderung:** `Sheet` liest `window.innerHeight` nur beim Öffnen; Drehen oder Fenstergröße bei offenem Sheet lässt Höhe und Detents falsch. Bei Bedarf Resize-Listener oder `dvh`.
-- **S3b · Large Title und Safe Area:** Die Schwelle, ab der der kleine Titel in der `NavBar` erscheint, rechnet `--safe-top` nicht ein (Notch: Titel zu spät). Beim Einbau in die App-Shell (S4) prüfen.
 - **S3b · Segmented Control 36 px:** wie die Referenz, unter 44 px Touch-Ziel. Vor S6 entscheiden, ob die Labels auf 44 px Klickfläche gestreckt werden.
 - **S3b · Dark-Varianten abgeleitet:** Primär-Button-Verlauf und Segment-Thumb im Dark Mode ohne Referenz nach dem Dark-Muster. Schatten des Thumbs und Fortschrittsspur (`bg-fill` statt 10 %) nicht eigens als Token.
 - **S3a · Icon-Namen ungeprüft:** `Icon` und `Illustration` nehmen Dateinamen als String; ein falscher Name wirft zur Laufzeit statt beim Typecheck. Bei Bedarf Namen als Union generieren.
@@ -21,4 +27,4 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 ## Prototyp
 - **S1 · `moveRouteHTML` fehlt:** Ein Klick auf „Umzug" im Prototyp wirft einen ReferenceError, weil `moveRouteHTML` in Zeile 51 aufgerufen, aber nirgends definiert wird. Die Preislogik von Umzug (`transportCalc`, Zeile 100) ist nicht betroffen. Die App übernimmt den Fehler nicht (S2, S6).
 - **S1 · Google Fonts in der Referenz:** `docs/reference/design/html/17_Wie_rechnet_MoveNow.html` lädt Inter von `fonts.googleapis.com`. Die App übernimmt das nicht (DSGVO); Erledigt in S3a: Inter wird über `@fontsource-variable/inter` selbst gehostet.
-- **S1 · Quelle für 46,60 €/h fehlt:** Der Montage-Laufmeterpreis 47,87 € ist das Mittel aus 42 / 46,60 / 55 €/h. Für 42 € (DasUmzugsteam) und 55 € (Kraftpack) nennt der Prototyp Quellen, für 46,60 € nicht. Ebenso ohne Einzelquelle: Entrümpelungs-Mindestpreis 180 €, Etagenzuschlag 25 €, Montage mindestens 2 lfm. Im Seed als „Prototyp v13, ohne Einzelquelle" markiert.
+- **S1 · Quelle für 46,60 €/h fehlt:** Der Montage-Laufmeterpreis 47,87 € ist das Mittel aus 42 / 46,60 / 55 €/h. Für 42 € (DasUmzugsteam) und 55 € (Kraftpack) nennt der Prototyp Quellen, für 46,60 € nicht. Ebenso ohne Einzelquelle: Entrümpelungs-Mindestpreis 180 €, Etagenzuschlag 25 €, Montage mindestens 2 lfm. Im Seed als „Ohne Einzelquelle" markiert.

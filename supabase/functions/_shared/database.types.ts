@@ -72,6 +72,13 @@ export type Database = {
             foreignKeyName: "fee_splits_price_version_fkey"
             columns: ["price_version"]
             isOneToOne: false
+            referencedRelation: "current_price_version"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "fee_splits_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
             referencedRelation: "price_versions"
             referencedColumns: ["version"]
           },
@@ -168,6 +175,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "price_config_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "current_price_version"
+            referencedColumns: ["version"]
+          },
           {
             foreignKeyName: "price_config_version_fkey"
             columns: ["version"]
@@ -294,6 +308,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rental_offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_bookings_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "current_price_version"
+            referencedColumns: ["version"]
           },
           {
             foreignKeyName: "rental_bookings_price_version_fkey"
@@ -492,6 +513,13 @@ export type Database = {
             foreignKeyName: "service_requests_price_version_fkey"
             columns: ["price_version"]
             isOneToOne: false
+            referencedRelation: "current_price_version"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "service_requests_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
             referencedRelation: "price_versions"
             referencedColumns: ["version"]
           },
@@ -499,7 +527,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      current_price_version: {
+        Row: {
+          effective_on: string | null
+          version: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       become_rental_provider: {

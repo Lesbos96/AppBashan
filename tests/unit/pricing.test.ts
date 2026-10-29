@@ -216,8 +216,7 @@ describe('Sommerzeit (Wanduhrzeit, keine Zeitzone)', () => {
   })
 })
 
-// Abnahmekriterien für spätere Sessions, damit sie nicht verloren gehen (siehe docs/ROADMAP.md, S4 und S8a)
-describe('Offen für S4 und S8a', () => {
+// Abnahmekriterium für S8a, damit es nicht verloren geht (siehe docs/ROADMAP.md)
+describe('Offen für S8a', () => {
   it.todo('S8a: quote speichert neben den Snapshot-Feldern nur Felder, die parse*Input geprüft hat')
-  it.todo('S4: price_config.value >= 0 als DB-Check und Seed-Test clearance.rate_low <= clearance.rate <= clearance.rate_high')
 })

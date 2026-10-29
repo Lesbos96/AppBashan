@@ -3,7 +3,7 @@
 -- Geldwerte in Cent. Das Preismodul rechnet value / 100 in Euro, wie der Prototyp.
 
 insert into public.price_versions (version, effective_on, note)
-values (1, '2026-10-28', 'Prototyp v13, Recherche 28.10.2026')
+values (1, '2026-10-28', 'Recherche 28.10.2026')
 on conflict (version) do update set effective_on = excluded.effective_on, note = excluded.note;
 
 insert into public.price_config (version, key, value, unit, label, sources, researched_at)
@@ -46,20 +46,20 @@ values
   (1, 'clearance.rate_high', 10000, 'cent/m3', 'Entrümpelung, Spanne oben je m³',
     '[{"label": "Kraftpack · 100 €/m³", "url": "https://kraftpack.at/preisliste"}]', '2026-10-28'),
   (1, 'clearance.minimum', 18000, 'cent', 'Entrümpelung, Mindestpreis',
-    '[{"label": "Prototyp v13, ohne Einzelquelle"}]', '2026-10-28'),
+    '[{"label": "Ohne Einzelquelle"}]', '2026-10-28'),
   (1, 'clearance.floor_surcharge', 2500, 'cent/Etage', 'Ohne Lift je Etage ab dem 2. Stock',
-    '[{"label": "Prototyp v13, ohne Einzelquelle"}]', '2026-10-28'),
+    '[{"label": "Ohne Einzelquelle"}]', '2026-10-28'),
   (1, 'clearance.volume_factor.light', 0.12, 'm3/m2', 'Fläche zu Volumen, wenig gefüllt (Planannahme)',
-    '[{"label": "Planannahme Prototyp v13, keine Messung"}]', '2026-10-28'),
+    '[{"label": "Planannahme, keine Messung"}]', '2026-10-28'),
   (1, 'clearance.volume_factor.normal', 0.25, 'm3/m2', 'Fläche zu Volumen, normal gefüllt (Planannahme)',
-    '[{"label": "Planannahme Prototyp v13, keine Messung"}]', '2026-10-28'),
+    '[{"label": "Planannahme, keine Messung"}]', '2026-10-28'),
   (1, 'clearance.volume_factor.full', 0.45, 'm3/m2', 'Fläche zu Volumen, voll (Planannahme)',
-    '[{"label": "Planannahme Prototyp v13, keine Messung"}]', '2026-10-28'),
+    '[{"label": "Planannahme, keine Messung"}]', '2026-10-28'),
   (1, 'assembly.rate_per_lfm', 4787, 'cent/lfm', 'Montage Standardmöbel je Laufmeter · (42 + 46,60 + 55) / 3, 1 h je lfm',
     '[{"label": "DasUmzugsteam · Montage 42 €/h", "url": "https://www.dasumzugsteam.at/wp-content/uploads/2026/02/DasUmzugsteam-Preisliste-2026.pdf"},
       {"label": "Kraftpack · Montage 55 €/h", "url": "https://kraftpack.at/preisliste"}]', '2026-10-28'),
   (1, 'assembly.min_lfm', 2, 'lfm', 'Montage Standardmöbel, mindestens',
-    '[{"label": "Prototyp v13, ohne Einzelquelle"}]', '2026-10-28'),
+    '[{"label": "Ohne Einzelquelle"}]', '2026-10-28'),
   (1, 'kitchen.base', 7200, 'cent', 'Küche, Grundbetrag (ohne Anschlüsse)',
     '[{"label": "DasUmzugsteam · Küchen-Laufmeter", "url": "https://www.dasumzugsteam.at/wp-content/uploads/2026/02/DasUmzugsteam-Preisliste-2026.pdf"}]', '2026-10-28'),
   (1, 'kitchen.lower_per_lfm', 14400, 'cent/lfm', 'Küche, Unterschrank je Laufmeter',
@@ -67,7 +67,13 @@ values
   (1, 'kitchen.upper_per_lfm', 4800, 'cent/lfm', 'Küche, Oberschrank je Laufmeter',
     '[{"label": "DasUmzugsteam · Küchen-Laufmeter", "url": "https://www.dasumzugsteam.at/wp-content/uploads/2026/02/DasUmzugsteam-Preisliste-2026.pdf"}]', '2026-10-28'),
   (1, 'kitchen.tall_per_lfm', 20400, 'cent/lfm', 'Küche, Hochschrank je Laufmeter',
-    '[{"label": "DasUmzugsteam · Küchen-Laufmeter", "url": "https://www.dasumzugsteam.at/wp-content/uploads/2026/02/DasUmzugsteam-Preisliste-2026.pdf"}]', '2026-10-28')
+    '[{"label": "DasUmzugsteam · Küchen-Laufmeter", "url": "https://www.dasumzugsteam.at/wp-content/uploads/2026/02/DasUmzugsteam-Preisliste-2026.pdf"}]', '2026-10-28'),
+  -- Kein Tarif: Quellen zur Transportermiete (Tarife stehen je Fahrzeug in rental_offers), für das Info-Sheet.
+  (1, 'rental.reference', 0, 'ref', 'Transportermiete, Tarif des Vermieters',
+    '[{"label": "Transportervermietung Wien", "url": "https://transportervermietung-wien.at/preise.html"},
+      {"label": "FunCar · Klassenpreise", "url": "https://www.funcar.at/transporter-mieten/"},
+      {"label": "MietVan · Schutzpakete", "url": "https://mietvan.at/preisliste-transporter/"},
+      {"label": "SIXT · Preisbestandteile als Referenz", "url": "https://www.sixt.at/help-center/sections/preise-gebuhren-und-schutzpakete/"}]', '2026-10-28')
 on conflict (version, key) do update set
   value = excluded.value, unit = excluded.unit, label = excluded.label,
   sources = excluded.sources, researched_at = excluded.researched_at;

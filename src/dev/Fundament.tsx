@@ -109,7 +109,7 @@ export function Fundament() {
             </div>
           ))}
           <div className="flex items-baseline justify-between gap-3 border-t border-separator pt-3">
-            <span className="whitespace-nowrap text-price-hero">{formatEuro(68961)}</span>
+            <span className="whitespace-nowrap text-price-hero tabular-nums">{formatEuro(68961)}</span>
             <span className="text-footnote text-text-secondary">tabular-nums</span>
           </div>
         </div>

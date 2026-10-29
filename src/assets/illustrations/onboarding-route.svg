@@ -1,0 +1,12 @@
+<svg aria-hidden="true" viewBox="0 0 390 490" fill="none" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="mnRouteO" x1="0" y1="420" x2="336" y2="128" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8FD6CF" stop-opacity="0"></stop><stop offset=".35" stop-color="#8FD6CF" stop-opacity=".55"></stop><stop offset="1" stop-color="#8FD6CF"></stop></linearGradient>
+      </defs>
+      <circle cx="336" cy="128" r="58" stroke="#8FD6CF" stroke-opacity=".08"></circle>
+      <circle cx="336" cy="128" r="36" stroke="#8FD6CF" stroke-opacity=".16"></circle>
+      <circle class="mn-pulse" cx="336" cy="128" r="18" stroke="#8FD6CF" stroke-opacity=".7"></circle>
+      <path d="M-10 420C60 404 92 366 150 360S286 344 304 262 330 156 336 128" stroke="#8FD6CF" stroke-opacity=".12" stroke-width="7" stroke-linecap="round"></path>
+      <path class="mn-route-long" d="M-10 420C60 404 92 366 150 360S286 344 304 262 330 156 336 128" stroke="url(#mnRouteO)" stroke-width="2" stroke-linecap="round"></path>
+      <circle cx="336" cy="128" r="8" fill="#8FD6CF"></circle>
+      <circle cx="336" cy="128" r="3" fill="#04252A"></circle>
+    </svg>

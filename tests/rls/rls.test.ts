@@ -62,6 +62,8 @@ let photoPathB: string
 let approvedOffer: string
 const extraPhotos: string[] = []
 const testKey = `rls.test.${run}`
+// Künftige Testversion: gilt nie als aktuell, die gültige Version 1 bleibt unberührt.
+const testVersion = 9999
 
 const requestRow = (customerId: string) => ({
   customer_id: customerId,
@@ -91,6 +93,11 @@ const bookingStatus = async (id: string) =>
   must(await service.from('rental_bookings').select('status').eq('id', id).single()).status
 
 beforeAll(async () => {
+  // Reste eines abgebrochenen Laufs entfernen, dann die künftige Testversion anlegen.
+  await service.from('price_config').delete().eq('version', testVersion)
+  await service.from('price_config').delete().like('key', 'rls.test.%')
+  await service.from('price_versions').delete().eq('version', testVersion)
+  must(await service.from('price_versions').insert({ version: testVersion, effective_on: '2999-01-01', note: 'RLS-Test' }).select())
   a = await makeUser('kunde-a')
   b = await makeUser('kunde-b')
   provider = await makeUser('vermieter')
@@ -170,7 +177,8 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await service.from('price_config').delete().eq('version', 1).eq('key', testKey)
+  await service.from('price_config').delete().eq('version', testVersion)
+  await service.from('price_versions').delete().eq('version', testVersion)
   if (photoPathB) await service.storage.from('request-photos').remove([photoPathB, ...extraPhotos])
   // Kunden zuerst (Anfragen und Mietanfragen kaskadieren), dann Vermieter (Angebote kaskadieren).
   for (const id of created) {
@@ -390,8 +398,8 @@ describe('Gebühren', () => {
 
 describe('price_config', () => {
   // Eigener Testschlüssel, damit echte Tarife im Dev-Projekt nie verändert werden.
-  const row = () => ({ version: 1, key: testKey, value: 100, unit: 'cent', label: 'RLS-Test' })
-  const stored = async () => must(await service.from('price_config').select('value').eq('version', 1).eq('key', testKey))
+  const row = () => ({ version: testVersion, key: testKey, value: 100, unit: 'cent', label: 'RLS-Test' })
+  const stored = async () => must(await service.from('price_config').select('value').eq('version', testVersion).eq('key', testKey))
 
   it('Kunde, Vermieter und anon legen nichts an', async () => {
     for (const db of [a.db, provider.db, anon]) {
@@ -403,15 +411,54 @@ describe('price_config', () => {
   it('nur admin legt an, ändert und löscht', async () => {
     must(await admin.db.from('price_config').insert(row()).select())
     for (const db of [a.db, provider.db]) {
-      expect((await db.from('price_config').update({ value: 1 }).eq('version', 1).eq('key', testKey).select()).data ?? []).toEqual([])
-      expect((await db.from('price_config').delete().eq('version', 1).eq('key', testKey).select()).data ?? []).toEqual([])
+      expect((await db.from('price_config').update({ value: 1 }).eq('version', testVersion).eq('key', testKey).select()).data ?? []).toEqual([])
+      expect((await db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select()).data ?? []).toEqual([])
     }
-    expect((await anon.from('price_config').update({ value: 1 }).eq('version', 1).eq('key', testKey)).error).not.toBeNull()
+    expect((await anon.from('price_config').update({ value: 1 }).eq('version', testVersion).eq('key', testKey)).error).not.toBeNull()
     expect(await stored()).toEqual([{ value: 100 }])
-    expect(must(await admin.db.from('price_config').update({ value: 101 }).eq('version', 1).eq('key', testKey).select('value'))).toEqual([
+    expect(must(await admin.db.from('price_config').update({ value: 101 }).eq('version', testVersion).eq('key', testKey).select('value'))).toEqual([
       { value: 101 },
     ])
-    expect(must(await admin.db.from('price_config').delete().eq('version', 1).eq('key', testKey).select())).toHaveLength(1)
+    expect(must(await admin.db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())).toHaveLength(1)
+  })
+
+  it('DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt', async () => {
+    expect((await admin.db.from('price_config').insert({ ...row(), value: -1 })).error?.code).toBe('23514')
+    must(await admin.db.from('price_config').insert({ ...row(), value: 0 }).select())
+    expect((await admin.db.from('price_config').update({ value: -1 }).eq('version', testVersion).eq('key', testKey)).error?.code).toBe('23514')
+    expect(await stored()).toEqual([{ value: 0 }])
+    must(await admin.db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())
+  })
+
+  it('Seed: Spanne rate_low ≤ rate ≤ rate_high in der gültigen Version', async () => {
+    const { version } = must(await anon.from('current_price_version').select('version').single())
+    const rows = must(await anon.from('price_config').select('key, value').eq('version', version!).like('key', 'clearance.rate%'))
+    const value = (key: string) => rows.find((r) => r.key === key)?.value
+    const [low, rate, high] = [value('clearance.rate_low'), value('clearance.rate'), value('clearance.rate_high')]
+    expect([low, rate, high].every((v) => typeof v === 'number')).toBe(true)
+    expect(low).toBeLessThanOrEqual(rate!)
+    expect(rate).toBeLessThanOrEqual(high!)
+  })
+
+  it('Seed: öffentliche Texte ohne Prototyp-Hinweis', async () => {
+    const config = must(await anon.from('price_config').select('label, sources').eq('version', 1))
+    const versions = must(await anon.from('price_versions').select('note'))
+    expect(JSON.stringify([config, versions])).not.toMatch(/Prototyp/i)
+  })
+})
+
+describe('current_price_version', () => {
+  it('liefert für anon und Kunden die höchste bereits gültige Version, keine künftige', async () => {
+    const future = must(await anon.from('price_versions').select('version').eq('version', testVersion))
+    expect(future).toHaveLength(1)
+    for (const db of [anon, a.db]) {
+      expect(must(await db.from('current_price_version').select('version')).map((r) => r.version)).toEqual([1])
+    }
+  })
+
+  it('macht platform_settings und fee_splits nicht lesbar', async () => {
+    expect((await anon.from('platform_settings').select('key')).data ?? []).toEqual([])
+    expect((await anon.from('fee_splits').select('id')).data ?? []).toEqual([])
   })
 })
 

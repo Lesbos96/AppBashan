@@ -48,18 +48,23 @@ export function ActionBar({ children }: { children: ReactNode }) {
  */
 export function NavBar({ title, back, trailing }: { title: string; back?: { to: string; label: string }; trailing?: ReactNode }) {
   const marker = useRef<HTMLDivElement>(null)
+  const bar = useRef<HTMLDivElement>(null)
   const [collapsed, setCollapsed] = useState(false)
   useEffect(() => {
     const el = marker.current
     if (!el) return
-    const observer = new IntersectionObserver(([entry]) => entry && setCollapsed(!entry.isIntersecting && entry.boundingClientRect.top < 44), { rootMargin: '-44px 0px 0px 0px' })
+    // Die Leiste misst 44 px plus Safe Area oben (Notch); ab dort verschwindet der große Titel darunter.
+    const height = bar.current?.offsetHeight ?? 44
+    const observer = new IntersectionObserver(([entry]) => entry && setCollapsed(!entry.isIntersecting && entry.boundingClientRect.top < height), {
+      rootMargin: `-${height}px 0px 0px 0px`,
+    })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
   return (
     <header>
-      <div className={`${column} top-0 z-10 pt-safe transition-colors ${collapsed ? 'glass border-b-[0.5px] border-separator' : ''}`}>
+      <div ref={bar} className={`${column} top-0 z-10 pt-safe transition-colors ${collapsed ? 'glass border-b-[0.5px] border-separator' : ''}`}>
         <div className="relative flex h-11 items-center justify-between px-2 text-accent">
           {back ? (
             <Link to={back.to} className="press flex h-11 min-w-11 items-center gap-0.5 text-body">

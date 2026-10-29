@@ -14,8 +14,8 @@ export function ServiceCard({ to, title, description, illustration }: { to: stri
         {illustration}
       </span>
       <span className="flex flex-col gap-0.5 px-2.5 pt-2.5 pb-2">
-        <span className="text-headline">{title}</span>
-        <span className="text-subhead text-text-secondary">{description}</span>
+        <span className="text-[15px]/5 font-semibold tracking-[-0.2px]">{title}</span>
+        <span className="text-[12.5px]/4 text-text-secondary">{description}</span>
       </span>
     </Link>
   )
@@ -73,7 +73,7 @@ export function ListRow({
   return (
     <li className={separator(icon ? 'not-first:before:left-[58px]' : 'not-first:before:left-4')}>
       {to ? (
-        <Link to={to} className={`press ${rowBase} text-text`}>
+        <Link to={to} className={`press ${rowBase} ${detail ? 'py-2.5' : ''} text-text`}>
           {content}
         </Link>
       ) : (
@@ -103,7 +103,7 @@ export function AmountRow({ label, cents, strong }: { label: string; cents: numb
   return (
     <li className={`${separator('not-first:before:left-4')} flex items-center justify-between gap-3 px-4 py-2 ${strong ? 'min-h-[52px]' : 'min-h-14'}`}>
       <span className="min-w-0 text-body">{label}</span>
-      <span className={`shrink-0 whitespace-nowrap text-body ${strong ? 'font-bold' : ''}`}>{formatEuro(cents)}</span>
+      <span className={`shrink-0 whitespace-nowrap text-body tabular-nums ${strong ? 'font-bold' : ''}`}>{formatEuro(cents)}</span>
     </li>
   )
 }

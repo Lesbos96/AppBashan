@@ -12,7 +12,7 @@ Alle Beträge Integer-Cent. Enums: `service_type` (transport, move, clearance, a
 |---|---|
 | `profiles` | `id` = `auth.users.id`, `role`, `display_name`, `phone` |
 | `price_versions` | `version` PK, `effective_on` (= „Tarifstand" in 14) |
-| `price_config` | PK (`version`, `key`), `value` numeric, `unit` (Geld als `cent…`), `label`, `sources` jsonb `[{label, url}]`, `researched_at`. Nur Kunden-Tarife |
+| `price_config` | PK (`version`, `key`), `value` numeric, `unit` (Geld als `cent…`), `label`, `sources` jsonb `[{label, url}]`, `researched_at`. Nur Kunden-Tarife; Zeilen mit `unit` `ref` sind Quellenverweise ohne Tarif (Info-Sheet), `@pricing` und `quote` ignorieren sie |
 | `platform_settings` | PK (`key`, `version`), `value`: `fee_rate` 0,15, `fee_vat_rate` 0,20 |
 | `service_requests` | `customer_id`, `service`, `status`, `inputs` jsonb, `price_snapshot` jsonb (nur Kunden-Positionen, bei Angebotspflicht die Gründe), `price_version` FK, `estimate_cents` (null ⇔ `needs_quote`), Adressen, PLZ, `geography`-Punkte, `route` jsonb, `region`, `preferred_date`, `time_window` |
 | `request_photos` | `request_id` FK, `storage_path` unique (`{user}/{request}/{datei}`) |
@@ -41,6 +41,7 @@ S/I/U/D = select/insert/update/delete. „Eigene" = Eigentum per `auth.uid()`. S
 |---|---|---|---|---|
 | profiles | – | S eigene; U (display_name, phone) eigene | – | S alle |
 | price_versions, price_config | S | S | – | S I U D |
+| current_price_version (View, `security_invoker`) | S | S | – | S |
 | platform_settings | – | – | S | S I U D |
 | service_requests | – | S eigene; U (status) nur → withdrawn | – | S, U (status) |
 | request_photos + Storage | – | S eigene; I bei offener eigener Anfrage, eigener Pfad, ≤ 8; Upload nur in vorher eingetragene Pfade; D bei offener Anfrage | – | S |
@@ -69,9 +70,9 @@ Tab-Bar: Start · Miete · Aufträge · Profil. Flow-Zustand je Service im `sess
 | `/:service/termin`, `/:service/zusammenfassung`, `/:service/gesendet` | 10, 11, 12 | nein |
 | `/miete`, `/miete/gesendet` | 09, 12 | ja / nein |
 | `/auftraege`, `/auftraege/:art/:id` | 13 bzw. 15 leer, 14 Detail | ja |
-| `/profil`, `/preise`, `/profil/vermieter` | 16, 17 Info-Sheet, 18 Vermieter | ja / Sheet / nein |
+| `/profil`, `/profil/preise`, `/profil/vermieter` | 16, 17 Info-Sheet (liegt über dem Profil), 18 Vermieter | ja / ja / nein |
 | `/anmelden` | Magic-Link-Rückkehr und Code-Eingabe (S8b) | nein |
-| `/datenschutz`, `/impressum` | markierte Platzhalter | ja |
+| `/profil/datenschutz`, `/profil/impressum` | markierte Platzhalter (Impressum und AGB zusammen) | ja |
 | `/dev/fundament` | Komponenten-Galerie, nur Dev-Build (S3a) | nein |
 
 ## Entscheidungen
@@ -90,7 +91,7 @@ Tab-Bar: Start · Miete · Aufträge · Profil. Flow-Zustand je Service im `sess
 13. PostGIS im Schema `extensions`: `spatial_ref_sys` liegt außerhalb der Data API.
 14. RLS-Tests gegen das Dev-Projekt statt lokalem Docker: dasselbe Schema wie die App, keine weitere Infrastruktur.
 15. TypeScript 6.0 statt 7: typescript-eslint unterstützt 7 noch nicht.
-16. Tarifversionen gelten als unveränderlich: admin ändert Tarife über eine neue `price_version`, nicht in bestehenden Versionen (Konvention bis zur Admin-Oberfläche).
+16. Tarifversionen gelten als unveränderlich: admin ändert Tarife über eine neue `price_version`, nicht in bestehenden Versionen (Konvention bis zur Admin-Oberfläche). „Aktuell" ist die höchste Version mit `effective_on` ≤ heute (Wiener Datum), gelesen über die View `current_price_version` (`security_invoker`, Migration 0004); App und `quote` lesen die gültige Version nur über sie. Neue Versionen mit künftigem `effective_on` anlegen, erst die Zeilen eintragen, dann gilt sie ab dem Datum. `price_config.value >= 0` ist ein DB-Check.
 17. Wer über „Für Vermieter" Vermieter wird, liest den Gebührensatz; er steht ohnehin in seiner Abrechnung (18).
 18. Freigegebene Angebote ändert der Vermieter ohne erneute Freigabe („Gespeicherte Werte erscheinen direkt im Mietrechner", 18). Offen zur Entscheidung, siehe OPEN_ISSUES.
 19. anon sieht `provider_id` freigegebener Angebote; die UUID führt zu keinem lesbaren Profil.

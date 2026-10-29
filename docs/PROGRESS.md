@@ -3,6 +3,13 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-29 · S4 · App-Shell und ruhige Screens · abgeschlossen
+- Migration 0004 (`price_config.value >= 0`, View `current_price_version`: höchste Version mit `effective_on` ≤ heute, Wiener Datum) und 0005 (Rechte der View); echte Tests statt `it.todo` (DB-Check, Seed-Spanne, Version 9999 mit `effective_on` 2999 gilt nie als aktuell); Seed-Labels ohne „Prototyp", Zeile `rental.reference` für die Quellen der Transportermiete
+- App-Shell (`src/app/`): Tab-Bar, Seitenübergänge im iOS-Stil, Spalte 520 px, Offline-Hinweis; Screens Start, Onboarding (3 Seiten, einmalig), Aufträge leer, Profil, Info-Sheet „Wie rechnet MoveNow?" (Werte, Labels, Quellen aus `price_config`, Fehlerzustand statt Ersatzwerte), Datenschutz und Impressum & AGB als markierte Platzhalter, Fehlerseite; Flows (Transport, Umzug, Entrümpelung, Montage, Miete, Vermieter) zeigen bis S6–S9 „noch nicht verfügbar"
+- Entscheidungen (advisor): aktuelle Version nur über die View; Info-Sheet unter `/profil/preise` (Profil-Tab bleibt aktiv). Abweichungen von `16` in OPEN_ISSUES. `Sheet` hat jetzt sichtbaren Titel und Schließen-Knopf, `NavBar` rechnet die Safe Area ein
+- Abnahme: advisor (Schema, RLS, Tests; Auflagen umgesetzt, Migration 0005), reviewer über alle vier Größen (Route im Onboarding war unterbrochen, Größen im Info-Sheet, Dark-Hero; behoben). Offen für S5/S8a: `quote` bricht bei fehlenden Tarifschlüsseln ab und ignoriert `unit` `ref`
+- Reviewer-Runde 1: Mesh wurde wegen ungültigem `background-image` nicht gemalt, `tabular-nums` im Body spreizte Bindestriche, Onboarding-Karte lag unter dem Hero; alles behoben
+
 ## 2026-10-29 · S3b · Basiskomponenten · abgeschlossen
 - `src/theme.css`: Gradienten (Primär-Button, Mietkarte, Hero-Mesh, App-Icon; Dark für Button und Mietkarte), Layout- und Motion-Werte als CSS-Variablen; `MotionConfig reducedMotion="user"` in `main.tsx`
 - `src/components/`: `Button`, `Controls` (Segmented als native Radiogruppe, Stepper, Toggle, Status-Chip), `Surfaces` (Karte, Service-Karte, Inset Grouped List mit Zeile und Feld, Betragszeile ohne Umbruch über `formatEuro`), `Bars` (Glas-Tab-Bar, Navigationsleiste mit schrumpfendem Large Title, Aktionsleiste, Fortschritt), `Sheet` (nativer `<dialog>`, Detents, Drag am Griff, Esc und Tippen außerhalb schließen)
