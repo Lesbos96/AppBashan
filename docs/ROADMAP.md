@@ -64,7 +64,7 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 
 ## S5 · Routing-Dienst und Wiener Stadtgrenze
 - [x] Wiener Grenze (OSM, ODbL) als Geometrie in `geo_boundaries`, Import-Skript dokumentiert; es schreibt über die service_role, keine Geometrie in Migrationen
-- [x] Edge Function `route`: Geocoding (Kandidaten zur Bestätigung), Route, Gesamt-km, einfache Strecke, km außerhalb Wiens per PostGIS, Fahrzeit, Region, Länder — Code und Tests fertig; Deploy und Live-Test gegen ORS offen (OPEN_ISSUES)
+- [x] Edge Function `route`: Geocoding (Kandidaten zur Bestätigung), Route, Gesamt-km, einfache Strecke, km außerhalb Wiens per PostGIS, Fahrzeit, Region (international über das Österreich-Polygon) — Code und Tests fertig; Deploy und Live-Test gegen ORS offen (OPEN_ISSUES)
 - [x] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
 - [x] Tests mit gemocktem Anbieter und festen Fixtures
 
