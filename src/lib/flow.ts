@@ -82,7 +82,7 @@ function valid(raw: unknown): raw is TransportFlow {
     ['van', 'truck', 'large'].includes(r.vehicleType as string) &&
     place(r.from) &&
     place(r.to) &&
-    (r.route === null || isRouteResult(r.route)) &&
+    (r.route === null || (isRouteResult(r.route) && r.routeConsent === true && !!r.from && !!r.to)) &&
     (r.hours === null || within(r.hours, LIMITS.hours)) &&
     within(r.crew, LIMITS.crew) &&
     within(r.vehicles, LIMITS.vehicles) &&

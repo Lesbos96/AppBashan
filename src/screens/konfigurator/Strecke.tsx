@@ -226,7 +226,7 @@ export function RouteKarte({
           role="img"
           aria-label={`Route von ${from?.label ?? 'Abholung'} nach ${to?.label ?? 'Ziel'}, ${oneDecimal(result.distanceKm)} Kilometer, ${regionLabel[result.region]}`}
           viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="xMidYMid slice"
+          preserveAspectRatio="xMidYMid meet"
           className="absolute inset-0 size-full"
         >
           <path d={d} stroke="#FFFFFF" strokeWidth={8} {...line} />

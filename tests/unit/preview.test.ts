@@ -24,6 +24,14 @@ describe('Preisvorschau des Konfigurators', () => {
     expect(lineText('assembly', p.price, beispiel, tariffs).detail).toBe(`Standardmöbel · 3 lfm × ${formatEuro(4787)}`)
   })
 
+  it('Kilometer außerhalb Wiens nennen die Fahrzeuganzahl, die im Betrag steckt', () => {
+    const p = previewTransport(tariffs, 'move', beispiel)
+    if (p.state !== 'price') throw new Error('Preis erwartet')
+    const f = { ...beispiel, vehicles: 2, route: { ...route, outsideKm: 100, geometry: [] } }
+    expect(lineText('mileage', p.price, f, tariffs).detail).toMatch(/100 km × .* × 2 Fahrzeuge$/)
+    expect(lineText('mileage', p.price, { ...f, vehicles: 1 }, tariffs).detail).not.toMatch(/Fahrzeug/)
+  })
+
   it('ohne berechnete Strecke gibt es nie einen Preis, sondern ein Angebot mit Grund', () => {
     const p = previewTransport(tariffs, 'move', { ...beispiel, route: null })
     expect(p).toEqual({ state: 'offer', offer: { kind: 'offer', reasons: ['route_missing'] } })

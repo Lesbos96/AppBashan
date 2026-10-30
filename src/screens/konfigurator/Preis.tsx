@@ -62,7 +62,7 @@ export function PreisLeiste({ preview, onOpen, canContinue, onContinue }: { prev
 
 export function PreisSheet({ open, onClose, preview, flow, tariffs }: { open: boolean; onClose: () => void; preview: Preview; flow: TransportFlow; tariffs: Tariffs }) {
   return (
-    <Sheet open={open} onClose={onClose} title={preview.state === 'price' ? 'Richtpreis' : isRouteMissing(preview) ? 'Strecke fehlt' : 'Persönliches Angebot'} detents={[0.62, 0.92]}>
+    <Sheet open={open} onClose={onClose} title={preview.state === 'price' ? 'Richtpreis' : isRouteMissing(preview) ? 'Strecke fehlt' : 'Persönliches Angebot'} detents={[0.7, 0.92]}>
       {preview.state === 'price' ? (
         <div className="flex flex-col gap-4 pt-1">
           <div className="flex flex-col items-center gap-1 pt-3 pb-1 text-center">

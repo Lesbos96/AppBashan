@@ -72,7 +72,7 @@ export function lineText(key: TransportPrice['lines'][number]['key'], p: Transpo
     case 'travel':
       return { label: 'Fahrzeit außerhalb Wiens', detail: `${hoursText(f.route?.driveHours ?? 0)} × ${formatEuro(p.hourlyRateCents)}` }
     case 'mileage':
-      return { label: 'Kilometer außerhalb Wiens', detail: `${String(f.route?.outsideKm ?? 0).replace('.', ',')} km × ${formatEuro(num(t, 'outside_km_rate'))}` }
+      return { label: 'Kilometer außerhalb Wiens', detail: `${String(f.route?.outsideKm ?? 0).replace('.', ',')} km × ${formatEuro(num(t, 'outside_km_rate'))}${f.vehicles > 1 ? ` × ${f.vehicles} Fahrzeuge` : ''}` }
     case 'assembly':
       return { label: 'Montage / Demontage', detail: `Standardmöbel · ${String(Math.max(f.assemblyLm, num(t, 'assembly.min_lfm'))).replace('.', ',')} lfm × ${formatEuro(num(t, 'assembly.rate_per_lfm'))}` }
     case 'boxes':
