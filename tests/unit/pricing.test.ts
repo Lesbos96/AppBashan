@@ -215,8 +215,3 @@ describe('Sommerzeit (Wanduhrzeit, keine Zeitzone)', () => {
     expect(spring.totalCents).toBe(autumn.totalCents)
   })
 })
-
-// Abnahmekriterium für S8a, damit es nicht verloren geht (siehe docs/ROADMAP.md)
-describe('Offen für S8a', () => {
-  it.todo('S8a: quote speichert neben den Snapshot-Feldern nur Felder, die parse*Input geprüft hat')
-})

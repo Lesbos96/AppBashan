@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 export const MAX_PHOTOS = 8
-const MAX_BYTES = 10 * 1024 * 1024
+export const MAX_BYTES = 10 * 1024 * 1024
 const MAX_EDGE = 2560
 
 export class PhotoError extends Error {}

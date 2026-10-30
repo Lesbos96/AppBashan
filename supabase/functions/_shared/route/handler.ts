@@ -1,5 +1,6 @@
 // HTTP-Handler der Edge Function `route` (S5). Alle Abhängigkeiten werden injiziert, damit Vitest ihn ohne
 // Netz und DB prüft. Logs enthalten nur Modus, Status, Latenz und Fehlercode: keine Adressen, Koordinaten, IPs.
+import { clientIp, corsHeaders, json, readLimited } from '../http.ts'
 import { computeRouteFacts, type RouteDeps } from './compute.ts'
 import { HttpError, parseGeocode, parseRoute } from './facts.ts'
 import { ProviderError } from './provider.ts'
@@ -17,48 +18,14 @@ const MINUTE = 60
 const DAY = 86400
 // Je Modus: pro IP und global. Global bleibt unter dem Kontingent des ORS-Plans (Directions 2000/Tag, Geocode 1000/Tag, je ca. 80 %).
 // ponytail: feste Konstanten, bei Planwechsel hier anpassen.
-const LIMITS = {
+export const LIMITS = {
   geocode: { ip: [10, 80], global: [35, 800] },
   route: { ip: [10, 160], global: [35, 1600] },
 } as const
 
-const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...headers } })
-
-// Liest den Body und bricht bei mehr als MAX_BODY_BYTES ab, auch ohne content-length.
-async function readLimited(req: Request): Promise<string> {
-  const reader = req.body?.getReader()
-  if (!reader) return ''
-  const chunks: Uint8Array[] = []
-  let size = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    size += value.length
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel().catch(() => {})
-      throw new HttpError(413, 'body_too_large')
-    }
-    chunks.push(value)
-  }
-  const all = new Uint8Array(size)
-  let at = 0
-  for (const c of chunks) {
-    all.set(c, at)
-    at += c.length
-  }
-  return new TextDecoder().decode(all)
-}
-
 export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Response> {
   const started = Date.now()
-  const origin = req.headers.get('origin')
-  const cors: Record<string, string> = {
-    Vary: 'Origin',
-    ...(origin && deps.allowedOrigins.includes(origin)
-      ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'apikey, content-type, authorization, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
-      : {}),
-  }
+  const cors = corsHeaders(req, deps.allowedOrigins)
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
 
   let mode = 'unknown'
@@ -72,8 +39,7 @@ export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Resp
     // Nur ein Missbrauchsfilter, kein Schutz: der Publishable Key ist öffentlich. Schutz bietet das globale Limit.
     if (req.headers.get('apikey') !== deps.publishableKey) throw new HttpError(401, 'unauthorized')
 
-    if (Number(req.headers.get('content-length')) > MAX_BODY_BYTES) throw new HttpError(413, 'body_too_large')
-    const text = await readLimited(req)
+    const text = await readLimited(req, MAX_BODY_BYTES)
     let body: { mode?: unknown } | null
     try {
       body = JSON.parse(text)
@@ -86,9 +52,7 @@ export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Resp
     // Eingaben vor dem Zähler prüfen: ungültige Anfragen verbrauchen kein Kontingent des Anbieters.
     const input = kind === 'geocode' ? parseGeocode(body) : parseRoute(body)
 
-    // Client-IP von der Plattform: cf-connecting-ip, sonst das letzte x-forwarded-for-Element (das erste kann der Client selbst setzen).
-    // Ohne beides teilen sich alle den Bucket „unknown" (streng, aber sicher). Verhalten nach dem Deploy prüfen (docs/OPEN_ISSUES.md).
-    const ip = req.headers.get('cf-connecting-ip')?.trim() || req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || 'unknown'
+    const ip = clientIp(req)
     const ipBucket = await deps.hmac(`ip|${ip}`)
     const [ipMin, ipDay] = LIMITS[kind].ip
     const [gMin, gDay] = LIMITS[kind].global

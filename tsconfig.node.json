@@ -4,5 +4,5 @@
     "lib": ["ES2023"],
     "types": ["node"]
   },
-  "include": ["tests", "vite.config.ts", "playwright.config.ts", "supabase/functions/_shared/database.types.ts"]
+  "include": ["tests", "src/vite-env.d.ts", "vite.config.ts", "playwright.config.ts", "supabase/functions/_shared/database.types.ts"]
 }

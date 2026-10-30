@@ -241,6 +241,7 @@ export type Database = {
       }
       rental_bookings: {
         Row: {
+          client_ref: string | null
           cover: boolean
           created_at: string
           customer_id: string
@@ -259,6 +260,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_ref?: string | null
           cover?: boolean
           created_at?: string
           customer_id: string
@@ -277,6 +279,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_ref?: string | null
           cover?: boolean
           created_at?: string
           customer_id?: string
@@ -469,8 +472,10 @@ export type Database = {
       }
       service_requests: {
         Row: {
+          client_ref: string | null
           created_at: string
           customer_id: string
+          description: string | null
           estimate_cents: number | null
           from_address: string | null
           from_point: unknown
@@ -490,10 +495,13 @@ export type Database = {
           to_point: unknown
           to_postcode: string | null
           updated_at: string
+          volume_m3: number | null
         }
         Insert: {
+          client_ref?: string | null
           created_at?: string
           customer_id: string
+          description?: string | null
           estimate_cents?: number | null
           from_address?: string | null
           from_point?: unknown
@@ -513,10 +521,13 @@ export type Database = {
           to_point?: unknown
           to_postcode?: string | null
           updated_at?: string
+          volume_m3?: number | null
         }
         Update: {
+          client_ref?: string | null
           created_at?: string
           customer_id?: string
+          description?: string | null
           estimate_cents?: number | null
           from_address?: string | null
           from_point?: unknown
@@ -536,6 +547,7 @@ export type Database = {
           to_point?: unknown
           to_postcode?: string | null
           updated_at?: string
+          volume_m3?: number | null
         }
         Relationships: [
           {
@@ -563,6 +575,13 @@ export type Database = {
       }
     }
     Views: {
+      current_fee_rates: {
+        Row: {
+          fee_rate: number | null
+          fee_vat_rate: number | null
+        }
+        Relationships: []
+      }
       current_price_version: {
         Row: {
           effective_on: string | null
@@ -575,6 +594,75 @@ export type Database = {
       become_rental_provider: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      quote_save_booking: {
+        Args: {
+          p_client_ref: string
+          p_cover: boolean
+          p_customer: string
+          p_deposit: number
+          p_extra_driver: boolean
+          p_fee_cents: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_km: number
+          p_offer: string
+          p_one_way: boolean
+          p_payee: string
+          p_payout: number
+          p_pickup: string
+          p_price_version: number
+          p_return: string
+          p_snapshot: Json
+          p_total: number
+        }
+        Returns: {
+          created: boolean
+          id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }[]
+      }
+      quote_save_request: {
+        Args: {
+          p_client_ref: string
+          p_customer: string
+          p_description: string
+          p_estimate: number
+          p_fee_cents: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_from_address: string
+          p_from_lat: number
+          p_from_lon: number
+          p_from_postcode: string
+          p_inputs: Json
+          p_needs_quote: boolean
+          p_payout: number
+          p_preferred_date: string
+          p_price_version: number
+          p_region: Database["public"]["Enums"]["region"]
+          p_request: string
+          p_route: Json
+          p_service: Database["public"]["Enums"]["service_type"]
+          p_snapshot: Json
+          p_status: Database["public"]["Enums"]["request_status"]
+          p_time_window: string
+          p_to_address: string
+          p_to_lat: number
+          p_to_lon: number
+          p_to_postcode: string
+          p_volume: number
+        }
+        Returns: {
+          created: boolean
+          id: string
+          needs_quote: boolean
+          status: Database["public"]["Enums"]["request_status"]
+        }[]
       }
       route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {

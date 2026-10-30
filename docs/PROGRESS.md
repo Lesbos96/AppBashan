@@ -3,6 +3,11 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-30 · S8a · Anfrage-Backend und Login · vorläufig abgeschlossen (Live-Test fehlt)
+- Edge Function `quote` (`_shared/quote/`, Migration 0010 mit atomaren RPCs `quote_save_request`/`quote_save_booking`, View `current_fee_rates`, Spalten `description`, `volume_m3`, `client_ref`): Server rechnet Strecke, Preis, Gebühr und Status; Client liefert nur die Kundenwahl. Idempotent über `clientRef`, Bearbeiten nur im Status „angefragt", Miete in Wiener Ortszeit (ISO/UTC wird umgerechnet). App-Module `src/lib/{auth,uploads}.ts`, Mail-Vorlagen mit Code und Link, `route` und `quote` lesen `SECRET_KEY`
+- Tests: Unit 199+ (je Pflichtkriterium ein Test), `test:rls` 88+ gegen Dev (Handler im Prozess, echte DB, fester Routenanbieter); Verweigerungstests bei gelockerten Rechten rot belegt (`tmp/reports/s8a-red-proof.md`). Keine UI, keine Screenshots
+- **Vorläufig:** `quote` nicht deployt, `route`/`quote` nie live getestet (Secrets fehlen, kein echter Routenanbieter, kein echter Mailversand): OPEN_ISSUES „S8a" und „S5b". Entscheidungen (advisor): `SECRET_KEY` ohne Fallback, Gebührensatz je Schlüssel aus der höchsten Version, Routenfehler → Angebot `route_missing`, Zeitfenster als Enum. Abweichung: ISO-Zeitpunkte bei Mietzeiten auf Wunsch von Beks
+
 ## 2026-10-30 · S6 · Transport- und Umzug-Konfigurator · abgeschlossen
 - `/transport` und `/umzug` (Konfigurator wie 04, Preis-Sheet wie 05, Persönliches Angebot mit Gründen, Foto-Aufbereitung ohne EXIF, Adress-Sheet mit Einwilligung und Bestätigung, animierte Routengrafik); Weiter führt zu einem Platzhalter `/:service/termin` (S8b). Code: `src/lib/{route,routeResult,photos,flow,preview}.ts`, `src/screens/Konfigurator.tsx`, `src/screens/konfigurator/`
 - Preise nur über `computeTransport` aus `@pricing` (vorher `parseTransportInput`), ohne Strecke ein Angebot (`route_missing`, Anzeige „Strecke fehlt“), nie ein Preis ohne Strecke. Einwilligung standardmäßig aus; ohne sie kein Request an `route`. `route` ist in allen Tests gemockt (feste Beispielantwort, keine echten Kilometer), nicht live getestet (S5b)

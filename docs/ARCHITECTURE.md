@@ -14,10 +14,10 @@ Alle Beträge Integer-Cent. Enums: `service_type` (transport, move, clearance, a
 | `price_versions` | `version` PK, `effective_on` (= „Tarifstand" in 14) |
 | `price_config` | PK (`version`, `key`), `value` numeric, `unit` (Geld als `cent…`), `label`, `sources` jsonb `[{label, url}]`, `researched_at`. Nur Kunden-Tarife; Zeilen mit `unit` `ref` sind Quellenverweise ohne Tarif (Info-Sheet), `@pricing` und `quote` ignorieren sie |
 | `platform_settings` | PK (`key`, `version`), `value`: `fee_rate` 0,15, `fee_vat_rate` 0,20 |
-| `service_requests` | `customer_id`, `service`, `status`, `inputs` jsonb, `price_snapshot` jsonb (nur Kunden-Positionen, bei Angebotspflicht die Gründe), `price_version` FK, `estimate_cents` (null ⇔ `needs_quote`), Adressen, PLZ, `geography`-Punkte, `route` jsonb, `region`, `preferred_date`, `time_window` |
+| `service_requests` | `customer_id`, `service`, `status`, `inputs` jsonb, `price_snapshot` jsonb (nur Kunden-Positionen, bei Angebotspflicht die Gründe), `price_version` FK, `estimate_cents` (null ⇔ `needs_quote`), Adressen, PLZ, `geography`-Punkte, `route` jsonb, `region`, `preferred_date`, `time_window` (`morning`, `midday`, `afternoon`, `flexible`), `description` (Freitext, nie für Partner), `volume_m3`, `client_ref` (Idempotenz, 0010) |
 | `request_photos` | `request_id` FK, `storage_path` unique (`{user}/{request}/{datei}`) |
 | `rental_offers` | `provider_id` (null nur bei `is_demo`), `provider_name`, alle `offerFields` als `*_cents`/km/m³, `status`, `is_demo` |
-| `rental_bookings` | `offer_id`, `customer_id`, `status`, `pickup_at`, `return_at`, `km`, `cover`, `extra_driver`, `one_way`, `price_snapshot` (inkl. Kopie der Angebotswerte), `price_version`, `total_cents`, `deposit_cents` |
+| `rental_bookings` | `offer_id`, `customer_id`, `status`, `pickup_at`, `return_at`, `km`, `cover`, `extra_driver`, `one_way`, `price_snapshot` (inkl. Kopie der Angebotswerte), `price_version`, `total_cents`, `deposit_cents`, `client_ref` |
 | `fee_splits` | genau eins von `service_request_id`/`rental_booking_id`, `payee_id`, `total_cents`, `fee_rate`, `fee_vat_rate`, `fee_cents`, `fee_net_cents`, `fee_vat_cents`, `payout_cents`, `price_version`; Checks für Summen |
 | `geo_boundaries` | `slug` PK, `geom` MultiPolygon 4326, `source` (ODbL) |
 
@@ -29,7 +29,7 @@ Abgleich Briefing Abschnitt 6: alle sechs Tabellen vorhanden, `price_config` ver
 
 ## Geldfluss
 1. App: Vorschau mit `@pricing` und den öffentlichen `price_config`-Werten. Keine Gebühr, kein Satz im Client.
-2. Absenden und „Anfrage bearbeiten": nur über die Edge Function `quote` (service_role). Sie prüft `inputs` je Service gegen das Schema des Preismoduls, lädt die aktuelle `price_version`, rechnet neu, speichert Anfrage bzw. Mietanfrage mit Snapshot und schreibt `fee_splits` mit dem Satz aus `platform_settings`. Kunden haben kein INSERT auf `service_requests`/`rental_bookings`; ein Client-Preis wird nie übernommen.
+2. Absenden und „Anfrage bearbeiten": nur über die Edge Function `quote` (service_role). Sie prüft `inputs` je Service gegen das Schema des Preismoduls, lädt die aktuelle `price_version`, rechnet neu, speichert Anfrage bzw. Mietanfrage mit Snapshot und schreibt `fee_splits` mit dem Satz aus `platform_settings`. Kunden haben kein INSERT auf `service_requests`/`rental_bookings`; ein Client-Preis wird nie übernommen. Details: Abschnitt „quote (S8a)".
 3. Aufteilung wie `platform()` im Prototyp: fee = cents(total × rate), netto = cents(fee / (1 + vat)), USt. = fee − netto, payout = total − fee; erst am Ende in Integer-Cent.
 4. `payee_id`: bei Mietanfragen der Vermieter des Angebots (Demo: null), bei Anfragen null bis zur Partnerzuordnung. Vermieter sehen die Aufteilung in ihrer Abrechnung (18); die Beispielabrechnung rechnet mit `fee_rate` aus `platform_settings`.
 5. Später: Partnerangebot (`quotes`) ersetzt den Richtpreis, Zahlung über Stripe Connect mit der Gebühr als Application Fee.
@@ -49,7 +49,8 @@ S/I/U/D = select/insert/update/delete. „Eigene" = Eigentum per `auth.uid()`. S
 | rental_bookings | – | S eigene; U (status) nur requested → withdrawn | – | S, U (status) |
 | fee_splits | – | – | S mit payee_id = ich | S |
 | geo_boundaries, route_cache, route_rate_limits | – | – | – | – |
-| RPC `route_geo_facts`, `take_rate_tokens` | – | – | – | – |
+| RPC `route_geo_facts`, `take_rate_tokens`, `quote_save_request`, `quote_save_booking` | – | – | – | – |
+| current_fee_rates (View, `security_invoker`) | – | S (nur NULL) | S (Satz) | S |
 
 Die drei Tabellen und die Funktionen `route_geo_facts`, `take_rate_tokens`, `route_cleanup` (Migration 0006, 0009) nutzt nur die Edge Function `route` über service_role; Tests in `tests/rls/route.test.ts`.
 
@@ -88,6 +89,18 @@ Edge Function `route` (`supabase/functions/route`, Logik in `_shared/route/`), a
 
 **Anbieter (Entscheidung advisor):** openrouteservice (HeiGIT, Deutschland) hinter dem Interface `RouteProvider`. In Produktion erst, wenn (1) ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO besteht (Adresstexte gehen an den Anbieter) und (2) kommerzielle Nutzung samt Kontingent schriftlich geklärt ist. Ausweichanbieter: Geoapify (DE). Weder Client-Header noch IP gehen an den Anbieter; Timeout 8 s, bei Fehler 502 ohne Schätzwert.
 
+## quote (S8a)
+Edge Function `quote` (`supabase/functions/quote`, Logik in `_shared/quote/`), `verify_jwt = false`, das Nutzer-JWT prüft die Function selbst (`auth.getUser`); der Secret-Key-Client bekommt nie den Authorization-Header des Nutzers. Secrets: `SECRET_KEY` (neuer Secret Key, kein Rückgriff auf die Legacy-Variable; `route` liest ihn ebenso), `ORS_API_KEY`, `RATE_LIMIT_SECRET`, `ALLOWED_ORIGINS`.
+- **Aufruf:** `{service, inputs, from?, to?, returnTrip?, description?, volume?, preferredDate?, timeWindow?, requestId?, clientRef}` bzw. `{service: 'rental', offerId, inputs, clientRef}`. Top-Level-Schlüssel außerhalb der Liste werden verworfen; `inputs` nur über `parse*Input`; `to` und `volume` nur bei Transport/Umzug, `timeWindow` nur bei Entrümpelung/Montage. Der Aufruf kennt keinen Preis, keine Kilometer, keine Region, keinen Status. `clientRef` (UUID je Absendeversuch) macht das Anlegen idempotent, `requestId` bearbeitet.
+- **Ablauf:** JWT → Nutzerlimit (6/min, 30/Tag, gehashte Kennung) → Body (16 KB) → Prüfung → vorhandene `clientRef` liefert die gespeicherte Antwort → Tarife (`current_price_version`, `ref`-Zeilen raus, alle `REQUIRED_TARIFF_KEYS` vorhanden, sonst Abbruch) → Gebührensätze (`current_fee_rates`, fehlt einer: Abbruch) → Strecke → Preis (`compute*`) → Schreiben über RPC.
+- **Strecke:** nur Transport/Umzug mit beiden Koordinaten, über `computeRouteFacts`; Anbieter-Aufrufe zählen gegen dieselben `route`-Zähler (IP, global). Fehler des Anbieters, `no_route` und erschöpfte Zähler ergeben ein gespeichertes Angebot `route_missing` (kein Preis, keine Gebühr); Ausfall des Limiters (503) und alle anderen Fehler brechen ab.
+- **Status:** Angebotspflicht bei Entrümpelung → `inspection_requested`, sonst `requested` (Transport/Umzug-Angebot: `requested` mit `needs_quote`). Bearbeiten nur im Status `requested` und im selben Service; danach gilt dieselbe Regel (ein Angebot wird zur Besichtigung und ist nicht mehr bearbeitbar).
+- **Schreiben:** `public.quote_save_request` / `quote_save_booking` (Migration 0010, `security invoker`, `search_path = ''`, Execute nur für `service_role`): Anfrage und `fee_splits` in einer Transaktion; bei Angebot entfällt die `fee_splits`-Zeile. Fehler: `55000` nicht bearbeitbar (409), `P0002` nicht gefunden oder fremd (404).
+- **Snapshot:** nur Felder des Preismoduls (`kind`, Gesamtpreis, Spanne, Zeilen, Zusatzfelder je Service, Gründe), keine Tarife (die `price_version` genügt, Versionen sind unveränderlich), nie Gebühr. Mietanfragen enthalten zusätzlich eine Kopie der Angebotswerte (ohne Vermieter-ID). Antwort an den Kunden: `id`, `status`, `needsQuote`, `priceVersion`, `snapshot`.
+- **Miete:** Eingabe ist Wiener Ortszeit (`YYYY-MM-DDTHH:mm`); ISO-Zeitpunkte mit Z oder Offset werden vor der Berechnung in Wiener Wanduhrzeit umgerechnet, die Spalten `pickup_at`/`return_at` bekommen den Zeitpunkt (nicht existierende Uhrzeit beim Vorstellen: abgelehnt, doppelte Stunde im Herbst: die frühere). Abholung nicht in der Vergangenheit, höchstens 365 Tage voraus. Das Angebot wird per id mit `status = approved` geladen; `payee_id` ist der Vermieter (Demo: null).
+- **Anmelde-Mail:** Vorlage `supabase/templates/magic_link.html` (und `confirmation.html`) mit Code (`{{ .Token }}`) und Link (`/anmelden?token_hash=…&type=email`); die App prüft beides mit `verifyOtp` (`src/lib/auth.ts`). Der Link funktioniert damit in jedem Browser, nicht nur im anfragenden.
+- **Fotos:** `src/lib/uploads.ts`: Eintrag in `request_photos`, dann Upload nach `{user}/{request}/{id}.jpg`, Rollback des Eintrags bei Fehler, signierte Links (10 min).
+
 ## Entscheidungen
 1. Anfragen und Mietanfragen schreibt nur `quote`: Preis und Gebühr sind nicht fälschbar. Die DB prüft `inputs` nur auf „Objekt", das Schema prüft der einzige Schreiber.
 2. Spalten-Grants plus RLS statt Trigger: deklarativ, und was nicht gegrantet ist, schreibt per API niemand. Supabase-Default-Grants werden je Tabelle zuerst widerrufen.
@@ -110,3 +123,7 @@ Edge Function `route` (`supabase/functions/route`, Logik in `_shared/route/`), a
 19. anon sieht `provider_id` freigegebener Angebote; die UUID führt zu keinem lesbaren Profil.
 20. Policies lesen nie die eigene Tabelle (Postgres 42P17): Zählen über `private.photo_count()`, Fotos in der App erst in `request_photos` eintragen, dann hochladen.
 21. App-Variablen mit Präfix `NEXT_PUBLIC_` (Vite `envPrefix`): passt zur vorhandenen `.env.local`. Nur dieses Präfix landet im Bundle, nie `SUPABASE_*`.
+22. Gebührensatz je Schlüssel aus der höchsten Version (View `current_fee_rates`), unabhängig von der `price_version`: Die Gebühr hat einen anderen Lebenszyklus als die Kundentarife. Fehlt ein Schlüssel, bricht `quote` ab.
+23. Schreiben über RPCs statt zweier Inserts: Anfrage und Gebührenaufteilung sind atomar, das Bearbeiten prüft Eigentümer, Status und Service im selben Statement.
+24. Freitext (`description`) und Volumen sind eigene Spalten, nicht Teil von `inputs`: `inputs` bleibt exakt das Ergebnis von `parse*Input`, und der Freitext ist von der späteren Partner-Sicht trennbar.
+25. Ein Routenfehler macht aus der Anfrage ein Angebot statt einer Ablehnung: Eine erschöpfte Quote darf nicht alle Kunden aussperren, und ein Angebot ist geldlich unschädlich (kein Preis, keine Gebühr).

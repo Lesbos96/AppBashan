@@ -1,0 +1,32 @@
+// Tarifschlüssel, die das Preismodul liest (Server prüft die Vollständigkeit vor dem Rechnen, `quote`).
+
+/** Alle Schlüssel, die das Preismodul liest. Ein Test vergleicht die Liste mit `supabase/seed.sql`. */
+export const REQUIRED_TARIFF_KEYS = [
+  'team_rate.1',
+  'team_rate.2',
+  'team_rate.3',
+  'team_rate.4',
+  'team_rate.extra_person',
+  'extra_vehicle_rate',
+  'min_hours.transport',
+  'min_hours.move',
+  'outside_km_rate',
+  'box',
+  'parking_zone',
+  'piano.vienna_base',
+  'piano.per_floor',
+  'clearance.rate',
+  'clearance.rate_low',
+  'clearance.rate_high',
+  'clearance.minimum',
+  'clearance.floor_surcharge',
+  'clearance.volume_factor.light',
+  'clearance.volume_factor.normal',
+  'clearance.volume_factor.full',
+  'assembly.rate_per_lfm',
+  'assembly.min_lfm',
+  'kitchen.base',
+  'kitchen.lower_per_lfm',
+  'kitchen.upper_per_lfm',
+  'kitchen.tall_per_lfm',
+] as const

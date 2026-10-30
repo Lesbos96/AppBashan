@@ -51,7 +51,7 @@ export const lineGeoJson = (line: [number, number][]) => JSON.stringify({ type: 
 
 const BBOX = { lat: [34, 72], lon: [-25, 45] } as const // Europa
 
-function point(v: unknown): Point {
+export function point(v: unknown): Point {
   const p = v as Record<string, unknown> | null
   const lat = p?.lat
   const lon = p?.lon

@@ -41,7 +41,9 @@ Alle Grenzen stehen an einer Stelle: `limits.ts` (`LIMITS`, exportiert über `@p
 | Miete Kilometer | 0–10.000 |
 | Mietdauer | höchstens 90 Tage |
 
-Miettage zählen nach Wanduhrzeit (`YYYY-MM-DDTHH:mm` ohne Zeitzone, `Date.UTC`); die Rechnung hängt damit nicht von der Zeitzone des Servers ab. Tests für beide Umstellungen 2026 (29.03. und 25.10.) stehen in `tests/unit/pricing.test.ts`.
+Tarifvollständigkeit: `REQUIRED_TARIFF_KEYS` (`tariffs.ts`, exportiert über `@pricing`) listet alle Schlüssel, die das Modul liest; `quote` rechnet nur mit einem vollständigen Satz und bricht sonst ab. Ein Test vergleicht die Liste mit den Nicht-`ref`-Schlüsseln aus `supabase/seed.sql`.
+
+Miettage zählen nach Wanduhrzeit (`YYYY-MM-DDTHH:mm` ohne Zeitzone, `Date.UTC`); die Rechnung hängt damit nicht von der Zeitzone des Servers ab. Tests für beide Umstellungen 2026 (29.03. und 25.10.) stehen in `tests/unit/pricing.test.ts`. `quote` nimmt Wiener Wanduhrzeit oder ISO-Zeitpunkte (Z/Offset) und rechnet Letztere vor der Berechnung in Wiener Wanduhrzeit um (`_shared/quote/time.ts`; Folge der Wanduhrzählung: Über die Herbst-Umstellung zählen 24,5 reale Stunden als ein Tag, Tests in `tests/unit/quote.test.ts`: 29.03. 11:00 → 11:30 MESZ = 2 Tage, 25.10. 11:00 MESZ → 10:30 MEZ = 1 Tag, obwohl die UTC-Differenz anders zählen würde).
 
 ## Stichproben-Richtwerte und Quellen
 Alle Tarife sind Stichproben-Richtwerte (Recherche 28.10.2026), keine Marktdurchschnitte. Einzelquellen, Label und URL stehen je Schlüssel in `supabase/seed.sql` (`price_config.sources`); die App zeigt sie im Info-Sheet „Wie rechnet MoveNow?" (S4).

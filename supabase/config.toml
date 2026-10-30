@@ -232,7 +232,7 @@ max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+otp_expiry = 900
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -417,3 +417,16 @@ enabled = true
 
 [functions.route]
 verify_jwt = false
+
+[functions.quote]
+verify_jwt = false
+
+# Anmelde-Mail (S8a): Code und Link (token_hash) in derselben Mail. Neue Nutzer bekommen je nach Einstellung die Bestätigungs-Mail,
+# daher gilt dieselbe Vorlage für beide. Im gehosteten Projekt im Dashboard eintragen (Authentication → Emails) oder per `supabase config push`.
+[auth.email.template.magic_link]
+subject = "Dein MoveNow-Code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Dein MoveNow-Code"
+content_path = "./supabase/templates/confirmation.html"
