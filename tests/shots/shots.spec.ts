@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress } from '../e2e/konfigurator-helpers'
 
 // Wächst mit jedem Screen ab S3. `onboarded: false` startet wie beim ersten Besuch.
@@ -93,6 +94,97 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
       await setAddress(page, 'Abholung', 'Neubaugasse 12, 1070 Wien')
       await setAddress(page, 'Ziel', 'Praterstraße 30, 1020 Wien')
       await expect(page.getByRole('alert').filter({ hasText: 'nicht erreichbar' })).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-objekt',
+    path: '/entruempelung',
+    ready: (page) => expect(page.getByRole('heading', { name: 'Was soll geräumt werden?' })).toBeVisible(),
+  },
+  {
+    name: 'entruempelung-flaeche',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Wohnung/ }).click()
+      await weiter(page).click()
+      await page.getByRole('button', { name: '60 m²' }).click()
+    },
+  },
+  {
+    name: 'entruempelung-fuellgrad',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Wohnung/ }).click()
+      await weiter(page).click()
+      await page.getByRole('button', { name: '60 m²' }).click()
+      await weiter(page).click()
+      await expect(page.getByRole('heading', { name: 'Wie voll ist der Bereich?' })).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-zugang',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Wohnung/ }).click()
+      for (let i = 0; i < 3; i++) await weiter(page).click()
+      await expect(page.getByRole('heading', { name: 'Wie ist der Zugang?' })).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-zusatz',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Wohnung/ }).click()
+      for (let i = 0; i < 4; i++) await weiter(page).click()
+      await page.getByRole('switch', { name: 'Montage oder Demontage dazubuchen' }).click()
+      await expect(page.getByRole('heading', { name: 'Was brauchst du zusätzlich?' })).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-fotos',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Wohnung/ }).click()
+      for (let i = 0; i < 5; i++) await weiter(page).click()
+      await expect(page.getByRole('heading', { name: 'Zeig uns, was weg soll.' })).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-ergebnis',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await fillEntruempelungBeispiel(page)
+      await expect(page.getByText('ca. 1.175,00 €')).toBeVisible()
+    },
+  },
+  {
+    name: 'entruempelung-besichtigung',
+    path: '/entruempelung',
+    steps: async (page) => {
+      await page.getByRole('radio', { name: /^Gewerbe/ }).click()
+      for (let i = 0; i < 5; i++) await weiter(page).click()
+      await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
+      await expect(page.getByRole('heading', { name: 'Wir schauen genauer hin.' })).toBeVisible()
+    },
+  },
+  { name: 'montage-standard', path: '/montage', ready: (page) => expect(page.getByRole('button', { name: /Richtpreis 95,74/ })).toBeVisible() },
+  {
+    name: 'montage-kueche',
+    path: '/montage',
+    steps: async (page) => {
+      await fillKuecheBeispiel(page)
+      await expect(page.getByRole('button', { name: /Richtpreis 770,40/ })).toBeVisible()
+    },
+  },
+  {
+    name: 'montage-preis',
+    path: '/montage',
+    fit: false,
+    sheet: true,
+    steps: async (page) => {
+      await fillKuecheBeispiel(page)
+      await page.getByRole('button', { name: /alle Positionen anzeigen/ }).click()
+      await expect(page.locator('dialog[open]').getByText('Gesamt')).toBeVisible()
     },
   },
   { name: 'fehler', path: '/gibt-es-nicht' },

@@ -1,15 +1,21 @@
 import {
+  type ClearancePrice,
   LIMITS,
+  computeAssembly,
+  computeClearance,
   computeTransport,
   num,
   type OfferReason,
   type OfferResult,
+  parseAssembly,
+  parseClearanceInput,
+  type PriceResult,
   type Tariffs,
   parseTransportInput,
   type TransportPrice,
 } from '@pricing'
 import { formatEuro } from './money'
-import type { Service, TransportFlow } from './flow'
+import { type AssemblyDraft, type ClearanceFlow, type Service, type TransportFlow, toAssembly } from './flow'
 
 /** Tarife der aktuellen Version; Zeilen mit Einheit `ref` sind nur Quellenverweise. */
 export const toTariffs = (prices: { rows: { key: string; value: number; unit: string }[] }): Tariffs => Object.fromEntries(prices.rows.filter((r) => r.unit !== 'ref').map((r) => [r.key, r.value]))
@@ -18,7 +24,10 @@ export const minHours = (t: Tariffs, service: Service) => num(t, service === 'mo
 export const stepHours = 0.5
 export const maxHours = LIMITS.hours[1]
 
-export type Preview = { state: 'offer'; offer: OfferResult } | { state: 'price'; price: TransportPrice }
+export type PreviewOf<P extends PriceResult> = { state: 'offer'; offer: OfferResult } | { state: 'price'; price: P }
+export type Preview = PreviewOf<TransportPrice>
+
+const wrap = <P extends PriceResult>(result: P | OfferResult): PreviewOf<P> => (result.kind === 'price' ? { state: 'price', price: result } : { state: 'offer', offer: result })
 
 /** Vorschau für die Preiskarte; gerechnet wird ausschließlich im Preismodul. Ohne berechnete Strecke liefert es ein Angebot (route_missing), nie einen Preis. */
 export function previewTransport(t: Tariffs, service: Service, f: TransportFlow): Preview {
@@ -40,8 +49,7 @@ export function previewTransport(t: Tariffs, service: Service, f: TransportFlow)
     assembly: f.assembly ? { kind: 'standard', lm: f.assemblyLm } : null,
   })
   const r = f.route && { region: f.route.region, outsideKm: f.route.outsideKm, driveHours: f.route.driveHours }
-  const result = computeTransport(t, input, r)
-  return result.kind === 'price' ? { state: 'price', price: result } : { state: 'offer', offer: result }
+  return wrap(computeTransport(t, input, r))
 }
 
 export const offerReasonText: Record<OfferReason, string> = {
@@ -79,5 +87,42 @@ export function lineText(key: TransportPrice['lines'][number]['key'], p: Transpo
       return { label: 'Umzugskartons', detail: `${f.boxes} × ${formatEuro(num(t, 'box'))}` }
     case 'parking':
       return { label: 'Halteverbotszone', detail: `${f.parking} ${f.parking === 1 ? 'Adresse' : 'Adressen'} × ${formatEuro(num(t, 'parking_zone'))}` }
+  }
+}
+
+/** Vorschau Entrümpelung: dieselbe Prüfung wie später `quote`; ohne gewähltes Objekt wirft sie `InputError`. */
+export function previewClearance(t: Tariffs, f: ClearanceFlow): PreviewOf<ClearancePrice> {
+  const input = parseClearanceInput({ object: f.object, area: f.area, fill: f.fill, lift: f.lift, floor: f.floor, special: f.special, assembly: f.assembly ? toAssembly(f.draft) : null })
+  return wrap(computeClearance(t, input))
+}
+
+/** Vorschau für den Service „Montage". */
+export function previewAssembly(t: Tariffs, d: AssemblyDraft): PreviewOf<PriceResult<'assembly'>> {
+  return { state: 'price', price: computeAssembly(t, parseAssembly(toAssembly(d))) }
+}
+
+export const floorText = (n: number) => (n === 0 ? 'Erdgeschoss' : `${n}. Stock`)
+export const lmText = (n: number) => `${String(n).replace('.', ',')} lfm`
+
+/** Beschriftung der Montage-Zeile; die Beträge kommen aus dem Preismodul. */
+export function assemblyText(d: AssemblyDraft, t: Tariffs): string {
+  if (d.kind === 'standard') return `Standardmöbel · ${lmText(Math.max(d.lm, num(t, 'assembly.min_lfm')))} × ${formatEuro(num(t, 'assembly.rate_per_lfm'))}`
+  return `Küche · ${lmText(d.lm)} unten, ${lmText(d.upper)} oben, ${lmText(d.tall)} hoch · Grundbetrag ${formatEuro(num(t, 'kitchen.base'))}`
+}
+
+export function clearanceLineText(key: 'clearance' | 'access' | 'assembly', p: ClearancePrice, f: ClearanceFlow, t: Tariffs): LineText {
+  switch (key) {
+    case 'clearance': {
+      const volume = `${String(p.volumeM3).replace('.', ',')} m³`
+      // Mindestpreis, wenn die Menge ihn nicht erreicht (Preis kommt unverändert aus dem Modul)
+      const belowMinimum = p.volumeM3 * num(t, 'clearance.rate') < num(t, 'clearance.minimum')
+      return { label: 'Räumung & Entsorgung', detail: belowMinimum ? `${volume} · Mindestpreis` : `${volume} × ${formatEuro(num(t, 'clearance.rate'))}` }
+    }
+    case 'access': {
+      const n = Math.max(0, f.floor - 1)
+      return { label: 'Etagenzuschlag', detail: `${n} ${n === 1 ? 'Etage' : 'Etagen'} ohne Lift × ${formatEuro(num(t, 'clearance.floor_surcharge'))}` }
+    }
+    case 'assembly':
+      return { label: 'Montage / Demontage', detail: assemblyText(f.draft, t) }
   }
 }

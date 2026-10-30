@@ -1,6 +1,6 @@
 import { LIMITS, num } from '@pricing'
 import { useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Segmented } from '../components/Controls'
 import { Icon } from '../components/Icon'
@@ -10,7 +10,8 @@ import { Card, GroupedList, StepRow, SwitchRow, ValueRow } from '../components/S
 import { type Place, type Service, type TransportFlow, initialFlow, useFlow } from '../lib/flow'
 import { formatEuro } from '../lib/money'
 import { loadPrices, useLoad } from '../lib/prices'
-import { hoursText, maxHours, minHours, previewTransport, stepHours, toTariffs } from '../lib/preview'
+import { floorText, hoursText, lmText, maxHours, minHours, previewTransport, stepHours, toTariffs, lineText } from '../lib/preview'
+import { InfoLink } from '../components/InfoLink'
 import { Fotos } from './konfigurator/Fotos'
 import { PreisLeiste, PreisSheet } from './konfigurator/Preis'
 import { AdresseSheet, Adressen, RouteKarte } from './konfigurator/Strecke'
@@ -26,9 +27,6 @@ const vehicleTypes = [
   { value: 'truck', label: 'Möbel-LKW bis 3,5 t' },
   { value: 'large', label: 'Großer LKW / Hebebühne · Angebot' },
 ] as const
-
-const floor = (n: number) => (n === 0 ? 'Erdgeschoss' : `${n}. Stock`)
-const lm = (n: number) => String(n).replace('.', ',')
 
 function Step({ n, title, children, footnote }: { n: number; title: string; children: ReactNode; footnote?: ReactNode }) {
   return (
@@ -55,14 +53,6 @@ export function Konfigurator({ service }: { service: Service }) {
       {prices.status === 'error' && <ErrorState text="Die Preise konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />}
       {prices.status === 'ready' && <Formular service={service} tariffs={toTariffs(prices.data)} />}
     </main>
-  )
-}
-
-function InfoLink() {
-  return (
-    <Link to="/profil/preise" aria-label="Wie rechnet MoveNow?" className="press flex size-11 items-center justify-center text-accent">
-      <Icon name="info" width={24} height={24} />
-    </Link>
   )
 }
 
@@ -166,9 +156,9 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
 
         <Step n={3} title="Stockwerke & Lift" footnote="0 steht für Erdgeschoss. Ein Lift zählt nur, wenn das Transportgut hineinpasst.">
           <GroupedList>
-            <StepRow label="Abholung" sub="Stockwerk" value={flow.fromFloor} min={LIMITS.floor[0]} max={LIMITS.floor[1]} display={floor(flow.fromFloor)} onChange={(fromFloor) => update({ fromFloor })} labelDown="Stockwerk Abholung verringern" labelUp="Stockwerk Abholung erhöhen" />
+            <StepRow label="Abholung" sub="Stockwerk" value={flow.fromFloor} min={LIMITS.floor[0]} max={LIMITS.floor[1]} display={floorText(flow.fromFloor)} onChange={(fromFloor) => update({ fromFloor })} labelDown="Stockwerk Abholung verringern" labelUp="Stockwerk Abholung erhöhen" />
             <SwitchRow label="Lift für das Transportgut" checked={flow.fromLift} onChange={(fromLift) => update({ fromLift })} switchLabel="Lift an der Abholung nutzbar" />
-            <StepRow label="Ziel" sub="Stockwerk" value={flow.toFloor} min={LIMITS.floor[0]} max={LIMITS.floor[1]} display={floor(flow.toFloor)} onChange={(toFloor) => update({ toFloor })} labelDown="Stockwerk Ziel verringern" labelUp="Stockwerk Ziel erhöhen" />
+            <StepRow label="Ziel" sub="Stockwerk" value={flow.toFloor} min={LIMITS.floor[0]} max={LIMITS.floor[1]} display={floorText(flow.toFloor)} onChange={(toFloor) => update({ toFloor })} labelDown="Stockwerk Ziel verringern" labelUp="Stockwerk Ziel erhöhen" />
             <SwitchRow label="Lift für das Transportgut" checked={flow.toLift} onChange={(toLift) => update({ toLift })} switchLabel="Lift am Ziel nutzbar" />
           </GroupedList>
         </Step>
@@ -211,7 +201,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
             {flow.assembly && (
               <li className="relative before:absolute before:top-0 before:right-0 before:left-[58px] before:h-[0.5px] before:bg-separator">
                 <button type="button" onClick={() => setSheet('assembly')} className="press flex min-h-[52px] w-full items-center justify-between gap-3 pr-3 pl-[58px] text-left">
-                  <span className="text-subhead text-text-secondary">Standardmöbel · {lm(assemblyLm)} lfm</span>
+                  <span className="text-subhead text-text-secondary">Standardmöbel · {lmText(assemblyLm)}</span>
                   <span className="flex items-center gap-1 whitespace-nowrap text-body tabular-nums">
                     {assemblyCents !== undefined && formatEuro(assemblyCents)}
                     <Icon name="chevron-right" width={18} height={18} className="text-text-secondary opacity-60" />
@@ -227,7 +217,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
       </div>
 
       <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from && !!flow.to && !calc.loading} onContinue={() => void navigate(`/${copy[service].path}/termin`)} />
-      <PreisSheet open={sheet === 'price'} onClose={() => setSheet(null)} preview={preview} flow={flow} tariffs={tariffs} />
+      <PreisSheet note="Richtwert auf Basis deiner Angaben. Dauer, Team und Fahrzeug bestätigt der Partner." open={sheet === 'price'} onClose={() => setSheet(null)} preview={preview} describe={(key) => (price ? lineText(key as Parameters<typeof lineText>[0], price, flow, tariffs) : { label: key })} />
       <AdresseSheet which={sheet === 'from' || sheet === 'to' ? sheet : null} flow={flow} onClose={() => setSheet(null)} onConsent={consent} onPick={pick} />
 
       <Sheet open={sheet === 'vehicle'} onClose={() => setSheet(null)} title="Fahrzeugart" detents={[0.4, 0.6]}>
@@ -254,10 +244,10 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
 
       <Sheet open={sheet === 'assembly'} onClose={() => setSheet(null)} title="Montage / Demontage" detents={[0.4, 0.6]}>
         <GroupedList>
-          <StepRow label="Standardmöbel" sub="Laufmeter" value={assemblyLm} min={minLm} max={LIMITS.assemblyLm[1]} step={0.5} display={`${lm(assemblyLm)} lfm`} onChange={(assemblyLm) => update({ assemblyLm })} labelDown="Laufmeter verringern" labelUp="Laufmeter erhöhen" />
+          <StepRow label="Standardmöbel" sub="Laufmeter" value={assemblyLm} min={minLm} max={LIMITS.assemblyLm[1]} step={0.5} display={lmText(assemblyLm)} onChange={(assemblyLm) => update({ assemblyLm })} labelDown="Laufmeter verringern" labelUp="Laufmeter erhöhen" />
         </GroupedList>
         <p className="m-0 mt-2 px-1 text-footnote text-text-secondary">
-          {formatEuro(num(tariffs, 'assembly.rate_per_lfm'))} je Laufmeter, mindestens {lm(minLm)} lfm.
+          {formatEuro(num(tariffs, 'assembly.rate_per_lfm'))} je Laufmeter, mindestens {lmText(minLm)}.
         </p>
       </Sheet>
     </>

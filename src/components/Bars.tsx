@@ -64,7 +64,7 @@ export function NavBar({ title, back, trailing }: { title: string; back?: { to: 
 
   return (
     <header>
-      <div ref={bar} className={`${column} top-0 z-10 pt-safe transition-colors ${collapsed ? 'glass border-b-[0.5px] border-separator' : ''}`}>
+      <div ref={bar} className={`${column} top-0 z-10 pt-safe ${collapsed ? 'glass-strong border-b-[0.5px] border-separator' : ''}`}>
         <div className="relative flex h-11 items-center justify-between px-2 text-accent">
           {back ? (
             <Link to={back.to} className="press flex h-11 min-w-11 items-center gap-0.5 text-body">

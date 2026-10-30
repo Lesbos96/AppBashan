@@ -79,9 +79,9 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [x] E2E: Umzug-Preisbeispiel aus dem README (689,61 €) erscheint exakt in der UI, ohne Gebührenzeile; Klavier → Angebotspflicht
 
 ## S7 · Entrümpelung und Montage
-- [ ] Wizard wie `06` (alle 6 Schritte im selben Stil), Ergebnis wie `07` mit Spannen-Grafik, Besichtigungspfad bei Sonderfällen
-- [ ] Montage: Küche wie `08`, Standardmöbel im selben Stil
-- [ ] E2E: Entrümpelungs- (1.175,00 €, Spanne 950–1.550 €) und Küchen-Preisbeispiel (770,40 €) aus dem README exakt in der UI, ohne Gebühr
+- [x] Wizard wie `06` (alle 6 Schritte im selben Stil), Ergebnis wie `07` mit Spannen-Grafik, Besichtigungspfad bei Sonderfällen
+- [x] Montage: Küche wie `08`, Standardmöbel im selben Stil
+- [x] E2E: Entrümpelungs- (1.175,00 €, Spanne 950–1.550 €) und Küchen-Preisbeispiel (770,40 €) aus dem README exakt in der UI, ohne Gebühr
 
 ## S8a · Anfrage-Backend und Login (Effort high)
 Keine Screens. Die App bekommt nur die Module, die S8b anbindet.

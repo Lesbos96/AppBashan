@@ -1,4 +1,4 @@
-import { LIMITS } from '@pricing'
+import { type AssemblyInput, type ClearanceInput, LIMITS } from '@pricing'
 import { useCallback, useState } from 'react'
 import type { RouteResult } from '../../supabase/functions/_shared/route/facts.ts'
 import { isRouteResult } from './routeResult'
@@ -60,8 +60,6 @@ export const initialFlow: TransportFlow = {
   packing: false,
 }
 
-const key = (service: Service) => `movenow.flow.${service}`
-
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const within = (v: unknown, [min, max]: readonly [number, number]) => finite(v) && v >= min && v <= max
 const place = (v: unknown) => {
@@ -69,15 +67,15 @@ const place = (v: unknown) => {
   const p = v as { label?: unknown; point?: { lat?: unknown; lon?: unknown } | null } | undefined
   return typeof p?.label === 'string' && (p.point === null || (!!p.point && finite(p.point.lat) && finite(p.point.lon)))
 }
+/** Jedes Feld hat den Typ des Anfangswerts; `skip` sind Felder mit eigener Prüfung. */
+const typed = (r: Record<string, unknown>, initial: object, skip: string[] = []) => Object.entries(initial).every(([k, v]) => skip.includes(k) || typeof r[k] === typeof v)
 
 /** Gespeicherter Zustand nur, wenn jedes Feld Typ, Aufzählung und Grenzen des Modells einhält; sonst verwerfen. */
-function valid(raw: unknown): raw is TransportFlow {
+function validTransport(raw: unknown): raw is TransportFlow {
   if (!raw || typeof raw !== 'object') return false
   const r = raw as Record<string, unknown>
-  const skip = ['from', 'to', 'route', 'hours']
-  const typed = Object.entries(initialFlow).every(([k, v]) => skip.includes(k) || typeof r[k] === typeof v)
   return (
-    typed &&
+    typed(r, initialFlow, ['from', 'to', 'route', 'hours']) &&
     ['normal', 'piano', 'grand', 'safe'].includes(r.goods as string) &&
     ['van', 'truck', 'large'].includes(r.vehicleType as string) &&
     place(r.from) &&
@@ -95,31 +93,95 @@ function valid(raw: unknown): raw is TransportFlow {
   )
 }
 
-function read(service: Service): TransportFlow {
-  try {
-    const raw: unknown = JSON.parse(sessionStorage.getItem(key(service)) ?? 'null')
-    if (valid(raw)) return raw
-  } catch {
-    // Zustand ist nur eine Bequemlichkeit; ohne Speicher startet der Flow leer
-  }
-  return initialFlow
+/** Montage-Wahl für Service „Montage" und den Schritt „Zusatz" der Entrümpelung; Küche braucht lm (unten), upper und tall. */
+export type AssemblyDraft = { kind: 'standard' | 'kitchen'; lm: number; upper: number; tall: number }
+
+export const initialDraft: AssemblyDraft = { kind: 'standard', lm: 2, upper: 0, tall: 0 }
+
+export const toAssembly = (d: AssemblyDraft): AssemblyInput => (d.kind === 'standard' ? { kind: 'standard', lm: d.lm } : { kind: 'kitchen', lm: d.lm, upper: d.upper, tall: d.tall })
+
+function validDraft(raw: unknown): raw is AssemblyDraft {
+  if (!raw || typeof raw !== 'object') return false
+  const r = raw as Record<string, unknown>
+  return ['standard', 'kitchen'].includes(r.kind as string) && within(r.lm, LIMITS.assemblyLm) && within(r.upper, LIMITS.assemblyLm) && within(r.tall, LIMITS.assemblyLm)
 }
 
-/** Flow-Zustand je Service im sessionStorage (nur in diesem Tab), bis `quote` ihn speichert. */
-export function useFlow(service: Service): [TransportFlow, (patch: Partial<TransportFlow>) => void] {
-  const [flow, setFlow] = useState(() => read(service))
+export type MontageFlow = { draft: AssemblyDraft }
+export const initialMontage: MontageFlow = { draft: initialDraft }
+const validMontage = (raw: unknown): raw is MontageFlow => !!raw && typeof raw === 'object' && validDraft((raw as Record<string, unknown>).draft)
+
+/** Eingaben des Entrümpelungs-Wizards. `step` (1–6) ist die Seite des Wizards; Beschreibung ist kein Preisfeld. */
+export type ClearanceFlow = {
+  step: number
+  object: '' | ClearanceInput['object']
+  area: number
+  fill: ClearanceInput['fill']
+  floor: number
+  /** Lift für die Gegenstände nutzbar (oder ebenerdig). */
+  lift: boolean
+  special: boolean
+  assembly: boolean
+  draft: AssemblyDraft
+  description: string
+}
+
+export const clearanceSteps = 6
+
+export const initialClearance: ClearanceFlow = {
+  step: 1,
+  object: '',
+  area: 40,
+  fill: 'normal',
+  floor: 0,
+  lift: true,
+  special: false,
+  assembly: false,
+  draft: initialDraft,
+  description: '',
+}
+
+function validClearance(raw: unknown): raw is ClearanceFlow {
+  if (!raw || typeof raw !== 'object') return false
+  const r = raw as Record<string, unknown>
+  return (
+    typed(r, initialClearance, ['draft']) &&
+    within(r.step, [1, clearanceSteps]) &&
+    ['', 'flat', 'house', 'attic', 'cellar', 'office', 'heavy'].includes(r.object as string) &&
+    ['light', 'normal', 'full'].includes(r.fill as string) &&
+    within(r.area, LIMITS.clearanceArea) &&
+    within(r.floor, LIMITS.floor) &&
+    (r.description as string).length <= 800 &&
+    validDraft(r.draft)
+  )
+}
+
+/** Flow-Zustand im sessionStorage (nur in diesem Tab), bis `quote` ihn speichert; ungültiger oder fehlender Zustand startet leer. */
+function useStored<T>(key: string, initial: T, valid: (raw: unknown) => raw is T): [T, (patch: Partial<T>) => void] {
+  const [flow, setFlow] = useState<T>(() => {
+    try {
+      const raw: unknown = JSON.parse(sessionStorage.getItem(key) ?? 'null')
+      if (valid(raw)) return raw
+    } catch {
+      // Zustand ist nur eine Bequemlichkeit; ohne Speicher startet der Flow leer
+    }
+    return initial
+  })
   const update = useCallback(
-    (patch: Partial<TransportFlow>) =>
+    (patch: Partial<T>) =>
       setFlow((prev) => {
         const next = { ...prev, ...patch }
         try {
-          sessionStorage.setItem(key(service), JSON.stringify(next))
+          sessionStorage.setItem(key, JSON.stringify(next))
         } catch {
-          // siehe read()
+          // siehe oben
         }
         return next
       }),
-    [service],
+    [key],
   )
   return [flow, update]
 }
+
+export const useFlow = (service: Service) => useStored(`movenow.flow.${service}`, initialFlow, validTransport)
+export const useClearanceFlow = () => useStored('movenow.flow.clearance', initialClearance, validClearance)
+export const useMontageFlow = () => useStored('movenow.flow.montage', initialMontage, validMontage)

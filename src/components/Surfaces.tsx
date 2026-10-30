@@ -103,13 +103,13 @@ export function Field({ label, className = '', ...props }: { label: string } & I
 export function AmountRow({ label, cents, strong }: { label: string; cents: number; strong?: boolean }) {
   return (
     <li className={`${separator('not-first:before:left-4')} flex items-center justify-between gap-3 px-4 py-2 ${strong ? 'min-h-[52px]' : 'min-h-14'}`}>
-      <span className="min-w-0 text-body">{label}</span>
+      <span className={`min-w-0 text-body ${strong ? 'font-semibold' : ''}`}>{label}</span>
       <span className={`shrink-0 whitespace-nowrap text-body tabular-nums ${strong ? 'font-bold' : ''}`}>{formatEuro(cents)}</span>
     </li>
   )
 }
 
-type RowLabel = { label: string; sub?: string; icon?: string; tileClassName?: string }
+type RowLabel = { label: string; sub?: string; icon?: string; tileClassName?: string; /** Kleine Farbkachel statt Icon (z. B. Schrankart); die Klasse setzt die Farbe. */ dotClassName?: string }
 
 const tile = (icon: string | undefined, className = 'bg-primary') =>
   icon && (
@@ -125,7 +125,9 @@ const rowText = ({ label, sub }: RowLabel) => (
   </span>
 )
 
-const rowInset = (icon?: string) => separator(icon ? 'not-first:before:left-[58px]' : 'not-first:before:left-4')
+const rowInset = (icon?: string, dot?: string) => separator(icon ? 'not-first:before:left-[58px]' : dot ? 'not-first:before:left-11' : 'not-first:before:left-4')
+
+const dotTile = (className?: string) => className && <span aria-hidden="true" className={`size-3 shrink-0 rounded-[4px] ${className}`} />
 
 /** Zeile mit Wert und Stepper-Pille. */
 export function StepRow({
@@ -140,8 +142,9 @@ export function StepRow({
   ...text
 }: RowLabel & { value: number; min: number; max: number; step?: number; display: string; onChange: (v: number) => void; labelDown: string; labelUp: string }) {
   return (
-    <li className={`${rowInset(text.icon)} flex items-center gap-3 pr-3 pl-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
+    <li className={`${rowInset(text.icon, text.dotClassName)} flex items-center gap-3 pr-3 pl-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
       {tile(text.icon, text.tileClassName)}
+      {dotTile(text.dotClassName)}
       {rowText(text)}
       <output className="whitespace-nowrap text-headline tabular-nums">{display}</output>
       <StepPill

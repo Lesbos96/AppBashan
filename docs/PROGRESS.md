@@ -56,6 +56,12 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Migration 0009 `route_cleanup()` + stündlicher Job (Cache ≤ 25 h); RLS-Test prüft 42501 exakt (Beweis mit gelockerten Grants rot, zurückgenommen); Body-Limit per Stream; IP-Tageslimit 80/160; Konsolen-Erfassung belegt; check, test:rls (55) und E2E (14) grün
 - `route` deployt, Secrets fehlen (Auto-Modus verweigert, Beks setzt sie), Live-Test Wien→Graz, R1, R3 offen: OPEN_ISSUES „S5b"
 
+## 2026-10-30 · S7 · abgeschlossen
+- Vorab: Umzug-E2E „Mehr Kartons“ 50 von 50 Läufen grün (Ursache früherer Fehlschläge vermutlich Timeout unter Last, nicht bewiesen; Timeout 60 s, Trace/Screenshot bei Fehlschlag). Preis-Sheet: Link bei 390 px ohne Scrollen, obere Leiste dichter (`glass-strong`)
+- Entrümpelungs-Wizard (6 Schritte) mit Ergebnis (Spannen-Grafik, Besichtigungspfad) und Service Montage (Standardmöbel, Küche) über `@pricing`; `useStored` für alle Flows; Preis-Sheet für alle Services nutzbar
+- E2E: Entrümpelung 1.175,00 € (950–1.550 €), Küche 770,40 €, Mindestpreis, Besichtigung, kaputter Zustand; check, E2E (33) und `shots:all` (240) grün, Reviewer ohne „hoch“. Keine Migration, kein `test:rls` nötig
+- Offen: Beschreibung/Fotos für `quote` (S8a), Termin-Seiten bis S8b „Folgt“: OPEN_ISSUES „S7“
+
 <!-- Beispiel:
 ## 2026-10-30 · S1 · abgeschlossen
 - Gerüst, Migration 0001, RLS-Tests (12/12) grün

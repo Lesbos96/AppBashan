@@ -1,7 +1,10 @@
 import { createBrowserRouter, redirect, type RouteObject } from 'react-router'
 import { hasOnboarded } from '../lib/onboarding'
 import { Auftraege } from '../screens/Auftraege'
+import { Entruempelung } from '../screens/entruempelung/Wizard'
+import { EntruempelungErgebnis } from '../screens/entruempelung/Ergebnis'
 import { Konfigurator } from '../screens/Konfigurator'
+import { Montage } from '../screens/Montage'
 import { Onboarding } from '../screens/Onboarding'
 import { Profil } from '../screens/Profil'
 import { Datenschutz, Fehler, Folgt, Impressum } from '../screens/Seiten'
@@ -17,8 +20,8 @@ const backTo = (path: string) =>
 const flows = [
   { path: 'transport/termin', title: 'Ort & Termin' },
   { path: 'umzug/termin', title: 'Ort & Termin' },
-  { path: 'entruempelung', title: 'Entrümpelung' },
-  { path: 'montage', title: 'Montage' },
+  { path: 'entruempelung/termin', title: 'Ort & Termin' },
+  { path: 'montage/termin', title: 'Ort & Termin' },
   { path: 'profil/vermieter', title: 'Für Vermieter' },
 ].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
 
@@ -39,6 +42,9 @@ export const router = createBrowserRouter([
       page('willkommen', <Onboarding />, { key: 'willkommen', bar: false }),
       page('transport', <Konfigurator service="transport" />, { key: 'transport', bar: false }),
       page('umzug', <Konfigurator service="move" />, { key: 'umzug', bar: false }),
+      page('entruempelung', <Entruempelung />, { key: 'entruempelung', bar: false }),
+      page('entruempelung/ergebnis', <EntruempelungErgebnis />, { key: 'entruempelung/ergebnis', bar: false }),
+      page('montage', <Montage />, { key: 'montage', bar: false }),
       ...flows,
     ],
   },
