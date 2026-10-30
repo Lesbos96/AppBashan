@@ -68,7 +68,7 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [x] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
 - [x] Tests mit gemocktem Anbieter und festen Fixtures
 
-- [ ] **OFFEN (2026-10-30), Pflicht vor Abnahme von S8a und vor dem Livegang:** `ORS_API_KEY` holen, die Secrets im Dev-Projekt setzen (`SECRET_KEY`, `ORS_API_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`), `route` und `quote` deployen, Live-Test Wien→Graz (Kilometer plausibel um 200 km), R1 (gefälschte Header) und R3 (Latenz mit voller Grenze). Einzelheiten: OPEN_ISSUES „S5b"
+- [x] **Erledigt (2026-10-30):** Secrets im Dev-Projekt gesetzt (SECRET_KEY, ORS_API_KEY, RATE_LIMIT_SECRET, PUBLISHABLE_KEY, ALLOWED_ORIGINS), route und quote deployt, Live-Test Wien→Graz (196,1 km, 186,5 km außerhalb), R1 und R3 belegt. Einzelheiten: OPEN_ISSUES "S5b/S5c"
 - [ ] **OFFEN (2026-10-30), vor dem Livegang:** ORS-Plan und Nutzungsbedingungen für kommerzielle Nutzung klären. Der Standard-Plan hat 2.000 Directions-Anfragen pro Tag und 40 pro Minute; daraus das Tageslimit pro IP konkret festlegen (`LIMITS` in `handler.ts`)
 - [ ] **OFFEN (2026-10-30), vor dem Livegang:** `ALLOWED_ORIGINS` auf die echten Domains umstellen
 
@@ -87,12 +87,12 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 
 ## S8a · Anfrage-Backend und Login (Effort high)
 Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
-- [x] Edge Function `quote` (Code und Tests fertig, vorläufig: nicht deployt, nicht live getestet, siehe OPEN_ISSUES, Abschnitt S8a): prüft `inputs` je Service, rechnet neu und speichert Snapshot mit `price_version`, schreibt `fee_splits` mit dem Satz aus `platform_settings`; Status „angefragt" bzw. „Besichtigung angefragt"; „Anfrage bearbeiten" rechnet neu und ist nur bei „angefragt" erlaubt
+- [x] Edge Function `quote` (deployt und live getestet am 2026-10-30, siehe OPEN_ISSUES, Abschnitt S8a): prüft `inputs` je Service, rechnet neu und speichert Snapshot mit `price_version`, schreibt `fee_splits` mit dem Satz aus `platform_settings`; Status „angefragt" bzw. „Besichtigung angefragt"; „Anfrage bearbeiten" rechnet neu und ist nur bei „angefragt" erlaubt
 - [x] Foto-Upload in den privaten Bucket (Pfad `{user}/{request}/{datei}`, signierte URLs) als App-Modul
 - [x] Supabase Auth: E-Mail-Magic-Link, Code in derselben Mail als Ausweichweg, Konto erst beim Absenden, „Mit Apple anmelden" vorbereitet; Auth-Modul in der App
 - [x] Integrationstests (sequenziell): manipulierter Client-Preis wird ignoriert; `fee_splits` stimmt centgenau mit der Gebührenfunktion überein und ist für den Kunden unlesbar; Bearbeiten außerhalb von „angefragt" wird abgelehnt. Fremde Anfragen, Fotos und Status sind bereits durch `tests/rls/` abgedeckt und bleiben grün.
 
-**Akzeptanz (vorläufig erfüllt, Live-Test von `route`/`quote` offen, siehe S5):** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`). `quote` liest die Tarifversion über die View `current_price_version`, bricht bei fehlenden Schlüsseln ab und übernimmt die `rental.reference`-Zeile (`unit` `ref`) nicht in den Snapshot (Test).
+**Akzeptanz (erfüllt; Live-Test von `route` und `quote` am 2026-10-30 bestanden, offen bleibt nur der echte Mailversand, siehe OPEN_ISSUES):** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`). `quote` liest die Tarifversion über die View `current_price_version`, bricht bei fehlenden Schlüsseln ab und übernimmt die `rental.reference`-Zeile (`unit` `ref`) nicht in den Snapshot (Test).
 
 ## S8b · Termin, Anfrage, Aufträge
 - [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`

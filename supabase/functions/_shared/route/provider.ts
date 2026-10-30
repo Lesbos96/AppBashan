@@ -15,7 +15,14 @@ export interface RouteProvider {
   route(points: Point[]): Promise<ProviderRoute>
 }
 
-const ORS = 'https://api.openrouteservice.org'
+/**
+ * Basis-URLs je Dienst. HeiGIT hat api.openrouteservice.org durch api.heigit.org ersetzt (Struktur: api.heigit.org/<Dienst>/<Version>);
+ * Directions liegt unter /openrouteservice, Geocoding (Pelias) unter /pelias/v1. Der Key gilt unverändert.
+ */
+export const ORS_URLS = {
+  directions: 'https://api.heigit.org/openrouteservice',
+  geocode: 'https://api.heigit.org/pelias/v1',
+} as const
 const TIMEOUT_MS = 8000
 const VIENNA = { lon: 16.3738, lat: 48.2082 } // Suchschwerpunkt, keine Einschränkung auf ein Land
 
@@ -29,11 +36,11 @@ type OrsRoute = {
   }[]
 }
 
-export function orsProvider(apiKey: string | undefined, fetchFn: typeof fetch = fetch): RouteProvider {
-  async function call(path: string, init: RequestInit): Promise<Response> {
+export function orsProvider(apiKey: string | undefined, fetchFn: typeof fetch = fetch, urls: typeof ORS_URLS = ORS_URLS): RouteProvider {
+  async function call(base: string, path: string, init: RequestInit): Promise<Response> {
     if (!apiKey) throw new ProviderError('unavailable')
     try {
-      return await fetchFn(ORS + path, {
+      return await fetchFn(base + path, {
         ...init,
         headers: { Authorization: apiKey, Accept: 'application/json', ...init.headers },
         signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -53,7 +60,7 @@ export function orsProvider(apiKey: string | undefined, fetchFn: typeof fetch = 
         'focus.point.lon': String(VIENNA.lon),
         'focus.point.lat': String(VIENNA.lat),
       })
-      const res = await call(`/geocode/search?${params}`, {})
+      const res = await call(urls.geocode, `/search?${params}`, {})
       if (!res.ok) throw new ProviderError('unavailable')
       const body = (await res.json()) as OrsGeocode
       return (body.features ?? []).slice(0, 5).flatMap((f) => {
@@ -64,10 +71,13 @@ export function orsProvider(apiKey: string | undefined, fetchFn: typeof fetch = 
     },
 
     async route(points) {
-      const res = await call('/v2/directions/driving-car/geojson', {
+      // instructions: true, weil der Dienst die Abschnitte (Distanz und Dauer je Leg) nur mit Anweisungen liefert;
+      // ohne sie bleibt nur `summary` für die Gesamtstrecke, die einfache Strecke (erstes Leg) ginge verloren.
+      const res = await call(urls.directions, '/v2/directions/driving-car/geojson', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coordinates: points.map((p) => [p.lon, p.lat]), instructions: false, geometry_simplify: false }),
+        // Der /geojson-Endpunkt antwortet auf Accept: application/json mit 406 (Fehler 2007)
+        headers: { 'Content-Type': 'application/json', Accept: 'application/geo+json' },
+        body: JSON.stringify({ coordinates: points.map((p) => [p.lon, p.lat]), instructions: true, geometry_simplify: false }),
       })
       // 400/404: keine Route zwischen den Punkten (z. B. Punkt nicht an der Straße, Distanzlimit).
       if (res.status === 400 || res.status === 404) throw new ProviderError('no_route')

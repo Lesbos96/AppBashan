@@ -3,6 +3,11 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-30 · S8a · Live-Test, Deploy, ORS-Umstellung · abgeschlossen
+- Secrets im Dev-Projekt gesetzt (SECRET_KEY, ORS_API_KEY, RATE_LIMIT_SECRET, PUBLISHABLE_KEY, ALLOWED_ORIGINS; nur über dotenv-cli), `route` und `quote` deployt. ORS-Basis-URL von `api.openrouteservice.org` (abgekündigt) auf `api.heigit.org` umgestellt (Konstante `ORS_URLS`: Directions `/openrouteservice`, Geocoding `/pelias/v1`); zwei Anpassungen aus dem Live-Test: Accept `application/geo+json` (sonst 406) und `instructions: true` (sonst keine Abschnitte je Leg)
+- Live: Wien→Graz 196,1 km, davon 186,5 km außerhalb Wiens, 2,4 h; München international; R1 belegt (12 Aufrufe: ab dem 11. 429, `cf-connecting-ip` wird vom Gateway mit 403 abgelehnt); R3 253 ms; Browser (CORS, `functions.invoke`) und `quote` (Token, CORS, Preis 1.060,95 €, Idempotenz, 409, Miete, Nutzerlimit) geprüft. Zahlen und Befehle: OPEN_ISSUES „S5b/S5c" und „S8a"
+- Offen: echter Mailversand (Dashboard-Vorlagen, SMTP), ORS-Vertrag und Tageslimit, `ALLOWED_ORIGINS` für die echten Domains
+
 ## 2026-10-30 · S8a · Anfrage-Backend und Login · vorläufig abgeschlossen (Live-Test fehlt)
 - Edge Function `quote` (`_shared/quote/`, Migration 0010 mit atomaren RPCs `quote_save_request`/`quote_save_booking`, View `current_fee_rates`, Spalten `description`, `volume_m3`, `client_ref`): Server rechnet Strecke, Preis, Gebühr und Status; Client liefert nur die Kundenwahl. Idempotent über `clientRef`, Bearbeiten nur im Status „angefragt", Miete in Wiener Ortszeit (ISO/UTC wird umgerechnet). App-Module `src/lib/{auth,uploads}.ts`, Mail-Vorlagen mit Code und Link, `route` und `quote` lesen `SECRET_KEY`
 - Tests: Unit 199+ (je Pflichtkriterium ein Test), `test:rls` 88+ gegen Dev (Handler im Prozess, echte DB, fester Routenanbieter); Verweigerungstests bei gelockerten Rechten rot belegt (`tmp/reports/s8a-red-proof.md`). Keine UI, keine Screenshots

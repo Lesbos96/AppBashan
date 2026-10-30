@@ -259,13 +259,17 @@ describe('ORS-Adapter (Fixtures im ORS-Format)', () => {
     const c = await orsProvider('KEY', f as never).geocode('Ring 1')
     expect(c).toEqual([{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT' }])
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url.startsWith('https://api.heigit.org/pelias/v1/search?')).toBe(true)
     expect(url).not.toContain('KEY')
     expect((init.headers as Record<string, string>).Authorization).toBe('KEY')
   })
 
   it('mappt Directions auf Legs, Dauer und Linie; Fehler wie vorgesehen', async () => {
     const ok = { features: [{ geometry: { coordinates: line }, properties: { segments: [{ distance: 1000, duration: 60 }, { distance: 500, duration: 30 }] } }] }
-    const r = await orsProvider('K', res(200, ok) as never).route([A, B, A])
+    const fetched = vi.fn(res(200, ok))
+    const r = await orsProvider('K', fetched as never).route([A, B, A])
+    expect((fetched.mock.calls[0] as unknown as [string])[0]).toBe('https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson')
+    expect(((fetched.mock.calls[0] as unknown as [string, RequestInit])[1].headers as Record<string, string>).Accept).toBe('application/geo+json')
     expect(r).toEqual({ legMeters: [1000, 500], durationSeconds: 90, line })
     await expect(orsProvider('K', res(404, {}) as never).route([A, B])).rejects.toMatchObject({ kind: 'no_route' })
     await expect(orsProvider('K', res(500, {}) as never).route([A, B])).rejects.toMatchObject({ kind: 'unavailable' })
