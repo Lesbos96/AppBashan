@@ -71,6 +71,7 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [x] **Erledigt (2026-10-30):** Secrets im Dev-Projekt gesetzt (SECRET_KEY, ORS_API_KEY, RATE_LIMIT_SECRET, PUBLISHABLE_KEY, ALLOWED_ORIGINS), route und quote deployt, Live-Test Wien→Graz (196,1 km, 186,5 km außerhalb), R1 und R3 belegt. Einzelheiten: OPEN_ISSUES "S5b/S5c"
 - [ ] **OFFEN (2026-10-30), vor dem Livegang:** ORS-Plan und Nutzungsbedingungen für kommerzielle Nutzung klären. Der Standard-Plan hat 2.000 Directions-Anfragen pro Tag und 40 pro Minute; daraus das Tageslimit pro IP konkret festlegen (`LIMITS` in `handler.ts`)
 - [ ] **OFFEN (2026-10-30), vor dem Livegang:** `ALLOWED_ORIGINS` auf die echten Domains umstellen
+- [ ] **PFLICHT (2026-10-31), vor dem ersten Test auf einem Handy und vor dem Livegang:** eigener SMTP-Anbieter einrichten, danach die Mail-Vorlagen aus `supabase/templates/` einspielen (Supabase sperrt sie ohne Custom SMTP), `Site URL` und Redirect-URLs setzen. Bis dahin ist die Anmeldung nur per Test gegen die Datenbank und lokal mit dem Standard-Link belegt. Einzelheiten: OPEN_ISSUES "S8a · PFLICHT"
 
 **Akzeptanz:** Wien→Wien, Wien→Graz, Wien→München liefern die erwartete Region und plausible km-Anteile.
 
