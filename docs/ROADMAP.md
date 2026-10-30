@@ -68,6 +68,8 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [x] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
 - [x] Tests mit gemocktem Anbieter und festen Fixtures
 
+- [ ] **OFFEN, Pflicht vor S8a und vor dem Livegang:** Secrets im Dev-Projekt setzen (`ORS_API_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`), Function `route` neu deployen, Live-Test Wien→Graz mit echter ORS-Geometrie, R1 (gefälschte Header) und R3 (Latenz mit voller Grenze). Einzelheiten: OPEN_ISSUES „S5b"
+
 **Akzeptanz:** Wien→Wien, Wien→Graz, Wien→München liefern die erwartete Region und plausible km-Anteile.
 
 ## S6 · Transport- und Umzug-Konfigurator
