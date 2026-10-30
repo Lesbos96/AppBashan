@@ -25,16 +25,26 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S5 · Cache-Schlüssel exakt:** Der Schlüssel nutzt die Koordinaten ohne Rundung; ein Nachkomma-Unterschied ist ein Cache-Fehlgriff. Bei geringer Trefferquote den Schlüssel auf 5 Nachkommastellen runden (die Geometrie bleibt für outsideKm voll).
 
 ## UI
+- **S6 · Farben im Code:** Kacheln der Zusatzleistungen (`#2B8C88`, `#3A7F9A`, `#B39A68`) und der Kartenhintergrund (`#E8EEED`, `#0F272B`) stehen direkt im Code, wie schon in `Profil.tsx`; als Tokens in `theme.css` nachziehen.
+- **S6 · Segmented Control:** Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per `::before` auf 44 px (ersetzt den Punkt aus S3b).
+- **S6 · Kartenhintergrund und Dark:** Der Hintergrund (`route-map.svg`) ist die dekorative Straßengrafik der Referenz 04, keine echte Karte; die Linie kommt aus der echten `geometry`. `route-map.dark.svg` ist aus der Referenz abgeleitet (Dark-Muster, keine Referenz).
+- **S6 · Info-Link verlässt den Flow:** „Wie rechnet MoveNow?“ führt zu `/profil/preise` (Profil-Seite mit Sheet); Zurück geht dann ins Profil, nicht in den Konfigurator. Eingaben bleiben im sessionStorage, Fotos im Speicher erhalten.
 - **S4 · Profil gegenüber `16`:** „Mitteilungen" fehlt (keine Benachrichtigungen in dieser Phase), „Mit E-Mail-Link anmelden" ist deaktiviert (kommt mit S8b), Darstellung (Automatisch) und Region (Wien, AT) sind Anzeigen ohne Auswahl, ebenso die Region-Pille auf Start (nur Wien).
 - **S4 · Farben im Code:** `#2e918a` (Kachel Region) und `#4a5f63` (Kacheln Datenschutz, Impressum) stehen direkt in `Profil.tsx`; bei Gelegenheit als Tokens in `theme.css`.
 - **S4 · Hero bei 768 px:** Die Startmarke der Route im Hero liegt knapp am Text („Weniger Aufwand."), weil die Grafik mit `slice` skaliert. Bei Bedarf Route nach rechts rücken.
 - **S4 · Tarif-Aktivierung:** Neue Tarife als neue `price_version` mit künftigem `effective_on` anlegen, erst die Zeilen eintragen; `current_price_version` schaltet am Datum (Wiener Zeit) um.
 - **S3b · Sheet bei Größenänderung:** `Sheet` liest `window.innerHeight` nur beim Öffnen; Drehen oder Fenstergröße bei offenem Sheet lässt Höhe und Detents falsch. Bei Bedarf Resize-Listener oder `dvh`.
-- **S3b · Segmented Control 36 px:** wie die Referenz, unter 44 px Touch-Ziel. Vor S6 entscheiden, ob die Labels auf 44 px Klickfläche gestreckt werden.
 - **S3b · Dark-Varianten abgeleitet:** Primär-Button-Verlauf und Segment-Thumb im Dark Mode ohne Referenz nach dem Dark-Muster. Schatten des Thumbs und Fortschrittsspur (`bg-fill` statt 10 %) nicht eigens als Token.
 - **S3a · Icon-Namen ungeprüft:** `Icon` und `Illustration` nehmen Dateinamen als String; ein falscher Name wirft zur Laufzeit statt beim Typecheck. Bei Bedarf Namen als Union generieren.
 
+## S6 · Konfigurator
+- **Nicht-Preisfelder für S8a:** Beschreibung (Freitext, `maxLength` 500) und Ladevolumen (1–100 m³) liegen nur im Flow-Zustand; `parseTransportInput` verwirft sie. `quote` braucht einen eigenen Parser mit Höchstlänge und Spanne und eine Spalte bzw. ein Feld dafür. Die Beschreibung ist für Partner vor der Annahme nicht sichtbar (Freitext kann Namen und Adressen enthalten).
+- **Fotos nur im Speicher:** Bis zum Absenden (S8a/S8b) liegen Fotos als Blobs im Speicher (Modul `photos.ts`); ein Neuladen verwirft sie, der Zustand der Felder bleibt im sessionStorage. EXIF wird beim Übernehmen durch Neu-Kodierung entfernt (E2E-Test mit Exif-Segment). HEIC geht nur in Browsern, die es dekodieren (Safari); sonst Meldung.
+- **Routing nicht live getestet:** Alle Tests und Screenshots nutzen eine feste Beispielantwort für `route` (`tests/e2e/konfigurator-helpers.ts`); sie sagt nichts über echte Kilometer. Erst nach dem Setzen der Secrets (S5b) stimmt, ob CORS (`ALLOWED_ORIGINS`), `apikey` über `functions.invoke` und die Antwortform in der echten App funktionieren. Vor S8a im Browser gegen die Dev-Function prüfen.
+- **Fahrzeugart „Möbel-LKW“:** rechnet wie der Transporter (wie im Prototyp, gleicher Richtsatz); nur „Großer LKW“ führt zum Angebot.
+- **Montage im Konfigurator nur Standardmöbel:** Küche (Unter-, Ober-, Hochschränke) kommt mit dem Service Montage in S7.
+- **Dauer in 0,5-h-Schritten, Kartons einzeln:** Bei vielen Kartons sind das viele Taps; ein Schritt von 5 wäre möglich, wenn sich das im Test mit echten Nutzern zeigt.
+
 ## Prototyp
-- **S1 · `moveRouteHTML` fehlt:** Ein Klick auf „Umzug" im Prototyp wirft einen ReferenceError, weil `moveRouteHTML` in Zeile 51 aufgerufen, aber nirgends definiert wird. Die Preislogik von Umzug (`transportCalc`, Zeile 100) ist nicht betroffen. Die App übernimmt den Fehler nicht (S2, S6).
 - **S1 · Google Fonts in der Referenz:** `docs/reference/design/html/17_Wie_rechnet_MoveNow.html` lädt Inter von `fonts.googleapis.com`. Die App übernimmt das nicht (DSGVO); Erledigt in S3a: Inter wird über `@fontsource-variable/inter` selbst gehostet.
 - **S1 · Quelle für 46,60 €/h fehlt:** Der Montage-Laufmeterpreis 47,87 € ist das Mittel aus 42 / 46,60 / 55 €/h. Für 42 € (DasUmzugsteam) und 55 € (Kraftpack) nennt der Prototyp Quellen, für 46,60 € nicht. Ebenso ohne Einzelquelle: Entrümpelungs-Mindestpreis 180 €, Etagenzuschlag 25 €, Montage mindestens 2 lfm. Im Seed als „Ohne Einzelquelle" markiert.

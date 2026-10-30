@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { formatEuro } from '../lib/money'
+import { StepPill, Toggle } from './Controls'
 import { Icon } from './Icon'
 
 export function Card({ className = '', children }: { className?: string; children: ReactNode }) {
@@ -104,6 +105,78 @@ export function AmountRow({ label, cents, strong }: { label: string; cents: numb
     <li className={`${separator('not-first:before:left-4')} flex items-center justify-between gap-3 px-4 py-2 ${strong ? 'min-h-[52px]' : 'min-h-14'}`}>
       <span className="min-w-0 text-body">{label}</span>
       <span className={`shrink-0 whitespace-nowrap text-body tabular-nums ${strong ? 'font-bold' : ''}`}>{formatEuro(cents)}</span>
+    </li>
+  )
+}
+
+type RowLabel = { label: string; sub?: string; icon?: string; tileClassName?: string }
+
+const tile = (icon: string | undefined, className = 'bg-primary') =>
+  icon && (
+    <span aria-hidden="true" className={`flex size-[30px] shrink-0 items-center justify-center rounded-icon-tile text-white ${className}`}>
+      <Icon name={icon} width={19} height={19} />
+    </span>
+  )
+
+const rowText = ({ label, sub }: RowLabel) => (
+  <span className="flex min-w-0 flex-1 flex-col gap-px">
+    <span className="text-body">{label}</span>
+    {sub && <span className="text-[13px]/4 text-text-secondary">{sub}</span>}
+  </span>
+)
+
+const rowInset = (icon?: string) => separator(icon ? 'not-first:before:left-[58px]' : 'not-first:before:left-4')
+
+/** Zeile mit Wert und Stepper-Pille. */
+export function StepRow({
+  value,
+  min,
+  max,
+  step = 1,
+  display,
+  onChange,
+  labelDown,
+  labelUp,
+  ...text
+}: RowLabel & { value: number; min: number; max: number; step?: number; display: string; onChange: (v: number) => void; labelDown: string; labelUp: string }) {
+  return (
+    <li className={`${rowInset(text.icon)} flex items-center gap-3 pr-3 pl-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
+      {tile(text.icon, text.tileClassName)}
+      {rowText(text)}
+      <output className="whitespace-nowrap text-headline tabular-nums">{display}</output>
+      <StepPill
+        labelDown={labelDown}
+        labelUp={labelUp}
+        canDown={value > min}
+        canUp={value < max}
+        onDown={() => onChange(Math.max(min, +(value - step).toFixed(2)))}
+        onUp={() => onChange(Math.min(max, +(value + step).toFixed(2)))}
+      />
+    </li>
+  )
+}
+
+/** Zeile mit Schalter; `switchLabel` benennt den Schalter für Screenreader genauer als die sichtbare Zeile. */
+export function SwitchRow({ checked, onChange, switchLabel, ...text }: RowLabel & { checked: boolean; onChange: (v: boolean) => void; switchLabel: string }) {
+  return (
+    <li className={`${rowInset(text.icon)} flex items-center gap-3 px-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
+      {tile(text.icon, text.tileClassName)}
+      {rowText(text)}
+      <Toggle label={switchLabel} checked={checked} onChange={onChange} />
+    </li>
+  )
+}
+
+/** Zeile mit Wert und Chevron, öffnet `onClick` (z. B. ein Sheet). */
+export function ValueRow({ label, sub, value, onClick, icon }: RowLabel & { value?: string; onClick: () => void }) {
+  return (
+    <li className={rowInset(icon)}>
+      <button type="button" onClick={onClick} className={`press flex w-full items-center gap-3 pr-3 pl-4 text-left ${sub ? 'min-h-[64px]' : 'min-h-[52px]'}`}>
+        {tile(icon)}
+        {rowText({ label, sub })}
+        {value && <span className="min-w-0 truncate whitespace-nowrap text-body text-text-secondary tabular-nums">{value}</span>}
+        <Icon name="chevron-right" width={18} height={18} className="shrink-0 text-text-secondary opacity-60" />
+      </button>
     </li>
   )
 }

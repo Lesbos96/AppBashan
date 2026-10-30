@@ -1,0 +1,14 @@
+<svg viewBox="0 0 350 190" width="350" height="190" fill="none" preserveAspectRatio="xMidYMid slice">
+<rect width="350" height="190" fill="#0F272B"></rect>
+<path d="M14 112c18-12 46-10 58 4s4 34-20 36-52-24-38-40z" fill="#15383A"></path>
+<ellipse cx="312" cy="34" rx="44" ry="22" fill="#15383A"></ellipse>
+<path d="M226 -10C240 40 258 84 296 124S344 170 362 204" stroke="#1B4048" stroke-width="16" stroke-linecap="round"></path>
+<path d="M226 -10C240 40 258 84 296 124S344 170 362 204" stroke="#23505A" stroke-width="5" stroke-linecap="round"></path>
+<path d="M-10 58C60 52 150 66 362 46" stroke="#274047" stroke-width="6" stroke-linecap="round"></path>
+<path d="M-10 146C80 136 170 158 362 138" stroke="#274047" stroke-width="5" stroke-linecap="round"></path>
+<path d="M74 -10 62 200" stroke="#274047" stroke-width="4" stroke-linecap="round"></path>
+<path d="M150 -10C156 60 148 130 158 200" stroke="#274047" stroke-width="4" stroke-linecap="round"></path>
+<path d="M200 -10 214 200" stroke="#274047" stroke-width="2.5" stroke-linecap="round"></path>
+<path d="M-10 100C70 98 130 104 210 92" stroke="#274047" stroke-width="2.5" stroke-linecap="round"></path>
+<path d="M110 -10 104 200M30 -10 22 200M290 -10 280 120M250 150 362 100" stroke="#274047" stroke-width="1.6" stroke-linecap="round"></path>
+</svg>

@@ -1,6 +1,7 @@
 import { createBrowserRouter, redirect, type RouteObject } from 'react-router'
 import { hasOnboarded } from '../lib/onboarding'
 import { Auftraege } from '../screens/Auftraege'
+import { Konfigurator } from '../screens/Konfigurator'
 import { Onboarding } from '../screens/Onboarding'
 import { Profil } from '../screens/Profil'
 import { Datenschutz, Fehler, Folgt, Impressum } from '../screens/Seiten'
@@ -9,14 +10,17 @@ import { Shell, type Handle } from './Shell'
 
 const page = (path: string, element: RouteObject['element'], handle: Handle, extra?: Partial<RouteObject>): RouteObject => ({ path, element, handle, ...extra })
 
+const backTo = (path: string) =>
+  path.startsWith('profil') ? { to: '/profil', label: 'Profil' } : path.includes('/') ? { to: `/${path.split('/')[0]}`, label: 'Zurück' } : { to: '/', label: 'Start' }
+
 // Flows ohne Tab-Bar, gebaut in S6 bis S9; bis dahin „Folgt".
 const flows = [
-  { path: 'transport', title: 'Möbeltransport' },
-  { path: 'umzug', title: 'Umzug' },
+  { path: 'transport/termin', title: 'Ort & Termin' },
+  { path: 'umzug/termin', title: 'Ort & Termin' },
   { path: 'entruempelung', title: 'Entrümpelung' },
   { path: 'montage', title: 'Montage' },
   { path: 'profil/vermieter', title: 'Für Vermieter' },
-].map(({ path, title }) => page(path, <Folgt title={title} back={{ to: path.startsWith('profil') ? '/profil' : '/', label: path.startsWith('profil') ? 'Profil' : 'Start' }} />, { key: path, bar: false }))
+].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +37,8 @@ export const router = createBrowserRouter([
       page('profil/datenschutz', <Datenschutz />, { key: 'datenschutz' }),
       page('profil/impressum', <Impressum />, { key: 'impressum' }),
       page('willkommen', <Onboarding />, { key: 'willkommen', bar: false }),
+      page('transport', <Konfigurator service="transport" />, { key: 'transport', bar: false }),
+      page('umzug', <Konfigurator service="move" />, { key: 'umzug', bar: false }),
       ...flows,
     ],
   },

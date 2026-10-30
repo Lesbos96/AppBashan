@@ -28,7 +28,8 @@ export function Segmented({
       {options.map((o) => (
         <label
           key={o.value}
-          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] has-[:checked]:font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent/45"
+          // Das Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per ::before auf 44 px.
+          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] has-[:checked]:font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent/45"
         >
           <input
             type="radio"
@@ -48,6 +49,22 @@ export function Segmented({
           <span className="relative truncate px-1">{o.label}</span>
         </label>
       ))}
+    </div>
+  )
+}
+
+/** Nur die Pille (− | +) wie in den Konfiguratoren; der Wert steht links daneben. */
+export function StepPill({ labelDown, labelUp, canDown, canUp, onDown, onUp }: { labelDown: string; labelUp: string; canDown: boolean; canUp: boolean; onDown: () => void; onUp: () => void }) {
+  const button = 'press -my-1.5 flex h-11 w-11 items-center justify-center text-accent disabled:text-text/30'
+  return (
+    <div className="flex h-[34px] items-center rounded-full bg-fill">
+      <button type="button" aria-label={labelDown} disabled={!canDown} onClick={onDown} className={button}>
+        <Icon name="minus" width={17} height={17} />
+      </button>
+      <span aria-hidden="true" className="h-[18px] w-[0.5px] bg-text/16" />
+      <button type="button" aria-label={labelUp} disabled={!canUp} onClick={onUp} className={button}>
+        <Icon name="plus" width={17} height={17} />
+      </button>
     </div>
   )
 }

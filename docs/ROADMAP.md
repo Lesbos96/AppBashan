@@ -73,10 +73,10 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 **Akzeptanz:** Wien→Wien, Wien→Graz, Wien→München liefern die erwartete Region und plausible km-Anteile.
 
 ## S6 · Transport- und Umzug-Konfigurator
-- [ ] Konfigurator wie `04` mit allen Feldern aus Briefing Abschnitt 4, Fotos (Kamera/Galerie, Vorschau, Entfernen, EXIF entfernt)
-- [ ] Adressen über `route` mit Einwilligung und Bestätigung, animierte Routengrafik
-- [ ] Fixierte Live-Preiskarte, Preis-Sheet wie `05` (ohne Gebühr, Beträge ohne Umbruch); „Persönliches Angebot" mit Gründen
-- [ ] E2E: Umzug-Preisbeispiel aus dem README (689,61 €) erscheint exakt in der UI, ohne Gebührenzeile; Klavier → Angebotspflicht
+- [x] Konfigurator wie `04` mit allen Feldern aus Briefing Abschnitt 4, Fotos (Kamera/Galerie, Vorschau, Entfernen, EXIF entfernt)
+- [x] Adressen über `route` mit Einwilligung und Bestätigung, animierte Routengrafik
+- [x] Fixierte Live-Preiskarte, Preis-Sheet wie `05` (ohne Gebühr, Beträge ohne Umbruch); „Persönliches Angebot" mit Gründen
+- [x] E2E: Umzug-Preisbeispiel aus dem README (689,61 €) erscheint exakt in der UI, ohne Gebührenzeile; Klavier → Angebotspflicht
 
 ## S7 · Entrümpelung und Montage
 - [ ] Wizard wie `06` (alle 6 Schritte im selben Stil), Ergebnis wie `07` mit Spannen-Grafik, Besichtigungspfad bei Sonderfällen

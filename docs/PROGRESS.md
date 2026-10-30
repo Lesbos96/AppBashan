@@ -3,6 +3,12 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-30 · S6 · Transport- und Umzug-Konfigurator · abgeschlossen
+- `/transport` und `/umzug` (Konfigurator wie 04, Preis-Sheet wie 05, Persönliches Angebot mit Gründen, Foto-Aufbereitung ohne EXIF, Adress-Sheet mit Einwilligung und Bestätigung, animierte Routengrafik); Weiter führt zu einem Platzhalter `/:service/termin` (S8b). Code: `src/lib/{route,routeResult,photos,flow,preview}.ts`, `src/screens/Konfigurator.tsx`, `src/screens/konfigurator/`
+- Preise nur über `computeTransport` aus `@pricing` (vorher `parseTransportInput`), ohne Strecke ein Angebot (`route_missing`, Anzeige „Strecke fehlt“), nie ein Preis ohne Strecke. Einwilligung standardmäßig aus; ohne sie kein Request an `route`. `route` ist in allen Tests gemockt (feste Beispielantwort, keine echten Kilometer), nicht live getestet (S5b)
+- Tests: 12 neue E2E (689,61 € ohne Gebührenzeile, Klavier, Tastatur, Einwilligung, 429/500, EXIF, 8 Fotos, kaputter Zustand), Unit für Vorschau, Fotos, Routenantwort; `shots:all` ohne Konsolenfehler
+- Entscheidungen (advisor, Plan und Abnahme): `functions.invoke`, gespeicherter Zustand wird streng geprüft, Fehlerzustand statt Absturz. Offen und bewusst: Weiter bleibt bei Routenfehler aktiv (Angebot); Einzelheiten in OPEN_ISSUES „S6“
+
 ## 2026-10-29 · S5 · Routing-Dienst und Wiener Stadtgrenze · abgeschlossen (Deploy offen)
 - Migrationen 0006–0008: `route_cache`, `route_rate_limits`, RPC `route_geo_facts` (km außerhalb Wiens per PostGIS, Punkt in Österreich, fehlende Grenze = Fehler) und `take_rate_tokens` (nur service_role, bricht beim ersten überschrittenen Zähler ab), pg_cron-Aufräumjob; Grenzen Wien und Österreich importiert (`npm run geo:import`, 415 und ca. 83.900 km², gültig)
 - Edge Function `route` (Logik in `_shared/route/`): Geocode-Kandidaten, Routenfakten (Region, outsideKm, driveHours, Strecken), ORS hinter Adapter, Cache nur Rohantwort (24 h, HMAC-Schlüssel), Rate-Limit je IP und global. Tests: 27 Unit, Integration mit PostGIS-Fixtures (Wien→Wien, Graz, München, Salzburg→Innsbruck), Zugriff verweigert/erlaubt, parallele Zähler
