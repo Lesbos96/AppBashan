@@ -68,7 +68,9 @@ Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6
 - [x] Anbieter-Adapter mit Cache und Rate-Limit; Entscheidungsnotiz in ARCHITECTURE.md, welcher Anbieter in Produktion
 - [x] Tests mit gemocktem Anbieter und festen Fixtures
 
-- [ ] **OFFEN, Pflicht vor S8a und vor dem Livegang:** Secrets im Dev-Projekt setzen (`ORS_API_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`), Function `route` neu deployen, Live-Test Wien→Graz mit echter ORS-Geometrie, R1 (gefälschte Header) und R3 (Latenz mit voller Grenze). Einzelheiten: OPEN_ISSUES „S5b"
+- [ ] **OFFEN (2026-10-30), Pflicht vor Abnahme von S8a und vor dem Livegang:** `ORS_API_KEY` holen, die vier Secrets im Dev-Projekt setzen (`ORS_API_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`), `route` neu deployen, Live-Test Wien→Graz (Kilometer plausibel um 200 km), R1 (gefälschte Header) und R3 (Latenz mit voller Grenze). Einzelheiten: OPEN_ISSUES „S5b"
+- [ ] **OFFEN (2026-10-30), vor dem Livegang:** ORS-Plan und Nutzungsbedingungen für kommerzielle Nutzung klären. Der Standard-Plan hat 2.000 Directions-Anfragen pro Tag und 40 pro Minute; daraus das Tageslimit pro IP konkret festlegen (`LIMITS` in `handler.ts`)
+- [ ] **OFFEN (2026-10-30), vor dem Livegang:** `ALLOWED_ORIGINS` auf die echten Domains umstellen
 
 **Akzeptanz:** Wien→Wien, Wien→Graz, Wien→München liefern die erwartete Region und plausible km-Anteile.
 
