@@ -145,9 +145,13 @@ export function Anmelden() {
               Anmelden
             </Button>
             <div className="flex flex-col">
-              <Button variant="plain" disabled={busy || cooldown > 0} onClick={send}>
-                {cooldown > 0 ? `Erneut senden in ${cooldown} s` : 'Code erneut senden'}
-              </Button>
+              {cooldown > 0 ? (
+                <p className="m-0 flex min-h-11 items-center justify-center text-body tabular-nums text-text-secondary">Erneut senden in {cooldown} s</p>
+              ) : (
+                <Button variant="plain" disabled={busy} onClick={send}>
+                  Code erneut senden
+                </Button>
+              )}
               <Button variant="plain" onClick={() => { setError(null); setStep('email') }}>
                 Andere Adresse
               </Button>
@@ -157,7 +161,7 @@ export function Anmelden() {
 
         {step === 'link' && (
           <div className="flex flex-col gap-4">
-            {session ? (
+            {error ? null : session ? (
               <p className={intro}>Du bist schon als {session.user.email} angemeldet. Dieser Link kann dich in einem anderen Konto anmelden. Mach das nur, wenn du ihn selbst angefordert hast.</p>
             ) : (
               <p className={intro}>Tippe auf „Anmelden“, um dich in diesem Browser anzumelden.</p>
