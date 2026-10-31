@@ -103,7 +103,7 @@ describe('Rücksprung nach der Anmeldung', () => {
   it('safeNext: nur interne Pfade', () => {
     expect(safeNext('/auftraege')).toBe('/auftraege')
     expect(safeNext('/profil?x=1#a')).toBe('/profil?x=1#a')
-    for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '/\t/evil.com', 'javascript:alert(1)', 'evil.com', '', null, undefined, '/anmelden', '/anmelden?next=/', 'data:text/html,x']) expect(safeNext(bad)).toBe('/')
+    for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '/\t/evil.com', 'javascript:alert(1)', 'evil.com', '', null, undefined, '/anmelden', '/anmelden?next=/', 'data:text/html,x', '/.//evil.com', '/a/..//evil.com']) expect(safeNext(bad)).toBe('/')
     expect(safeNext('/%2F%2Fevil.com')).toBe('/%2F%2Fevil.com') // bleibt ein Pfad auf der eigenen Origin
   })
 

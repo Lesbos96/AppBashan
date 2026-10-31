@@ -90,7 +90,8 @@ export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith('/') || next.startsWith('//')) return '/'
   try {
     const url = new URL(next, window.location.origin)
-    if (url.origin !== window.location.origin || url.pathname.startsWith('/anmelden')) return '/'
+    // `/.//host` wird zu `//host` aufgelöst: Router würde es als Host-Ziel lesen
+    if (url.origin !== window.location.origin || url.pathname.startsWith('//') || url.pathname.startsWith('/anmelden')) return '/'
     return url.pathname + url.search + url.hash
   } catch {
     return '/'
