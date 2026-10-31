@@ -91,3 +91,7 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Konfigurator und Routengrafik fertig, Preis-Sheet offen
 - Weiter bei: Preis-Sheet wie 05, danach E2E Umzug-Beispiel
 -->
+
+## 2026-10-31 · S8b-1 · Nachbesserung
+- `safeNext` per Parsing (Steuerzeichen sofort verworfen, Origin-Vergleich, `//` und `/anmelden` nach Auflösung), Berater ohne mittel/hoch; `scripts/scan-dist.mjs` im `build` (Rot-Beweis: Fake-Wert Exit 1, danach Exit 0); Shots 430/768 geprüft; Captcha und Login-CSRF in OPEN_ISSUES
+- check (Exit 0, 216 Unit), build (Exit 0, dist-Scan 0), E2E 49/49

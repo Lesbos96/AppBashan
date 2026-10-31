@@ -103,8 +103,10 @@ describe('Rücksprung nach der Anmeldung', () => {
   it('safeNext: nur interne Pfade', () => {
     expect(safeNext('/auftraege')).toBe('/auftraege')
     expect(safeNext('/profil?x=1#a')).toBe('/profil?x=1#a')
-    for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '/\t/evil.com', 'javascript:alert(1)', 'evil.com', '', null, undefined, '/anmelden', '/anmelden?next=/', 'data:text/html,x', '/.//evil.com', '/a/..//evil.com']) expect(safeNext(bad)).toBe('/')
-    expect(safeNext('/%2F%2Fevil.com')).toBe('/%2F%2Fevil.com') // bleibt ein Pfad auf der eigenen Origin
+    for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '\\/evil.com', '/\t/evil.com', '/a\nb', '/a\rb', 'javascript:alert(1)', 'evil.com', '', null, undefined, '/anmelden', '/anmelden?next=/', 'data:text/html,x', '/.//evil.com', '/a/..//evil.com', '/%2e%2e//evil.com', '/.\\/evil.com', ' /x', '/anmelden/', '/Anmelden', '/%61nmelden', '/%zz', '/%E0%A4%A']) expect(safeNext(bad)).toBe('/')
+    // bleiben Pfade auf der eigenen Origin, keine Host-Ziele
+    for (const ok of ['/%2F%2Fevil.com', '/%5Cevil.com']) expect(safeNext(ok)).toBe(ok)
+    expect(safeNext('/profil/a?x=1&y=2#b')).toBe('/profil/a?x=1&y=2#b')
   })
 
   it('rememberNext/takeNext: einmalig, 15 Minuten, nur gültige Ziele', () => {

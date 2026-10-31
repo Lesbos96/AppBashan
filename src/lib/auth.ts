@@ -84,14 +84,15 @@ export async function signOut(): Promise<void> {
 
 /**
  * Rücksprungziel nach der Anmeldung: nur Pfade der eigenen Origin, nie `/anmelden` selbst (Schleife), sonst `/`.
- * `URL` löst `//host`, `/\host`, Schema und Steuerzeichen auf; was die Origin wechselt, fällt durch.
+ * Steuerzeichen (Tab, Zeilenumbruch) verwirft die Funktion sofort, weil `URL` sie stillschweigend entfernt.
+ * Den Rest entscheidet das Parsen: `//host`, `/\host` und Schemas wechseln die Origin und fallen durch.
  */
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/'
+  if (!next || !next.startsWith('/') || [...next].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)) return '/'
   try {
     const url = new URL(next, window.location.origin)
     // `/.//host` wird zu `//host` aufgelöst: Router würde es als Host-Ziel lesen
-    if (url.origin !== window.location.origin || url.pathname.startsWith('//') || url.pathname.startsWith('/anmelden')) return '/'
+    if (url.origin !== window.location.origin || url.pathname.startsWith('//') || /^\/anmelden(\/|$)/i.test(decodeURIComponent(url.pathname))) return '/'
     return url.pathname + url.search + url.hash
   } catch {
     return '/'
