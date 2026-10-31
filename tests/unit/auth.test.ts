@@ -100,13 +100,21 @@ describe('Anmeldung per E-Mail-Link und Code', () => {
 })
 
 describe('Rücksprung nach der Anmeldung', () => {
-  it('safeNext: nur interne Pfade', () => {
-    expect(safeNext('/auftraege')).toBe('/auftraege')
-    expect(safeNext('/profil?x=1#a')).toBe('/profil?x=1#a')
-    for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '\\/evil.com', '/\t/evil.com', '/a\nb', '/a\rb', 'javascript:alert(1)', 'evil.com', '', null, undefined, '/anmelden', '/anmelden?next=/', 'data:text/html,x', '/.//evil.com', '/a/..//evil.com', '/%2e%2e//evil.com', '/.\\/evil.com', ' /x', '/anmelden/', '/Anmelden', '/%61nmelden', '/%zz', '/%E0%A4%A']) expect(safeNext(bad)).toBe('/')
-    // bleiben Pfade auf der eigenen Origin, keine Host-Ziele
-    for (const ok of ['/%2F%2Fevil.com', '/%5Cevil.com']) expect(safeNext(ok)).toBe(ok)
-    expect(safeNext('/profil/a?x=1&y=2#b')).toBe('/profil/a?x=1&y=2#b')
+  it.each([
+    'https://evil.com', '//evil.com', '/\\evil.com', '\\/evil.com', '/\t/evil.com', '/a\nb', '/a\rb', 'javascript:alert(1)', 'data:', 'data:text/html,x', 'evil.com', '',
+    null, undefined, '/anmelden', '/anmelden?next=/', '/.//evil.com', '/a/..//evil.com', '/%2e%2e//evil.com', '/.\\/evil.com', ' /x', '/anmelden/', '/Anmelden', '/%61nmelden', '/%zz', '/%E0%A4%A',
+    '/a\x7fb', '/a\x00b', '/\\/evil.com', '/x/../anmelden', '/%2e%2e/anmelden', '/anmelden%2F', '/anmelden#x', '/ANMELDEN',
+  ])('safeNext verwirft %j', (bad) => {
+    expect(safeNext(bad)).toBe('/')
+  })
+
+  // bleiben Pfade auf der eigenen Origin, keine Host-Ziele
+  it.each(['/auftraege', '/profil?x=1#a', '/profil/a?x=1&y=2#b', '/%2F%2Fevil.com', '/%5Cevil.com', '/?//evil.com', '/#//evil.com'])('safeNext lässt %j unverändert', (ok) => {
+    expect(safeNext(ok)).toBe(ok)
+  })
+
+  it('safeNext kodiert Fullwidth-Schrägstrich', () => {
+    expect(safeNext('/／evil.com')).toBe('/%EF%BC%8Fevil.com')
   })
 
   it('rememberNext/takeNext: einmalig, 15 Minuten, nur gültige Ziele', () => {
@@ -123,6 +131,10 @@ describe('Rücksprung nach der Anmeldung', () => {
     expect(takeNext()).toBe('/')
     store.set('movenow.next', '{"path":"https://evil.com","until":9999999999999}')
     expect(takeNext()).toBe('/')
+    for (const raw of ['{', '{"path":5,"until":9999999999999}', '{"path":"/profil"}']) {
+      store.set('movenow.next', raw)
+      expect(takeNext(), raw).toBe('/')
+    }
     vi.useRealTimers()
   })
 })

@@ -93,5 +93,5 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 -->
 
 ## 2026-10-31 · S8b-1 · Nachbesserung
-- `safeNext` per Parsing (Steuerzeichen sofort verworfen, Origin-Vergleich, `//` und `/anmelden` nach Auflösung), Berater ohne mittel/hoch; `scripts/scan-dist.mjs` im `build` (Rot-Beweis: Fake-Wert Exit 1, danach Exit 0); Shots 430/768 geprüft; Captcha und Login-CSRF in OPEN_ISSUES
-- check (Exit 0, 214 Unit), build (Exit 0, dist-Scan 0), E2E 49/49
+- `safeNext` per Parsing (Steuerzeichen sofort verworfen, Origin-Vergleich, `//` und `/anmelden` nach Auflösung); Berater-Prüfung: `tmp/proof/s8b1-berater.md` (kein hoch/mittel); `scripts/scan-dist.mjs` im `build` (Rot-Beweis: Fake-Wert Exit 1, danach Exit 0); Shots 430/768: `tmp/proof/s8b1-shots.md`; Captcha und Login-CSRF in OPEN_ISSUES
+- check (Exit 0, 255 Unit), build (Exit 0, dist-Scan 0), E2E 49/49
