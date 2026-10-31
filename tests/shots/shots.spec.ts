@@ -1,6 +1,22 @@
 import { expect, test, type Page } from '@playwright/test'
+import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress } from '../e2e/konfigurator-helpers'
+
+// Der Browser meldet gemockte Fehlerantworten selbst als Konsolenfehler; die App fängt sie ab.
+const failed = /status of 4\d\d|ERR_FAILED/
+
+/** Anmeldung bis zum Codefeld; `submit` sendet danach einen Code mit dem gemockten Ergebnis. */
+const codeStep = (mock?: AuthMock, submit = false) => async (page: Page) => {
+  await mockAuth(page, mock)
+  await page.getByLabel('E-Mail').fill(EMAIL)
+  await page.getByRole('button', { name: 'Code senden' }).click()
+  await expect(page.getByLabel('Code')).toBeVisible()
+  if (!submit) return
+  await page.getByLabel('Code').fill(CODE)
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+}
 
 // Wächst mit jedem Screen ab S3. `onboarded: false` startet wie beim ersten Besuch.
 const routes: { name: string; path: string; onboarded?: false; mock?: { routeStatus?: number }; expectedError?: RegExp; sheet?: true; fit?: false; ready?: (page: Page) => Promise<unknown>; steps?: (page: Page) => Promise<unknown> }[] = [
@@ -25,7 +41,49 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
       await expect(page.getByRole('heading', { name: 'Ein Partner bestätigt.' })).toBeVisible()
     },
   },
-  { name: 'auftraege', path: '/auftraege' },
+  { name: 'anmelden-email', path: '/anmelden' },
+  { name: 'anmelden-code', path: '/anmelden', steps: codeStep() },
+  { name: 'anmelden-code-falsch', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: { status: 403, code: 'otp_expired' } }, true) },
+  { name: 'anmelden-zu-viele', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: { status: 429, code: 'over_request_rate_limit' } }, true) },
+  { name: 'anmelden-offline', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: 'offline' }, true) },
+  { name: 'anmelden-link', path: `/anmelden#token_hash=${HASH}&type=email`, steps: (page) => mockAuth(page) },
+  {
+    name: 'anmelden-link-abgelaufen',
+    path: `/anmelden#token_hash=${HASH}&type=email`,
+    expectedError: failed,
+    steps: async (page) => {
+      await mockAuth(page, { verify: { status: 403, code: 'otp_expired' } })
+      await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+  },
+  {
+    name: 'anmelden-link-fertig',
+    path: `/anmelden#token_hash=${HASH}&type=email`,
+    steps: async (page) => {
+      await mockAuth(page)
+      await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
+      await expect(page.getByText(/angemeldet als/)).toBeVisible()
+    },
+  },
+  {
+    name: 'auftraege',
+    path: '/auftraege',
+    steps: async (page) => {
+      await mockAuth(page)
+      await signInWithCode(page)
+      await expect(page.getByRole('heading', { name: 'Noch keine Aufträge' })).toBeVisible()
+    },
+  },
+  {
+    name: 'profil-angemeldet',
+    path: '/anmelden?next=%2Fprofil',
+    steps: async (page) => {
+      await mockAuth(page)
+      await signInWithCode(page)
+      await expect(page.getByRole('button', { name: 'Abmelden' })).toBeVisible()
+    },
+  },
   { name: 'profil', path: '/profil' },
   { name: 'preise', path: '/profil/preise', fit: false, ready: (page) => expect(page.getByText('Montage & Demontage')).toBeVisible() },
   { name: 'datenschutz', path: '/profil/datenschutz' },

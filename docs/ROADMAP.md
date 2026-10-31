@@ -97,7 +97,7 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 
 ## S8b · Termin, Anfrage, Aufträge
 - [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`
-- [ ] Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
+- [ ] (Anmeldung und `/anmelden` erledigt in S8b-1, 2026-10-31; offen: Absenden über `quote`) Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
 - [ ] Aufträge-Liste wie `13` (Anfragen und Mietanfragen, Aktiv/Erledigt), Detail mit Timeline und Tarifstand wie `14`
 - [ ] „Anfrage bearbeiten" (über `quote`, rechnet neu) und „Anfrage zurückziehen" (direktes Status-Update) wie `14`, solange der Status „angefragt" ist. Alle weiteren Status setzt in dieser Phase nur admin (vorerst im Supabase-Dashboard).
 

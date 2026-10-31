@@ -1,5 +1,7 @@
-import { createBrowserRouter, redirect, type RouteObject } from 'react-router'
+import { createBrowserRouter, redirect, type LoaderFunctionArgs, type RouteObject } from 'react-router'
 import { hasOnboarded } from '../lib/onboarding'
+import { supabase } from '../lib/supabase'
+import { Anmelden } from '../screens/Anmelden'
 import { Auftraege } from '../screens/Auftraege'
 import { Entruempelung } from '../screens/entruempelung/Wizard'
 import { EntruempelungErgebnis } from '../screens/entruempelung/Ergebnis'
@@ -25,6 +27,14 @@ const flows = [
   { path: 'profil/vermieter', title: 'Für Vermieter' },
 ].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
 
+/** Geschützter Bereich: ohne Sitzung zur Anmeldung, danach zurück hierher. Ein Loader läuft einmal je Navigation (kein Render-Guard, der beim Ausblenden die neue URL sähe). */
+async function requireSession({ request }: LoaderFunctionArgs) {
+  const { data } = await supabase.auth.getSession()
+  if (data.session) return null
+  const { pathname, search } = new URL(request.url)
+  return redirect(`/anmelden?next=${encodeURIComponent(pathname + search)}`)
+}
+
 export const router = createBrowserRouter([
   {
     element: <Shell />,
@@ -33,7 +43,8 @@ export const router = createBrowserRouter([
     children: [
       page('/', <Start />, { key: 'start', root: true }, { loader: () => (hasOnboarded() ? null : redirect('/willkommen')) }),
       page('miete', <Folgt title="Transporter mieten" />, { key: 'miete', root: true }),
-      page('auftraege', <Auftraege />, { key: 'auftraege', root: true }),
+      page('auftraege', <Auftraege />, { key: 'auftraege', root: true }, { loader: requireSession }),
+      page('anmelden', <Anmelden />, { key: 'anmelden', bar: false }),
       // Info-Sheet „Wie rechnet MoveNow?" liegt über dem Profil und teilt dessen Seite
       page('profil', <Profil />, { key: 'profil', root: true }),
       page('profil/preise', <Profil />, { key: 'profil', root: true }),

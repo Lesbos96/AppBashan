@@ -7,7 +7,7 @@ export function Auftraege() {
   return (
     <main>
       <NavBar title="Aufträge" />
-      <EmptyState illustration="empty-orders" title="Noch keine Aufträge" text="Plane deinen ersten Move. Den Richtpreis siehst du sofort, ganz ohne Konto.">
+      <EmptyState illustration="empty-orders" title="Noch keine Aufträge" text="Plane deinen ersten Move. Den Richtpreis siehst du sofort.">
         <Link to="/" className="press flex h-[50px] items-center rounded-button-secondary bg-tint px-[26px] text-headline text-accent">
           Service wählen
         </Link>

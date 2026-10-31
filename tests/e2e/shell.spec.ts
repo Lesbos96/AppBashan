@@ -36,7 +36,6 @@ test.describe('App-Shell', () => {
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
     for (const [label, heading] of [
       ['Miete', 'Dieser Bereich ist noch nicht verfügbar'],
-      ['Aufträge', 'Noch keine Aufträge'],
       ['Profil', 'Noch kein Konto'],
       ['Start', 'Was hast du vor?'],
     ]) {

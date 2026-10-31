@@ -76,6 +76,12 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - E2E: Entrümpelung 1.175,00 € (950–1.550 €), Küche 770,40 €, Mindestpreis, Besichtigung, kaputter Zustand; check, E2E (33) und `shots:all` (240) grün, Reviewer ohne „hoch“. Keine Migration, kein `test:rls` nötig
 - Offen: Beschreibung/Fotos für `quote` (S8a), Termin-Seiten bis S8b „Folgt“: OPEN_ISSUES „S7“
 
+## 2026-10-31 · S8b-1 · Anmeldung (abgeschlossen, Rest von S8b offen)
+- `/anmelden` (E-Mail → Code 6–10 Ziffern, Link mit `token_hash` erst nach Tipp, Fehlertexte, Countdown 60 s), geschützte Route `/auftraege` per Loader mit Rücksprung (`safeNext`, 15 min im localStorage), Profil mit E-Mail und Abmelden, `SessionProvider`. Keine Angebots-Anbindung, keine Uploads (S8b-2, S8b-3)
+- Berater-Auflagen eingearbeitet: Link bei bestehender Sitzung nur nach Tipp (Login-CSRF), Token sofort aus der URL, `no-referrer`, `config.toml`: `max_frequency` 60 s, `otp_length` 8
+- check (214 Unit), E2E (49), `shots:all` (312), build, `test:rls` (88) und `scripts/live-auth.mjs` (Code- und Link-Weg, Nutzer gelöscht) grün; dist-Scan ohne Schlüssel
+- Offen: Dashboard-Werte (Dev, Prod) und SMTP, siehe OPEN_ISSUES „S8b-1“
+
 <!-- Beispiel:
 ## 2026-10-30 · S1 · abgeschlossen
 - Gerüst, Migration 0001, RLS-Tests (12/12) grün

@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
 import { version } from '../../package.json'
+import { signOut } from '../lib/auth'
+import { useSession } from '../lib/session'
 import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
@@ -11,6 +14,16 @@ const value = (text: string) => <span className="text-body text-text-secondary">
 export function Profil() {
   const navigate = useNavigate()
   const sheet = useMatch('/profil/preise') !== null
+  const session = useSession()
+  const [busy, setBusy] = useState(false)
+  const out = async () => {
+    setBusy(true)
+    try {
+      await signOut()
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <main>
@@ -21,16 +34,23 @@ export function Profil() {
             <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-tint text-accent">
               <Icon name="profile" width={28} height={28} />
             </span>
-            <div className="flex flex-col gap-0.5">
-              <h2 className="m-0 text-headline">Noch kein Konto</h2>
-              <p className="m-0 text-[14px]/[19px] text-text-secondary">Brauchst du erst, wenn du eine Anfrage sendest.</p>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2 className="m-0 text-headline">{session ? 'Angemeldet' : 'Noch kein Konto'}</h2>
+              <p className="m-0 break-words text-[14px]/[19px] text-text-secondary">
+                {session ? session.user.email : 'Brauchst du erst, wenn du eine Anfrage sendest.'}
+              </p>
             </div>
           </div>
-          {/* Die Anmeldung kommt mit S8b. */}
-          <Button variant="tinted" disabled className="flex items-center justify-center gap-2">
-            <Icon name="mail" width={20} height={20} />
-            Mit E-Mail-Link anmelden
-          </Button>
+          {session ? (
+            <Button variant="tinted" disabled={busy} onClick={() => void out()}>
+              Abmelden
+            </Button>
+          ) : (
+            <Button variant="tinted" className="flex items-center justify-center gap-2" onClick={() => void navigate('/anmelden?next=%2Fprofil')}>
+              <Icon name="mail" width={20} height={20} />
+              Mit E-Mail-Link anmelden
+            </Button>
+          )}
         </Card>
 
         <GroupedList>
