@@ -227,6 +227,73 @@ export type Database = {
           },
         ]
       }
+      price_revisions: {
+        Row: {
+          content_hash: string
+          created_at: string
+          high_cents: number | null
+          id: string
+          inputs: Json
+          low_cents: number | null
+          n: number
+          price_version: number
+          request_id: string
+          snapshot: Json
+          source: string
+          total_cents: number | null
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          high_cents?: number | null
+          id?: string
+          inputs: Json
+          low_cents?: number | null
+          n: number
+          price_version: number
+          request_id: string
+          snapshot: Json
+          source: string
+          total_cents?: number | null
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          high_cents?: number | null
+          id?: string
+          inputs?: Json
+          low_cents?: number | null
+          n?: number
+          price_version?: number
+          request_id?: string
+          snapshot?: Json
+          source?: string
+          total_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_revisions_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "current_price_version"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "price_revisions_price_version_fkey"
+            columns: ["price_version"]
+            isOneToOne: false
+            referencedRelation: "price_versions"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "price_revisions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_versions: {
         Row: {
           content_hash: string | null
@@ -450,6 +517,41 @@ export type Database = {
           },
         ]
       }
+      request_contacts: {
+        Row: {
+          created_at: string
+          email: string
+          name: string
+          phone: string
+          request_id: string
+          stairs_door: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          name: string
+          phone: string
+          request_id: string
+          stairs_door?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          name?: string
+          phone?: string
+          request_id?: string
+          stairs_door?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_contacts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       request_photos: {
         Row: {
           created_at: string
@@ -517,24 +619,23 @@ export type Database = {
       }
       service_requests: {
         Row: {
-          client_ref: string | null
+          accept_deadline: string
+          client_ref: string
           created_at: string
+          current_revision: string | null
           customer_id: string
           description: string | null
-          estimate_cents: number | null
+          district: number | null
           from_address: string | null
           from_point: unknown
           from_postcode: string | null
           id: string
-          inputs: Json
-          needs_quote: boolean
           preferred_date: string | null
-          price_snapshot: Json
-          price_version: number
           region: Database["public"]["Enums"]["region"] | null
           route: Json | null
           service: Database["public"]["Enums"]["service_type"]
           status: Database["public"]["Enums"]["request_status"]
+          termin_at: string
           time_window: string | null
           to_address: string | null
           to_point: unknown
@@ -543,24 +644,23 @@ export type Database = {
           volume_m3: number | null
         }
         Insert: {
-          client_ref?: string | null
+          accept_deadline: string
+          client_ref: string
           created_at?: string
+          current_revision?: string | null
           customer_id: string
           description?: string | null
-          estimate_cents?: number | null
+          district?: number | null
           from_address?: string | null
           from_point?: unknown
           from_postcode?: string | null
           id?: string
-          inputs: Json
-          needs_quote?: boolean
           preferred_date?: string | null
-          price_snapshot: Json
-          price_version: number
           region?: Database["public"]["Enums"]["region"] | null
           route?: Json | null
           service: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
+          termin_at: string
           time_window?: string | null
           to_address?: string | null
           to_point?: unknown
@@ -569,24 +669,23 @@ export type Database = {
           volume_m3?: number | null
         }
         Update: {
-          client_ref?: string | null
+          accept_deadline?: string
+          client_ref?: string
           created_at?: string
+          current_revision?: string | null
           customer_id?: string
           description?: string | null
-          estimate_cents?: number | null
+          district?: number | null
           from_address?: string | null
           from_point?: unknown
           from_postcode?: string | null
           id?: string
-          inputs?: Json
-          needs_quote?: boolean
           preferred_date?: string | null
-          price_snapshot?: Json
-          price_version?: number
           region?: Database["public"]["Enums"]["region"] | null
           route?: Json | null
           service?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
+          termin_at?: string
           time_window?: string | null
           to_address?: string | null
           to_point?: unknown
@@ -596,25 +695,56 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "service_requests_current_revision"
+            columns: ["current_revision", "id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id", "request_id"]
+          },
+          {
             foreignKeyName: "service_requests_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      status_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          at: string
+          from_status: Database["public"]["Enums"]["request_status"]
+          id: number
+          request_id: string
+          to_status: Database["public"]["Enums"]["request_status"]
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role: string
+          at?: string
+          from_status: Database["public"]["Enums"]["request_status"]
+          id?: never
+          request_id: string
+          to_status: Database["public"]["Enums"]["request_status"]
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          at?: string
+          from_status?: Database["public"]["Enums"]["request_status"]
+          id?: never
+          request_id?: string
+          to_status?: Database["public"]["Enums"]["request_status"]
+        }
+        Relationships: [
           {
-            foreignKeyName: "service_requests_price_version_fkey"
-            columns: ["price_version"]
+            foreignKeyName: "status_events_request_id_fkey"
+            columns: ["request_id"]
             isOneToOne: false
-            referencedRelation: "current_price_version"
-            referencedColumns: ["version"]
-          },
-          {
-            foreignKeyName: "service_requests_price_version_fkey"
-            columns: ["price_version"]
-            isOneToOne: false
-            referencedRelation: "price_versions"
-            referencedColumns: ["version"]
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -700,16 +830,9 @@ export type Database = {
           p_customer: string
           p_deposit: number
           p_extra_driver: boolean
-          p_fee_cents: number
-          p_fee_net: number
-          p_fee_rate: number
-          p_fee_vat: number
-          p_fee_vat_rate: number
           p_km: number
           p_offer: string
           p_one_way: boolean
-          p_payee: string
-          p_payout: number
           p_pickup: string
           p_price_version: number
           p_return: string
@@ -727,32 +850,25 @@ export type Database = {
           p_client_ref: string
           p_customer: string
           p_description: string
-          p_estimate: number
-          p_fee_cents: number
-          p_fee_net: number
-          p_fee_rate: number
-          p_fee_vat: number
-          p_fee_vat_rate: number
           p_from_address: string
           p_from_lat: number
           p_from_lon: number
           p_from_postcode: string
+          p_high: number
           p_inputs: Json
-          p_needs_quote: boolean
-          p_payout: number
+          p_low: number
           p_preferred_date: string
           p_price_version: number
           p_region: Database["public"]["Enums"]["region"]
-          p_request: string
           p_route: Json
           p_service: Database["public"]["Enums"]["service_type"]
           p_snapshot: Json
-          p_status: Database["public"]["Enums"]["request_status"]
           p_time_window: string
           p_to_address: string
           p_to_lat: number
           p_to_lon: number
           p_to_postcode: string
+          p_total: number
           p_volume: number
         }
         Returns: {
@@ -779,18 +895,27 @@ export type Database = {
       }
       take_rate_tokens: { Args: { checks: Json }; Returns: boolean }
       verify_price_version: { Args: { p_version: number }; Returns: undefined }
+      withdraw: {
+        Args: { p_request: string }
+        Returns: Database["public"]["Enums"]["request_status"]
+      }
     }
     Enums: {
       offer_status: "pending" | "approved" | "archived"
       region: "vienna" | "austria" | "international"
       request_status:
         | "requested"
-        | "inspection_requested"
-        | "confirmed"
+        | "awaiting_offer"
+        | "offered"
+        | "accepted"
         | "in_progress"
         | "completed"
         | "withdrawn"
         | "expired"
+        | "declined"
+        | "unmatched"
+        | "cancelled_by_customer"
+        | "cancelled_by_partner"
       service_type: "transport" | "move" | "clearance" | "assembly"
       user_role: "customer" | "rental_provider" | "admin" | "partner"
     }
@@ -924,12 +1049,17 @@ export const Constants = {
       region: ["vienna", "austria", "international"],
       request_status: [
         "requested",
-        "inspection_requested",
-        "confirmed",
+        "awaiting_offer",
+        "offered",
+        "accepted",
         "in_progress",
         "completed",
         "withdrawn",
         "expired",
+        "declined",
+        "unmatched",
+        "cancelled_by_customer",
+        "cancelled_by_partner",
       ],
       service_type: ["transport", "move", "clearance", "assembly"],
       user_role: ["customer", "rental_provider", "admin", "partner"],

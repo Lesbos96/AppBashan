@@ -61,6 +61,8 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
 - Abschlussberichte jedes Schritts nach `docs/proof/<schritt>/`, vorher Secret-Scan (`npm run scan:proof`, Exit 0 nötig); `tmp/proof/` bleibt Arbeitsordner.
+- Ein Rot-Beweis zählt nur, wenn die fehlschlagende Prüfung die Wirkung der gelockerten Sperre misst (Ist-Wert: Zeilen sichtbar, Aufruf erfolgreich, Wert geändert), nicht nur, dass ein Schritt fehlschlägt.
+- Nachweisdateien werden nach dem Schreiben nie verändert; Hinweise in eine `README.md` im selben `docs/proof`-Ordner.
 
 ## Ausgaben
 - Befehlsausgaben nur bei Fehlern im Wortlaut zeigen, sonst nur „bestanden".
@@ -71,7 +73,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 
 ### Werkzeuge
 - Kein Python über stdin-Heredoc (`python3 - <<EOF`), das hängt unter Windows. Stattdessen Node-Skript oder temporäre Datei unter `tmp/`.
-- Doku- und Markdown-Dateien nur mit den Werkzeugen Write und Edit ändern. Keine Skripte dafür (node, python, sed, PowerShell, Shell-Umleitungen), auch nicht in tmp/.
+- Doku- und Markdown-Dateien nur mit den Werkzeugen Write und Edit ändern. Keine Skripte dafür (node, python, sed, PowerShell, Shell-Umleitungen), auch nicht in tmp/. Ausnahme: Nachweisdateien werden byte-genau mit `cp` nach `docs/proof/<schritt>/` kopiert.
 
 ### Geld
 - Beträge als Integer-Cent in DB und API. Rechnen wie der Prototyp, erst am Ende auf Cent runden (wie `cents()` dort).

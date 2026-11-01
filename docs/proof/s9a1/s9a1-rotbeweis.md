@@ -2,8 +2,6 @@
 
 Stand 2026-11-01T20:01:01.730Z (Dev-Projekt). Je Sperre: lockern (committet), Test laufen lassen (muss rot sein), Original wiederherstellen, Test laufen lassen (muss grün sein).
 
-**Überholt für sechs Sperren (Nachprüfung):** „Marker-Prüfung von guard_price_version“, „guard_profile_role: Tausch von profiles.id“, „Trigger guard_role“, „is_admin() ohne aal2“, „price_versions_select für alle“ und „profiles_select: admin ohne aal2“ gelten nur in der Fassung `s9a1-rotbeweis-nachpruefung.md`. Die Rot-Zeilen unten zeigten dort einen anderen Fehler (42501, 23503) oder nur `P0001: false`.
-
 ## Trigger guard_price_version entfernt
 
 - Test: `tests/rls/settings.test.ts` -t "veröffentlichte Preisversion ist unveränderlich"
