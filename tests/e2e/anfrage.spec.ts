@@ -292,7 +292,9 @@ test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', async ({ pag
 
 test('Zusammenfassung: kein Preis vor dem Senden, Links und Knöpfe mindestens 44 px', async ({ page }) => {
   await signedInSummary(page)
-  await expect(page.locator('main').last()).not.toContainText('€')
+  // Im Seitenübergang stehen kurz zwei main: erst auf das Ende warten, dann gilt die Prüfung der einen Seite.
+  await expect(page.locator('main')).toHaveCount(1)
+  await expect(page.locator('main')).not.toContainText('€')
   for (const target of [page.getByRole('link', { name: 'AGB' }), page.getByRole('link', { name: 'Datenschutz' }), page.getByRole('button', { name: 'Anderes Konto' })]) {
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44)
   }

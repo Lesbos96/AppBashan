@@ -120,3 +120,6 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Findings A (Migration 0013, Test „Wiederholen beim achten Foto“) und B (`deletePhoto` prüft den Fehler, Unit-Test) waren schon umgesetzt, hier nachgewiesen; keine neue Migration. RLS-Tests zu `photo_cleanup` melden fehlenden Vault klar („Vault-Secrets fehlen – npm run setup:photo-cleanup ausführen“)
 - UI: Aktionsleiste ab 520 px auf Kartenbreite, Einwilligungs-Links ohne Zeilenabstand-Effekt, Dark-Variante der Karton-Grafik, Spinner und Entfernen-Badge kontrastreicher; Shot-Tabelle `tmp/proof/s8b-abschluss-shots.md`
 - E2E-Flake (zwei `main` im Seitenübergang) im Zusammenfassungs-Test behoben. check 339 Unit, build/dist-Scan 0, E2E 82, RLS 102
+
+## 2026-11-01 · S8b-Abschluss Nachtrag
+- Test „kein Preis“ wartet auf genau ein `main` und prüft es (Rot-Beweis: Preis im Zielseiten-`main` macht ihn rot; 20 von 20 grün). CLAUDE.md: Shots beurteilt nur der `reviewer` (Bildsicht belegt), je Tabellenzeile eine Bildbeobachtung; Doku nur mit Write/Edit. check 341 Unit, E2E 82

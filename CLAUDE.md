@@ -55,6 +55,7 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 ## Arbeits-Loop
 bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/reference/design/screens/`) → fixen. Wiederholen, bis alles grün ist, höchstens 5 Runden je Screen bzw. Aufgabe. Was danach rot bleibt: in `docs/OPEN_ISSUES.md` mit Begründung, dann weiter oder Blocker einmal berichten.
 - In jeder Runde: `shots` (390 px, Light und Dark). Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
+- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Fehlt das, gilt die Zeile als ungeprüft.
 - Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und alle Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
@@ -68,6 +69,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 
 ### Werkzeuge
 - Kein Python über stdin-Heredoc (`python3 - <<EOF`), das hängt unter Windows. Stattdessen Node-Skript oder temporäre Datei unter `tmp/`.
+- Doku und Markdown nur mit den Datei-Werkzeugen (Write/Edit) schreiben, nie per Shell (echo, cat, heredoc): Backticks werden sonst ausgeführt.
 
 ### Geld
 - Beträge als Integer-Cent in DB und API. Rechnen wie der Prototyp, erst am Ende auf Cent runden (wie `cents()` dort).
