@@ -1,0 +1,65 @@
+# MoveNow · Livegang-Checkliste
+
+Quelle: `docs/OPEN_ISSUES.md` und `docs/ROADMAP.md` (S5b, S8a, S8b-1, S10). Ein Punkt gilt erst als erledigt, wenn sein Prüfweg gelaufen ist. Wer: **Beks** (Konten, Verträge, Dashboard, Schlüssel) oder **CC** (Claude Code: Befehle, Dateien, Prüfläufe). Schlüsselwerte nie in Chat, Logs oder Commits; Befehle laufen über `dotenv-cli`.
+
+**Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt `--include-seed` (Demo-Angebote). Gegen Produktion deshalb nur mit einer eigenen Env-Datei und ohne `--include-seed` aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
+
+Reihenfolge: Abschnitt 1 bis 5.
+
+## 1 · Projekt und Schlüssel
+| # | Was | Wer | Prüfweg |
+|---|---|---|---|
+| 1 | Neues Supabase-Projekt in der EU-Region anlegen; Dev bleibt getrennt | Beks | Dashboard zeigt EU-Region; Projekt-Ref notiert |
+| 2 | Neue Schlüssel nur für Produktion: Publishable Key, **Secret Key**, **Access Token**, **DB-Passwort**; keinen aus Dev wiederverwenden; Legacy-Keys (anon/service_role) abschalten | Beks | Dashboard → API Keys: nur `sb_publishable_…` und `sb_secret_…` aktiv |
+| 3 | **ORS-Schlüssel** für Produktion (eigener Key im Produktivplan, siehe 11) | Beks | Key im ORS-Dashboard dem Produktivplan zugeordnet |
+| 4 | Schlüssel in einer eigenen, nicht eingecheckten Env-Datei für Produktion ablegen (Variablennamen wie `.env.example`). Die App-Build-Umgebung bekommt nur URL und Publishable Key | Beks | `npm run env:check` meldet die Namen ohne Werte; `npm run build` (führt `scripts/scan-dist.mjs` aus) findet keinen Secret-Key in `dist/` |
+
+## 2 · Datenbank
+| # | Was | Wer | Prüfweg |
+|---|---|---|---|
+| 5 | Projekt verlinken (`npx dotenv -e <prod-env> -- node scripts/db-link.mjs`, nicht `npm run db:link`), dann Migrationen ohne Seed: `npx dotenv -e <prod-env> -- supabase db push --linked --yes` | CC | `supabase migration list` zeigt lokal = remote; `supabase projects list` zeigt das Produktivprojekt als verlinkt |
+| 6 | **Verlässlicher Seed-Weg** (`--include-seed` wirkt nicht verlässlich, OPEN_ISSUES S4): nach dem Push `npx dotenv -e <prod-env> -- supabase db query --linked -f supabase/seed.prod.sql`. `seed.sql` (Demo-Angebote) läuft nie gegen Produktion | CC | Stichprobe per `db query`: `select count(*), max(researched_at) from price_config` (28 und `2026-10-28`); `select key, value from price_config where key in ('rental.reference','clearance.rate','clearance.rate_low','clearance.rate_high')`; `select key, version, value from platform_settings` (`fee_rate` 0.15, `fee_vat_rate` 0.20); `select count(*) from rental_offers` = 0. `tests/unit/seed-prod.test.ts` hält `seed.prod.sql` identisch mit `seed.sql` |
+| 7 | Wiener Stadtgrenze importieren (`npx dotenv -e <prod-env> -- node scripts/import-boundaries.mjs`, nicht `npm run geo:import`) | CC | `select count(*) from geo_boundaries where slug = 'vienna'` = 1; `route` Wien→Graz liefert Region `austria` und km außerhalb > 0 |
+| 8 | Keine Testnutzer, kein Konto aus Dev; den ersten Admin legt Beks per SQL im Dashboard an. `test:rls` und die Live-Skripte laufen nie gegen Produktion | Beks | `select count(*) from auth.users` = 0 vor dem ersten Admin |
+
+## 3 · Edge Functions
+| # | Was | Wer | Prüfweg |
+|---|---|---|---|
+| 9 | **Secrets setzen:** `SECRET_KEY`, `ORS_API_KEY`, `RATE_LIMIT_SECRET` (neu, zufällig, mindestens 32 Zeichen), `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS` (`supabase secrets set` über dotenv-cli, Werte nie ausgeben) | CC (Beks liefert Werte) | `supabase secrets list` zeigt die fünf Namen; kein Wert im Terminal-Log |
+| 10 | **`ALLOWED_ORIGINS` auf echte Domains:** kommagetrennt die App-Origin(s) mit `https://` und `capacitor://localhost`, **kein** `http://localhost:…` | CC | `golive-check.mjs`: echte Origin und `capacitor://localhost` bekommen `Access-Control-Allow-Origin`, fremde und localhost-Origins nicht |
+| 11 | **ORS-Plan klären:** kommerzielle Nutzung schriftlich, Auftragsverarbeitungsvertrag (Art. 28 DSGVO, Adresstexte gehen an den Anbieter), Kontingent. Standard-Plan: 2.000 Directions pro Tag, 40 pro Minute. Prüfen, ob Geocoding gegen dasselbe Minutenkontingent zählt (die globalen Limits gelten je Modus, 35 + 35 = 70/min). Daraus das **Tageslimit je IP** festlegen (`LIMITS` in `supabase/functions/_shared/route/handler.ts`, derzeit 80 Geocode / 160 Route je IP und Tag, global 800 / 1600, 35/min). Mobilfunk-CGNAT teilt IPs, das IP-Limit nicht zu knapp wählen; die globale Grenze bleibt unter dem Plankontingent. Ohne Vertrag Wechsel auf Geoapify, nur im Adapter (`provider.ts`) | Beks (Vertrag, Plan), CC (Limits, Tests) | Vertrag liegt vor; `LIMITS` und `docs/ARCHITECTURE.md` nennen dieselben Zahlen; globales Tageslimit ≤ Planlimit |
+| 12 | `route` und `quote` deployen (`supabase functions deploy route quote --use-api`) | CC | `golive-check.mjs` grün; Live-Test Wien→Wien, Wien→Graz, Wien→München wie in OPEN_ISSUES S5b |
+| 13 | **Bot-Bremse vor `route`** (Turnstile-Token), Pflicht vor Livegang (ROADMAP S10). Der Code gehört zu S10, hier nur der Nachweis | CC (Code), Beks (Turnstile-Konto, Site Key) | Aufruf ohne Token wird abgelehnt; Datenschutztext nennt Turnstile |
+
+## 4 · Anmeldung und Mail
+| # | Was | Wer | Prüfweg |
+|---|---|---|---|
+| 14 | **SMTP-Anbieter** einrichten und im Dashboard eintragen (Absender-Domain mit SPF, DKIM, DMARC); Supabase sperrt eigene Vorlagen ohne Custom SMTP | Beks | Testmail kommt an, nicht im Spam; DKIM im Header „pass“ |
+| 15 | **Mail-Vorlagen** `supabase/templates/magic_link.html` und `confirmation.html` einspielen (nur im Dashboard; **kein** `supabase config push`: die `config.toml` enthält Dev-Werte wie `site_url` 127.0.0.1 und würde die Produktion damit überschreiben) | Beks oder CC | Echte Anmeldung: Mail enthält Link **und** 8-stelligen Code; Link führt auf `/anmelden#token_hash=…&type=email`; Anmeldung klappt mit Link und mit Code |
+| 16 | **Site URL** = App-Origin (die Vorlage nutzt `{{ .SiteURL }}`). **Redirect URLs:** `<Domain>/anmelden` und `capacitor://localhost/anmelden`, **keine** `http://localhost`-Einträge | Beks | Dashboard → Auth → URL Configuration; der Link aus der Mail öffnet die Produktiv-Domain |
+| 17 | Auth-Werte angleichen: `otp_length` 8, `otp_expiry` 900, `max_frequency` 60 s (im Dashboard) | Beks oder CC | Dashboard zeigt die Werte; ein zweiter Code innerhalb 60 s wird abgelehnt |
+| 18 | **Turnstile für `signInWithOtp`:** `[auth.captcha]` in `config.toml` und Dashboard aktivieren, Token in `requestSignIn` mitsenden (Code in S10). Ohne Captcha legt `shouldCreateUser: true` beliebig Konten an und löst Mails an Fremde aus | CC (Code), Beks (Konto, Secret im Dashboard) | Anmeldung ohne Token schlägt fehl, mit Token klappt sie; Datenschutztext nennt Turnstile |
+
+## 5 · App, Recht, Capacitor
+| # | Was | Wer | Prüfweg |
+|---|---|---|---|
+| 19 | **Impressum, Datenschutz, AGB:** Platzhalter durch geprüfte Texte ersetzen (Anbieter, Auftragsverarbeiter ORS, Supabase, SMTP, Turnstile; Aufbewahrung; Betroffenenrechte). OpenStreetMap-Attribution bleibt | Beks (Inhalt, Rechtsprüfung), CC (einbauen) | Keine Seite mit „Platzhalter“-Text; Links aus Zusammenfassung und Profil führen dorthin |
+| 20 | **Capacitor und `safeNext`:** iOS lädt von `capacitor://localhost`; `new URL(...).origin` ist dort vermutlich `"null"`, jeder Rücksprung fiele still auf `/`. Auf dem Gerät prüfen, den Vergleich bei Bedarf auf `host`/`protocol` umstellen und `tests/unit/auth.test.ts` erweitern | CC (Code), Beks (Gerät) | Anmelden aus einer geschützten Seite im iOS-Build führt auf die Zielseite zurück; eine fremde Origin als `next` bleibt abgelehnt |
+| 21 | App als statischen Build beim festgelegten Hosting-Anbieter ausliefern; Produktions-Env nur mit URL und Publishable Key | Beks (Anbieter), CC (Build) | `npm run build` grün; `dist/` ohne Secrets; App-Origin entspricht Punkt 10 und 16 |
+| 22 | Security- und Performance-Advisor ohne Warnungen, Rate-Limits auf allen Edge Functions (S10) | CC | Advisor-Bericht im Dashboard bzw. per MCP ohne Warnungen |
+
+Weitere Abnahme-Punkte (Lighthouse, Preis-Stichproben über 10 Szenarien, `shots:all`, README, Apple-Anmeldung) stehen in ROADMAP S10 und OPEN_ISSUES; Apple bleibt bis dahin ausgeblendet.
+
+## Automatische Prüfung: `scripts/golive-check.mjs`
+Nur lesend, ändert nichts, liest keine `.env`-Dateien. Ausführen nur auf Anweisung von Beks: zuerst gegen Dev (prüft das Skript selbst; die localhost-Origins melden dort erwartungsgemäß FAIL), dann gegen Produktion.
+
+```bash
+GOLIVE_URL=https://<ref>.supabase.co GOLIVE_ORIGIN=https://<app-domain> GOLIVE_PUBLISHABLE_KEY=<publishable> node scripts/golive-check.mjs
+```
+
+`GOLIVE_PUBLISHABLE_KEY` ist optional (der Key ist öffentlich). Geprüft werden:
+- CORS von `route` und `quote`: echte Origin und `capacitor://localhost` erlaubt; fremde Origin sowie `http://localhost:5173` und `:4173` ohne `Access-Control-Allow-Origin`; POST mit falschen Zugangsdaten und fremder Origin gibt 401 ohne CORS-Header.
+- `quote` ohne JWT und mit Müll-Token: 401; `route` ohne `apikey`: 401.
+- Mit Key: `price_config` anonym lesbar, aber ohne Gebührenschlüssel; `platform_settings`, `fee_splits`, `service_requests`, `rental_bookings`, `profiles` anonym ohne Zeilen; keine Demo-Angebote.
+
+Exit-Code 0 = bestanden, 1 = mindestens ein FAIL, 2 = falscher Aufruf. Nicht geprüft werden Mailversand, Redirect-URLs, SMTP, Turnstile, Secrets und der ORS-Plan: diese Punkte nur per Dashboard und echter Anmeldung.
