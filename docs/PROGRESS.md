@@ -115,3 +115,8 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 ## 2026-11-01 · S8b-3 Nachtrag · Foto-Löschung
 - Migration 0014 (Dev): `photo_cleanup()` scheitert bei fehlenden/leeren Vault-Secrets, Timeout 60 s. Berater: `tmp/proof/s8b3-0014-berater.md` (F1, F2 mittel behoben)
 - Live-Skript belegt 0 Dateien nach Anfrage- und Konto-Löschung samt Negativkontrolle; test:rls 102, check 339, Cron succeeded und HTTP 200 (`tmp/proof/s8b3-cron.log`)
+
+## 2026-11-01 · S8b-Abschluss
+- Findings A (Migration 0013, Test „Wiederholen beim achten Foto“) und B (`deletePhoto` prüft den Fehler, Unit-Test) waren schon umgesetzt, hier nachgewiesen; keine neue Migration. RLS-Tests zu `photo_cleanup` melden fehlenden Vault klar („Vault-Secrets fehlen – npm run setup:photo-cleanup ausführen“)
+- UI: Aktionsleiste ab 520 px auf Kartenbreite, Einwilligungs-Links ohne Zeilenabstand-Effekt, Dark-Variante der Karton-Grafik, Spinner und Entfernen-Badge kontrastreicher; Shot-Tabelle `tmp/proof/s8b-abschluss-shots.md`
+- E2E-Flake (zwei `main` im Seitenübergang) im Zusammenfassungs-Test behoben. check 339 Unit, build/dist-Scan 0, E2E 82, RLS 102

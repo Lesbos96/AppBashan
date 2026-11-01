@@ -17,7 +17,7 @@ export function EmptyState({ illustration, title, text, children }: { illustrati
 export function Loading({ label = 'Lädt' }: { label?: string }) {
   return (
     <div role="status" aria-live="polite" className="flex flex-col items-center gap-3 px-8 py-12 text-text-secondary">
-      <span aria-hidden="true" className="size-7 animate-spin rounded-full border-[3px] border-fill border-t-primary motion-reduce:animate-none" />
+      <span aria-hidden="true" className="size-7 animate-spin rounded-full border-[3px] border-text/25 border-t-accent motion-reduce:animate-none" />
       <span className="text-subhead">{label} …</span>
     </div>
   )

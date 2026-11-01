@@ -32,7 +32,7 @@ export function FotoUploads({ requestId }: { requestId: string }) {
                 )}
                 {(u.status === 'queued' || u.status === 'uploading') && (
                   <>
-                    <span aria-hidden="true" className="size-4 shrink-0 animate-spin rounded-full border-2 border-separator border-t-primary motion-reduce:animate-none" />
+                    <span aria-hidden="true" className="size-4 shrink-0 animate-spin rounded-full border-2 border-text/25 border-t-accent motion-reduce:animate-none" />
                     <span className="text-text-secondary">{u.status === 'queued' ? 'Wartet …' : 'Wird hochgeladen …'}</span>
                   </>
                 )}

@@ -44,7 +44,7 @@ export function Fotos({ storeKey }: { storeKey: string }) {
             <div key={p.id} className="relative h-[58px]">
               <img src={p.url} alt={`Foto ${i + 1}`} className="size-full rounded-[14px] object-cover" />
               <button type="button" aria-label={`Foto ${i + 1} entfernen`} onClick={() => remove(p.id)} className="absolute -top-4 -right-4 flex size-11 items-center justify-center">
-                <span className="flex size-5 items-center justify-center rounded-full bg-text/70 text-white shadow-[0_0_0_2px_var(--surface)]">
+                <span className="flex size-5 items-center justify-center rounded-full bg-text text-background shadow-[0_0_0_2px_var(--surface)]">
                   <Icon name="close" width={10} height={10} strokeWidth={3.2} />
                 </span>
               </button>

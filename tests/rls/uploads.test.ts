@@ -222,6 +222,12 @@ describe('Objekte (storage.objects)', () => {
 })
 
 describe('Aufräumen', () => {
+  // Ohne Vault-Einträge scheitert photo_cleanup (Migration 0014): klare Meldung statt unverständlichem Fehler, nie überspringen.
+  beforeAll(async () => {
+    const { error } = await service.rpc('photo_cleanup')
+    if (error?.message.includes('nicht eingerichtet')) throw new Error('Vault-Secrets fehlen – npm run setup:photo-cleanup ausführen')
+  })
+
   it('Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar', async () => {
     for (const fn of ['photo_orphans', 'photo_cleanup'] as const) {
       expect((await anon.rpc(fn)).error, `anon ${fn}`).toMatchObject({ code: '42501' })

@@ -36,7 +36,7 @@ export function TabBar({ tabs }: { tabs: Tab[] }) {
 /** Fixierte Aktionsleiste für Buchungsflows (ersetzt dort die Tab-Bar). */
 export function ActionBar({ children }: { children: ReactNode }) {
   return (
-    <div className={`${column} glass bottom-0 z-20 flex items-center gap-3 border-t-[0.5px] border-separator px-5 pt-3 pb-[max(var(--safe-bottom),12px)]`}>
+    <div className={`${column} glass bottom-0 z-20 flex items-center gap-3 border-t-[0.5px] border-separator px-5 pt-3 min-[520px]:max-w-[calc(var(--content-max-width)-2.5rem)] min-[520px]:px-0 pb-[max(var(--safe-bottom),12px)]`}>
       {children}
     </div>
   )

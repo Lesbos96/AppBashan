@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <ellipse cx="32" cy="54" rx="24" ry="2.5" fill="#2F2A22" fill-opacity=".16"></ellipse>
+          <path d="M10 33h20v20H10z" fill="#C79A64"></path><path d="M10 33l4-4h20l-4 4z" fill="#DDBA88"></path><path d="M30 33l4-4v20l-4 4z" fill="#A87842"></path><path d="M12 31h20" stroke="#EADDC2" stroke-width="2"></path>
+          <path d="M34 33h20v20H34z" fill="#C79A64"></path><path d="M34 33l4-4h20l-4 4z" fill="#DDBA88"></path><path d="M54 33l4-4v20l-4 4z" fill="#A87842"></path><path d="M36 31h20" stroke="#EADDC2" stroke-width="2"></path>
+          <path d="M20 13h20v16H20z" fill="#CDA16C"></path><path d="M20 13l4-4h20l-4 4z" fill="#E2C292"></path><path d="M40 13l4-4v16l-4 4z" fill="#A87842"></path><path d="M22 11h20" stroke="#EADDC2" stroke-width="2"></path>
+          <rect x="38" y="40" width="10" height="7" rx="1" fill="#F6F2E9"></rect>
+        </svg>

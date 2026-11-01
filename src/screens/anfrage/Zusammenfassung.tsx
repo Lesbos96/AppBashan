@@ -232,11 +232,11 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
           <input type="checkbox" checked={consent} onChange={(e) => setConsentFor(e.target.checked ? accountId : '')} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
           <span className="text-subhead">
             Ich sende eine unverbindliche Anfrage. Der Partner prüft und bestätigt Termin und Preis. Es gelten{' '}
-            <Link to="/profil/impressum" className="inline-flex min-h-11 items-center text-accent underline">
+            <Link to="/profil/impressum" className="py-3.5 text-accent underline">
               AGB
             </Link>{' '}
             und{' '}
-            <Link to="/profil/datenschutz" className="inline-flex min-h-11 items-center text-accent underline">
+            <Link to="/profil/datenschutz" className="py-3.5 text-accent underline">
               Datenschutz
             </Link>
             .
