@@ -80,7 +80,7 @@ Ohne E-Mail-Adresse kannst du keine Anfrage absenden. Die Einwilligung zur Adres
 
 ## 7. Belege im Code
 
-Stand: Arbeitskopie vom 2026-11-01. Zeilen der mit † markierten Dateien stammen aus der laufenden Session S8b-3 (noch nicht auf `main` committed) und können sich verschieben.
+Stand: 2026-11-01, Zeilen gegen den committeten Stand von S8b-3 geprüft; sie können sich verschieben.
 
 | Aussage | Beleg im Code |
 |---|---|
@@ -113,13 +113,13 @@ Stand: Arbeitskopie vom 2026-11-01. Zeilen der mit † markierten Dateien stamme
 | Profil mit Name/Telefon-Feldern | `0001_foundation.sql:28-35` |
 | Keine automatische Löschung von Anfragen im Code; Fristen sind Vorschlag | `docs/ARCHITECTURE.md:62` („Vorschlag, Entscheidung offen“), kein `cron.schedule` für Anfragen in `supabase/migrations/` |
 | Privater Foto-Speicher | `0001_foundation.sql:408-409` |
-| Nur JPEG im Speicher † | `supabase/migrations/20261101120000_0011_photos.sql:39` † |
-| Höchstens 8 Fotos je Anfrage † | `0011_photos.sql:10-11` †, `src/lib/photos.ts:3` † |
-| Höchstens 10 MB, Neu-Kodierung, EXIF entfällt, 2000 px † | `src/lib/photos.ts:4-5`, `:13`, `:43` † |
-| Signierte Links 10 Minuten | `src/lib/uploads.ts:10` †, `:118-124` †, `docs/ARCHITECTURE.md:60` |
-| Dateien ohne Zeile nach 1 Stunde entfernt, nur nach Einrichtung der Vault-Secrets † | `0011_photos.sql:48` †, `:56-57`, `:71-75` †, `supabase/functions/photo-cleanup/index.ts:33`, `:39` † |
-| Einträge ohne Datei nach 48 Stunden gelöscht † | `0011_photos.sql:67-69` † |
-| Foto-Aufräumjob stündlich (Minute 23) † | `0011_photos.sql:82` † |
+| Nur JPEG im Speicher | `supabase/migrations/20261101120000_0011_photos.sql:39` |
+| Höchstens 8 Fotos je Anfrage | `0011_photos.sql:10-11`, `src/lib/photos.ts:3` |
+| Höchstens 10 MB, Neu-Kodierung, EXIF entfällt, 2000 px | `src/lib/photos.ts:4-5`, `:13`, `:43` |
+| Signierte Links 10 Minuten | `src/lib/uploads.ts:10`, `:124-133`, `docs/ARCHITECTURE.md:60` |
+| Dateien ohne Zeile nach 1 Stunde entfernt, nur nach Einrichtung der Vault-Secrets | `0011_photos.sql:48`, `:56-57`, `:71-75`, `supabase/functions/photo-cleanup/index.ts:33`, `:39` |
+| Einträge ohne Datei nach 48 Stunden gelöscht | `0011_photos.sql:67-69` |
+| Foto-Aufräumjob stündlich (Minute 23) | `0011_photos.sql:82` |
 | Foto-Frist 90 Tage nur Vorschlag | `docs/ARCHITECTURE.md:62` |
 | Region des Supabase-Projekts nicht in der Konfiguration; nur Empfehlung Frankfurt | `docs/SESSION_PROMPTS.md:9`, `supabase/config.toml` enthält keinen Regionswert |
 | Keine Kartenkacheln, Grenzdaten OSM in der DB | `docs/ARCHITECTURE.md:86`, keine Kachelbibliothek in `package.json` |
