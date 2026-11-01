@@ -29,11 +29,12 @@ export function Shell() {
   const type = useNavigationType()
   const handle = useMatches().at(-1)?.handle as Handle
   const online = useOnline()
-  const [nav, setNav] = useState<{ handle: Handle; direction: Direction }>({ handle, direction: 'tab' })
+  const [nav, setNav] = useState<{ handle: Handle; direction: Direction; seq: number }>({ handle, direction: 'tab', seq: 0 })
 
+  // Jeder Seitenwechsel bekommt eine neue Instanz (seq): Kehrt man während der Ausblendung auf dieselbe Seite zurück, belebte AnimatePresence sonst die alte Instanz samt Zustand.
   // Richtung beim Wechsel der Seite festlegen (abgeleiteter Zustand, kein Effekt)
   if (nav.handle.key !== handle.key) {
-    setNav({ handle, direction: nav.handle.root && handle.root ? 'tab' : type === 'POP' ? 'pop' : 'push' })
+    setNav({ handle, direction: nav.handle.root && handle.root ? 'tab' : type === 'POP' ? 'pop' : 'push', seq: nav.seq + 1 })
   }
 
   return (
@@ -45,7 +46,7 @@ export function Shell() {
       )}
       <AnimatePresence mode="popLayout" initial={false} custom={nav.direction}>
         <motion.div
-          key={handle.key}
+          key={`${handle.key}:${nav.seq}`}
           custom={nav.direction}
           variants={pages}
           initial="enter"

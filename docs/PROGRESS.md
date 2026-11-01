@@ -3,6 +3,16 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-10-31 · S8b-2 · Anfragen senden und Aufträge (abgeschlossen, Rest von S8b offen)
+- Termin (`/:service/termin`), Zusammenfassung mit „Anfrage als x@y senden“ und „Anderes Konto“, Bestätigung, Aufträge-Liste (nur eigene Anfragen, Filter `customer_id`, feste Spalten). `clientRef` je Inhalt, Entwurf wandert über die Anmeldung (15 min, localStorage), keine automatischen Wiederholungen. Code: `src/lib/{draft,quote}.ts`, `src/screens/anfrage/`.
+- Server: Mietzeit nur als Wiener Ortszeit, ISO mit Z/Offset gibt 400 (`pickupAt:`/`returnAt:`); neu `formatEuroRounded`. `quote` im Dev-Projekt deployt. Berater: Plan `tmp/proof/s8b2-berater-plan.md`.
+- Grün: check (312 Unit), E2E, shots/shots:all, build mit dist-Scan (inkl. `fee_splits`/`platform_settings`), `test:rls` (88), `scripts/live-quote-app.mjs` (23/23, Testnutzer gelöscht). Offen: Uploads (S8b-3), Detail/Bearbeiten/Zurückziehen, Miete in der App (S9); siehe OPEN_ISSUES „S8b-2“.
+
+## 2026-11-01 · S8b-2 · Abschluss und Nachbesserung
+- Flake `dienste.spec.ts:73` behoben: `Shell.tsx` gibt jedem Seitenwechsel eine neue Instanz (AnimatePresence belebte sonst die ausblendende Seite samt Zustand). 30/30 grün einzeln (vorher 23/30), `tmp/proof/s8b2-flake-73.log`
+- Live-Skript: clientRef-Fall (zweite Anfrage mit neuen Werten) und Vorschau = Server auf den Cent für Montage, Entrümpelung, Umzug (mit Strecke) und Miete (`tmp/proof/s8b2-live.log`, alle bestanden, Testnutzer gelöscht). App: Hinweis „Der Preis wurde aktualisiert.“ auf der Bestätigung (E2E mit abweichender Antwort)
+- Grün: check, build + dist-Scan, E2E 72/72, `test:rls` 88/88, Shots 390 (`tmp/proof/s8b2-shots.md`, Reviewer: 1 mittel Kontrast behoben)
+
 ## 2026-10-30 · S8a · Live-Test, Deploy, ORS-Umstellung · abgeschlossen
 - Secrets im Dev-Projekt gesetzt (SECRET_KEY, ORS_API_KEY, RATE_LIMIT_SECRET, PUBLISHABLE_KEY, ALLOWED_ORIGINS; nur über dotenv-cli), `route` und `quote` deployt. ORS-Basis-URL von `api.openrouteservice.org` (abgekündigt) auf `api.heigit.org` umgestellt (Konstante `ORS_URLS`: Directions `/openrouteservice`, Geocoding `/pelias/v1`); zwei Anpassungen aus dem Live-Test: Accept `application/geo+json` (sonst 406) und `instructions: true` (sonst keine Abschnitte je Leg)
 - Live: Wien→Graz 196,1 km, davon 186,5 km außerhalb Wiens, 2,4 h; München international; R1 belegt (12 Aufrufe: ab dem 11. 429, `cf-connecting-ip` wird vom Gateway mit 403 abgelehnt); R3 253 ms; Browser (CORS, `functions.invoke`) und `quote` (Token, CORS, Preis 1.060,95 €, Idempotenz, 409, Miete, Nutzerlimit) geprüft. Zahlen und Befehle: OPEN_ISSUES „S5b/S5c" und „S8a"

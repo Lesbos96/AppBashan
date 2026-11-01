@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
 import { Card, GroupedList, StepRow, SwitchRow, ValueRow } from '../components/Surfaces'
+import { rememberShown } from '../lib/draft'
 import { type Place, type Service, type TransportFlow, initialFlow, useFlow } from '../lib/flow'
 import { formatEuro } from '../lib/money'
 import { loadPrices, useLoad } from '../lib/prices'
@@ -20,7 +21,7 @@ import { useRouteCalc } from './konfigurator/useRouteCalc'
 const copy = {
   transport: { title: 'Möbeltransport', path: 'transport', illustrationHint: 'Einzelne Möbel' },
   move: { title: 'Umzug', path: 'umzug', illustrationHint: 'Ganzes Zuhause' },
-}
+} as const
 
 const vehicleTypes = [
   { value: 'van', label: 'Transporter bis 3,5 t' },
@@ -216,7 +217,10 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
         </Step>
       </div>
 
-      <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from && !!flow.to && !calc.loading} onContinue={() => void navigate(`/${copy[service].path}/termin`)} />
+      <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from && !!flow.to && !calc.loading} onContinue={() => {
+        rememberShown(copy[service].path, price ? price.totalCents : null)
+        void navigate(`/${copy[service].path}/termin`)
+      }} />
       <PreisSheet note="Richtwert auf Basis deiner Angaben. Dauer, Team und Fahrzeug bestätigt der Partner." open={sheet === 'price'} onClose={() => setSheet(null)} preview={preview} describe={(key) => (price ? lineText(key as Parameters<typeof lineText>[0], price, flow, tariffs) : { label: key })} />
       <AdresseSheet which={sheet === 'from' || sheet === 'to' ? sheet : null} flow={flow} onClose={() => setSheet(null)} onConsent={consent} onPick={pick} />
 

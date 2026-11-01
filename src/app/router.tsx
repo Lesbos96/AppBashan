@@ -1,7 +1,11 @@
 import { createBrowserRouter, redirect, type LoaderFunctionArgs, type RouteObject } from 'react-router'
+import { paths } from '../lib/draft'
 import { hasOnboarded } from '../lib/onboarding'
 import { supabase } from '../lib/supabase'
 import { Anmelden } from '../screens/Anmelden'
+import { Gesendet } from '../screens/anfrage/Gesendet'
+import { Termin } from '../screens/anfrage/Termin'
+import { Zusammenfassung } from '../screens/anfrage/Zusammenfassung'
 import { Auftraege } from '../screens/Auftraege'
 import { Entruempelung } from '../screens/entruempelung/Wizard'
 import { EntruempelungErgebnis } from '../screens/entruempelung/Ergebnis'
@@ -18,14 +22,15 @@ const page = (path: string, element: RouteObject['element'], handle: Handle, ext
 const backTo = (path: string) =>
   path.startsWith('profil') ? { to: '/profil', label: 'Profil' } : path.includes('/') ? { to: `/${path.split('/')[0]}`, label: 'Zurück' } : { to: '/', label: 'Start' }
 
-// Flows ohne Tab-Bar, gebaut in S6 bis S9; bis dahin „Folgt".
-const flows = [
-  { path: 'transport/termin', title: 'Ort & Termin' },
-  { path: 'umzug/termin', title: 'Ort & Termin' },
-  { path: 'entruempelung/termin', title: 'Ort & Termin' },
-  { path: 'montage/termin', title: 'Ort & Termin' },
-  { path: 'profil/vermieter', title: 'Für Vermieter' },
-].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
+// Ablauf nach dem Konfigurator: Termin, Zusammenfassung, Bestätigung. Ohne Tab-Bar.
+const anfrage = paths.flatMap((path) => [
+  page(`${path}/termin`, <Termin path={path} />, { key: `${path}/termin`, bar: false }),
+  page(`${path}/zusammenfassung`, <Zusammenfassung path={path} />, { key: `${path}/zusammenfassung`, bar: false }),
+  page(`${path}/gesendet`, <Gesendet path={path} />, { key: `${path}/gesendet`, bar: false }),
+])
+
+// Noch nicht gebaut (S9): „Folgt“.
+const flows = [{ path: 'profil/vermieter', title: 'Für Vermieter' }].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
 
 /** Geschützter Bereich: ohne Sitzung zur Anmeldung, danach zurück hierher. Ein Loader läuft einmal je Navigation (kein Render-Guard, der beim Ausblenden die neue URL sähe). */
 async function requireSession({ request }: LoaderFunctionArgs) {
@@ -56,6 +61,7 @@ export const router = createBrowserRouter([
       page('entruempelung', <Entruempelung />, { key: 'entruempelung', bar: false }),
       page('entruempelung/ergebnis', <EntruempelungErgebnis />, { key: 'entruempelung/ergebnis', bar: false }),
       page('montage', <Montage />, { key: 'montage', bar: false }),
+      ...anfrage,
       ...flows,
     ],
   },

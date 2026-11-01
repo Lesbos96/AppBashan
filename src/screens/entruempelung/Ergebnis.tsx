@@ -7,8 +7,9 @@ import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { ErrorState, Loading } from '../../components/States'
 import { AmountRow, GroupedList } from '../../components/Surfaces'
+import { rememberShown } from '../../lib/draft'
 import { type ClearanceFlow, useClearanceFlow } from '../../lib/flow'
-import { formatEuro } from '../../lib/money'
+import { formatEuro, formatEuroRounded } from '../../lib/money'
 import { usePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
 import { clearanceLineText, floorText, offerReasonText, previewClearance, toTariffs } from '../../lib/preview'
@@ -69,7 +70,7 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
   const price: ClearancePrice | null = preview.state === 'price' ? preview.price : null
   const fill = fills.find((f) => f.value === flow.fill)!
   const photoText = photos === 0 ? 'ohne Fotos' : `${photos} ${photos === 1 ? 'Foto' : 'Fotos'}`
-  const hero = price ? `ca. ${formatEuro(price.totalCents)}` : ''
+  const hero = price ? `ca. ${formatEuroRounded(price.totalCents)}` : ''
 
   return (
     <main>
@@ -90,10 +91,12 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
             <span className="text-[13px]/4 text-text-secondary">Wiener Preisorientierung · inkl. USt.</span>
             <span className={`mt-1 whitespace-nowrap font-bold tabular-nums ${hero.length > 15 ? 'text-[32px]/10 tracking-[-0.8px]' : 'text-[40px]/12 tracking-[-1px]'}`}>{hero}</span>
             <Spanne fraction={price.highCents > price.lowCents ? (price.totalCents - price.lowCents) / (price.highCents - price.lowCents) : 0.5} />
-            <div className="mt-2 flex justify-between text-[13px]/4 whitespace-nowrap text-text-secondary tabular-nums">
-              <span>{formatEuro(price.lowCents)}</span>
-              <span>{formatEuro(price.highCents)}</span>
-            </div>
+            {formatEuroRounded(price.lowCents) !== formatEuroRounded(price.highCents) && (
+              <div className="mt-2 flex justify-between text-[13px]/4 whitespace-nowrap text-text-secondary tabular-nums">
+                <span>{formatEuroRounded(price.lowCents)}</span>
+                <span>{formatEuroRounded(price.highCents)}</span>
+              </div>
+            )}
             <p className="m-0 mt-3 text-[13px]/[18px] text-text-secondary">
               Spanne aus {formatEuro(num(tariffs, 'clearance.rate_low'))} bis {formatEuro(num(tariffs, 'clearance.rate_high'))} je m³. Fixpreis erst nach Prüfung durch den Partner.
             </p>
@@ -146,7 +149,12 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
       </div>
 
       <ActionBar>
-        <Button onClick={() => void navigate('/entruempelung/termin')}>{price ? 'Ort & Wunschtermin' : 'Besichtigung anfragen'}</Button>
+        <Button
+          onClick={() => {
+            rememberShown('entruempelung', price ? price.totalCents : null)
+            void navigate('/entruempelung/termin')
+          }}
+        >{price ? 'Ort & Wunschtermin' : 'Besichtigung anfragen'}</Button>
       </ActionBar>
     </main>
   )

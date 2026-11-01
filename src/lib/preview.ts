@@ -29,25 +29,28 @@ export type Preview = PreviewOf<TransportPrice>
 
 const wrap = <P extends PriceResult>(result: P | OfferResult): PreviewOf<P> => (result.kind === 'price' ? { state: 'price', price: result } : { state: 'offer', offer: result })
 
+/** Preisfelder des Konfigurators in der Form, die `parseTransportInput` (Vorschau und `quote`) erwartet. */
+export const transportFields = (t: Tariffs, service: Service, f: TransportFlow) => ({
+  service,
+  goods: f.goods,
+  crew: f.crew,
+  vehicles: f.vehicles,
+  vehicleType: f.vehicleType,
+  hours: f.hours ?? minHours(t, service),
+  fromFloor: f.fromFloor,
+  toFloor: f.toFloor,
+  fromLift: f.fromLift,
+  toLift: f.toLift,
+  boxes: f.boxes,
+  parking: f.parking,
+  packing: f.packing,
+  assembly: f.assembly ? { kind: 'standard', lm: f.assemblyLm } : null,
+})
+
 /** Vorschau für die Preiskarte; gerechnet wird ausschließlich im Preismodul. Ohne berechnete Strecke liefert es ein Angebot (route_missing), nie einen Preis. */
 export function previewTransport(t: Tariffs, service: Service, f: TransportFlow): Preview {
   // Dieselbe Prüfung wie später `quote`; ungültige Werte werfen `InputError` (die Seite zeigt dann den Fehlerzustand).
-  const input = parseTransportInput({
-    service,
-    goods: f.goods,
-    crew: f.crew,
-    vehicles: f.vehicles,
-    vehicleType: f.vehicleType,
-    hours: f.hours ?? minHours(t, service),
-    fromFloor: f.fromFloor,
-    toFloor: f.toFloor,
-    fromLift: f.fromLift,
-    toLift: f.toLift,
-    boxes: f.boxes,
-    parking: f.parking,
-    packing: f.packing,
-    assembly: f.assembly ? { kind: 'standard', lm: f.assemblyLm } : null,
-  })
+  const input = parseTransportInput(transportFields(t, service, f))
   const r = f.route && { region: f.route.region, outsideKm: f.route.outsideKm, driveHours: f.route.driveHours }
   return wrap(computeTransport(t, input, r))
 }
@@ -91,8 +94,10 @@ export function lineText(key: TransportPrice['lines'][number]['key'], p: Transpo
 }
 
 /** Vorschau Entrümpelung: dieselbe Prüfung wie später `quote`; ohne gewähltes Objekt wirft sie `InputError`. */
+export const clearanceFields = (f: ClearanceFlow) => ({ object: f.object, area: f.area, fill: f.fill, lift: f.lift, floor: f.floor, special: f.special, assembly: f.assembly ? toAssembly(f.draft) : null })
+
 export function previewClearance(t: Tariffs, f: ClearanceFlow): PreviewOf<ClearancePrice> {
-  const input = parseClearanceInput({ object: f.object, area: f.area, fill: f.fill, lift: f.lift, floor: f.floor, special: f.special, assembly: f.assembly ? toAssembly(f.draft) : null })
+  const input = parseClearanceInput(clearanceFields(f))
   return wrap(computeClearance(t, input))
 }
 

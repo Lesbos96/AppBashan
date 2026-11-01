@@ -4,8 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
 import '@fontsource-variable/inter'
 import { router } from './app/router'
+import { purgeHandover } from './lib/draft'
 import { SessionProvider } from './lib/session'
 import './index.css'
+
+purgeHandover()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

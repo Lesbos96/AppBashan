@@ -243,48 +243,43 @@ describe('Pflichtkriterium: Miettage in Wiener Ortszeit', () => {
     return t.run(rentalCall({ inputs: { ...rentalInput, pickupAt, returnAt, km: 0, cover: false } })).then((res) => ({ res, saved: t.bookings[0] }))
   }
 
-  it('Sommerzeit-Beginn 29.03.2026: UTC-Zeitstempel werden vor der Berechnung in Wiener Zeit umgerechnet', async () => {
-    // 11:00 MEZ bis 11:30 MESZ: 24,5 Stunden Wanduhr = 2 Tage (nach UTC wären es 23,5 Stunden = 1 Tag)
-    const march = Date.UTC(2026, 2, 1)
-    const utc = await rent('2026-03-28T10:00:00Z', '2026-03-29T09:30:00Z', march)
-    const wall = await rent('2026-03-28T11:00', '2026-03-29T11:30', march)
-    expect(utc.saved?.snapshot.days).toBe(2)
-    expect(utc.saved?.snapshot).toEqual(wall.saved?.snapshot)
-    expect(utc.saved?.totalCents).toBe(wall.saved?.totalCents)
-    expect(utc.saved).toMatchObject({ pickupAt: '2026-03-28T10:00:00.000Z', returnAt: '2026-03-29T09:30:00.000Z' })
+  it('Wanduhrzeit: Miettage zählen nach Wiener Uhr, die Spalten bekommen den UTC-Zeitpunkt', async () => {
+    // Sommerzeit-Ende 25.10.2026: 11:00 MESZ bis 10:30 MEZ = 23,5 Stunden Wanduhr = 1 Tag
+    const october = await rent('2026-10-24T11:00', '2026-10-25T10:30', Date.UTC(2026, 9, 1))
+    expect(october.saved?.snapshot.days).toBe(1)
+    expect(october.saved).toMatchObject({ pickupAt: '2026-10-24T09:00:00.000Z', returnAt: '2026-10-25T09:30:00.000Z' })
+    const winter = await rent('2026-11-10T09:00', '2026-11-12T09:00')
+    expect(winter.saved?.pickupAt).toBe('2026-11-10T08:00:00.000Z')
   })
 
-  it('Sommerzeit-Ende 25.10.2026: UTC-Zeitstempel werden vor der Berechnung in Wiener Zeit umgerechnet', async () => {
-    // 11:00 MESZ bis 10:30 MEZ: 23,5 Stunden Wanduhr = 1 Tag (nach UTC wären es 24,5 Stunden = 2 Tage)
-    const october = Date.UTC(2026, 9, 1)
-    const utc = await rent('2026-10-24T09:00:00Z', '2026-10-25T09:30:00Z', october)
-    const wall = await rent('2026-10-24T11:00', '2026-10-25T10:30', october)
-    expect(utc.saved?.snapshot.days).toBe(1)
-    expect(utc.saved?.snapshot).toEqual(wall.saved?.snapshot)
-    expect(utc.saved).toMatchObject({ pickupAt: '2026-10-24T09:00:00.000Z', returnAt: '2026-10-25T09:30:00.000Z' })
+  it.each([
+    ['Z', '2026-11-10T08:00:00Z', '2026-11-12T08:00:00Z'],
+    ['Z ohne Sekunden', '2026-11-10T08:00Z', '2026-11-12T08:00Z'],
+    ['+01:00', '2026-11-10T09:00:00+01:00', '2026-11-12T09:00:00+01:00'],
+    ['Sekunden ohne Zone', '2026-11-10T09:00:00', '2026-11-12T09:00:00'],
+    ['24:00', '2026-11-10T24:00', '2026-11-12T09:00'],
+    ['Minuten 60', '2026-11-10T10:60', '2026-11-12T09:00'],
+  ])('lehnt Mietzeit mit %s ab (400 invalid_input, nichts gespeichert)', async (_name, pickupAt, returnAt) => {
+    const out = await rent(pickupAt, returnAt)
+    expect(out.res.status).toBe(400)
+    expect(out.res.body).toMatchObject({ error: 'invalid_input' })
+    expect(out.saved).toBeUndefined()
   })
 
-  it('Offsets (+02:00) gelten wie UTC; Wanduhrzeit bleibt unverändert', async () => {
-    const a = await rent('2026-11-10T09:00:00+01:00', '2026-11-12T09:00:00+01:00')
-    const b = await rent('2026-11-10T09:00', '2026-11-12T09:00')
-    expect(a.saved?.snapshot).toEqual(b.saved?.snapshot)
-    expect(b.saved?.pickupAt).toBe('2026-11-10T08:00:00.000Z')
+  it('Rückgabe mit Z wird ebenfalls abgelehnt, mit Feldpräfix returnAt', async () => {
+    const out = await rent('2026-11-10T09:00', '2026-11-12T08:00:00Z')
+    expect(out.res.status).toBe(400)
+    expect(out.res.body).toMatchObject({ message: expect.stringMatching(/^returnAt:/) })
   })
 
-  it('Uhrzeit, die es wegen der Zeitumstellung nicht gibt, wird abgelehnt; die doppelte Stunde gilt als die frühere', async () => {
-    const missing = await rent('2026-03-29T02:30', '2026-03-30T02:30', Date.UTC(2026, 2, 1))
+  it('Uhrzeit, die es wegen der Zeitumstellung nicht gibt, wird abgelehnt (Präfix pickupAt); die doppelte Stunde gilt als die frühere', async () => {
+    const missing = await rent('2027-03-28T02:30', '2027-03-29T02:30', Date.UTC(2027, 2, 1))
     expect(missing.res.status).toBe(400)
+    expect(missing.res.body).toMatchObject({ message: expect.stringMatching(/^pickupAt:/) })
     const twice = await rent('2026-10-25T02:30', '2026-10-26T02:30', Date.UTC(2026, 9, 1))
     expect(twice.res.status).toBe(200)
     expect(twice.saved).toMatchObject({ pickupAt: '2026-10-25T00:30:00.000Z', returnAt: '2026-10-26T01:30:00.000Z' })
     expect(twice.saved?.snapshot.days).toBe(1)
-  })
-
-  it('ISO-Zeitpunkt in der doppelten Herbststunde bleibt als Zeitpunkt erhalten (kein Verrutschen um eine Stunde)', async () => {
-    // 01:30 UTC = 02:30 MEZ (die zweite 02:30-Uhrzeit des Tages); die Wanduhr-Eingabe 02:30 meint dagegen die frühere (00:30 UTC)
-    const iso = await rent('2026-10-25T01:30:00Z', '2026-10-26T01:30:00Z', Date.UTC(2026, 9, 1))
-    expect(iso.saved).toMatchObject({ pickupAt: '2026-10-25T01:30:00.000Z', returnAt: '2026-10-26T01:30:00.000Z' })
-    expect(iso.saved?.snapshot.days).toBe(1)
   })
 
   it('Abholung heute zu einer schon vergangenen Uhrzeit wird abgelehnt', async () => {

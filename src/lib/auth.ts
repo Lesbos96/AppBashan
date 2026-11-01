@@ -1,4 +1,5 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
+import { clearHandover, clearSent } from './draft'
 import { supabase } from './supabase'
 
 export type AuthErrorKind = 'invalid_email' | 'invalid_code' | 'rate_limited' | 'offline' | 'unavailable'
@@ -77,9 +78,16 @@ export async function signOut(): Promise<void> {
   try {
     sessionStorage.clear()
     localStorage.removeItem(NEXT_KEY)
+    clearHandover()
   } catch {
     // Speicher gesperrt: nichts zu löschen
   }
+}
+
+/** Meldet nur diese Sitzung ab und lässt den Entwurf stehen (Kontowechsel mitten im Flow, „Anderes Konto“). */
+export async function leaveAccount(): Promise<void> {
+  await supabase.auth.signOut({ scope: 'local' })
+  clearSent()
 }
 
 /**

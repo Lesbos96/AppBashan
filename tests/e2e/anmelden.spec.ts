@@ -11,6 +11,7 @@ const noRawText = (page: Page) => expect(page.locator('body')).not.toContainText
 test('Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden', async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await mockAuth(page)
+  await page.route('**/rest/v1/service_requests**', (r) => r.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: [] }))
   await page.goto('/auftraege')
   await expect(page).toHaveURL(/\/anmelden$/) // Rücksprungziel steht nicht mehr in der URL
   await expect(page.getByRole('heading', { name: 'Anmelden', level: 1 })).toBeVisible()

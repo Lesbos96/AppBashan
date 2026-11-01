@@ -1,9 +1,10 @@
 // Scan von dist/ auf Geheimnisse: Secret-Key (sb_secret_ + mind. 20 Zeichen) und JWT-förmige Tokens.
+// Außerdem dürfen die Gebühren-Tabellen nirgends im App-Code vorkommen (Kunden lesen sie nie).
 // Das nackte Präfix `sb_secret_` steckt in der Client-Bibliothek und zählt nicht. Ausgabe nie mit dem Fundtext.
 import fs from 'node:fs'
 import path from 'node:path'
 
-const PATTERNS = { 'sb_secret_-Schlüssel': /sb_secret_[A-Za-z0-9_-]{20,}/g, 'JWT-Token': /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g }
+const PATTERNS = { 'sb_secret_-Schlüssel': /sb_secret_[A-Za-z0-9_-]{20,}/g, 'JWT-Token': /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, 'Gebührentabelle': /fee_splits|platform_settings|current_fee_rates/g }
 
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]))
 

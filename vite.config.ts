@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), svgr()],
   // Nur Variablen mit diesem Präfix landen im Client-Bundle (URL und Publishable Key, nie der Secret-Key).
   envPrefix: 'NEXT_PUBLIC_',
+  // Testläufe schreiben Berichte und Screenshots nach tmp/; das darf den Dev-Server nicht neu laden.
+  server: { watch: { ignored: ['**/tmp/**', '**/docs/**'] } },
   resolve: {
     alias: { '@pricing': fileURLToPath(new URL('./supabase/functions/_shared/pricing', import.meta.url)) },
   },

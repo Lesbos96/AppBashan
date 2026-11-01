@@ -1,5 +1,5 @@
 import { type AssemblyInput, type ClearanceInput, LIMITS } from '@pricing'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { RouteResult } from '../../supabase/functions/_shared/route/facts.ts'
 import { isRouteResult } from './routeResult'
 
@@ -155,28 +155,33 @@ function validClearance(raw: unknown): raw is ClearanceFlow {
   )
 }
 
+/** Gespeicherter Flow-Zustand; ungültiger oder fehlender Zustand ergibt den Anfangswert. */
+function readStored<T>(key: string, initial: T, valid: (raw: unknown) => raw is T): T {
+  try {
+    const raw: unknown = JSON.parse(sessionStorage.getItem(key) ?? 'null')
+    if (valid(raw)) return raw
+  } catch {
+    // Zustand ist nur eine Bequemlichkeit; ohne Speicher startet der Flow leer
+  }
+  return initial
+}
+
 /** Flow-Zustand im sessionStorage (nur in diesem Tab), bis `quote` ihn speichert; ungültiger oder fehlender Zustand startet leer. */
 function useStored<T>(key: string, initial: T, valid: (raw: unknown) => raw is T): [T, (patch: Partial<T>) => void] {
-  const [flow, setFlow] = useState<T>(() => {
-    try {
-      const raw: unknown = JSON.parse(sessionStorage.getItem(key) ?? 'null')
-      if (valid(raw)) return raw
-    } catch {
-      // Zustand ist nur eine Bequemlichkeit; ohne Speicher startet der Flow leer
-    }
-    return initial
-  })
+  const [flow, setFlow] = useState<T>(() => readStored(key, initial, valid))
+  // Der Speicher wird synchron geschrieben: ein Updater läuft erst beim nächsten Render und ginge bei einer Navigation im selben Tipp verloren.
+  const latest = useRef(flow)
   const update = useCallback(
-    (patch: Partial<T>) =>
-      setFlow((prev) => {
-        const next = { ...prev, ...patch }
-        try {
-          sessionStorage.setItem(key, JSON.stringify(next))
-        } catch {
-          // siehe oben
-        }
-        return next
-      }),
+    (patch: Partial<T>) => {
+      const next = { ...latest.current, ...patch }
+      latest.current = next
+      try {
+        sessionStorage.setItem(key, JSON.stringify(next))
+      } catch {
+        // siehe oben
+      }
+      setFlow(next)
+    },
     [key],
   )
   return [flow, update]
@@ -185,3 +190,7 @@ function useStored<T>(key: string, initial: T, valid: (raw: unknown) => raw is T
 export const useFlow = (service: Service) => useStored(`movenow.flow.${service}`, initialFlow, validTransport)
 export const useClearanceFlow = () => useStored('movenow.flow.clearance', initialClearance, validClearance)
 export const useMontageFlow = () => useStored('movenow.flow.montage', initialMontage, validMontage)
+
+export const readFlow = (service: Service) => readStored(`movenow.flow.${service}`, initialFlow, validTransport)
+export const readClearanceFlow = () => readStored('movenow.flow.clearance', initialClearance, validClearance)
+export const readMontageFlow = () => readStored('movenow.flow.montage', initialMontage, validMontage)

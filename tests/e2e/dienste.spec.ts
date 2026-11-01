@@ -20,9 +20,9 @@ test('Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Geb�
   await expect(page).toHaveURL(/\/entruempelung\/ergebnis$/)
   await expect(page.getByRole('heading', { name: 'Dein erster Preisrahmen.' })).toBeVisible()
   const range = page.getByRole('region', { name: 'Richtwert' })
-  await expect(range.getByText('ca. 1.175,00 €')).toBeVisible()
-  await expect(range.getByText('950,00 €')).toBeVisible()
-  await expect(range.getByText('1.550,00 €')).toBeVisible()
+  await expect(range.getByText('ca. 1.175 €')).toBeVisible()
+  await expect(range.getByText('950 €')).toBeVisible()
+  await expect(range.getByText('1.550 €')).toBeVisible()
   await expect(page.getByText('≈ 15 m³ · 2 Fotos')).toBeVisible()
   await expect(page.getByText('3. Stock, ohne Lift')).toBeVisible()
   for (const [label, detail, amount] of [
@@ -67,7 +67,7 @@ test('Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis', async ({ page 
   for (let step = 3; step < 6; step++) await weiter(page).click()
   await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
   await expect(page.getByText('Mindestpreis')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Richtwert' }).getByText('ca. 180,00 €')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Richtwert' }).getByText('ca. 180 €')).toBeVisible()
 })
 
 test('Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis', async ({ page }) => {
@@ -133,4 +133,14 @@ test('Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt 
   await page.goto('/montage')
   // Ungültige Menge wird verworfen: Standardmontage mit Mindestmenge
   await expect(page.getByRole('button', { name: /Richtpreis 95,74.€/ })).toBeVisible()
+})
+
+test('Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten', async ({ page }) => {
+  await page.goto('/entruempelung')
+  await fillEntruempelungBeispiel(page)
+  await page.getByRole('link', { name: 'Ändern' }).click()
+  await expect(page.getByRole('heading', { name: 'Was soll geräumt werden?' })).toBeVisible({ timeout: 5000 })
+  await expect(page.getByRole('radio', { name: /^Wohnung/ })).toBeChecked()
+  await weiter(page).click()
+  await expect(page.getByRole('button', { name: '60 m²' })).toHaveAttribute('aria-pressed', 'true')
 })

@@ -96,8 +96,8 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 **Akzeptanz (erfüllt; Live-Test von `route` und `quote` am 2026-10-30 bestanden, offen bleibt nur der echte Mailversand, siehe OPEN_ISSUES):** Integrationstests und `tests/rls/` grün; `advisor`-Abnahme von `quote`, Upload- und Auth-Modul. `quote` speichert neben den Snapshot-Feldern nur Felder, die `parse*Input` geprüft hat (Test ersetzt das `it.todo` in `tests/unit/pricing.test.ts`). `quote` liest die Tarifversion über die View `current_price_version`, bricht bei fehlenden Schlüsseln ab und übernimmt die `rental.reference`-Zeile (`unit` `ref`) nicht in den Snapshot (Test).
 
 ## S8b · Termin, Anfrage, Aufträge
-- [ ] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12`
-- [ ] (Anmeldung und `/anmelden` erledigt in S8b-1, 2026-10-31; offen: Absenden über `quote`) Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
+- [x] Ort & Termin wie `10`, Zeitfenster für Entrümpelung und Montage, Zusammenfassung wie `11`, Bestätigung wie `12` (S8b-2; Abweichungen in OPEN_ISSUES)
+- [x] (Anmeldung und `/anmelden` S8b-1, Absenden über `quote` S8b-2, 2026-10-31) Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
 - [ ] Aufträge-Liste wie `13` (Anfragen und Mietanfragen, Aktiv/Erledigt), Detail mit Timeline und Tarifstand wie `14`
 - [ ] „Anfrage bearbeiten" (über `quote`, rechnet neu) und „Anfrage zurückziehen" (direktes Status-Update) wie `14`, solange der Status „angefragt" ist. Alle weiteren Status setzt in dieser Phase nur admin (vorerst im Supabase-Dashboard).
 

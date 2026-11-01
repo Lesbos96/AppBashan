@@ -4,6 +4,7 @@ import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
 import { Field, GroupedList } from '../components/Surfaces'
 import { AuthError, digitsOnly, rememberNext, requestSignIn, takeNext, verifyCode, verifyLink, type AuthErrorKind } from '../lib/auth'
+import { restoreDraft } from '../lib/draft'
 import { useSession } from '../lib/session'
 
 const RESEND_SECONDS = 60
@@ -64,6 +65,7 @@ export function Anmelden() {
   useEffect(() => {
     if (!session || step !== 'email' || redirected.current) return
     redirected.current = true
+    restoreDraft()
     void navigate(takeNext(), { replace: true })
   }, [session, step, navigate])
 
@@ -92,12 +94,14 @@ export function Anmelden() {
     e.preventDefault()
     void run(async () => {
       await verifyCode(email, code)
+      restoreDraft()
       void navigate(takeNext(), { replace: true })
     })
   }
   const confirmLink = () =>
     void run(async () => {
       await verifyLink(url.token ?? '')
+      restoreDraft()
       setStep('done')
     }, true)
 

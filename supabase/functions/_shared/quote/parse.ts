@@ -14,7 +14,7 @@ import {
   rec,
 } from '../pricing/index.ts'
 import { type Point, point } from '../route/facts.ts'
-import { instantOf, toViennaWall } from './time.ts'
+import { instantOf } from './time.ts'
 
 export type Place = { label: string; postcode: string | null; point: Point | null }
 
@@ -114,8 +114,8 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
   if (service === 'rental') {
     const r = only(raw, KEYS.rental)
     const input = rec(r['inputs'], 'inputs')
-    // Eingabe ist Wiener Ortszeit; ISO-Zeitpunkte (UTC) werden vor der Berechnung umgerechnet.
-    const parsed = parseRentalInput({ ...input, pickupAt: toViennaWall(input['pickupAt']), returnAt: toViennaWall(input['returnAt']) })
+    // Eingabe ist Wiener Ortszeit ohne Zone; ISO mit Z oder Offset lehnt parseRentalInput ab.
+    const parsed = parseRentalInput(input)
     if (!Number.isInteger(parsed.km)) throw new InputError('km: ganze Zahl erwartet')
     day(parsed.pickupAt.slice(0, 10), 'pickupAt', today)
     return {
@@ -123,8 +123,8 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
       clientRef: uuid(r['clientRef'], 'clientRef'),
       offerId: uuid(r['offerId'], 'offerId'),
       input: parsed,
-      pickupInstant: instantOf(input['pickupAt'], parsed.pickupAt),
-      returnInstant: instantOf(input['returnAt'], parsed.returnAt),
+      pickupInstant: instantOf(parsed.pickupAt, 'pickupAt'),
+      returnInstant: instantOf(parsed.returnAt, 'returnAt'),
     }
   }
   if (service !== 'transport' && service !== 'move' && service !== 'clearance' && service !== 'assembly') throw new InputError('service: unbekannt')
