@@ -70,13 +70,13 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 
 ### Werkzeuge
 - Kein Python über stdin-Heredoc (`python3 - <<EOF`), das hängt unter Windows. Stattdessen Node-Skript oder temporäre Datei unter `tmp/`.
-- Doku und Markdown nur mit den Datei-Werkzeugen (Write/Edit) schreiben, nie per Shell (echo, cat, heredoc): Backticks werden sonst ausgeführt.
+- Doku- und Markdown-Dateien nur mit den Werkzeugen Write und Edit ändern. Keine Skripte dafür (node, python, sed, PowerShell, Shell-Umleitungen), auch nicht in tmp/.
 
 ### Geld
 - Beträge als Integer-Cent in DB und API. Rechnen wie der Prototyp, erst am Ende auf Cent runden (wie `cents()` dort).
 - Den gespeicherten Preis berechnet der Server (Edge Function `quote`) aus `price_config`. Die App nutzt dasselbe Modul (`@pricing`) nur für die Vorschau. Gespeichert wird ein Snapshot mit `price_version`.
 - Plattformgebühr wie `platform()` im Prototyp: fee = round(total × 0,15); netto = round(fee / 1,2); USt. = fee − netto; Partner = total − fee.
-- Kunden können die Gebühr weder sehen noch per API lesen. Die Gebührenaufteilung liegt im Journal `commission_entries` (entsteht bei der Annahme, nur anfügen), der Gebührensatz in einer eigenen Einstellungstabelle, nicht in der öffentlich lesbaren `price_config`. Die Aufteilung lesen nur der betroffene Vermieter und admin, den Satz nur Vermieter und admin (später auch Partner). Beides per RLS-Test abgesichert.
+- Kunden können die Gebühr weder sehen noch per API lesen. Die Gebührenaufteilung liegt im Journal `commission_entries` (entsteht bei der Annahme, nur anfügen), der Gebührensatz in einer eigenen Einstellungstabelle, nicht in der öffentlich lesbaren `price_config`. Journal lesen nur die eigene Partner-Firma (mit aal2) und admin (mit aal2); den Gebührensatz lesen alle Partner-Konten unabhängig vom Status (P2B-Transparenz) und admin; Kunden ohne Partner-Konto nichts. Beides per RLS-Test abgesichert.
 - Die Gebührenfunktion bekommt den Satz als Parameter. Im App-Code steht kein fester 15-%-Wert. Kundenpreise brauchen den Satz nicht, weil die Gebühr im Gesamtpreis enthalten ist.
 - Angezeigt wird die Gebühr nur in der Vermieter-Abrechnung und später auf der Rechnung (und in der Auszahlungsübersicht des Partner-Portals, sobald es freigegeben ist). Die `feeHTML`-Hinweise des Prototyps werden nicht übernommen.
 - Kaution und Kraftstoff sind nie Teil der Berechnungsbasis.

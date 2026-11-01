@@ -150,3 +150,8 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Beks hat freigegeben: Tab-Bar ohne „Miete“ in Phase 1 (R8-16, CLAUDE.md, auch „Partner-Portal (Phase 1)“), `offer_max_cents` = 800000, `window_start_*` 08:00 / 11:00 / 14:00 / 08:00 (Wiener Zeit); in S9_KONZEPT Frage 25, 5.10 und 14.3 eingetragen, Ergänzung für S9i (Spannen 8–11, 11–14, 14–18, „ganzer Tag ab 8 Uhr“).
 - R11-1 bis R11-7 sind in OPEN_ISSUES je einem Schritt S9a bis S9i zugeordnet. `.vitest/` steht in .gitignore. R8-9 (Leserechte, CLAUDE.md:79) bleibt ohne Freigabe.
 - Weiter bei: Beks entscheidet R8-9 und `route_missing` (14.3); R11 einarbeiten, dann Plan-Freigabe S9a
+
+## 2026-11-01 · Bauplan S9a (nur Dokumente)
+- `docs/S9a_PLAN.md`: S9a in vier Teile (S9a-1 Preise/Sätze/Seed, S9a-2 Status/Revisionen, S9a-3 `quote`-Härtung/Bezirk, S9a-4 Fotos-Staging), Migrationen 0015–0020, Tests mit Rot-Beweis je Sperre. Berater Runde 1: 3 hoch (Seed, Enum-Tausch, Spanne), alle eingearbeitet; Runde 2: hoch 0 (`tmp/proof/s9a-plan-abnahme-runde2.md`).
+- R8-9 von Beks freigegeben und in CLAUDE.md:79 und `S9_KONZEPT.md` eingearbeitet (Journal: eigene Firma und admin mit aal2; Satz: alle Partner-Konten und admin). Werkzeug-Regel für Doku präzisiert. `S9_KONZEPT.md` Abschnitt 13: `window_start` und `offer_max_cents` als entschieden nachgezogen, R11-2 im Seed-Satz.
+- Weiter bei: S9a-1 (Plan-Freigabe mit dem Berater; verbleibende mittel/niedrig-Findings aus Runde 2 vorher einarbeiten).
