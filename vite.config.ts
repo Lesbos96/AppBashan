@@ -21,6 +21,7 @@ export default defineConfig({
         test: {
           name: 'rls',
           include: ['tests/rls/**/*.test.ts'],
+          globalSetup: ['tests/support/dev-guard-setup.ts'],
           fileParallelism: false,
           testTimeout: 30_000,
           hookTimeout: 180_000,

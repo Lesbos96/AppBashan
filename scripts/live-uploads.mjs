@@ -3,6 +3,7 @@
 // Start: npx dotenv -e .env.local -- node scripts/live-uploads.mjs | tee tmp/proof/live-uploads.log
 // Werte kommen nur aus der Umgebung und werden nie ausgegeben (kein Token, kein Schlüssel, keine URL mit Signatur).
 // Alles Angelegte (Nutzer, Anfragen, Dateien) wird im finally gelöscht.
+import './dev-guard.mjs'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
@@ -37,14 +38,18 @@ async function newUser(tag) {
   return { id: data.user.id, db }
 }
 async function newRequest(user) {
-  const { data, error } = await service
-    .from('service_requests')
-    .insert({ customer_id: user.id, service: 'move', inputs: {}, price_snapshot: {}, price_version: 1, estimate_cents: 1 })
-    .select('id')
-    .single()
+  // einziger Weg: dieselbe SQL-Funktion wie quote (direkte Inserts gibt es nicht mehr)
+  const { version } = (await service.from('current_price_version').select('version').single()).data
+  const day = new Date(Date.now() + 14 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
+  const snapshot = { kind: 'price', totalCents: 100, lowCents: 100, highCents: 100, lines: [{ key: 'a', cents: 100 }] }
+  const { data, error } = await service.rpc('quote_save_request', {
+    p_customer: user.id, p_client_ref: randomUUID(), p_service: 'move', p_inputs: {}, p_snapshot: snapshot, p_price_version: version, p_total: 100, p_low: 100, p_high: 100,
+    p_from_address: null, p_from_postcode: null, p_from_lon: null, p_from_lat: null, p_to_address: null, p_to_postcode: null, p_to_lon: null, p_to_lat: null,
+    p_route: null, p_region: null, p_preferred_date: day, p_time_window: null, p_description: null, p_volume: null,
+  })
   if (error) throw error
-  requests.push(data.id)
-  return data.id
+  requests.push(data[0].id)
+  return data[0].id
 }
 /** Zeile, dann Datei, wie die App. Liefert den Pfad und den Upload-Fehler. */
 async function addPhoto(user, request, body, options = JPEG) {
@@ -151,7 +156,6 @@ try {
   const reqC = await newRequest(c)
   const photoC = await addPhoto(c, reqC, small)
   const deletedRequestPaths = [gps.path, ...results.filter((r) => r.path).map((r) => r.path)]
-  await service.from('service_requests').delete().in('id', [gpsReq, reqLimit])
   check(((await service.from('request_photos').select('id').in('request_id', [gpsReq, reqLimit])).data ?? []).length === 0, 'Anfrage gelöscht: Foto-Zeilen sind mit weg')
   await service.auth.admin.deleteUser(c.id)
   users.splice(users.indexOf(c.id), 1)
@@ -193,7 +197,7 @@ try {
     }
   }
   if (data?.length) await service.storage.from(BUCKET).remove(data.map((d) => d.storage_path))
-  await service.from('service_requests').delete().in('id', requests)
+  // Anfragen verschwinden mit dem Konto (Kaskade); ein direktes DELETE ist gesperrt
   for (const id of users) await service.auth.admin.deleteUser(id)
   const left = await service.from('service_requests').select('id', { count: 'exact', head: true }).in('id', requests)
   console.log(`Aufgeräumt: Nutzer ${users.length}, Anfragen übrig ${left.count ?? 0}`)

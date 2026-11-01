@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
-import { anonymousPrices, answer, cors, mockQuote, pickDate, price, type Reply } from '../e2e/anfrage-helpers'
+import { anonymousPrices, answer, cors, mockQuote, pickDate, price, range, type Reply } from '../e2e/anfrage-helpers'
 import { mockPhotos, sendWithPhotos, storageError } from '../e2e/fotos-helpers'
 import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress } from '../e2e/konfigurator-helpers'
 
@@ -336,7 +336,7 @@ const anfrageRoutes: (typeof routes)[number][] = [
     path: '/',
     steps: async (page) => {
       await page.goto('/')
-      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
+      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
       await page.goto('/umzug/gesendet')
       await expect(page.getByText('689,61 €')).toBeVisible()
     },
@@ -355,12 +355,12 @@ const anfrageRoutes: (typeof routes)[number][] = [
   { name: 'fotos-limit', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { row: () => ({ status: 400, json: { code: '23514', message: 'x' } }) }); await sendWithPhotos(page); await expect(page.getByText('Mehr als 8 Fotos gehen nicht.').first()).toBeVisible() } },
   { name: 'fotos-zu-gross', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { upload: () => storageError(413, 'Payload too large', 'x') }); await sendWithPhotos(page); await expect(page.getByText('Das Foto ist zu groß.').first()).toBeVisible() } },
   { name: 'fotos-typ-abgelehnt', path: '/transport', steps: async (page) => { const input = page.locator('input[type=file][multiple]'); await addPhotos(page, 2); await expect(page.getByText('2 von 8')).toBeVisible(); await input.setInputFiles({ name: 'IMG_1.heic', mimeType: 'image/heic', buffer: Buffer.from('x') }); await expect(page.getByText(/HEIC-Fotos gehen hier nicht/)).toBeVisible(); await page.getByText('Fotos', { exact: true }).scrollIntoViewIfNeeded() } },
-  { name: 'gesendet-spanne', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), price(117500, 95000, 155000, [{ key: 'clearance', cents: 117500 }])); await page.goto('/entruempelung/gesendet'); await expect(page.getByText('ca. 1.175 €')).toBeVisible() } },
+  { name: 'gesendet-spanne', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), range(95000, 155000, 117500)); await page.goto('/entruempelung/gesendet'); await expect(page.getByText('950 € bis 1.550 €')).toBeVisible() } },
   {
     name: 'gesendet-angebot',
     path: '/',
     steps: async (page) => {
-      await summary({ json: answer({ kind: 'offer', reasons: ['special_case'] }, { needsQuote: true, status: 'inspection_requested' }) })(page)
+      await summary({ json: answer({ kind: 'offer', reasons: ['special_case'] }, { needsQuote: true, status: 'awaiting_offer' }) })(page)
       await expect(page.getByText('Wir melden uns mit einem Angebot')).toBeVisible()
     },
   },
@@ -373,9 +373,9 @@ const anfrageRoutes: (typeof routes)[number][] = [
         r.fulfill({
           headers: cors,
           json: [
-            { id: 'a', service: 'move', status: 'requested', preferred_date: day15, from_address: 'Neubaugasse 12, 1070 Wien', to_address: 'Praterstraße 30, 1020 Wien', price_snapshot: price(68961), created_at: '2026-10-31T10:00:00Z' },
-            { id: 'b', service: 'clearance', status: 'inspection_requested', preferred_date: day15, from_address: 'Mariahilfer Straße 5, 1060 Wien', to_address: null, price_snapshot: { kind: 'offer', reasons: ['special_case'] }, created_at: '2026-10-30T10:00:00Z' },
-            { id: 'c', service: 'clearance', status: 'requested', preferred_date: day15, from_address: 'Keller, 1100 Wien', to_address: null, price_snapshot: price(117500, 95000, 155000, [{ key: 'clearance', cents: 117500 }]), created_at: '2026-10-29T10:00:00Z' },
+            { id: 'a', service: 'move', status: 'requested', preferred_date: day15, from_address: 'Neubaugasse 12, 1070 Wien', to_address: 'Praterstraße 30, 1020 Wien', price_revisions: { snapshot: price(68961) }, created_at: '2026-10-31T10:00:00Z' },
+            { id: 'b', service: 'clearance', status: 'awaiting_offer', preferred_date: day15, from_address: 'Mariahilfer Straße 5, 1060 Wien', to_address: null, price_revisions: { snapshot: { kind: 'offer', reasons: ['special_case'] } }, created_at: '2026-10-30T10:00:00Z' },
+            { id: 'c', service: 'clearance', status: 'awaiting_offer', preferred_date: day15, from_address: 'Keller, 1100 Wien', to_address: null, price_revisions: { snapshot: range(95000, 155000, 117500) }, created_at: '2026-10-29T10:00:00Z' },
           ],
         }),
       )

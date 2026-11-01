@@ -54,6 +54,9 @@ export const place = (label: string, point: { lat: number; lon: number } | null,
 /** Eindeutige client_ref (UUID v4) je Absendeversuch, über alle Läufe hinweg. */
 export const clientRef = () => crypto.randomUUID()
 
+/** Wunschtermin in `days` Tagen (Wiener Datum, `YYYY-MM-DD`): weit genug vor jeder Fristgrenze und innerhalb der 365 Tage. */
+export const termin = (days = 14) => new Date(Date.now() + days * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
+
 export const moveCall = (over: Record<string, unknown> = {}) => ({
   service: 'move',
   clientRef: clientRef(),
@@ -61,12 +64,13 @@ export const moveCall = (over: Record<string, unknown> = {}) => ({
   from: place('Stephansplatz 1, Wien', VIENNA_A),
   to: place('Meidlinger Hauptstraße 1, Wien', VIENNA_B, '1120'),
   returnTrip: false,
+  preferredDate: termin(),
   ...over,
 })
 
 export const clearanceInputs = { object: 'flat', area: 60, fill: 'normal', lift: false, floor: 3, special: false, assembly: null }
-export const clearanceCall = (over: Record<string, unknown> = {}) => ({ service: 'clearance', clientRef: clientRef(), inputs: clearanceInputs, from: place('Ring 1, Wien', null), ...over })
-export const assemblyCall = (over: Record<string, unknown> = {}) => ({ service: 'assembly', clientRef: clientRef(), inputs: { kind: 'kitchen', lm: 3.2, upper: 2.4, tall: 0.6 }, from: place('Ring 1, Wien', null), ...over })
+export const clearanceCall = (over: Record<string, unknown> = {}) => ({ service: 'clearance', clientRef: clientRef(), inputs: clearanceInputs, from: place('Ring 1, Wien', null), preferredDate: termin(), ...over })
+export const assemblyCall = (over: Record<string, unknown> = {}) => ({ service: 'assembly', clientRef: clientRef(), inputs: { kind: 'kitchen', lm: 3.2, upper: 2.4, tall: 0.6 }, from: place('Ring 1, Wien', null), preferredDate: termin(), ...over })
 
 export const rentalInput = { pickupAt: '2026-11-10T09:00', returnAt: '2026-11-12T09:00', km: 350, cover: true, driver: false, oneWay: false }
 export const CARGO_VAN = '00000000-0000-4000-8000-000000000002'

@@ -10,18 +10,23 @@ import { useSession } from '../lib/session'
 import { supabase } from '../lib/supabase'
 import { shortDayText } from './anfrage/format'
 
-const COLUMNS = 'id, service, status, preferred_date, from_address, to_address, price_snapshot, created_at'
+const COLUMNS = 'id, service, status, preferred_date, from_address, to_address, created_at, price_revisions!service_requests_current_revision(snapshot)'
 const titles = { transport: 'Möbeltransport', move: 'Umzug', clearance: 'Entrümpelung', assembly: 'Montage' }
 const icons = { transport: 'sofa', move: 'boxes', clearance: 'basket', assembly: 'drill' }
 type Chip = { chip: 'requested' | 'review' | 'confirmed' | 'done'; label: string; active: boolean }
 const states: Record<string, Chip> = {
   requested: { chip: 'requested', label: 'Angefragt', active: true },
-  inspection_requested: { chip: 'review', label: 'Besichtigung angefragt', active: true },
-  confirmed: { chip: 'confirmed', label: 'Bestätigt', active: true },
+  awaiting_offer: { chip: 'review', label: 'Wartet auf Angebot', active: true },
+  offered: { chip: 'review', label: 'Angebot liegt vor', active: true },
+  accepted: { chip: 'confirmed', label: 'Bestätigt', active: true },
   in_progress: { chip: 'confirmed', label: 'Läuft', active: true },
   completed: { chip: 'done', label: 'Erledigt', active: false },
   withdrawn: { chip: 'done', label: 'Zurückgezogen', active: false },
   expired: { chip: 'done', label: 'Abgelaufen', active: false },
+  declined: { chip: 'done', label: 'Abgelehnt', active: false },
+  unmatched: { chip: 'done', label: 'Kein Partner gefunden', active: false },
+  cancelled_by_customer: { chip: 'done', label: 'Storniert', active: false },
+  cancelled_by_partner: { chip: 'done', label: 'Storniert', active: false },
 }
 
 type Item = { id: string; icon: string; title: string; line: string; chip: Chip; price: string | null }
@@ -32,7 +37,7 @@ async function load(userId: string): Promise<Item[]> {
   const { data, error } = await supabase.from('service_requests').select(COLUMNS).eq('customer_id', userId).order('created_at', { ascending: false })
   if (error) throw error
   return data.map((r) => {
-    const snapshot = parseSnapshot(r.price_snapshot)
+    const snapshot = parseSnapshot(r.price_revisions?.snapshot)
     return {
       id: r.id,
       icon: icons[r.service],

@@ -46,3 +46,20 @@ export async function deleteUsers(): Promise<void> {
 
 /** PostgREST-Fehlercode eines verweigerten Zugriffs (Rechte widerrufen): nicht „leeres Ergebnis", sondern 42501. */
 export const DENIED = '42501'
+
+/** Legt eine Anfrage über dieselbe SQL-Funktion an wie `quote` (der einzige Weg; direkte Inserts gibt es nicht mehr). Gibt die id zurück. */
+export async function makeRequest(customerId: string, over: Record<string, unknown> = {}): Promise<string> {
+  const { version } = must(await service.from('current_price_version').select('version').single())
+  const day = new Date(Date.now() + 14 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
+  const args = {
+    p_customer: customerId, p_client_ref: crypto.randomUUID(), p_service: 'move', p_inputs: {},
+    p_snapshot: { kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961, lines: [{ key: 'a', cents: 68961 }] },
+    p_price_version: version, p_total: 68961, p_low: 68961, p_high: 68961,
+    p_from_address: null, p_from_postcode: null, p_from_lon: null, p_from_lat: null,
+    p_to_address: null, p_to_postcode: null, p_to_lon: null, p_to_lat: null,
+    p_route: null, p_region: null, p_preferred_date: day, p_time_window: null, p_description: null, p_volume: null,
+    ...over,
+  }
+  const rows = must(await service.rpc('quote_save_request', args as never)) as unknown as { id: string }[]
+  return rows[0]!.id
+}

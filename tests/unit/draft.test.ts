@@ -180,9 +180,13 @@ describe('Antwort von quote', () => {
 
   it('Anzeige: Schätzpreis in ganzen Euro (auch ohne Spanne), Richtpreis mit Cent', () => {
     const nbsp = String.fromCharCode(160)
-    expect(priceLabel({ ...ok, totalCents: 117500, lowCents: 95000, highCents: 155000, lines: [] }, true)).toEqual({ main: `ca. 1.175${nbsp}€`, range: `950${nbsp}€ bis 1.550${nbsp}€` })
+    expect(priceLabel({ ...ok, totalCents: null, lowCents: 95000, highCents: 155000, lines: [] }, true)).toEqual({ main: `950${nbsp}€ bis 1.550${nbsp}€`, range: null })
     expect(priceLabel({ ...ok, totalCents: 18000, lowCents: 18000, highCents: 18000, lines: [] }, true)).toEqual({ main: `ca. 180${nbsp}€`, range: null })
-    expect(priceLabel({ ...ok, totalCents: 117410, lowCents: 117410, highCents: 117420, lines: [] }, true).range).toBeNull()
+    expect(priceLabel({ ...ok, totalCents: null, lowCents: 117410, highCents: 117420, lines: [] }, true)).toEqual({ main: `ca. 1.174${nbsp}€`, range: null })
+    // Spanne ohne verbindlichen Gesamtpreis ist gültig, wenn low < high und die Zeilensumme dazwischen liegt
+    expect(parseSnapshot({ kind: 'price', lowCents: 900, highCents: 1100, lines: [{ key: 'a', cents: 1000 }] })).toMatchObject({ totalCents: null })
+    expect(parseSnapshot({ kind: 'price', lowCents: 1000, highCents: 1000, lines: [{ key: 'a', cents: 1000 }] })).toBeNull()
+    expect(parseSnapshot({ kind: 'price', lowCents: 900, highCents: 1100, lines: [{ key: 'a', cents: 1200 }] })).toBeNull()
     expect(priceLabel({ ...ok, totalCents: 68961, lowCents: 68961, highCents: 68961, lines: [] }, false)).toEqual({ main: `689,61${nbsp}€`, range: null })
   })
 

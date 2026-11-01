@@ -4,7 +4,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
-import { asUser, ownerGrantRole } from '../support/owner.ts'
+import { makeRequest } from '../support/db.ts'
+import { asUser, ownerGrantRole, ownerSql } from '../support/owner.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -66,15 +67,6 @@ const testKey = `rls.test.${run}`
 // Künftige Testversion: gilt nie als aktuell, die gültige Version 1 bleibt unberührt.
 const testVersion = 9999
 
-const requestRow = (customerId: string) => ({
-  customer_id: customerId,
-  service: 'move' as const,
-  inputs: { crew: 3 },
-  price_snapshot: { positions: [] },
-  price_version: 1,
-  estimate_cents: 68961,
-})
-
 const bookingRow = (customerId: string, offerId: string) => ({
   offer_id: offerId,
   customer_id: customerId,
@@ -110,8 +102,8 @@ beforeAll(async () => {
   expect(must(await otherProvider.db.rpc('become_rental_provider'))).toBe('rental_provider')
   ownerGrantRole(admin.id, 'admin')
 
-  requestA = must(await service.from('service_requests').insert(requestRow(a.id)).select('id').single()).id
-  requestB = must(await service.from('service_requests').insert(requestRow(b.id)).select('id').single()).id
+  requestA = await makeRequest(a.id)
+  requestB = await makeRequest(b.id)
 
   // Ablauf wie in der App: erst Eintrag (Limit 8), dann Upload in den eingetragenen Pfad.
   photoPathB = must(await b.db.from('request_photos').insert({ request_id: requestB }).select('storage_path').single()).storage_path
@@ -144,36 +136,11 @@ beforeAll(async () => {
   bookingA = must(await service.from('rental_bookings').insert(bookingRow(a.id, CARGO_VAN)).select('id').single()).id
   bookingB = must(await service.from('rental_bookings').insert(bookingRow(b.id, approvedOffer)).select('id').single()).id
 
-  must(
-    await service
-      .from('fee_splits')
-      .insert([
-        {
-          rental_booking_id: bookingB,
-          payee_id: provider.id,
-          total_cents: 27600,
-          fee_rate: 0.15,
-          fee_vat_rate: 0.2,
-          fee_cents: 4140,
-          fee_net_cents: 3450,
-          fee_vat_cents: 690,
-          payout_cents: 23460,
-          price_version: 1,
-        },
-        {
-          service_request_id: requestA,
-          total_cents: 68961,
-          fee_rate: 0.15,
-          fee_vat_rate: 0.2,
-          fee_cents: 10344,
-          fee_net_cents: 8620,
-          fee_vat_cents: 1724,
-          payout_cents: 58617,
-          price_version: 1,
-        },
-      ])
-      .select(),
-  )
+  // Gebührenzeilen schreibt niemand mehr außer dem Eigentümer (service_role hat kein Schreibrecht, S9a-2): Fixtures per Eigentümer-SQL.
+  ownerSql(`insert into public.fee_splits (rental_booking_id, payee_id, total_cents, fee_rate, fee_vat_rate, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, price_version)
+    values ('${bookingB}', '${provider.id}', 27600, 0.15, 0.2, 4140, 3450, 690, 23460, 1);
+    insert into public.fee_splits (service_request_id, total_cents, fee_rate, fee_vat_rate, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, price_version)
+    values ('${requestA}', 68961, 0.15, 0.2, 10344, 8620, 1724, 58617, 1)`)
 })
 
 afterAll(async () => {
@@ -268,26 +235,25 @@ describe('Kunden sehen nur Eigenes', () => {
 
 describe('Kunden setzen nur „zurückgezogen"', () => {
   it('legen Anfragen nicht selbst an (nur über quote)', async () => {
-    expect((await a.db.from('service_requests').insert(requestRow(a.id))).error).not.toBeNull()
+    expect((await a.db.from('service_requests').insert({ customer_id: a.id, service: 'move' } as never)).error?.code).toBe('42501')
     expect((await a.db.from('rental_bookings').insert(bookingRow(a.id, CARGO_VAN))).error).not.toBeNull()
   })
 
   it('kein anderer Status, keine Preisfelder', async () => {
-    expect((await a.db.from('service_requests').update({ status: 'confirmed' }).eq('id', requestA)).error).not.toBeNull()
-    expect((await a.db.from('service_requests').update({ estimate_cents: 1 }).eq('id', requestA)).error).not.toBeNull()
+    expect((await a.db.from('service_requests').update({ status: 'accepted' }).eq('id', requestA)).error?.code).toBe('42501')
+    expect((await a.db.from('service_requests').update({ description: 'x' }).eq('id', requestA)).error?.code).toBe('42501')
     expect(await requestStatus(requestA)).toBe('requested')
   })
 
   it('fremde Anfrage bleibt unverändert', async () => {
-    const result = await a.db.from('service_requests').update({ status: 'withdrawn' }).eq('id', requestB).select()
-    expect(result.data ?? []).toEqual([])
+    expect((await a.db.rpc('withdraw', { p_request: requestB })).error?.message).toBe('not_found')
     expect(await requestStatus(requestB)).toBe('requested')
   })
 
   it('eigene Anfrage zurückziehen, danach nicht wieder öffnen', async () => {
-    expect(must(await a.db.from('service_requests').update({ status: 'withdrawn' }).eq('id', requestA).select())).toHaveLength(1)
-    const reopen = await a.db.from('service_requests').update({ status: 'requested' }).eq('id', requestA).select()
-    expect(reopen.data ?? []).toEqual([])
+    expect(must(await a.db.rpc('withdraw', { p_request: requestA }))).toBe('withdrawn')
+    expect((await a.db.from('service_requests').update({ status: 'requested' }).eq('id', requestA)).error?.code).toBe('42501')
+    expect((await a.db.rpc('withdraw', { p_request: requestA })).error?.message).toBe('invalid_transition')
     expect(await requestStatus(requestA)).toBe('withdrawn')
   })
 
@@ -298,7 +264,7 @@ describe('Kunden setzen nur „zurückgezogen"', () => {
   })
 
   it('Mietanfrage: nur zurückziehen', async () => {
-    expect((await a.db.from('rental_bookings').update({ status: 'confirmed' }).eq('id', bookingA)).error).not.toBeNull()
+    expect((await a.db.from('rental_bookings').update({ status: 'in_progress' }).eq('id', bookingA)).error).not.toBeNull()
     expect(await bookingStatus(bookingA)).toBe('requested')
     expect(must(await a.db.from('rental_bookings').update({ status: 'withdrawn' }).eq('id', bookingA).select())).toHaveLength(1)
   })

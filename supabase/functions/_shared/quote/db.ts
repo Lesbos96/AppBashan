@@ -1,4 +1,4 @@
-// Datenbank-Anbindung von `quote` (Lesen von Tarifen, Sätzen und Angeboten; Schreiben nur über die RPCs der Migration 0010).
+// Datenbank-Anbindung von `quote` (Lesen von Tarifen, Sätzen und Angeboten; Schreiben nur über die RPCs der Migration 0018).
 // Läuft mit dem Secret Key (service_role), daher filtert jede Abfrage ausdrücklich nach Eigentümer bzw. Freigabe.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
@@ -13,16 +13,7 @@ const must = <T>(r: { data: T; error: unknown }): NonNullable<T> => {
   return r.data
 }
 
-const fee = (f: SaveRequest['fee']) => ({
-  p_fee_rate: f?.feeRate ?? null,
-  p_fee_vat_rate: f?.vatRate ?? null,
-  p_fee_cents: f?.feeCents ?? null,
-  p_fee_net: f?.feeNetCents ?? null,
-  p_fee_vat: f?.feeVatCents ?? null,
-  p_payout: f?.payoutCents ?? null,
-})
-
-type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'loadPricing' | 'loadFeeRates' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
+type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'loadPricing' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
   route: Pick<QuoteDeps['route'], 'cache' | 'geoFacts'>
 }
 
@@ -43,10 +34,6 @@ export function quoteDb(db: Db): DbDeps {
       if (verified.error) throw verified.error
       const rows = must(await db.from('price_config').select('key, value, unit').eq('version', version))
       return { version, rows }
-    },
-    async loadFeeRates() {
-      const r = must(await db.from('current_fee_rates').select('fee_rate, fee_vat_rate').single())
-      return { feeRate: r.fee_rate, vatRate: r.fee_vat_rate }
     },
     async loadOffer(id) {
       // service_role umgeht RLS: nur freigegebene Angebote
@@ -74,14 +61,18 @@ export function quoteDb(db: Db): DbDeps {
     },
     async findExisting(customerId, clientRef, kind): Promise<QuoteResponse | null> {
       if (kind === 'request') {
+        // Zwei getrennte Zeilen über den zusammengesetzten Fremdschlüssel; das Embedding wäre mehrdeutig (zwei Fremdschlüssel).
         const { data, error } = await db
           .from('service_requests')
-          .select('id, status, needs_quote, price_version, price_snapshot')
+          .select('id, status, price_revisions!service_requests_current_revision(price_version, snapshot)')
           .eq('customer_id', customerId)
           .eq('client_ref', clientRef)
           .maybeSingle()
         if (error) throw error
-        return data && { id: data.id, status: data.status, needsQuote: data.needs_quote, priceVersion: data.price_version, snapshot: data.price_snapshot as Snapshot }
+        if (!data) return null
+        const rev = data.price_revisions
+        if (!rev) throw new Error('Anfrage ohne Revision')
+        return { id: data.id, status: data.status, needsQuote: data.status === 'awaiting_offer', priceVersion: rev.price_version, snapshot: rev.snapshot as Snapshot }
       }
       const { data, error } = await db
         .from('rental_bookings')
@@ -95,15 +86,14 @@ export function quoteDb(db: Db): DbDeps {
     async saveRequest(a: SaveRequest) {
       const args = {
         p_customer: a.customerId,
-        p_request: a.requestId,
         p_client_ref: a.clientRef,
         p_service: a.service,
-        p_status: a.status,
         p_inputs: a.inputs,
         p_snapshot: a.snapshot,
         p_price_version: a.priceVersion,
-        p_estimate: a.estimateCents,
-        p_needs_quote: a.needsQuote,
+        p_total: a.totalCents,
+        p_low: a.lowCents,
+        p_high: a.highCents,
         p_from_address: a.from?.label ?? null,
         p_from_postcode: a.from?.postcode ?? null,
         p_from_lon: a.from?.point?.lon ?? null,
@@ -118,7 +108,6 @@ export function quoteDb(db: Db): DbDeps {
         p_time_window: a.timeWindow,
         p_description: a.description,
         p_volume: a.volumeM3,
-        ...fee(a.fee),
       }
       // Die generierten Typen kennen keine NULL-Argumente; die Funktion nimmt sie an.
       const row = must(await db.rpc('quote_save_request', args as never))[0]
@@ -140,8 +129,6 @@ export function quoteDb(db: Db): DbDeps {
         p_price_version: a.priceVersion,
         p_total: a.totalCents,
         p_deposit: a.depositCents,
-        p_payee: a.payeeId,
-        ...fee(a.fee),
       }
       const row = must(await db.rpc('quote_save_booking', args as never))[0]
       if (!row) throw new Error('keine Antwort der Schreib-Funktion')

@@ -66,6 +66,8 @@ export function probes(setup: string, steps: Step[]): Record<string, string> {
       const role = s.as ?? 'owner'
       const prefix = [
         'reset role;',
+        // Claims eines vorigen Schritts gelten sonst bis zum Ende der Transaktion weiter (auth.uid() des vorigen Kunden)
+        "perform set_config('request.jwt.claims', '', true);",
         role === 'owner' ? '' : `set local role ${role};`,
         s.claims ? `perform set_config('request.jwt.claims', ${lit(JSON.stringify({ sub: s.claims.sub, role: 'authenticated', aal: s.claims.aal }))}, true);` : '',
       ].join(' ')
@@ -73,7 +75,7 @@ export function probes(setup: string, steps: Step[]): Record<string, string> {
       const stmt = s.sql.startsWith('?')
         ? `if not coalesce((${s.sql.slice(1)}), false) then raise exception 'false'; end if;`
         : isValue
-          ? `perform set_config('app.probe_val', (${s.sql.slice(1)})::text, true);`
+          ? `perform set_config('app.probe_val', coalesce((${s.sql.slice(1)})::text, '<null>'), true);`
           : `${s.sql};`
       const okValue = isValue ? `'= ' || current_setting('app.probe_val')` : `'ok'`
       return `begin ${prefix} ${stmt} reset role; insert into res values (${lit(s.name)}, ${okValue}); exception when others then reset role; insert into res values (${lit(s.name)}, sqlstate || ': ' || sqlerrm); end;`

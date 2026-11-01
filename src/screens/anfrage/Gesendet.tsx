@@ -16,7 +16,7 @@ export function Gesendet({ path }: { path: Path }) {
   if (!sent || sent.path !== path) return <Navigate to="/auftraege" replace />
   const snapshot = parseSnapshot(sent.snapshot)
   const price = snapshot?.kind === 'price' ? priceLabel(snapshot, path === 'entruempelung') : null
-  const inspection = sent.status === 'inspection_requested'
+  const awaiting = sent.status === 'awaiting_offer'
   // Der Serverpreis ist maßgeblich. Weicht er vom zuletzt angezeigten Richtpreis ab (auch zu „Angebot nötig“), steht das sichtbar da, nie still.
   const estimate = path === 'entruempelung'
   const shown = sent.shownCents === null ? null : estimate ? `ca. ${formatEuroRounded(sent.shownCents)}` : formatEuro(sent.shownCents)
@@ -57,7 +57,7 @@ export function Gesendet({ path }: { path: Path }) {
           </span>
           <span aria-hidden="true" className="h-[0.5px] bg-separator" />
           <span className="flex items-center justify-between gap-3">
-            <StatusChip status={inspection ? 'review' : 'requested'}>{inspection ? 'Besichtigung angefragt' : 'Angefragt'}</StatusChip>
+            <StatusChip status={awaiting ? 'review' : 'requested'}>{awaiting ? 'Wartet auf Angebot' : 'Angefragt'}</StatusChip>
             {price ? (
               <span className="flex flex-col items-end">
                 <span className="text-[12.5px]/4 text-text-secondary">Richtpreis</span>

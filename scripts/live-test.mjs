@@ -1,6 +1,7 @@
 // Live-Test gegen die deployten Functions `quote` und `route` (nur Dev-Projekt).
 // Start: npx dotenv -e .env.local -- node scripts/live-test.mjs | tee tmp/proof/live-test.log
 // Werte kommen nur aus der Umgebung und werden nie ausgegeben. Testnutzer und ihre Daten werden am Ende gelöscht.
+import './dev-guard.mjs'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 
@@ -39,6 +40,7 @@ const move = (over = {}) => ({
   from: { label: 'Stephansplatz 1, Wien', postcode: '1010', point: { lat: 48.208164, lon: 16.373477 } },
   to: { label: 'Hauptplatz, Graz', postcode: '8010', point: { lat: 47.0707, lon: 15.4395 } },
   returnTrip: false,
+  preferredDate: new Date(Date.now() + 14 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' }),
   ...over,
 })
 
@@ -74,7 +76,7 @@ try {
   check(statuses.every((s) => s === 200 || s === 429) && statuses.includes(200), 'Rennen: Statuscodes', statuses.join(' '))
   check(rows.length === 1, 'Rennen: genau eine Anfrage in der Datenbank', rows.length)
   check(ids.size === 1 && ids.has(rows[0]?.id), 'Rennen: alle 200er liefern dieselbe id', ids.size)
-  check((await count('fee_splits', 'service_request_id', rows[0]?.id)) === 1, 'Rennen: genau eine Gebührenaufteilung', 'fee_splits')
+  check((await count('fee_splits', 'service_request_id', rows[0]?.id)) === 0, 'Rennen: quote schreibt keine Gebührenaufteilung', 'fee_splits')
 
   // 2. CORS an route: fremde Origin bekommt keinen Allow-Origin-Header
   const pre = async (origin) => {

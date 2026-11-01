@@ -21,7 +21,8 @@ export function buildSnapshot(service: QuoteService, result: PriceResult | Offer
   const extras = result as unknown as Record<string, unknown>
   return {
     kind: 'price',
-    totalCents: result.totalCents,
+    // Eine Spanne (Entrümpelung) trägt keinen verbindlichen Gesamtpreis; die Zeilen bleiben zur Anzeige.
+    ...(result.lowCents === result.highCents && { totalCents: result.totalCents }),
     lowCents: result.lowCents,
     highCents: result.highCents,
     lines: result.lines.map(({ key, cents }) => ({ key, cents })),

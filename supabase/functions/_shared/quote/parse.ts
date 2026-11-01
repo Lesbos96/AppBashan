@@ -21,9 +21,9 @@ export type Place = { label: string; postcode: string | null; point: Point | nul
 /** Zeitfenster für Entrümpelung und Montage (fester Satz, kein Freitext). */
 export const TIME_WINDOWS = ['morning', 'midday', 'afternoon', 'flexible'] as const
 
-/** `requestId` gesetzt = Anfrage bearbeiten; sonst ist `clientRef` (je Absendeversuch von der App erzeugt) Pflicht und macht das Anlegen idempotent. */
-type Common = { service: 'transport' | 'move' | 'clearance' | 'assembly'; requestId: string | null; clientRef: string | null; from: Place | null; to: Place | null; returnTrip: boolean }
-export type Extras = { description: string | null; volumeM3: number | null; preferredDate: string | null; timeWindow: (typeof TIME_WINDOWS)[number] | null }
+/** `clientRef` (je Absendeversuch von der App erzeugt) ist Pflicht und macht das Anlegen idempotent; Bearbeiten nach dem Absenden gibt es nicht. */
+type Common = { service: 'transport' | 'move' | 'clearance' | 'assembly'; clientRef: string; from: Place | null; to: Place | null; returnTrip: boolean }
+export type Extras = { description: string | null; volumeM3: number | null; preferredDate: string; timeWindow: (typeof TIME_WINDOWS)[number] | null }
 
 export type RequestCall =
   | (Common & Extras & { kind: 'request'; service: 'transport' | 'move'; inputs: TransportInput })
@@ -41,7 +41,7 @@ const POSTCODE = /^[0-9A-Za-z -]{3,12}$/
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 const KEYS = {
-  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'requestId', 'clientRef'],
+  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'clientRef'],
   rental: ['service', 'offerId', 'inputs', 'clientRef'],
 } as const
 
@@ -110,6 +110,7 @@ const uuid = (v: unknown, key: string): string => {
 /** `today`: heutiges Datum in Wien (`YYYY-MM-DD`), Grundlage für „nicht in der Vergangenheit“. */
 export function parseQuoteCall(body: unknown, today: string): QuoteCall {
   const raw = rec(body, 'Anfrage')
+  if (raw['requestId'] !== undefined) throw new InputError('requestId: Bearbeiten nach dem Absenden gibt es nicht')
   const service = raw['service']
   if (service === 'rental') {
     const r = only(raw, KEYS.rental)
@@ -130,16 +131,14 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
   if (service !== 'transport' && service !== 'move' && service !== 'clearance' && service !== 'assembly') throw new InputError('service: unbekannt')
   const r = only(raw, KEYS.request)
   const inputs = rec(r['inputs'], 'inputs')
-  const requestId = optional(r['requestId'], (v) => uuid(v, 'requestId'))
   const wantsWindow = service === 'clearance' || service === 'assembly'
   const common = {
     kind: 'request' as const,
-    requestId,
-    clientRef: requestId ? null : uuid(r['clientRef'], 'clientRef'),
+    clientRef: uuid(r['clientRef'], 'clientRef'),
     from: place(r['from'], 'from'),
     to: service === 'transport' || service === 'move' ? place(r['to'], 'to') : null,
     returnTrip: optional(r['returnTrip'], flag) ?? false,
-    preferredDate: optional(r['preferredDate'], (v) => day(v, 'preferredDate', today)),
+    preferredDate: day(r['preferredDate'], 'preferredDate', today),
     timeWindow: wantsWindow ? optional(r['timeWindow'], (v) => oneOfWindow(v)) : null,
   }
   const volume = optional(r['volume'], (v) => {

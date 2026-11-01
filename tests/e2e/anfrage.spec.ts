@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { EMAIL, HASH, mockAuth, signInWithCode } from './auth-helpers'
-import { anonymousPrices, answer, cors, mockQuote, price, toSummary, UUID } from './anfrage-helpers'
+import { anonymousPrices, answer, cors, mockQuote, price, range, toSummary, UUID } from './anfrage-helpers'
 import { collectErrors } from './console'
 
 // Der Browser meldet gemockte Fehlerantworten selbst als Konsolenfehler; die App fängt sie ab.
@@ -83,6 +83,16 @@ test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur
   await expect(page).toHaveURL(/\/montage\/termin$/)
 })
 
+test('Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen', async ({ page }) => {
+  await mockQuote(page, () => ({ status: 422, json: { error: 'too_late' } }))
+  await signedInSummary(page)
+  await send(page).click()
+  await expect(page.getByRole('alert')).toContainText('Das Wunschdatum geht nicht')
+  await expect(page.getByRole('alert')).not.toContainText('nicht verloren')
+  await page.getByRole('link', { name: 'Angaben ändern' }).click()
+  await expect(page).toHaveURL(/\/montage\/termin$/)
+})
+
 test('Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt', async ({ page }) => {
   await mockQuote(page, () => ({ status: 401, json: { error: 'unauthorized' } }))
   await signedInSummary(page)
@@ -147,9 +157,8 @@ test('Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“', 
 
 test('Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent', async ({ page }) => {
   await page.goto('/')
-  await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), price(117500, 95000, 155000, [{ key: 'clearance', cents: 117500 }]))
+  await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), range(95000, 155000, 117500))
   await page.goto('/entruempelung/gesendet')
-  await expect(page.getByText('ca. 1.175 €')).toBeVisible()
   await expect(page.getByText('950 € bis 1.550 €')).toBeVisible()
 })
 
@@ -223,9 +232,9 @@ test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', as
     return r.fulfill({
       headers: cors,
       json: [
-        { id: 'a', service: 'move', status: 'requested', preferred_date: '2026-11-13', from_address: 'Neubaugasse 12, 1070 Wien', to_address: 'Praterstraße 30, 1020 Wien', price_snapshot: price(68961), created_at: '2026-10-31T10:00:00Z' },
-        { id: 'b', service: 'clearance', status: 'inspection_requested', preferred_date: '2026-11-18', from_address: 'Keller', to_address: null, price_snapshot: { kind: 'offer', reasons: ['special_case'] }, created_at: '2026-10-30T10:00:00Z' },
-        { id: 'c', service: 'assembly', status: 'completed', preferred_date: null, from_address: null, to_address: null, price_snapshot: price(77040), created_at: '2026-10-01T10:00:00Z' },
+        { id: 'a', service: 'move', status: 'requested', preferred_date: '2026-11-13', from_address: 'Neubaugasse 12, 1070 Wien', to_address: 'Praterstraße 30, 1020 Wien', price_revisions: { snapshot: price(68961) }, created_at: '2026-10-31T10:00:00Z' },
+        { id: 'b', service: 'clearance', status: 'awaiting_offer', preferred_date: '2026-11-18', from_address: 'Keller', to_address: null, price_revisions: { snapshot: { kind: 'offer', reasons: ['special_case'] } }, created_at: '2026-10-30T10:00:00Z' },
+        { id: 'c', service: 'assembly', status: 'completed', preferred_date: null, from_address: null, to_address: null, price_revisions: { snapshot: price(77040) }, created_at: '2026-10-01T10:00:00Z' },
       ],
     })
   })

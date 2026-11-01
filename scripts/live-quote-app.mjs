@@ -4,6 +4,7 @@
 // Start: npx dotenv -e .env.local -- node scripts/live-quote-app.mjs | tee tmp/proof/s8b2-live.log
 // Ausgabe maskiert (nur Status, Längen, Codes). Rohantworten (ohne E-Mail) in tmp/proof/s8b2-live-raw.json.
 // `quote` erlaubt 6 Aufrufe je Nutzer und Minute: zwei Phasen mit Pause, höchstens 5 Aufrufe je Phase.
+import './dev-guard.mjs'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'node:fs'
 import { computeAssembly, computeClearance, computeRental, computeTransport, parseAssembly, parseClearanceInput, parseRentalInput, parseTransportInput } from '../supabase/functions/_shared/pricing/index.ts'
@@ -182,7 +183,7 @@ try {
   const settings = await app.from('platform_settings').select('key')
   check(Boolean(settings.error) || settings.data.length === 0, 'Kunde liest keine platform_settings')
   const serverFees = await service.from('fee_splits').select('id').in('service_request_id', requestIds)
-  check(!serverFees.error && serverFees.data.length >= 3, 'Server hat die Gebührenaufteilung gespeichert (Preis-Anfragen)', `${serverFees.data?.length ?? 0} Zeilen`)
+  check(!serverFees.error && serverFees.data.length === 0, 'quote schreibt keine Gebührenaufteilung (Journal erst ab S9b)', `${serverFees.data?.length ?? 0} Zeilen`)
 } catch (e) {
   failed++
   console.log(`FAIL Abbruch: ${e instanceof Error ? e.message : 'unbekannt'}`)

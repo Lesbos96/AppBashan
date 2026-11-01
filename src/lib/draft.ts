@@ -102,7 +102,7 @@ export function readShown(path: Path): number | null {
 export type Sent = {
   path: Path
   id: string
-  status: 'requested' | 'inspection_requested'
+  status: 'requested' | 'awaiting_offer'
   needsQuote: boolean
   snapshot: unknown
   /** Vorschaupreis, den der Kunde zuletzt gesehen hat (Cent), für den Hinweis bei Abweichung. */

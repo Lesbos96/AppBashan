@@ -7,6 +7,9 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 
 export const price = (totalCents: number, lowCents = totalCents, highCents = totalCents, lines = [{ key: 'assembly', cents: totalCents }]) => ({ kind: 'price', totalCents, lowCents, highCents, lines })
 
+/** Spanne ohne verbindlichen Gesamtpreis (Entrümpelung): nur low und high, die Zeilensumme liegt dazwischen. */
+export const range = (lowCents: number, highCents: number, sum: number) => ({ kind: 'price', lowCents, highCents, lines: [{ key: 'clearance', cents: sum }] })
+
 /** Gültige Antwort von `quote`; die Werte sind Testwerte, keine Berechnung. */
 export const answer = (snapshot: object, over: object = {}) => ({
   id: '7b0e7a58-6f0c-4c52-9d0c-5a1f3b9d2e11',

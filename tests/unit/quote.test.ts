@@ -7,7 +7,6 @@ import {
   parseClearanceInput,
   parseTransportInput,
   REQUIRED_TARIFF_KEYS,
-  splitFee,
 } from '@pricing'
 import { describe, expect, it } from 'vitest'
 import { handleQuote, type OfferRow, type QuoteDeps, type QuoteResponse, type SaveBooking, type SaveRequest } from '../../supabase/functions/_shared/quote/handler.ts'
@@ -73,12 +72,13 @@ function setup(over: Partial<QuoteDeps> = {}, geo: GeoFacts = AT_GRAZ, route: Pr
     },
     getUserId: async (jwt) => (jwt === 'aaa.bbb.ccc' ? 'user-a' : null),
     loadPricing: async () => ({ version: 1, rows: seedRows }),
-    loadFeeRates: async () => ({ feeRate: 0.15, vatRate: 0.2 }),
     loadOffer: async (id) => (id === CARGO_VAN ? cargoVan : null),
     findExisting: async (_user, ref) => existing.get(ref) ?? null,
     saveRequest: async (a) => {
       requests.push(a)
-      return { id: 'req-1', status: a.status, needsQuote: a.needsQuote, created: true }
+      // wie die Datenbank: total gesetzt = requested, sonst awaiting_offer
+      const awaiting = a.totalCents === null
+      return { id: 'req-1', status: awaiting ? 'awaiting_offer' : 'requested', needsQuote: awaiting, created: true }
     },
     saveBooking: async (a) => {
       bookings.push(a)
@@ -116,6 +116,8 @@ describe('Pflichtkriterium: Strecke und Preis rechnet nur der Server', () => {
       driveHours: 0,
       totalKm: 1,
       estimateCents: 100,
+      lowCents: 1,
+      highCents: 1,
       totalCents: 100,
       price_snapshot: { totalCents: 100 },
       snapshot: { totalCents: 100 },
@@ -132,11 +134,11 @@ describe('Pflichtkriterium: Strecke und Preis rechnet nur der Server', () => {
     expect(saved.route).toMatchObject({ region: 'austria', outsideKm: 190, driveHours: 2, totalKm: 200 })
     const expected = computeTransport(tariffs, parseTransportInput({ ...moveInputs, service: 'move' }), { region: 'austria', outsideKm: 190, driveHours: 2 })
     expect(expected.kind).toBe('price')
-    expect(saved.estimateCents).toBe(expected.kind === 'price' ? expected.totalCents : null)
-    expect(saved.estimateCents).not.toBe(100)
-    expect(saved.status).toBe('requested')
+    expect(saved.totalCents).toBe(expected.kind === 'price' ? expected.totalCents : null)
+    expect(saved.totalCents).not.toBe(100)
+    expect(saved.lowCents).toBe(saved.totalCents)
+    expect(saved.highCents).toBe(saved.totalCents)
     expect(saved.customerId).toBe('user-a')
-    expect(saved.fee?.feeRate).toBe(0.15)
     expect(JSON.stringify(saved)).not.toMatch(/user-b|confirmed|"totalKm":1[,}]/)
   })
 
@@ -144,7 +146,7 @@ describe('Pflichtkriterium: Strecke und Preis rechnet nur der Server', () => {
     const t = setup({}, IN_VIENNA)
     const res = await t.run(moveCall({ region: 'international', route: { region: 'international' } }))
     expect(res.status).toBe(200)
-    expect(t.requests[0]!.estimateCents).toBe(68961) // Umzug-Beispiel aus dem README
+    expect(t.requests[0]!.totalCents).toBe(68961) // Umzug-Beispiel aus dem README
     expect(t.requests[0]!.route?.region).toBe('vienna')
   })
 })
@@ -230,10 +232,11 @@ describe('Pflichtkriterium: Tarife', () => {
     expect(t.requests).toHaveLength(0)
   })
 
-  it('fehlender Gebührensatz: Abbruch ohne Schreiben', async () => {
-    const t = setup({ loadFeeRates: async () => ({ feeRate: 0.15, vatRate: null }) })
-    expect(await t.run(clearanceCall())).toMatchObject({ status: 500, body: { error: 'fee_rates_missing' } })
-    expect(t.requests).toHaveLength(0)
+  it('quote kennt keine Gebühr: der Schreibaufruf trägt weder Satz noch Aufteilung', async () => {
+    const t = setup({}, IN_VIENNA)
+    for (const call of [moveCall(), clearanceCall(), assemblyCall()]) await t.run(call)
+    await t.run(rentalCall())
+    expect(keysOf([...t.requests, ...t.bookings]).filter((k) => /^(fee|payout|payee|platform|commission|vat)/i.test(k))).toEqual([])
   })
 })
 
@@ -303,46 +306,45 @@ describe('Pflichtkriterium: ganze Cent und Summen', () => {
     ['Umzug', () => moveCall(), IN_VIENNA],
     ['Umzug Graz', () => moveCall(), AT_GRAZ],
     ['Transport', () => moveCall({ service: 'transport', inputs: { ...moveInputs, hours: 2.5, boxes: 0, parking: 0 } }), IN_VIENNA],
-    ['Entrümpelung', () => clearanceCall(), IN_VIENNA],
     ['Montage Küche', () => assemblyCall(), IN_VIENNA],
   ]
-  it.each(calls)('%s: Gesamtpreis = Summe der Zeilen, Gebühr + Partneranteil = Gesamtpreis', async (_, call, geo) => {
+  it.each(calls)('%s: Gesamtpreis = Summe der Zeilen, Festpreis total = low = high', async (_, call, geo) => {
     const t = setup({}, geo)
     const res = await t.run(call())
     expect(res.status).toBe(200)
     const saved = t.requests[0]!
     const total = res.body.snapshot.totalCents as number
     expect(Number.isInteger(total)).toBe(true)
-    expect(saved.estimateCents).toBe(total)
+    expect(saved).toMatchObject({ totalCents: total, lowCents: total, highCents: total })
     expect(sumOfLines(res.body.snapshot)).toBe(total)
     for (const l of res.body.snapshot.lines as { cents: number }[]) expect(Number.isInteger(l.cents)).toBe(true)
-    const fee = saved.fee!
-    expect(fee.feeCents + fee.payoutCents).toBe(total)
-    expect(fee.feeNetCents + fee.feeVatCents).toBe(fee.feeCents)
-    expect(fee).toMatchObject(splitFee(total, { feeRate: 0.15, vatRate: 0.2 }))
   })
 
-  it('Umzug-Beispiel: 689,61 € → Gebühr 103,44, netto 86,20, USt. 17,24, Partner 586,17', async () => {
+  it('Entrümpelung (Spanne): kein verbindlicher Gesamtpreis, Zeilen liegen in der Spanne', async () => {
     const t = setup({}, IN_VIENNA)
-    await t.run(moveCall())
-    expect(t.requests[0]!.fee).toMatchObject({ totalCents: 68961, feeCents: 10344, feeNetCents: 8620, feeVatCents: 1724, payoutCents: 58617 })
+    const res = await t.run(clearanceCall())
+    expect(res.body).toMatchObject({ status: 'awaiting_offer', needsQuote: true })
+    expect(res.body.snapshot).not.toHaveProperty('totalCents')
+    expect(t.requests[0]).toMatchObject({ totalCents: null, lowCents: 95000, highCents: 155000 })
+    for (const l of res.body.snapshot.lines as { cents: number }[]) expect(Number.isInteger(l.cents)).toBe(true)
+    expect(sumOfLines(res.body.snapshot)).toBeGreaterThanOrEqual(95000)
+    expect(sumOfLines(res.body.snapshot)).toBeLessThanOrEqual(155000)
   })
 
   it('Entrümpelung 1.175,00 € und Küche 770,40 € wie im README', async () => {
     const t = setup()
-    expect((await t.run(clearanceCall())).body.snapshot).toMatchObject({ totalCents: 117500, lowCents: 95000, highCents: 155000 })
+    expect(sumOfLines((await t.run(clearanceCall())).body.snapshot)).toBe(117500)
     expect((await t.run(assemblyCall())).body.snapshot).toMatchObject({ totalCents: 77040 })
     const expected = computeClearance(tariffs, parseClearanceInput(clearanceInputs))
     expect(expected.kind).toBe('price')
   })
 
-  it('Miete: Cargo Van 276,00 €, Kaution 500,00 € separat, Gebühr an den Vermieter (Demo: niemand)', async () => {
+  it('Miete: Cargo Van 276,00 €, Kaution 500,00 € separat', async () => {
     const t = setup()
     const res = await t.run(rentalCall())
     expect(res.status).toBe(200)
     const b = t.bookings[0]!
-    expect(b).toMatchObject({ totalCents: 27600, depositCents: 50000, payeeId: null })
-    expect(b.fee).toMatchObject({ feeCents: 4140, payoutCents: 23460 })
+    expect(b).toMatchObject({ totalCents: 27600, depositCents: 50000 })
     expect(res.body.snapshot).toMatchObject({ days: 2, includedKm: 300, depositCents: 50000 })
     expect(sumOfLines(res.body.snapshot)).toBe(27600)
     expect(res.body.snapshot.offer).toMatchObject({ name: 'Cargo Van', depositCents: 50000 })
@@ -365,19 +367,19 @@ describe('Antwort', () => {
 })
 
 describe('Status und Angebote', () => {
-  it('Sonderfall bei Entrümpelung → Besichtigung angefragt, ohne Preis und ohne Gebühr', async () => {
+  it('Sonderfall bei Entrümpelung → wartet auf Angebot, ohne Preis', async () => {
     const t = setup()
     const res = await t.run(clearanceCall({ inputs: { ...clearanceInputs, special: true } }))
-    expect(res.body).toMatchObject({ status: 'inspection_requested', needsQuote: true })
+    expect(res.body).toMatchObject({ status: 'awaiting_offer', needsQuote: true })
     expect(res.body.snapshot).toMatchObject({ kind: 'offer', reasons: ['special_case'] })
-    expect(t.requests[0]).toMatchObject({ estimateCents: null, fee: null })
+    expect(t.requests[0]).toMatchObject({ totalCents: null, lowCents: null, highCents: null })
   })
 
-  it('Klavier → Angebot, Status „angefragt“, ohne Gebühr', async () => {
+  it('Klavier → Angebot, Status „wartet auf Angebot“', async () => {
     const t = setup({}, IN_VIENNA)
     const res = await t.run(moveCall({ inputs: { ...moveInputs, goods: 'piano' } }))
-    expect(res.body).toMatchObject({ status: 'requested', needsQuote: true })
-    expect(t.requests[0]).toMatchObject({ estimateCents: null, fee: null })
+    expect(res.body).toMatchObject({ status: 'awaiting_offer', needsQuote: true })
+    expect(t.requests[0]).toMatchObject({ totalCents: null, lowCents: null, highCents: null })
   })
 
   it('Ohne Koordinaten: Angebot route_missing, kein Aufruf des Anbieters', async () => {
@@ -391,12 +393,12 @@ describe('Status und Angebote', () => {
     ['Anbieter nicht erreichbar', { route: new ProviderError('unavailable') }, {}],
     ['keine Route', { route: new ProviderError('no_route') }, {}],
     ['Zähler erschöpft', {}, { takeTokens: async (c: { bucket: string }[]) => !c.some((x) => x.bucket.startsWith('route:')) }],
-  ])('%s: Angebot route_missing statt Ablehnung, keine Gebühr', async (_, { route }: { route?: Error }, over) => {
+  ])('%s: Angebot route_missing statt Ablehnung', async (_, { route }: { route?: Error }, over) => {
     const t = setup(over, AT_GRAZ, route)
     const res = await t.run(moveCall())
     expect(res.status).toBe(200)
     expect(res.body.snapshot).toMatchObject({ kind: 'offer', reasons: ['route_missing'] })
-    expect(t.requests[0]).toMatchObject({ estimateCents: null, fee: null, route: null })
+    expect(t.requests[0]).toMatchObject({ totalCents: null, route: null })
   })
 
   it('Ausfall des Limiters beim Anbieter-Aufruf bricht ab (503), nichts wird gespeichert', async () => {
@@ -488,21 +490,24 @@ describe('Zugang, Limits, Idempotenz, Bearbeiten', () => {
     expect((await t.run(call)).body).toEqual(stored)
   })
 
-  it('Bearbeiten: requestId statt clientRef, die Schreib-Funktion bekommt den neu berechneten Preis', async () => {
+  it('Bearbeiten gibt es nicht: ein Body mit requestId wird abgelehnt', async () => {
     const t = setup()
-    const id = '11111111-1111-4111-8111-111111111111'
-    const res = await t.run(clearanceCall({ requestId: id, clientRef: undefined, inputs: { ...clearanceInputs, area: 80 } }))
-    expect(res.status).toBe(200)
-    expect(t.requests[0]).toMatchObject({ requestId: id, clientRef: null, customerId: 'user-a' })
-    expect(t.requests[0]!.estimateCents).not.toBe(117500)
+    expect((await t.run(clearanceCall({ requestId: '11111111-1111-4111-8111-111111111111' }))).status).toBe(400)
+    expect(t.requests).toHaveLength(0)
+  })
+
+  it('preferredDate ist Pflicht', async () => {
+    const t = setup()
+    expect((await t.run(moveCall({ preferredDate: undefined }))).status).toBe(400)
+    expect(t.requests).toHaveLength(0)
   })
 
   it.each([
-    ['55000', 409, 'not_editable'],
-    ['P0002', 404, 'not_found'],
-  ])('Schreib-Fehler %s → %i %s', async (code, status, error) => {
-    const t = setup({ saveRequest: async () => { throw Object.assign(new Error('x'), { code }) } })
-    expect(await t.run(clearanceCall({ requestId: '11111111-1111-4111-8111-111111111111', clientRef: undefined }))).toMatchObject({ status, body: { error } })
+    ['too_late', 422],
+    ['setting_missing', 500],
+  ])('Schreib-Fehler %s → %i', async (message, status) => {
+    const t = setup({ saveRequest: async () => { throw Object.assign(new Error(message), { code: 'P0001' }) } })
+    expect(await t.run(clearanceCall())).toMatchObject({ status, body: { error: message } })
   })
 
   it('unerwarteter Fehler: 500 ohne Details', async () => {

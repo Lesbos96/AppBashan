@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { deletePhoto, uploadPhoto } from '../../src/lib/uploads.ts'
 import type { Photo } from '../../src/lib/photos.ts'
 import { vaultMissing } from '../support/cleanup.ts'
-import { anon, deleteUsers, makeUser, must, service, type TestUser } from '../support/db.ts'
+import { anon, deleteUsers, makeRequest, makeUser, must, service, type TestUser } from '../support/db.ts'
 
 const BUCKET = 'request-photos'
 const bytes = Uint8Array.from(atob('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='), (c) => c.charCodeAt(0))
@@ -16,14 +16,8 @@ let b: TestUser
 let requestA: string
 const requests: string[] = []
 
-const newRequest = async (user: TestUser, status = 'requested') => {
-  const id = must(
-    await service
-      .from('service_requests')
-      .insert({ customer_id: user.id, service: 'move', inputs: {}, price_snapshot: {}, price_version: 1, estimate_cents: 1, status: status as 'requested' })
-      .select('id')
-      .single(),
-  ).id
+const newRequest = async (user: TestUser) => {
+  const id = await makeRequest(user.id)
   requests.push(id)
   return id
 }
@@ -72,7 +66,7 @@ describe('Zeile und Pfad (request_photos)', () => {
     const closed = await newRequest(a)
     const p = photo()
     must(await a.db.from('request_photos').insert({ id: p.id, request_id: closed }).select())
-    must(await service.from('service_requests').update({ status: 'confirmed' }).eq('id', closed).select())
+    must(await a.db.rpc('withdraw', { p_request: closed }))
     expect((await a.db.from('request_photos').insert({ request_id: closed })).error).toMatchObject({ code: '42501' })
     expect((await a.db.from('request_photos').delete().eq('id', p.id).select()).data).toEqual([])
     expect(await rows(closed)).toHaveLength(1)
@@ -199,7 +193,7 @@ describe('Objekte (storage.objects)', () => {
     const request = await newRequest(a)
     const p = photo()
     must(await a.db.from('request_photos').insert({ id: p.id, request_id: request }).select())
-    must(await service.from('service_requests').update({ status: 'withdrawn' }).eq('id', request).select())
+    must(await a.db.rpc('withdraw', { p_request: request }))
     const r = await a.db.storage.from(BUCKET).upload(pathOf(a, request, p.id), bytes, JPEG)
     expect(r.error).toMatchObject({ statusCode: '403', message: 'new row violates row-level security policy' })
   })
@@ -207,7 +201,7 @@ describe('Objekte (storage.objects)', () => {
   it('verweigert: Datei löschen, sobald die Anfrage nicht mehr offen ist', async () => {
     const p = photo()
     expect(await uploadPhoto(a.db, a.id, req, p)).toBeNull()
-    must(await service.from('service_requests').update({ status: 'confirmed' }).eq('id', req).select())
+    must(await a.db.rpc('withdraw', { p_request: req }))
     expect(must(await a.db.storage.from(BUCKET).remove([pathOf(a, req, p.id)]))).toEqual([])
     expect(await exists(pathOf(a, req, p.id))).toBe(true)
   })

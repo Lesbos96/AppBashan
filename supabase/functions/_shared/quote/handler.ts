@@ -4,7 +4,6 @@
 // nur Modus, Status, Latenz und Fehlercode: keine Nutzer-ID, keine Adressen, keine Koordinaten.
 import {
   InputError,
-  type FeeSplit,
   type OfferResult,
   type PriceResult,
   type RentalOffer,
@@ -12,7 +11,6 @@ import {
   computeClearance,
   computeRental,
   computeTransport,
-  splitFee,
 } from '../pricing/index.ts'
 import { clientIp, corsHeaders, json, readLimited } from '../http.ts'
 import { computeRouteFacts, type RouteDeps } from '../route/compute.ts'
@@ -30,28 +28,24 @@ const DAY = 86400
 const JWT_FORM = /^[\w-]+\.[\w-]+\.[\w-]+$/
 const USER_LIMITS = { minute: 6, day: 30 } as const
 
-export type RequestStatus = 'requested' | 'inspection_requested'
-export type FeeRow = FeeSplit & { feeRate: number; vatRate: number }
-
 export type SaveRequest = {
   customerId: string
-  requestId: string | null
-  clientRef: string | null
+  clientRef: string
   service: 'transport' | 'move' | 'clearance' | 'assembly'
-  status: RequestStatus
   inputs: unknown
   snapshot: Snapshot
   priceVersion: number
-  estimateCents: number | null
-  needsQuote: boolean
+  /** Festpreis: total = low = high; Spanne: total null; Angebot: alle null (die Datenbank leitet den Status daraus ab). */
+  totalCents: number | null
+  lowCents: number | null
+  highCents: number | null
   from: Place | null
   to: Place | null
   route: RouteResult | null
-  preferredDate: string | null
+  preferredDate: string
   timeWindow: string | null
   description: string | null
   volumeM3: number | null
-  fee: FeeRow | null
 }
 
 export type SaveBooking = {
@@ -68,8 +62,6 @@ export type SaveBooking = {
   priceVersion: number
   totalCents: number
   depositCents: number
-  payeeId: string | null
-  fee: FeeRow
 }
 
 /** Angebot aus `rental_offers` (nur freigegebene), Geldwerte in Cent. */
@@ -88,8 +80,6 @@ export type QuoteDeps = {
   getUserId(jwt: string): Promise<string | null>
   /** Aktuelle Version über die View `current_price_version` und deren Zeilen aus `price_config`. */
   loadPricing(): Promise<{ version: number; rows: PriceConfigRow[] }>
-  /** Aktuelle Sätze über die View `current_fee_rates` (fehlend = null). */
-  loadFeeRates(): Promise<{ feeRate: unknown; vatRate: unknown }>
   loadOffer(id: string): Promise<OfferRow | null>
   /** Bereits gespeicherte Anfrage zu dieser `clientRef` (idempotenter Wiederholungsaufruf). */
   findExisting(customerId: string, clientRef: string, kind: 'request' | 'rental'): Promise<QuoteResponse | null>
@@ -99,12 +89,6 @@ export type QuoteDeps = {
   /** Aktuelle Zeit in ms (Tests setzen sie fest). */
   now(): number
   log(entry: { mode: string; status: number; ms: number; code?: string }): void
-}
-
-function feeRow(totalCents: number, rates: { feeRate: unknown; vatRate: unknown }): FeeRow {
-  const { feeRate, vatRate } = rates
-  if (typeof feeRate !== 'number' || typeof vatRate !== 'number') throw new HttpError(500, 'fee_rates_missing')
-  return { ...splitFee(totalCents, { feeRate, vatRate }), feeRate, vatRate }
 }
 
 /** Anbieter-Aufrufe zählen gegen dieselben Zähler wie die Function `route`, sonst wäre `quote` ein zweiter, ungebremster Weg zum Anbieter. */
@@ -184,33 +168,36 @@ export async function handleQuote(req: Request, deps: QuoteDeps): Promise<Respon
       if (existing) return finish(200, existing)
     }
 
-    // Vollständiger Tarifsatz und Gebührensätze, sonst Abbruch ohne zu schreiben.
+    // Vollständiger Tarifsatz, sonst Abbruch ohne zu schreiben.
     const pricing = await deps.loadPricing()
     const tariffs = buildTariffs(pricing.rows)
-    const rates = await deps.loadFeeRates()
 
     const response =
       call.kind === 'rental'
-        ? await quoteRental(call, customerId, pricing.version, rates, deps)
-        : await quoteRequest(call, customerId, pricing.version, tariffs, rates, req, deps)
+        ? await quoteRental(call, customerId, pricing.version, deps)
+        : await quoteRequest(call, customerId, pricing.version, tariffs, req, deps)
     return finish(200, response)
   } catch (e) {
     if (e instanceof HttpError) return finish(e.status, { error: e.code }, e.code, e.status === 429 ? { 'Retry-After': String(MINUTE) } : {})
     if (e instanceof InputError) return finish(400, { error: 'invalid_input', message: e.message }, 'invalid_input')
     if (e instanceof TariffError) return finish(500, { error: 'tariff_incomplete' }, 'tariff_incomplete')
-    // Fehler der Schreib-Funktionen: 55000 nicht bearbeitbar, P0002 nicht gefunden (auch fremde Anfragen).
-    const pg = (e as { code?: unknown } | null)?.code
-    if (pg === '55000') return finish(409, { error: 'not_editable' }, 'not_editable')
-    if (pg === 'P0002') return finish(404, { error: 'not_found' }, 'not_found')
+    // Fehler der Schreib-Funktion: P0001 mit dem Code als Meldung (too_late: Termin zu nah, setting_missing: Einstellung fehlt).
+    const { code: pg, message } = (e ?? {}) as { code?: unknown; message?: unknown }
+    if (pg === 'P0001' && message === 'too_late') return finish(422, { error: 'too_late' }, 'too_late')
+    if (pg === 'P0001' && message === 'setting_missing') return finish(500, { error: 'setting_missing' }, 'setting_missing')
     const cause = typeof pg === 'string' && /^[0-9A-Z]{5}$/.test(pg) ? pg : e instanceof Error ? e.name : 'unknown'
     return finish(500, { error: 'internal' }, `internal:${cause}`)
   }
 }
 
 type RequestCall = Extract<QuoteCall, { kind: 'request' }>
-type Rates = { feeRate: unknown; vatRate: unknown }
+/** Preisart → Spalten der Revision (Konzept 5.4): Festpreis total = low = high, Spanne total null, Angebot alles null. */
+function amounts(r: PriceResult | OfferResult) {
+  if (r.kind === 'offer') return { totalCents: null, lowCents: null, highCents: null }
+  return { totalCents: r.lowCents === r.highCents ? r.totalCents : null, lowCents: r.lowCents, highCents: r.highCents }
+}
 
-async function quoteRequest(call: RequestCall, customerId: string, priceVersion: number, tariffs: ReturnType<typeof buildTariffs>, rates: Rates, req: Request, deps: QuoteDeps): Promise<QuoteResponse> {
+async function quoteRequest(call: RequestCall, customerId: string, priceVersion: number, tariffs: ReturnType<typeof buildTariffs>, req: Request, deps: QuoteDeps): Promise<QuoteResponse> {
   // Strecke nur aus Koordinaten über `route`. Scheitert der Anbieter oder greift ein Limit, wird die Anfrage ein Angebot
   // (`route_missing`, kein Preis, keine Gebühr); der Ausfall des Limiters (503) und alle übrigen Fehler brechen ab.
   let route: RouteResult | null = null
@@ -236,19 +223,15 @@ async function quoteRequest(call: RequestCall, customerId: string, priceVersion:
       break
   }
 
-  const needsQuote = result.kind === 'offer'
   const snapshot = buildSnapshot(call.service, result)
   const saved = await deps.saveRequest({
     customerId,
-    requestId: call.requestId,
     clientRef: call.clientRef,
     service: call.service,
-    status: needsQuote && call.service === 'clearance' ? 'inspection_requested' : 'requested',
     inputs: call.inputs,
     snapshot,
     priceVersion,
-    estimateCents: result.kind === 'price' ? result.totalCents : null,
-    needsQuote,
+    ...amounts(result),
     from: call.from,
     to: call.to,
     route,
@@ -256,12 +239,11 @@ async function quoteRequest(call: RequestCall, customerId: string, priceVersion:
     timeWindow: call.timeWindow,
     description: call.description,
     volumeM3: call.volumeM3,
-    fee: result.kind === 'price' ? feeRow(result.totalCents, rates) : null,
   })
   return answer(saved, priceVersion, snapshot, call.clientRef, customerId, 'request', deps)
 }
 
-async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, customerId: string, priceVersion: number, rates: Rates, deps: QuoteDeps): Promise<QuoteResponse> {
+async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, customerId: string, priceVersion: number, deps: QuoteDeps): Promise<QuoteResponse> {
   const offer = await deps.loadOffer(call.offerId)
   if (!offer) throw new HttpError(404, 'offer_not_found')
   // nur die Tarifwerte: computeRental prüft jedes Feld des Angebots
@@ -301,8 +283,6 @@ async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, custome
     priceVersion,
     totalCents: result.totalCents,
     depositCents: result.depositCents,
-    payeeId: offer.providerId,
-    fee: feeRow(result.totalCents, rates),
   })
   return answer(saved, priceVersion, snapshot, call.clientRef, customerId, 'rental', deps)
 }
