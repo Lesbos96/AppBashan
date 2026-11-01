@@ -2,7 +2,8 @@ import { useSyncExternalStore } from 'react'
 
 export const MAX_PHOTOS = 8
 export const MAX_BYTES = 10 * 1024 * 1024
-const MAX_EDGE = 2560
+const MAX_EDGE = 2000
+const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 
 export class PhotoError extends Error {}
 
@@ -14,12 +15,16 @@ export type Photo = { id: string; blob: Blob; url: string }
  */
 export async function preparePhoto(file: File): Promise<Blob> {
   if (!file.type.startsWith('image/')) throw new PhotoError('Das ist kein Bild.')
+  if (/^image\/hei[cf]/.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
+    throw new PhotoError('HEIC-Fotos gehen hier nicht. Stelle die Kamera auf „Maximale Kompatibilität“ oder wähle ein JPEG, PNG oder WebP.')
+  }
+  if (!ACCEPTED.includes(file.type)) throw new PhotoError('Dieses Format geht nicht. Nimm ein JPEG, PNG oder WebP.')
   if (file.size > MAX_BYTES) throw new PhotoError('Das Foto ist größer als 10 MB.')
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
   } catch {
-    throw new PhotoError('Dieses Bild lässt sich hier nicht lesen. Nimm ein JPEG, PNG oder WebP (HEIC geht nicht in jedem Browser).')
+    throw new PhotoError('Dieses Bild lässt sich nicht lesen. Nimm ein JPEG, PNG oder WebP.')
   }
   const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
   const canvas = document.createElement('canvas')
@@ -40,7 +45,7 @@ export async function preparePhoto(file: File): Promise<Blob> {
   return blob
 }
 
-// Fotos liegen nur im Speicher (Blobs passen nicht in den sessionStorage); der Upload folgt mit dem Absenden (S8a/S8b).
+// Fotos liegen nur im Speicher (Blobs passen nicht in den sessionStorage); `takePhotos` übergibt sie nach dem Absenden an die Upload-Warteschlange (`uploads.ts`).
 const store = new Map<string, Photo[]>()
 const listeners = new Set<() => void>()
 const empty: Photo[] = []
@@ -48,6 +53,13 @@ const empty: Photo[] = []
 function set(key: string, photos: Photo[]) {
   store.set(key, photos)
   listeners.forEach((l) => l())
+}
+
+/** Leert den Speicher eines Flows und gibt die Fotos ab; die Object-URLs gehören danach der Warteschlange. */
+export function takePhotos(key: string): Photo[] {
+  const photos = store.get(key) ?? empty
+  set(key, empty)
+  return photos
 }
 
 export function usePhotos(key: string) {

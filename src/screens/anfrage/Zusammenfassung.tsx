@@ -8,11 +8,13 @@ import { Card, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
 import { type Path, finishDraft, readShown, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
+import { takePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { QuoteError, buildBody, errorText, invalidTarget, invalidText, refFor, sendQuote } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
+import { queueUploads } from '../../lib/uploads'
 import { objectOf } from '../entruempelung/options'
 import { dayText } from './format'
 
@@ -195,6 +197,7 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
         return
       }
       const quote = await sendQuote(body, refFor(path, body), live.access_token)
+      queueUploads(supabase, live.user.id, quote.id, takePhotos(services[path].service))
       finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {

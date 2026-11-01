@@ -47,7 +47,7 @@ const must = <T>(result: { data: T; error: unknown }): NonNullable<T> => {
 }
 
 const CARGO_VAN = '00000000-0000-4000-8000-000000000002'
-const png = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))], { type: 'image/png' })
+const png = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))], { type: 'image/jpeg' })
 
 let a: Awaited<ReturnType<typeof makeUser>>
 let b: Awaited<ReturnType<typeof makeUser>>
@@ -113,9 +113,8 @@ beforeAll(async () => {
   requestB = must(await service.from('service_requests').insert(requestRow(b.id)).select('id').single()).id
 
   // Ablauf wie in der App: erst Eintrag (Limit 8), dann Upload in den eingetragenen Pfad.
-  photoPathB = `${b.id}/${requestB}/foto.png`
-  must(await b.db.from('request_photos').insert({ request_id: requestB, storage_path: photoPathB }).select())
-  must(await b.db.storage.from('request-photos').upload(photoPathB, png, { contentType: 'image/png' }))
+  photoPathB = must(await b.db.from('request_photos').insert({ request_id: requestB }).select('storage_path').single()).storage_path
+  must(await b.db.storage.from('request-photos').upload(photoPathB, png, { contentType: 'image/jpeg' }))
 
   const offer = must(
     await provider.db
@@ -224,11 +223,11 @@ describe('Kunden sehen nur Eigenes', () => {
   })
 
   it('kein Upload und kein Foto-Eintrag in fremde Anfragen', async () => {
-    const foreign = `${b.id}/${requestB}/fremd.png`
-    expect((await a.db.storage.from('request-photos').upload(foreign, png, { contentType: 'image/png' })).error).not.toBeNull()
-    const ownFolder = `${a.id}/${requestB}/fremd.png`
-    expect((await a.db.storage.from('request-photos').upload(ownFolder, png, { contentType: 'image/png' })).error).not.toBeNull()
-    expect((await a.db.from('request_photos').insert({ request_id: requestB, storage_path: ownFolder })).error).not.toBeNull()
+    const foreign = `${b.id}/${requestB}/${crypto.randomUUID()}.jpg`
+    expect((await a.db.storage.from('request-photos').upload(foreign, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
+    const ownFolder = `${a.id}/${requestB}/${crypto.randomUUID()}.jpg`
+    expect((await a.db.storage.from('request-photos').upload(ownFolder, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
+    expect((await a.db.from('request_photos').insert({ request_id: requestB })).error).not.toBeNull()
   })
 
   it('fremde Fotos lassen sich nicht löschen', async () => {
@@ -241,14 +240,13 @@ describe('Kunden sehen nur Eigenes', () => {
 
   it('höchstens 8 Fotos je Anfrage, in Storage und Tabelle', async () => {
     for (let i = 2; i <= 8; i++) {
-      const path = `${b.id}/${requestB}/foto-${i}.png`
-      must(await b.db.from('request_photos').insert({ request_id: requestB, storage_path: path }).select())
-      must(await b.db.storage.from('request-photos').upload(path, png, { contentType: 'image/png' }))
+      const path = must(await b.db.from('request_photos').insert({ request_id: requestB }).select('storage_path').single()).storage_path
+      must(await b.db.storage.from('request-photos').upload(path, png, { contentType: 'image/jpeg' }))
       extraPhotos.push(path)
     }
-    const ninth = `${b.id}/${requestB}/foto-9.png`
-    expect((await b.db.from('request_photos').insert({ request_id: requestB, storage_path: ninth })).error).not.toBeNull()
-    expect((await b.db.storage.from('request-photos').upload(ninth, png, { contentType: 'image/png' })).error).not.toBeNull()
+    const ninth = await b.db.from('request_photos').insert({ request_id: requestB })
+    expect(ninth.error?.message).toBe('Höchstens 8 Fotos je Anfrage')
+    expect(ninth.error?.code).toBe('23514')
     expect(must(await b.db.from('request_photos').select('id'))).toHaveLength(8)
   })
 
@@ -293,9 +291,9 @@ describe('Kunden setzen nur „zurückgezogen"', () => {
   })
 
   it('keine Fotos zu einer zurückgezogenen Anfrage', async () => {
-    const path = `${a.id}/${requestA}/spaet.png`
-    expect((await a.db.storage.from('request-photos').upload(path, png, { contentType: 'image/png' })).error).not.toBeNull()
-    expect((await a.db.from('request_photos').insert({ request_id: requestA, storage_path: path })).error).not.toBeNull()
+    const path = `${a.id}/${requestA}/${crypto.randomUUID()}.jpg`
+    expect((await a.db.storage.from('request-photos').upload(path, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
+    expect((await a.db.from('request_photos').insert({ request_id: requestA })).error).not.toBeNull()
   })
 
   it('Mietanfrage: nur zurückziehen', async () => {

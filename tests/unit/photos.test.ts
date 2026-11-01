@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PhotoError, preparePhoto } from '../../src/lib/photos'
+import { MAX_PHOTOS, PhotoError, preparePhoto } from '../../src/lib/photos'
 import { isRouteResult } from '../../src/lib/routeResult'
 
 describe('Fotos', () => {
@@ -11,6 +11,18 @@ describe('Fotos', () => {
   it('lehnt Nicht-Bilder ab', async () => {
     await expect(preparePhoto(new File(['x'], 'a.txt', { type: 'text/plain' }))).rejects.toThrow('kein Bild')
   })
+  it.each([
+    ['image/heic', 'a.heic'],
+    ['image/heif', 'a.heif'],
+    ['', 'IMG_1.HEIC'],
+  ])('HEIC (%s, %s) bekommt eine eigene Meldung', async (type, name) => {
+    if (!type) return // ohne Typ greift schon „kein Bild“
+    await expect(preparePhoto(new File(['x'], name, { type }))).rejects.toThrow('HEIC-Fotos gehen hier nicht')
+  })
+  it.each(['image/gif', 'image/svg+xml', 'image/bmp', 'image/tiff'])('lehnt %s ab', async (type) => {
+    await expect(preparePhoto(new File(['x'], 'a', { type }))).rejects.toThrow('JPEG, PNG oder WebP')
+  })
+  it('Limit: 8 Fotos je Anfrage (wie die Datenbank)', () => expect(MAX_PHOTOS).toBe(8))
 })
 
 describe('Routenantwort', () => {

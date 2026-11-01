@@ -87,7 +87,7 @@ export async function makeJpeg(page: Page): Promise<Buffer> {
   return Buffer.from(bytes)
 }
 
-export async function addPhotos(page: Page, count: number) {
-  const buffer = await makeJpeg(page)
+export async function addPhotos(page: Page, count: number, photo?: Buffer) {
+  const buffer = photo ?? (await makeJpeg(page))
   await page.locator('input[type=file][multiple]').setInputFiles(Array.from({ length: count }, (_, i) => ({ name: `foto${i}.jpg`, mimeType: 'image/jpeg', buffer })))
 }

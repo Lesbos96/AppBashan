@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { anonymousPrices, answer, cors, mockQuote, pickDate, price, type Reply } from '../e2e/anfrage-helpers'
+import { mockPhotos, sendWithPhotos, storageError } from '../e2e/fotos-helpers'
 import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress } from '../e2e/konfigurator-helpers'
 
 // Der Browser meldet gemockte Fehlerantworten selbst als Konsolenfehler; die App fängt sie ab.
@@ -281,7 +282,7 @@ const summary = (reply?: Reply, send = true) => async (page: Page) => {
 const umzugDraft = (page: Page) =>
   page.evaluate((date) => {
     const place = (label: string) => ({ label, point: null })
-    sessionStorage.setItem('movenow.flow.move', JSON.stringify({ goods: 'normal', description: '', volume: 12, crew: 3, vehicles: 1, vehicleType: 'van', fromFloor: 3, toFloor: 1, fromLift: true, toLift: false, from: place('Neubaugasse 12, 1070 Wien'), to: place('Praterstraße 30, 1020 Wien'), routeConsent: false, returnTrip: true, route: { region: 'vienna', outsideKm: 0, driveHours: 0.3, distanceKm: 4.8, totalKm: 9.6, geometry: [[16.35, 48.2], [16.4, 48.21]] }, hours: 5, assembly: true, assemblyLm: 3, boxes: 20, parking: 1, packing: false }))
+    sessionStorage.setItem('movenow.flow.move', JSON.stringify({ goods: 'normal', description: '', volume: 12, crew: 3, vehicles: 1, vehicleType: 'van', fromFloor: 3, toFloor: 1, fromLift: true, toLift: false, from: place('Neubaugasse 12, 1070 Wien'), to: place('Praterstraße 30, 1020 Wien'), routeConsent: true, returnTrip: true, route: { region: 'vienna', outsideKm: 0, driveHours: 0.3, distanceKm: 4.8, totalKm: 9.6, geometry: [[16.35, 48.2], [16.4, 48.21]] }, hours: 5, assembly: true, assemblyLm: 3, boxes: 20, parking: 1, packing: false }))
     sessionStorage.setItem('movenow.termin.umzug', JSON.stringify({ date, window: 'flexible', place: '' }))
   }, day15)
 
@@ -348,6 +349,12 @@ const anfrageRoutes: (typeof routes)[number][] = [
   { name: 'zusammenfassung-wird-gesendet', path: '/', steps: async (page) => { await summary({ json: answer(price(77040)), delay: 20_000 })(page); await expect(page.getByRole('button', { name: 'Wird gesendet …' })).toBeVisible() } },
   { name: 'gesendet-preis', path: '/', steps: async (page) => { await summary()(page); await expect(page.getByRole('heading', { name: 'Anfrage gesendet.' })).toBeVisible() } },
   { name: 'gesendet-preis-aktualisiert', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot, shownCents: 77040, date: '2026-11-13', route: 'Neubaugasse 12' })), price(79000)); await page.goto('/montage/gesendet'); await expect(page.getByText('Der Preis wurde aktualisiert.')).toBeVisible() } },
+  { name: 'fotos-wird-hochgeladen', path: '/', steps: async (page) => { await mockPhotos(page, { upload: () => ({ delay: 30_000 }) }); await sendWithPhotos(page); await expect(page.getByText('Wird hochgeladen …')).toBeVisible() } },
+  { name: 'fotos-hochgeladen', path: '/', steps: async (page) => { await mockPhotos(page); await sendWithPhotos(page); await expect(page.getByText('2 von 2 hochgeladen')).toBeVisible() } },
+  { name: 'fotos-fehler-und-offline', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { upload: (n) => (n === 1 ? storageError(500, 'Internal', 'x') : { abort: true }) }); await sendWithPhotos(page); await expect(page.getByRole('alert').first()).toBeVisible(); await expect(page.getByRole('alert')).toHaveCount(2) } },
+  { name: 'fotos-limit', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { row: () => ({ status: 400, json: { code: '23514', message: 'x' } }) }); await sendWithPhotos(page); await expect(page.getByText('Mehr als 8 Fotos gehen nicht.').first()).toBeVisible() } },
+  { name: 'fotos-zu-gross', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { upload: () => storageError(413, 'Payload too large', 'x') }); await sendWithPhotos(page); await expect(page.getByText('Das Foto ist zu groß.').first()).toBeVisible() } },
+  { name: 'fotos-typ-abgelehnt', path: '/transport', steps: async (page) => { const input = page.locator('input[type=file][multiple]'); await addPhotos(page, 2); await expect(page.getByText('2 von 8')).toBeVisible(); await input.setInputFiles({ name: 'IMG_1.heic', mimeType: 'image/heic', buffer: Buffer.from('x') }); await expect(page.getByText(/HEIC-Fotos gehen hier nicht/)).toBeVisible(); await page.getByText('Fotos', { exact: true }).scrollIntoViewIfNeeded() } },
   { name: 'gesendet-spanne', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), price(117500, 95000, 155000, [{ key: 'clearance', cents: 117500 }])); await page.goto('/entruempelung/gesendet'); await expect(page.getByText('ca. 1.175 €')).toBeVisible() } },
   {
     name: 'gesendet-angebot',

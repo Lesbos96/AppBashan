@@ -4,7 +4,7 @@ import { addPhotos, clickTimes } from './konfigurator-helpers'
 export const weiter = (page: Page) => page.getByRole('button', { name: 'Weiter' })
 
 /** Entrümpelung aus dem README bis zum Ergebnis: Wohnung, 60 m², normal möbliert, 3. Stock ohne Lift, 2 Fotos = 1.175,00 €. Erwartet die Seite /entruempelung. */
-export async function fillEntruempelungBeispiel(page: Page) {
+export async function fillEntruempelungBeispiel(page: Page, photo?: Buffer) {
   await page.getByRole('radio', { name: /^Wohnung/ }).click()
   await weiter(page).click()
   await page.getByRole('button', { name: '60 m²' }).click()
@@ -15,7 +15,7 @@ export async function fillEntruempelungBeispiel(page: Page) {
   await page.getByRole('switch', { name: 'Lift für die Gegenstände nutzbar' }).click()
   await weiter(page).click()
   await weiter(page).click()
-  await addPhotos(page, 2)
+  await addPhotos(page, 2, photo)
   await expect(page.getByText('2 von 8')).toBeVisible()
   await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
 }

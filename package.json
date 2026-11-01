@@ -54,8 +54,9 @@
     "fixtures:pricing": "node scripts/gen-golden.mjs",
     "geo:import": "dotenv -e .env.local -- node scripts/import-boundaries.mjs",
     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
+    "setup:photo-cleanup": "dotenv -e .env.local -- node scripts/setup-photo-cleanup.mjs",
     "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",
     "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts",
-    "check:deno": "deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts"
+    "check:deno": "deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts"
   }
 }

@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import { type Path, readSent, services } from '../../lib/draft'
 import { formatEuro, formatEuroRounded } from '../../lib/money'
 import { parseSnapshot, priceLabel } from '../../lib/quote'
+import { FotoUploads } from './FotoUploads'
 import { shortDayText } from './format'
 
 const icons = { transport: 'sofa', umzug: 'boxes', entruempelung: 'basket', montage: 'drill' }
@@ -68,6 +69,7 @@ export function Gesendet({ path }: { path: Path }) {
             )}
           </span>
         </Link>
+        <FotoUploads requestId={sent.id} />
       </div>
       <ActionBar>
         <div className="flex w-full flex-col">

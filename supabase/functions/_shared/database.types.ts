@@ -416,7 +416,7 @@ export type Database = {
           created_at?: string
           id?: string
           request_id: string
-          storage_path: string
+          storage_path?: string
         }
         Update: {
           created_at?: string
@@ -594,6 +594,13 @@ export type Database = {
       become_rental_provider: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      photo_cleanup: { Args: never; Returns: undefined }
+      photo_orphans: {
+        Args: never
+        Returns: {
+          name: string
+        }[]
       }
       quote_save_booking: {
         Args: {

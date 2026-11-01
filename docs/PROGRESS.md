@@ -105,3 +105,9 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 ## 2026-10-31 · S8b-1 · Nachbesserung
 - `safeNext` per Parsing (Steuerzeichen sofort verworfen, Origin-Vergleich, `//` und `/anmelden` nach Auflösung); Berater-Prüfung: `tmp/proof/s8b1-berater.md` (kein hoch/mittel); `scripts/scan-dist.mjs` im `build` (Rot-Beweis: Fake-Wert Exit 1, danach Exit 0); Shots 430/768: `tmp/proof/s8b1-shots.md`; Captcha und Login-CSRF in OPEN_ISSUES
 - check (Exit 0, 255 Unit), build (Exit 0, dist-Scan 0), E2E 49/49
+
+## 2026-11-01 · S8b-3 · Foto-Uploads
+- Migration 0011/0012: Pfad ({uid}/{anfrage}/{id}.jpg) und Limit 8 per Trigger (atomar), Bucket nur image/jpeg, `photo_orphans`/`photo_cleanup`, Job stündlich; Edge Function `photo-cleanup` (Code fertig, Einrichtung wartet auf `npm run setup:photo-cleanup`, siehe OPEN_ISSUES)
+- App: Warteschlange nach dem Senden (idempotent, Retry, offline/zu groß/Limit/Entfernen), Verkleinern auf 2000 px, HEIC-Meldung; Karte „Fotos“ auf der Bestätigung
+- check 334 Unit, E2E 82, RLS 102, Live-Skript ohne Fehler (Aufräum-Function übersprungen: Einrichtung offen, `npm run setup:photo-cleanup`), Rot-Beweis bestanden
+- Nachweise in `tmp/proof/`: Berater-Plan und -Abnahme, Review, Shot-Tabelle, `live-uploads.log`, `s8b3-redproof.log`
