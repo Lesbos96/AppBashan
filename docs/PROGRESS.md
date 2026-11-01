@@ -145,3 +145,8 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Offen aus Runde 11 (2 mittel, 5 niedrig, R11-1 bis R11-7): in `docs/OPEN_ISSUES.md` (Zeile 10) gelistet, vor der Plan-Freigabe S9a/S9b einzuarbeiten.
 - Neu in 14.3: offene Punkte für Beks (`window_start_*`, `offer_max_cents`, `route_missing` buchbar, Bezirk nur aus Polygon). CLAUDE.md-Änderungen R8-9/R8-16 weiter ohne Freigabe.
 - Weiter bei: Beks nennt die Werte aus 14.3 und entscheidet über R8-9/R8-16; R11-1 bis R11-7 einarbeiten, dann Plan-Freigabe S9a
+
+## 2026-11-01 · Doku-Abschluss vor S9a (nur Dokumente)
+- Beks hat freigegeben: Tab-Bar ohne „Miete“ in Phase 1 (R8-16, CLAUDE.md, auch „Partner-Portal (Phase 1)“), `offer_max_cents` = 800000, `window_start_*` 08:00 / 11:00 / 14:00 / 08:00 (Wiener Zeit); in S9_KONZEPT Frage 25, 5.10 und 14.3 eingetragen, Ergänzung für S9i (Spannen 8–11, 11–14, 14–18, „ganzer Tag ab 8 Uhr“).
+- R11-1 bis R11-7 sind in OPEN_ISSUES je einem Schritt S9a bis S9i zugeordnet. `.vitest/` steht in .gitignore. R8-9 (Leserechte, CLAUDE.md:79) bleibt ohne Freigabe.
+- Weiter bei: Beks entscheidet R8-9 und `route_missing` (14.3); R11 einarbeiten, dann Plan-Freigabe S9a

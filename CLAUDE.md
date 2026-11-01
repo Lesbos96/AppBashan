@@ -87,7 +87,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `NEXT_PUBLIC_`-Präfix (Vite `envPrefix`), und davon nur URL und Publishable Key.
 - `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über dotenv-cli an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
 - Annahme, Angebot, Nachtrag und Storno laufen über Funktionen mit festem Akteur je Übergang (`docs/S9_KONZEPT.md`, Abschnitt 4.4). Kein direktes UPDATE auf Status.
-- Für später (Partner-Portal): Partner sehen vor Annahme ihres Angebots nur PLZ/Bezirk, Umfang und Fotos. Keine Hausnummer, kein Name, keine Kontaktdaten.
+- Partner-Portal (Phase 1, S9a ff.): Partner sehen vor Annahme ihres Angebots nur PLZ/Bezirk, Umfang und Fotos. Keine Hausnummer, kein Name, keine Kontaktdaten.
 - Fotos: privater Bucket, signierte URLs, höchstens 8 Bilder à 10 MB, EXIF-Daten (Standort) vor dem Upload entfernen.
 - Seed-Daten nur in `supabase/seed.sql`, nie in Migrationen.
 - Integrationstests gegen Supabase laufen sequenziell und gepaced (Auth-Rate-Limits).
@@ -103,7 +103,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Deutsch (de-AT), per Du, kurz und ruhig. Beträge `de-AT` mit `tabular-nums`, formatiert nur über `formatEuro` (`src/lib/money.ts`, Ausgabe wie in der Referenz: „1.175,00 €“).
 - Beträge brechen nie um: Zahl und € bleiben in einer Zeile (`white-space: nowrap`), lange Beschreibungen umbrechen stattdessen. Die Referenz zeigt solche Umbrüche in 05 („354,00 €") und 14 („689,61 €"); diesen Fehler nicht übernehmen.
 - Kein Gerätemockup, keine Intro-Spalte, keine „Prototyp"/„Konzeptdemo"-Texte.
-- Tab-Bar: Start · Miete · Aufträge · Profil. In Buchungsflows ausgeblendet, dort die fixierte Aktionsleiste.
+- Tab-Bar: Start · Aufträge · Profil (Phase 1; „Miete“ kommt erst in Phase 2 zurück). In Buchungsflows ausgeblendet, dort die fixierte Aktionsleiste.
 - Icons und Illustrationen aus der Referenz als SVG-Komponenten, Pfade unverändert: Pfaddaten tippt kein Modell ab, sie werden aus `tmp/svg/` kopiert (`npm run svg:extract`). Icons über `currentColor` und Tokens. Illustrationen in den natürlichen Materialfarben der Palette `illustration` aus `tokens.json`, Teal nur als Marken-Akzent, Dark-Varianten aus `02_Start_Dark.html`. Keine Emojis, keine Rasterbilder, wo Vektor reicht.
 - Kein Hinweis auf „15 %", „Plattformgebühr", „Provision" oder „MoveNow-Gebühr" in Kunden-Screens.
 - Für Zustände ohne Referenz-Screen: im selben Stil ergänzen, `frontend-design`-Skill nutzen, falls installiert.

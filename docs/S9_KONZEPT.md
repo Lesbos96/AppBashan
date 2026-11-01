@@ -352,11 +352,11 @@ Alle Werte sind Schlüssel in `platform_settings` (R18); im Code steht keiner fe
 | `cancel_free_hours` / `cancel_late_percent` | 48 / 50 | Storno des Kunden: kostenlos bis 48 h vor dem Termin, danach 50 % des Gesamtpreises (10.2) |
 | `cancel_full_percent` / `cancel_full_days_before` | 100 / 0 | 100 % ab dem Termintag (0 Kalendertage vor dem Termin, Wiener Zeit) |
 | `call_out_fee_cents` | 6900 (vorläufig) | feste Anfahrtspauschale (10.3), Provision fällt an (9.4) [Entschieden (Beks, 01.11.2026)] |
-| `offer_max_cents` | **offen** (Beks) | Obergrenze des freien Betrags eines Festangebots ohne Spanne (5.5); ohne Wert antwortet `send_offer` bei Angeboten ohne Spanne fail closed; Voraussetzung für S9e (13); kein Wert erfunden |
+| `offer_max_cents` | 800000 (8.000,00 €) [Entschieden (Beks, 01.11.2026)] | Obergrenze des freien Betrags eines Festangebots ohne Spanne (5.5); `send_offer` lehnt höhere Beträge ab; fehlt der Schlüssel, antwortet es fail closed |
 | `partner_open_jobs_max` | 5 | offene angenommene Aufträge (`accepted`, `in_progress`) je Partner |
 | `partner_cancel_review_count` / `partner_cancel_review_days` | 3 / 30 | Prüfung ab 3 Partner-Stornos in 30 Tagen (10.2) |
 | `photo_staging_hours` | 24 [Entschieden (Beks, 01.11.2026)] | Aufräumfrist für Fotos im Staging-Pfad ohne Anfrage (7.1) |
-| `window_start_<fenster>` | **offen** (Frage 25) | Uhrzeit des Beginns je Zeitfenster der Entrümpelung und Montage; Grundlage von `termin_at`. Die App kennt vier Fenster ohne Uhrzeiten: `morning` „Vormittag“, `midday` „Mittag“, `afternoon` „Nachmittag“, `flexible` „Flexibel“ (`src/lib/draft.ts:14-19`, Standard `flexible` `draft.ts:26`; Prüfliste `supabase/functions/_shared/quote/parse.ts:22`). Startzeiten sind nirgends definiert; Beks nennt sie noch (keine erfunden) |
+| `window_start_<fenster>` | `morning` 08:00, `midday` 11:00, `afternoon` 14:00, `flexible` 08:00, Wiener Ortszeit [Entschieden (Beks, 01.11.2026)] | Beginn des Zeitfensters der Entrümpelung und Montage; Grundlage von `termin_at`. `flexible` = Beginn des Termintags. Die App kennt vier Fenster: `morning` „Vormittag“, `midday` „Mittag“, `afternoon` „Nachmittag“, `flexible` „Flexibel“ (`src/lib/draft.ts:14-19`, Standard `flexible` `draft.ts:26`; Prüfliste `supabase/functions/_shared/quote/parse.ts:22`) |
 
 Die Werte der Stornostufen und der Pauschale gelten für einen Auftrag so, wie sie im Snapshot der Revision stehen (5.4); alle anderen Werte gelten ab Änderung für neue Vorgänge. Die Stornowerte sind vorläufig bis zur Rechtsprüfung (Frage Recht 5).
 
@@ -696,7 +696,7 @@ Die Nummern sind die Nummern dieses Abschnitts; Beks' Zählung vom 01.11.2026 we
 
 2. **Regeländerungen (1.3):** freigegeben und angewendet (1.3).
 24. **Konto löschen mit Anonymisierung** bleibt in S9h, weil das Journal `ON DELETE RESTRICT` hat und die bisherige Kaskade (M01:107, 174) sonst das Löschen eines Kontos mit bestätigten Aufträgen blockiert.
-25. **Zahlenwerte:** `change_valid_hours` = 2; `call_out_fee_cents` = 6900 (vorläufig); `photo_staging_hours` = 24 (5.10). **`window_start_<fenster>` bleibt offen:** Die App kennt vier Zeitfenster ohne Uhrzeiten (`morning`, `midday`, `afternoon`, `flexible`; `src/lib/draft.ts:14-19`, `supabase/functions/_shared/quote/parse.ts:22`), Startzeiten sind nirgends definiert (der Prototyp hat nur Uhrzeitfelder für die Miete); Beks nennt sie.
+25. **Zahlenwerte:** `change_valid_hours` = 2; `call_out_fee_cents` = 6900 (vorläufig); `photo_staging_hours` = 24 (5.10). `offer_max_cents` = 800000. **`window_start_<fenster>`** (Wiener Ortszeit): `morning` 08:00, `midday` 11:00, `afternoon` 14:00, `flexible` 08:00 (Beginn des Termintags) [Entschieden (Beks, 01.11.2026)]. **Ergänzung für S9i:** Die App zeigt dem Kunden die Spannen `morning` 8–11, `midday` 11–14, `afternoon` 14–18, `flexible` „ganzer Tag ab 8 Uhr“.
 26. **Admin ohne Oberfläche in Phase 1:** Admin-Aktionen nur über Admin-Funktionen (RPC) oder benannte Skripte, nie direktes INSERT/UPDATE/DELETE auf Tabellen, auch nicht in der SQL-Konsole (Abschnitt 3). Der Tab „Miete“ ist in Phase 1 ausgeblendet (S9i, Abschnitt 13). Die Admin-Oberfläche bleibt Phase 2.
 27. **Provision auf die Anfahrtspauschale:** Die Provision fällt auch auf die Anfahrtspauschale an (9.4, 10.3).
 28. **Festangebot ohne Spanne (Teil von S9e):** Anfragen mit `needsQuote` ohne Spanne sind über ein Festangebot mit freiem Betrag buchbar: höchstens 3 offene Angebote (höchstens eines je Partner), gültig 48 h, höchstens bis zum Termin; der Kunde sieht alle Angebote und bestätigt eines (nur der Kunde, `confirm_offer` prüft den Partnerstatus, R7-1). **Ausnahme Auslandsziel:** in Phase 1 nicht buchbar, 422 `offer_not_bookable` nur noch dafür (T1, 5.5, 8.2).
@@ -708,8 +708,8 @@ R7-1. **`confirm_offer` und Partnerstatus:** Fix in S9e (T5, 8.2): Ist der anbie
 
 | Punkt | Was Beks nennt | Blockiert |
 |---|---|---|
-| `window_start_<fenster>` | Uhrzeiten der vier Zeitfenster oder eine Regel (z. B. `flexible` = Beginn des Termintags), Frage 25, 5.10 | S9a |
-| `offer_max_cents` | Obergrenze des freien Betrags eines Festangebots ohne Spanne (5.5, 5.10); ohne Wert antwortet `send_offer` fail closed | S9e |
+| `window_start_<fenster>` | entschieden (Beks, 01.11.2026): 08:00 / 11:00 / 14:00 / 08:00, Frage 25, 5.10 | – |
+| `offer_max_cents` | entschieden (Beks, 01.11.2026): 800000, 5.5, 5.10 | – |
 | `route_missing` buchbar | Bestätigung: Eine Anfrage mit `no_route` (Punkt unerreichbar) und bekannter Inlandsregion wird als Anfrage ohne Spanne gespeichert und geht ins Angebotsverfahren (5.5, 6.1); Ausfall und Limit sind nie buchbar | S9a |
 | Bezirk nur aus dem Polygon | Empfehlung des Beraters: Rückfallfeld „Wiener PLZ“ entfällt (Entscheidung 29 gilt bis zur Antwort) | S9a |
 

@@ -36,6 +36,19 @@ Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 - **S8a · Test benennt Einstellung um:** `tests/rls/quote.test.ts` benennt `platform_settings.fee_vat_rate` kurz um und stellt es wieder her (wie der Grenz-Test in `route.test.ts`). Nie gegen das Produktivprojekt laufen lassen; bricht der Prozess hart ab, den Schlüssel `fee_vat_rate_<lauf>` zurück auf `fee_vat_rate` setzen, sonst endet jede Preisanfrage mit 500.
 - **S8a · Bewusst offen:** `quote_save_request` verlangt `client_ref` beim Anlegen nur in `parse.ts`, nicht in der DB (nur `service_role` ruft die Funktion auf); `auth.getUser` läuft vor dem Nutzerlimit (nur Token in JWT-Form, danach Plattform-Limits der Auth-API); der Test auf unbekannte Schlüssel deckt alle Services über `parse*Input`-Tests und für den Umzug über `quote`; Preisänderung eines freigegebenen Angebots wirkt sofort auf Mietpreise (siehe „S1 · Freigegebene Angebote ändern“, Entscheidung vor S9); Ein Nutzer kann bis zu 30 Anfragen pro Tag senden (Limit `USER_LIMITS` in `handler.ts`); `postcode` kommt heute vom Client und wird nicht gegen den Punkt geprüft; ab S9a ist er verteilungsrelevant (Bezirk): der Body-Schlüssel entfällt, `quote` nimmt die PLZ des geprüften Kandidaten (Rückfallfeld mit eigenem Schlüssel nur ohne Kandidaten-PLZ) (`docs/S9_KONZEPT.md` 5.5); Entrümpelung mit Angebot (Besichtigung) lässt sich nicht bearbeiten, nur zurückziehen und neu senden; `price_snapshot` enthält keine Tarife (Versionen gelten als unveränderlich).
 
+## S9-Konzept · Zuordnung R11-1 bis R11-7 (Runde 11, `tmp/proof/s9-konzept-abnahme-runde11.md`)
+Vor der Plan-Freigabe des jeweiligen Schritts in `docs/S9_KONZEPT.md` einarbeiten.
+
+| Nr. | Einstufung | Schritt | Kurzbeschreibung |
+|---|---|---|---|
+| R11-1 | mittel | S9b | Partnerdaten nach der Freigabe nicht änderbar: Admin-Funktionen `admin_set_partner_scope` (Kategorien, Bezirke) und `admin_set_vat_rule` in Matrix und Abschnitt 3 aufnehmen |
+| R11-2 | mittel | S9a | `:658` (Seed/Migration über `publish_version`) widerspricht R7-2; `publish_version(p_actor, …)` ist in der Migration nicht aufrufbar |
+| R11-3 | niedrig | S9a | `private.is_admin()` (`aal2`) fehlt im Umsetzungsplan; bestehende admin-Klauseln ohne `aal` (M01:264, :293, :306, :402, :414); Test „`profiles` → 0 Zeilen“ zu weit |
+| R11-4 | niedrig | S9c | T8-Regel (erweitert) in 4.5 Art C und 8.4 nachziehen, Auslöser festlegen |
+| R11-5 | niedrig | S9a | Sonder-PLZ (Punkt in Wien) in Testzeile und `OPEN_ISSUES.md:37`; Spaltenentfernung `postcode` in der Migrationsliste |
+| R11-6 | niedrig | S9a | „Stiege/Tür“ in `request_contacts` aufnehmen (`job_contact` folgt in S9c) |
+| R11-7 | niedrig | S9b | Partner ändern geprüfte Stammdaten selbst: Firmenname, UID, Rechtsform, `stripe_account_id` nur über Admin-Funktion, Spalten-Grant einschränken |
+
 ## UI
 - **S6 · Farben im Code:** Kacheln der Zusatzleistungen (`#2B8C88`, `#3A7F9A`, `#B39A68`) und der Kartenhintergrund (`#E8EEED`, `#0F272B`) stehen direkt im Code, wie schon in `Profil.tsx`; als Tokens in `theme.css` nachziehen.
 - **S6 · Segmented Control:** Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per `::before` auf 44 px (ersetzt den Punkt aus S3b).

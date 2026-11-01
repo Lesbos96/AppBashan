@@ -12,6 +12,7 @@ coverage/
 
 # Prüfausgaben
 tmp/
+.vitest/
 test-results/
 playwright-report/
 blob-report/
