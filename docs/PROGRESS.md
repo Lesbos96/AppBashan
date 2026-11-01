@@ -127,3 +127,8 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 ## 2026-11-01 · S9-Konzept (nur Dokument)
 - `docs/S9_KONZEPT.md`: Konzept für verbindliche Buchung, Partner, Nachträge und Provisionsabrechnung (E1–E5), 14 Abschnitte; kein Code, keine Migration, kein DB-Zugriff. Nichts davon ist von Beks freigegeben: Regeländerungen (1.3), Vorschläge (10), Fragen (14: 23 Punkte) und rechtliche Fragen (11) sind offen
 - Berater (Opus): Plan `tmp/proof/s9-konzept-berater-plan.md`; Abnahme Runde 1 (5 hoch), Runde 2 (2 hoch), Runde 3 (0 hoch, mittlere Findings danach eingearbeitet, keine vierte Runde) in `tmp/proof/s9-konzept-abnahme-runde1.md`, `-runde2.md`, `s9-konzept-abnahme.md`; Belegstichproben des Beraters stimmen
+
+## 2026-11-01 · S9-Konzept Überarbeitung (nur Dokument)
+- `docs/S9_KONZEPT.md` nach den Entscheidungen von Beks vom 01.11.2026 neu geschnitten: Phase 1 (MVP) und Phase 2, Einstellwerte in `platform_settings` (5.10), Abschnitt 10 als Entscheidungen, Abschnitt 13 mit neun Schritten S9a bis S9i, Abschnitt 14 mit 14.1 (entschieden) und 14.2 (offen: Fragen 2, 24 bis 30). Regeländerungen (1.3) sind nur ein Vorschlag, Beks gibt sie separat frei. Kein Code, keine Migration, kein DB-Zugriff
+- Berater (Opus, schrieb seine Dateien selbst; der Agent `advisor` hat kein Write, deshalb ein Opus-Subagent mit Write-Recht): Runde 4 (5 hoch), Runde 5 (2 hoch), Runde 6 (0 hoch), Runde 7 (0 hoch, 1 mittel, 4 niedrig) in `tmp/proof/s9-konzept-abnahme-runde4.md` bis `-runde7.md`. Nach Runde 7 wurde das Konzept nicht mehr geändert; die offenen Punkte aus Runde 7 stehen als Auflagen für die Planfreigaben in OPEN_ISSUES „S9-Konzept“
+- Weiter bei: Beks beantwortet 14.2 und gibt 1.3 frei, dann Plan-Freigabe S9a
