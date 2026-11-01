@@ -123,3 +123,7 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 
 ## 2026-11-01 · S8b-Abschluss Nachtrag
 - Test „kein Preis“ wartet auf genau ein `main` und prüft es (Rot-Beweis: Preis im Zielseiten-`main` macht ihn rot; 20 von 20 grün). CLAUDE.md: Shots beurteilt nur der `reviewer` (Bildsicht belegt), je Tabellenzeile eine Bildbeobachtung; Doku nur mit Write/Edit. check 341 Unit, E2E 82
+
+## 2026-11-01 · S9-Konzept (nur Dokument)
+- `docs/S9_KONZEPT.md`: Konzept für verbindliche Buchung, Partner, Nachträge und Provisionsabrechnung (E1–E5), 14 Abschnitte; kein Code, keine Migration, kein DB-Zugriff. Nichts davon ist von Beks freigegeben: Regeländerungen (1.3), Vorschläge (10), Fragen (14: 23 Punkte) und rechtliche Fragen (11) sind offen
+- Berater (Opus): Plan `tmp/proof/s9-konzept-berater-plan.md`; Abnahme Runde 1 (5 hoch), Runde 2 (2 hoch), Runde 3 (0 hoch, mittlere Findings danach eingearbeitet, keine vierte Runde) in `tmp/proof/s9-konzept-abnahme-runde1.md`, `-runde2.md`, `s9-konzept-abnahme.md`; Belegstichproben des Beraters stimmen
