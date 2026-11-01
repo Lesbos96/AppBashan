@@ -111,3 +111,7 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - App: Warteschlange nach dem Senden (idempotent, Retry, offline/zu groß/Limit/Entfernen), Verkleinern auf 2000 px, HEIC-Meldung; Karte „Fotos“ auf der Bestätigung
 - check 334 Unit, E2E 82, RLS 102, Live-Skript ohne Fehler (Aufräum-Function übersprungen: Einrichtung offen, `npm run setup:photo-cleanup`), Rot-Beweis bestanden
 - Nachweise in `tmp/proof/`: Berater-Plan und -Abnahme, Review, Shot-Tabelle, `live-uploads.log`, `s8b3-redproof.log`
+
+## 2026-11-01 · S8b-3 Nachtrag · Foto-Löschung
+- Migration 0014 (Dev): `photo_cleanup()` scheitert bei fehlenden/leeren Vault-Secrets, Timeout 60 s. Berater: `tmp/proof/s8b3-0014-berater.md` (F1, F2 mittel behoben)
+- Live-Skript belegt 0 Dateien nach Anfrage- und Konto-Löschung samt Negativkontrolle; test:rls 102, check 339, Cron succeeded und HTTP 200 (`tmp/proof/s8b3-cron.log`)

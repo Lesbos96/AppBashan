@@ -22,7 +22,6 @@ const check = (ok, name, detail = '') => {
   if (!ok) failed++
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail === '' ? '' : `: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}`}`)
 }
-const skip = (name, why) => console.log(`SKIP ${name}: ${why}`)
 
 const users = []
 const requests = []
@@ -161,13 +160,13 @@ try {
 
   // 7. Aufräumen: Waisen sind nach einer Stunde in der Liste, die Function entfernt sie
   const keep = await addPhoto(a, reqA, small)
-  backdate([a.id, c.id])
+  const foreign = await addPhoto(b, await newRequest(b), small)
+  backdate([a.id, b.id, c.id])
   const orphans = ((await service.rpc('photo_orphans')).data ?? []).map((o) => o.name)
   check(deletedRequestPaths.every((p) => orphans.includes(p)) && orphans.includes(photoC.path), 'Waisenliste enthält alle Dateien gelöschter Anfragen und Konten')
   check(!orphans.includes(keep.path) && !orphans.includes(first.path), 'Dateien mit Zeile stehen nicht in der Waisenliste')
-  if (!cleanupSecret) {
-    skip('Aufräum-Function', 'CLEANUP_SECRET fehlt (npm run setup:photo-cleanup)')
-  } else {
+  check(!!cleanupSecret, 'CLEANUP_SECRET gesetzt (sonst ist die Löschung nicht belegbar: npm run setup:photo-cleanup)')
+  if (cleanupSecret) {
     const none = await callCleanup('')
     const wrong = await callCleanup('0'.repeat(64))
     check(none.status === 401 && wrong.status === 401, 'Function ohne und mit falschem Secret: 401', [none.status, wrong.status])
@@ -176,7 +175,10 @@ try {
     const ok = await callCleanup(cleanupSecret)
     check(ok.status === 200 && ok.json?.removed >= orphans.length, 'Function mit Secret: 200 und Waisen entfernt', ok.json)
     check(!(await exists(photoC.path)) && !(await exists(gps.path)), 'Dateien gelöschter Anfragen und Konten sind weg')
-    check((await exists(keep.path)) && (await exists(first.path)), 'Dateien mit Zeile sind geblieben')
+    check((await exists(keep.path)) && (await exists(first.path)) && (await exists(foreign.path)), 'Negativkontrolle: rückdatierte Dateien mit Zeile (A und fremder Nutzer B) sind geblieben')
+    const count = async (prefix) => ((await service.storage.from(BUCKET).list(prefix)).data ?? []).length
+    check((await count(`${a.id}/${gpsReq}`)) === 0 && (await count(`${a.id}/${reqLimit}`)) === 0, 'Anfrage gelöscht: 0 Dateien unter {user}/{anfrage}')
+    check((await count(`${c.id}/${reqC}`)) === 0 && (await count(c.id)) === 0, 'Konto gelöscht: 0 Dateien unter {user}/ und {user}/{anfrage}')
   }
 } catch (e) {
   failed++
