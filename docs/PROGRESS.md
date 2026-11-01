@@ -139,3 +139,9 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Berater (Opus): Runde 8 (1 hoch, 8 mittel, 10 niedrig) `tmp/proof/s9-konzept-abnahme-runde8.md`, nach Einarbeitung Runde 9 (0 hoch) `tmp/proof/s9-konzept-abnahme-runde9.md`. Danach keine Änderung an S9_KONZEPT.md.
 - Nicht eingearbeitet, braucht Freigabe von Beks: CLAUDE.md-Leserechte (R8-9) und Tab-Bar ohne Miete (R8-16).
 - Weiter bei: Beks nennt `window_start_*` und `offer_max_cents`, dann Plan-Freigabe S9a
+
+## 2026-11-01 · S9-Konzept: Findings R9-1 bis R9-13 und R10-1 bis R10-13 eingearbeitet (nur Dokumente)
+- Runde 9 → Einarbeitung → Runde 10 (`tmp/proof/s9-konzept-abnahme-runde10.md`, 0 hoch, 3 mittel, 10 niedrig) → Einarbeitung → Runde 11 (`tmp/proof/s9-konzept-abnahme-runde11.md`, 0 hoch). Nach Runde 11 keine Änderung an S9_KONZEPT.md (Rundengrenze).
+- Offen aus Runde 11 (2 mittel, 5 niedrig, R11-1 bis R11-7): in `docs/OPEN_ISSUES.md` (Zeile 10) gelistet, vor der Plan-Freigabe S9a/S9b einzuarbeiten.
+- Neu in 14.3: offene Punkte für Beks (`window_start_*`, `offer_max_cents`, `route_missing` buchbar, Bezirk nur aus Polygon). CLAUDE.md-Änderungen R8-9/R8-16 weiter ohne Freigabe.
+- Weiter bei: Beks nennt die Werte aus 14.3 und entscheidet über R8-9/R8-16; R11-1 bis R11-7 einarbeiten, dann Plan-Freigabe S9a
