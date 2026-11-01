@@ -132,3 +132,10 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - `docs/S9_KONZEPT.md` nach den Entscheidungen von Beks vom 01.11.2026 neu geschnitten: Phase 1 (MVP) und Phase 2, Einstellwerte in `platform_settings` (5.10), Abschnitt 10 als Entscheidungen, Abschnitt 13 mit neun Schritten S9a bis S9i, Abschnitt 14 mit 14.1 (entschieden) und 14.2 (offen: Fragen 2, 24 bis 30). Regeländerungen (1.3) sind nur ein Vorschlag, Beks gibt sie separat frei. Kein Code, keine Migration, kein DB-Zugriff
 - Berater (Opus, schrieb seine Dateien selbst; der Agent `advisor` hat kein Write, deshalb ein Opus-Subagent mit Write-Recht): Runde 4 (5 hoch), Runde 5 (2 hoch), Runde 6 (0 hoch), Runde 7 (0 hoch, 1 mittel, 4 niedrig) in `tmp/proof/s9-konzept-abnahme-runde4.md` bis `-runde7.md`. Nach Runde 7 wurde das Konzept nicht mehr geändert; die offenen Punkte aus Runde 7 stehen als Auflagen für die Planfreigaben in OPEN_ISSUES „S9-Konzept“
 - Weiter bei: Beks beantwortet 14.2 und gibt 1.3 frei, dann Plan-Freigabe S9a
+
+## 2026-11-01 · Freigaben von Beks eingearbeitet, Agent advisor-report, Bildsicht-Test (nur Dokumente)
+- Regeländerungen aus S9_KONZEPT 1.3 in CLAUDE.md, ARCHITECTURE, ROADMAP, OPEN_ISSUES angewendet; Entscheidungen 24–30 und R7-1 in 14.2 und den betroffenen Abschnitten eingetragen. Offen: `window_start_*` (die App kennt vier Zeitfenster ohne Uhrzeiten) und `offer_max_cents`, beide nennt Beks. Neuer Agent `.claude/agents/advisor-report.md`; CLAUDE.md um Agent und Maß-Regel ergänzt.
+- Bildsicht-Test bestanden: `tmp/proof/bildsicht-test.md` (Wort MSNSDQ vom reviewer richtig gelesen).
+- Berater (Opus): Runde 8 (1 hoch, 8 mittel, 10 niedrig) `tmp/proof/s9-konzept-abnahme-runde8.md`, nach Einarbeitung Runde 9 (0 hoch) `tmp/proof/s9-konzept-abnahme-runde9.md`. Danach keine Änderung an S9_KONZEPT.md.
+- Nicht eingearbeitet, braucht Freigabe von Beks: CLAUDE.md-Leserechte (R8-9) und Tab-Bar ohne Miete (R8-16).
+- Weiter bei: Beks nennt `window_start_*` und `offer_max_cents`, dann Plan-Freigabe S9a

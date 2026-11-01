@@ -22,16 +22,16 @@ Alle Beträge Integer-Cent. Enums: `service_type` (transport, move, clearance, a
 | `geo_boundaries` | `slug` PK, `geom` MultiPolygon 4326, `source` (ODbL) |
 
 Abgleich Briefing Abschnitt 6: alle sechs Tabellen vorhanden, `price_config` versioniert über `price_versions`; ergänzt um `platform_settings`, `fee_splits`, `geo_boundaries`.
-**Später (nur geplant):** `partners` (`id` = profiles.id, Firma, UID, Gebiet als PLZ-Liste, `stripe_account_id`, Status) und `quotes` (`request_id`, `partner_id`, `price_cents`, `valid_until`, Status offered/accepted/declined/expired). Dann bekommt `fee_splits` eine `quote_id`, `payee_id` zeigt auf den Partner, Kauf/Rechnung hängen an `quotes`. Kein Umbau bestehender Tabellen nötig.
+**Partner (ab S9a ff.):** `partners` mit Login je Firma (`partner_members`), `partner_offers`, `job_listings`, `assignments` und das Journal `commission_entries`: Datenmodell in `docs/S9_KONZEPT.md`, Abschnitt 5.
 
 ## Statusfluss (Screens 13, 14)
-`requested` bzw. `inspection_requested` (Besichtigung, nur mit `needs_quote`) → `confirmed` (Termin und Preis bestätigt) → `in_progress` (Auftrags-/Miettag) → `completed`; daneben `withdrawn` und `expired`. Mietanfragen nutzen dasselbe Enum ohne `inspection_requested`. Kunden setzen `requested` (über `quote` beim Absenden) und `withdrawn` (nur aus `requested`/`inspection_requested`). Alle anderen Status setzt admin, vorerst im Dashboard.
+Zustände und Übergänge mit Akteur: `docs/S9_KONZEPT.md`, Abschnitt 4. Übergänge laufen nur über Funktionen, kein direktes UPDATE auf Status.
 
 ## Geldfluss
 1. App: Vorschau mit `@pricing` und den öffentlichen `price_config`-Werten. Keine Gebühr, kein Satz im Client.
 2. Absenden und „Anfrage bearbeiten": nur über die Edge Function `quote` (service_role). Sie prüft `inputs` je Service gegen das Schema des Preismoduls, lädt die aktuelle `price_version`, rechnet neu, speichert Anfrage bzw. Mietanfrage mit Snapshot und schreibt `fee_splits` mit dem Satz aus `platform_settings`. Kunden haben kein INSERT auf `service_requests`/`rental_bookings`; ein Client-Preis wird nie übernommen. Details: Abschnitt „quote (S8a)".
 3. Aufteilung wie `platform()` im Prototyp: fee = cents(total × rate), netto = cents(fee / (1 + vat)), USt. = fee − netto, payout = total − fee; erst am Ende in Integer-Cent.
-4. `payee_id`: bei Mietanfragen der Vermieter des Angebots (Demo: null), bei Anfragen null bis zur Partnerzuordnung. Vermieter sehen die Aufteilung in ihrer Abrechnung (18); die Beispielabrechnung rechnet mit `fee_rate` aus `platform_settings`.
+4. Die Provision schreibt die Annahme ins Journal `commission_entries` (`docs/S9_KONZEPT.md`, 5.8, 9). Die Beispielabrechnung der Vermieter (18) rechnet mit `fee_rate` aus `platform_settings`.
 5. Später: Partnerangebot (`quotes`) ersetzt den Richtpreis, Zahlung über Stripe Connect mit der Gebühr als Application Fee.
 
 ## RLS-Matrix
@@ -114,7 +114,7 @@ Edge Function `quote` (`supabase/functions/quote`, Logik in `_shared/quote/`), `
 9. Demo-Angebote ohne `provider_id` (Check `provider_or_demo`): keine erfundenen Vermieter-Konten.
 10. `provider_name` am Angebot: `offerFields` führt den Firmennamen je Fahrzeug, Demo-Angebote brauchen ihn ohne Profil.
 11. `one_way` boolean statt `return_station`: der Prototyp kennt nur „gleiche" oder „andere Station".
-12. Vermieter sehen in dieser Phase keine Mietanfragen (Bestätigung in der App ist „Später"); `fee_splits` lesen sie über `payee_id`.
+12. Vermieter sehen keine Mietanfragen bis Phase 2 (`docs/S9_KONZEPT.md`, 5.3, 6); `fee_splits` lesen sie über `payee_id`.
 13. PostGIS im Schema `extensions`: `spatial_ref_sys` liegt außerhalb der Data API.
 14. RLS-Tests gegen das Dev-Projekt statt lokalem Docker: dasselbe Schema wie die App, keine weitere Infrastruktur.
 15. TypeScript 6.0 statt 7: typescript-eslint unterstützt 7 noch nicht.

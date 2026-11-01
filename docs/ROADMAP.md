@@ -4,8 +4,8 @@ Eine Session je Abschnitt. Modell Sonnet 5.5 / Effort medium, außer wo anders v
 Jede Session endet mit grünen Checks, abgehakten Checkboxen, einem Eintrag in `docs/PROGRESS.md`, Commit und Push (falls Remote). Der Commit beendet die Session.
 UI-Sessions: Jeder fertige Screen besteht den Prüf-Loop aus `CLAUDE.md` gegen seinen Referenz-Screen in `docs/reference/design/screens/`, in Light und Dark. Vor dem Commit einmal `shots:all` (alle vier Größen), Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 Preisbeispiele aus `docs/reference/design/README.md` in E2E-Tests: geprüft werden Gesamtpreis und Positionen, die Kunden sehen. Die Gebührenwerte der Beispiele gelten nur für das Modul und die Vermieter-Abrechnung.
-Umfang: genau das Briefing in `docs/DESIGN_BRIEF.md`. In dieser Phase keine echten Zahlungen, keine echten Buchungsbestätigungen, keine erfundenen Verfügbarkeiten. Alles darüber hinaus steht unter „Später" und wird nur nach Freigabe gebaut.
-Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6 nach S2–S5; S7 nach S2–S4; S8a nach S2 und S5; S8b nach S6, S7 und S8a; S9 nach S8b; S10 zuletzt. Schema, Rechte und Routen stehen in `docs/ARCHITECTURE.md`.
+Umfang: genau das Briefing in `docs/DESIGN_BRIEF.md`. Phase 1 enthält echte Buchungsbestätigungen (Annahme in der App); echte Zahlungen über MoveNow bleiben ausgeschlossen (der Kunde zahlt den Partner direkt, der Partner MoveNow per Überweisung außerhalb der App). Keine erfundenen Verfügbarkeiten. Alles darüber hinaus steht unter „Später" und wird nur nach Freigabe gebaut.
+Reihenfolge: S2, S3a und S5 hängen nur von S1 ab; S3b nach S3a; S4 nach S3b; S6 nach S2–S5; S7 nach S2–S4; S8a nach S2 und S5; S8b nach S6, S7 und S8a; S9a bis S9i nach S8b; S10 zuletzt. Schema, Rechte und Routen stehen in `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -100,13 +100,10 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 - [x] (Anmeldung und `/anmelden` S8b-1, Absenden über `quote` S8b-2, 2026-10-31) Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
 - [x] (S8b-3, 2026-11-01) Foto-Uploads zu Anfragen: Server-Pfad und atomares Limit, nur JPEG im Bucket, Aufräum-Job, Upload-Zustände auf der Bestätigung
 - [ ] Aufträge-Liste wie `13` (Anfragen und Mietanfragen, Aktiv/Erledigt), Detail mit Timeline und Tarifstand wie `14`
-- [ ] „Anfrage bearbeiten" (über `quote`, rechnet neu) und „Anfrage zurückziehen" (direktes Status-Update) wie `14`, solange der Status „angefragt" ist. Alle weiteren Status setzt in dieser Phase nur admin (vorerst im Supabase-Dashboard).
+- [ ] „Anfrage zurückziehen" wie `14` läuft über die Funktion `withdraw` (S9a). „Anfrage bearbeiten" entfällt.
 
-## S9 · Transportermiete und Vermieterbereich
-- [ ] Miete wie `09` (ohne Gebühr, Kaution separat); die Mietanfrage wird über `quote` als „angefragt" gespeichert (Server rechnet aus dem Angebot neu, `fee_splits` mit `payee_id` = Vermieter), ohne Bestätigung in der App und ohne echte Verfügbarkeit
-- [ ] Vermieterbereich wie `18` über Profil → „Für Vermieter": Fahrzeuge und Tarife anlegen und bearbeiten (alle Felder aus `offerFields`), Beispielabrechnung mit Plattformgebühr, Satz aus `platform_settings`
-- [ ] Wer „Für Vermieter" öffnet und sich anmeldet, wird Vermieter (RPC `become_rental_provider`). Vermieter sehen und ändern nur eigene Fahrzeuge (RLS). Neue Fahrzeuge sind für Kunden erst nach Freigabe sichtbar (vorerst im Supabase-Dashboard).
-- [ ] E2E: Cargo-Van-Beispiel (276,00 €, Kaution 500,00 € separat) für Kunden ohne Gebühr; Vermieter-Beispiel (99 € → Gebühr 14,85 €, netto 12,38 €, USt. 2,47 €, an Vermieter 84,15 €) nur in der Vermieter-Abrechnung
+## S9a bis S9i · Partner, verbindliche Buchung, Provisions-Journal
+Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jeder Schritt ist eine Session.
 
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
@@ -118,9 +115,9 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 ---
 
 ## Später (nicht im Briefing, nur nach Freigabe durch Beks)
-- Partner-Portal: Partner registrieren und freigeben, Angebote abgeben, Kunde nimmt an, Auszahlungsübersicht. Erst damit gibt es echte Buchungsbestätigungen. Die Sichtbarkeitsregel aus `CLAUDE.md` (vor Annahme nur PLZ/Bezirk) gilt dann.
-- Admin-Oberfläche (Freigaben, Statuspflege, `price_config` und Gebührensatz versioniert bearbeiten) und E-Mail-Benachrichtigungen. Bis dahin: Supabase-Dashboard.
-- Vermieter bestätigt Mietanfragen in der App
-- Zahlung und Rechnung über Stripe Connect (15 % als Plattformgebühr, Partner als Leistungserbringer; Rechnungs- und USt.-Logik vorher mit Steuerberatung klären)
+Partner-Portal und E-Mail-Benachrichtigungen sind Phase 1 (S9a ff.). Phase 2:
+- Admin-Oberfläche (Freigaben, Statuspflege, `price_config` und Gebührensatz versioniert bearbeiten)
+- Transportermiete und Vermieterbereich (Miete als Partner-Kategorie, `docs/S9_KONZEPT.md`, 5.3), Vermieter bestätigt Mietanfragen in der App
+- Automatische Sammelrechnung, SEPA, Zahlungsdienstleister (z. B. Stripe Connect; Rechnungs- und USt.-Logik vorher mit Steuerberatung klären), Push, pgAudit, Radius-Gebiete, Mehrfach-Mitglieder in der Oberfläche
 - Capacitor-Build für iOS und Android
 - Bewertungen, Verfügbarkeitskalender, weitere Städte

@@ -1,6 +1,6 @@
 # MoveNow
 
-Vermittlungsplattform, Start Wien: Möbeltransport, Umzug, Entrümpelung, Montage/Demontage, Transportermiete. Kunden bekommen einen Richtpreis und senden eine unverbindliche Anfrage; der Partner bestätigt Termin und Preis (in dieser Phase außerhalb der App). MoveNow behält 15 % des Gesamtpreises (inkl. 20 % USt.) als Plattformgebühr ein. Keine Zusatzgebühr für Kunden, und Kunden sehen die Gebühr nirgends.
+Vermittlungsplattform, Start Wien: Möbeltransport, Umzug, Entrümpelung, Montage/Demontage, Transportermiete. Kunden bekommen einen Richtpreis und senden eine verbindliche Buchungsanfrage; der Partner nimmt in der App an (`docs/S9_KONZEPT.md`). MoveNow behält 15 % des Gesamtpreises (inkl. 20 % USt.) als Plattformgebühr ein. Keine Zusatzgebühr für Kunden, und Kunden sehen die Gebühr nirgends.
 
 Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „Später" in `docs/ROADMAP.md` steht (z. B. Partner-Portal, Admin-Oberfläche, Zahlung), baust du nur nach meiner Freigabe.
 
@@ -48,6 +48,7 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
   - Abnahme vor dem Commit in S2, S8a und S9: nur die Dateien mit Geld- oder Sicherheitslogik, nicht der ganze Diff.
   - Wenn ein Fehler nach 2 Runden rot bleibt oder unterwegs eine solche Entscheidung auftaucht, die der Plan nicht abdeckt.
 - Gib ihm eine kurze Frage mit den betroffenen Dateien, nicht die ganze Session. Seine Entscheidung gilt; weichst du ab, sag mir warum. Für UI, Texte und Routinearbeit fragst du ihn nicht.
+  - `advisor-report` (Opus): derselbe Berater (Geld, Sicherheit, Schema), aber mit Write; schreibt ausschließlich seinen Bericht nach `tmp/proof/` und ändert nie andere Dateien. Immer, wenn der Berater eine Berichtsdatei liefern soll, nimmst du ihn; `general-purpose` bleibt verboten.
 - „advisor" meint immer diesen Subagent (Agent-Tool). Ein eingebautes `advisor`-Tool ohne Parameter, das den ganzen Verlauf weitergibt, benutzt du nicht; steht es in deiner Tool-Liste, sag es mir zu Beginn.
 - Jede Delegation hat eine schriftliche Spec: Ziel, Dateien, Akzeptanzkriterien, auszuführende Tests, passende Referenz-Screens.
 - Wenige große Delegationen statt vieler kleiner. Nur ein editierender Agent zur selben Zeit.
@@ -55,7 +56,7 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 ## Arbeits-Loop
 bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/reference/design/screens/`) → fixen. Wiederholen, bis alles grün ist, höchstens 5 Runden je Screen bzw. Aufgabe. Was danach rot bleibt: in `docs/OPEN_ISSUES.md` mit Begründung, dann weiter oder Blocker einmal berichten.
 - In jeder Runde: `shots` (390 px, Light und Dark). Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
-- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Fehlt das, gilt die Zeile als ungeprüft.
+- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Fehlt das, gilt die Zeile als ungeprüft. Maße (Breiten, Abstände, Überlauf) misst du nur per Playwright `boundingBox()` oder `getComputedStyle`, nie aus dem Bild geschätzt.
 - Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und alle Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
@@ -75,7 +76,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Beträge als Integer-Cent in DB und API. Rechnen wie der Prototyp, erst am Ende auf Cent runden (wie `cents()` dort).
 - Den gespeicherten Preis berechnet der Server (Edge Function `quote`) aus `price_config`. Die App nutzt dasselbe Modul (`@pricing`) nur für die Vorschau. Gespeichert wird ein Snapshot mit `price_version`.
 - Plattformgebühr wie `platform()` im Prototyp: fee = round(total × 0,15); netto = round(fee / 1,2); USt. = fee − netto; Partner = total − fee.
-- Kunden können die Gebühr weder sehen noch per API lesen. Die Gebührenaufteilung liegt in einer eigenen Tabelle (`fee_splits`), der Gebührensatz in einer eigenen Einstellungstabelle, nicht in der öffentlich lesbaren `price_config`. Die Aufteilung lesen nur der betroffene Vermieter und admin, den Satz nur Vermieter und admin (später auch Partner). Beides per RLS-Test abgesichert.
+- Kunden können die Gebühr weder sehen noch per API lesen. Die Gebührenaufteilung liegt im Journal `commission_entries` (entsteht bei der Annahme, nur anfügen), der Gebührensatz in einer eigenen Einstellungstabelle, nicht in der öffentlich lesbaren `price_config`. Die Aufteilung lesen nur der betroffene Vermieter und admin, den Satz nur Vermieter und admin (später auch Partner). Beides per RLS-Test abgesichert.
 - Die Gebührenfunktion bekommt den Satz als Parameter. Im App-Code steht kein fester 15-%-Wert. Kundenpreise brauchen den Satz nicht, weil die Gebühr im Gesamtpreis enthalten ist.
 - Angezeigt wird die Gebühr nur in der Vermieter-Abrechnung und später auf der Rechnung (und in der Auszahlungsübersicht des Partner-Portals, sobald es freigegeben ist). Die `feeHTML`-Hinweise des Prototyps werden nicht übernommen.
 - Kaution und Kraftstoff sind nie Teil der Berechnungsbasis.
@@ -85,7 +86,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - RLS auf jeder Tabelle. Kein `using (true)` auf personenbezogenen Daten. Views mit `security_invoker = true`. SECURITY-DEFINER-Funktionen mit festem `search_path`.
 - Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `NEXT_PUBLIC_`-Präfix (Vite `envPrefix`), und davon nur URL und Publishable Key.
 - `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über dotenv-cli an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
-- Kunden setzen nur die Status „angefragt" (beim Absenden) und „zurückgezogen". Alle anderen Status setzt in dieser Phase nur admin.
+- Annahme, Angebot, Nachtrag und Storno laufen über Funktionen mit festem Akteur je Übergang (`docs/S9_KONZEPT.md`, Abschnitt 4.4). Kein direktes UPDATE auf Status.
 - Für später (Partner-Portal): Partner sehen vor Annahme ihres Angebots nur PLZ/Bezirk, Umfang und Fotos. Keine Hausnummer, kein Name, keine Kontaktdaten.
 - Fotos: privater Bucket, signierte URLs, höchstens 8 Bilder à 10 MB, EXIF-Daten (Standort) vor dem Upload entfernen.
 - Seed-Daten nur in `supabase/seed.sql`, nie in Migrationen.
