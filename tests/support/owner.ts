@@ -47,7 +47,7 @@ export const asRole = (role: 'service_role' | 'authenticated' | 'anon', query: s
 
 export type Step = {
   name: string
-  /** SQL (plpgsql-Anweisungen); mit `?` am Anfang: boolescher Ausdruck, muss wahr sein. */
+  /** SQL (plpgsql-Anweisungen); mit `?` am Anfang: boolescher Ausdruck, muss wahr sein („P0001: false“ bei falsch); mit `=`: Wert des Ausdrucks als Ergebnis („= 3“). */
   sql: string
   as?: 'owner' | 'service_role' | 'authenticated' | 'anon'
   /** Claims für `authenticated` (z. B. admin mit aal2). */
@@ -69,8 +69,14 @@ export function probes(setup: string, steps: Step[]): Record<string, string> {
         role === 'owner' ? '' : `set local role ${role};`,
         s.claims ? `perform set_config('request.jwt.claims', ${lit(JSON.stringify({ sub: s.claims.sub, role: 'authenticated', aal: s.claims.aal }))}, true);` : '',
       ].join(' ')
-      const stmt = s.sql.startsWith('?') ? `if not coalesce((${s.sql.slice(1)}), false) then raise exception 'false'; end if;` : `${s.sql};`
-      return `begin ${prefix} ${stmt} reset role; insert into res values (${lit(s.name)}, 'ok'); exception when others then reset role; insert into res values (${lit(s.name)}, sqlstate || ': ' || sqlerrm); end;`
+      const isValue = s.sql.startsWith('=')
+      const stmt = s.sql.startsWith('?')
+        ? `if not coalesce((${s.sql.slice(1)}), false) then raise exception 'false'; end if;`
+        : isValue
+          ? `perform set_config('app.probe_val', (${s.sql.slice(1)})::text, true);`
+          : `${s.sql};`
+      const okValue = isValue ? `'= ' || current_setting('app.probe_val')` : `'ok'`
+      return `begin ${prefix} ${stmt} reset role; insert into res values (${lit(s.name)}, ${okValue}); exception when others then reset role; insert into res values (${lit(s.name)}, sqlstate || ': ' || sqlerrm); end;`
     })
     .join('\n')
   const rows = ownerSql(`begin; ${setup}; create temp table res (k text, v text); do $p$ begin ${body} end $p$; select k, v from res; rollback;`)

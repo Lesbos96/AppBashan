@@ -30,10 +30,10 @@ afterAll(async () => {
 
 const expectAll = (got: Record<string, string>, expected: Record<string, string | RegExp>) => {
   for (const [name, want] of Object.entries(expected)) {
-    if (typeof want === 'string') expect(got[name], name).toBe(want)
-    else expect(got[name], name).toMatch(want)
+    if (typeof want === 'string') expect.soft(got[name], name).toBe(want)
+    else expect.soft(got[name], name).toMatch(want)
   }
-  expect(Object.keys(got).sort()).toEqual(Object.keys(expected).sort())
+  expect.soft(Object.keys(got).sort()).toEqual(Object.keys(expected).sort())
 }
 
 describe('veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen service_role)', () => {
@@ -75,6 +75,9 @@ describe('veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen
       { name: 'tamper', sql: `alter table public.price_config disable trigger guard_price_config; update public.price_config set value = 5 where version = 9996 and key = 'a'; alter table public.price_config enable trigger guard_price_config` },
       svc('verify_mismatch', `perform public.verify_price_version(9996)`),
       svc('verify_unpublished', `perform public.verify_price_version(9993)`),
+      // Als Eigentümer (hat Zugriff auf private.price_version_hash): nur die Marker-Prüfung steht zwischen Aufruf und Veröffentlichung.
+      // Für service_role bremst zusätzlich das fehlende Schema-Recht auf private (42501), das beweist den Marker nicht.
+      { name: 'flag_without_marker_owner', sql: `update public.price_versions set published = true where version = 9995` },
     ])
     expectAll(got, {
       hash_kanonisch_ok: 'ok',
@@ -94,6 +97,7 @@ describe('veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen
       publish_by_customer: '42501: not_admin',
       publish_empty: 'P0001: not_found',
       flag_without_marker: 'P0001: field_immutable',
+      flag_without_marker_owner: 'P0001: field_immutable',
       insert_published: 'P0001: field_immutable',
       unpublished_version_ok: 'ok',
       unpublished_config_ok: 'ok',
@@ -261,9 +265,16 @@ describe('Gebührensätze und Einstellungen', () => {
 describe('audit_log, Rollen, aal2-Admin', () => {
   const svc = (name: string, sql: string): Step => ({ name, sql, as: 'service_role' })
   const asA = (name: string, who: string, aal: 'aal1' | 'aal2', sql: string): Step => ({ name, sql, as: 'authenticated', claims: { sub: who, aal } })
-  // Journal-Zeile und unveröffentlichte Version 9995 stehen nur in dieser Transaktion
+  // Journal-Zeile und unveröffentlichte Version 9995 stehen nur in dieser Transaktion.
+  // SPARE1/SPARE2: Konten in auth.users ohne Profil, damit der Fremdschlüssel profiles.id → auth.users nicht greift und nur guard_role prüft.
+  const SPARE1 = '00000000-0000-4000-8000-0000000000a1'
+  const SPARE2 = '00000000-0000-4000-8000-0000000000a2'
+  // SPARE3 behält sein Profil und dient als Opfer des id-Tauschs, damit der Testkunde für die Folgeschritte unberührt bleibt.
+  const SPARE3 = '00000000-0000-4000-8000-0000000000a3'
   const setup = () => `
-    select public.admin_create_price_version('${adm.id}', 9995, date '2999-01-01', 'probe')`
+    select public.admin_create_price_version('${adm.id}', 9995, date '2999-01-01', 'probe');
+    insert into auth.users (id) values ('${SPARE1}'), ('${SPARE2}'), ('${SPARE3}');
+    delete from public.profiles where id in ('${SPARE1}', '${SPARE2}')`
 
   it('audit_log nur anfügen; Lesen nur admin mit aal2; profiles.role nur mit Marker', () => {
     const got = probes(setup(), [
@@ -276,22 +287,24 @@ describe('audit_log, Rollen, aal2-Admin', () => {
       { name: 'settings_truncate_owner', sql: `truncate public.platform_settings` },
       { name: 'config_truncate_owner', sql: `truncate public.price_config` },
       svc('audit_insert_ok', `insert into public.audit_log (actor_role, action, entity) values ('system', 'probe', 'test')`),
+      // Wert-Schritte („=“): Ergebnis ist die Zahl der sichtbaren Zeilen bzw. der Rückgabewert; rot zeigt die Daten, die zu sehen wären.
       asA('audit_read_aal2_ok', adm.id, 'aal2', `?(select count(*) >= 1 from public.audit_log)`),
-      asA('audit_read_aal1', adm.id, 'aal1', `?(select count(*) = 0 from public.audit_log)`),
-      asA('audit_read_customer', cust.id, 'aal2', `?(select count(*) = 0 from public.audit_log)`),
+      asA('audit_read_aal1', adm.id, 'aal1', `=(select count(*) from public.audit_log)`),
+      asA('audit_read_customer', cust.id, 'aal2', `=(select count(*) from public.audit_log)`),
       { name: 'audit_anon', sql: `perform count(*) from public.audit_log`, as: 'anon' },
-      asA('is_admin_aal2_ok', adm.id, 'aal2', `?(select private.is_admin())`),
-      asA('is_admin_aal1', adm.id, 'aal1', `?(not (select private.is_admin()))`),
-      asA('is_admin_customer', cust.id, 'aal2', `?(not (select private.is_admin()))`),
-      asA('unpublished_admin_aal2_ok', adm.id, 'aal2', `?(select count(*) = 1 from public.price_versions where version = 9995)`),
-      asA('unpublished_admin_aal1', adm.id, 'aal1', `?(select count(*) = 0 from public.price_versions where version = 9995)`),
-      { name: 'unpublished_anon', sql: `?(select count(*) = 0 from public.price_versions where version = 9995)`, as: 'anon' },
+      asA('is_admin_aal2_ok', adm.id, 'aal2', `=(select private.is_admin())`),
+      asA('is_admin_aal1', adm.id, 'aal1', `=(select private.is_admin())`),
+      asA('is_admin_customer', cust.id, 'aal2', `=(select private.is_admin())`),
+      asA('unpublished_admin_aal2_ok', adm.id, 'aal2', `=(select count(*) from public.price_versions where version = 9995)`),
+      asA('unpublished_admin_aal1', adm.id, 'aal1', `=(select count(*) from public.price_versions where version = 9995)`),
+      { name: 'unpublished_anon', sql: `=(select count(*) from public.price_versions where version = 9995)`, as: 'anon' },
       { name: 'published_anon_ok', sql: `?(select count(*) = 1 from public.price_versions where version = 1)`, as: 'anon' },
       asA('profiles_admin_aal2_ok', adm.id, 'aal2', `?(select count(*) > 1 from public.profiles)`),
-      asA('profiles_admin_aal1', adm.id, 'aal1', `?(select count(*) = 1 from public.profiles)`),
-      svc('profile_id_swap', `update public.profiles set id = '${NIL}' where id = '${cust.id}'`),
+      asA('profiles_admin_aal1', adm.id, 'aal1', `=(select count(*) from public.profiles)`),
+      svc('profile_id_swap', `update public.profiles set id = '${SPARE1}' where id = '${SPARE3}'`),
       svc('role_update', `update public.profiles set role = 'admin' where id = '${cust.id}'`),
-      svc('role_insert', `insert into public.profiles (id, role) values ('${cust.id}', 'admin')`),
+      { name: 'role_after_update', sql: `=(select role::text from public.profiles where id = '${cust.id}')` },
+      svc('role_insert', `insert into public.profiles (id, role) values ('${SPARE2}', 'admin')`),
       svc('name_update_ok', `update public.profiles set display_name = 'Test' where id = '${cust.id}'`),
       { name: 'grant_not_found', sql: `perform public.admin_grant_role('${NIL}', 'admin')` },
       { name: 'grant_ok', sql: `perform public.admin_grant_role('${cust.id}', 'rental_provider')` },
@@ -309,20 +322,21 @@ describe('audit_log, Rollen, aal2-Admin', () => {
       config_truncate_owner: 'P0001: append_only',
       audit_insert_ok: 'ok',
       audit_read_aal2_ok: 'ok',
-      audit_read_aal1: 'ok',
-      audit_read_customer: 'ok',
+      audit_read_aal1: '= 0',
+      audit_read_customer: '= 0',
       audit_anon: '42501: permission denied for table audit_log',
-      is_admin_aal2_ok: 'ok',
-      is_admin_aal1: 'ok',
-      is_admin_customer: 'ok',
-      unpublished_admin_aal2_ok: 'ok',
-      unpublished_admin_aal1: 'ok',
-      unpublished_anon: 'ok',
+      is_admin_aal2_ok: '= true',
+      is_admin_aal1: '= false',
+      is_admin_customer: '= false',
+      unpublished_admin_aal2_ok: '= 1',
+      unpublished_admin_aal1: '= 0',
+      unpublished_anon: '= 0',
       published_anon_ok: 'ok',
       profiles_admin_aal2_ok: 'ok',
-      profiles_admin_aal1: 'ok',
+      profiles_admin_aal1: '= 1',
       profile_id_swap: 'P0001: field_immutable',
       role_update: 'P0001: field_immutable',
+      role_after_update: '= customer',
       role_insert: 'P0001: field_immutable',
       name_update_ok: 'ok',
       grant_not_found: 'P0001: not_found',

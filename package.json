@@ -50,6 +50,7 @@
     "shots": "playwright test --project=shots-390-light --project=shots-390-dark",
     "shots:all": "playwright test tests/shots",
     "env:check": "dotenv -e .env.local -- node scripts/env-check.mjs",
+    "scan:proof": "dotenv -e .env.local -- node scripts/scan-proof.mjs",
     "svg:extract": "node scripts/extract-svg.mjs",
     "fixtures:pricing": "node scripts/gen-golden.mjs",
     "geo:import": "dotenv -e .env.local -- node scripts/import-boundaries.mjs",

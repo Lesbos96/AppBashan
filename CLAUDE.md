@@ -60,6 +60,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und alle Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
+- Abschlussberichte jedes Schritts nach `docs/proof/<schritt>/`, vorher Secret-Scan (`npm run scan:proof`, Exit 0 nötig); `tmp/proof/` bleibt Arbeitsordner.
 
 ## Ausgaben
 - Befehlsausgaben nur bei Fehlern im Wortlaut zeigen, sonst nur „bestanden".
