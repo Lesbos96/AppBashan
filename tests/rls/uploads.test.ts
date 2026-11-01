@@ -3,6 +3,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { deletePhoto, uploadPhoto } from '../../src/lib/uploads.ts'
 import type { Photo } from '../../src/lib/photos.ts'
+import { vaultMissing } from '../support/cleanup.ts'
 import { anon, deleteUsers, makeUser, must, service, type TestUser } from '../support/db.ts'
 
 const BUCKET = 'request-photos'
@@ -225,7 +226,8 @@ describe('Aufräumen', () => {
   // Ohne Vault-Einträge scheitert photo_cleanup (Migration 0014): klare Meldung statt unverständlichem Fehler, nie überspringen.
   beforeAll(async () => {
     const { error } = await service.rpc('photo_cleanup')
-    if (error?.message.includes('nicht eingerichtet')) throw new Error('Vault-Secrets fehlen – npm run setup:photo-cleanup ausführen')
+    const missing = vaultMissing(error)
+    if (missing) throw missing
   })
 
   it('Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar', async () => {
