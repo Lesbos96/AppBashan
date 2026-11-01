@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string
+          at: string
+          detail: Json
+          entity: string
+          entity_id: string | null
+          id: number
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role: string
+          at?: string
+          detail?: Json
+          entity: string
+          entity_id?: string | null
+          id?: never
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string
+          at?: string
+          detail?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: never
+        }
+        Relationships: []
+      }
       fee_splits: {
         Row: {
           created_at: string
@@ -125,6 +158,7 @@ export type Database = {
       platform_settings: {
         Row: {
           created_at: string
+          effective_from: string
           key: string
           note: string | null
           value: number
@@ -132,6 +166,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          effective_from: string
           key: string
           note?: string | null
           value: number
@@ -139,6 +174,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          effective_from?: string
           key?: string
           note?: string | null
           value?: number
@@ -193,21 +229,30 @@ export type Database = {
       }
       price_versions: {
         Row: {
+          content_hash: string | null
           created_at: string
           effective_on: string
           note: string | null
+          published: boolean
+          published_at: string | null
           version: number
         }
         Insert: {
+          content_hash?: string | null
           created_at?: string
           effective_on: string
           note?: string | null
+          published?: boolean
+          published_at?: string | null
           version: number
         }
         Update: {
+          content_hash?: string | null
           created_at?: string
           effective_on?: string
           note?: string | null
+          published?: boolean
+          published_at?: string | null
           version?: number
         }
         Relationships: []
@@ -578,7 +623,9 @@ export type Database = {
       current_fee_rates: {
         Row: {
           fee_rate: number | null
+          fee_rate_from: string | null
           fee_vat_rate: number | null
+          fee_vat_rate_from: string | null
         }
         Relationships: []
       }
@@ -591,16 +638,60 @@ export type Database = {
       }
     }
     Functions: {
+      admin_create_price_version: {
+        Args: {
+          p_actor: string
+          p_effective_on: string
+          p_note?: string
+          p_version: number
+        }
+        Returns: undefined
+      }
+      admin_grant_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user: string
+        }
+        Returns: undefined
+      }
+      admin_set_price_config: {
+        Args: {
+          p_actor: string
+          p_key: string
+          p_label: string
+          p_researched_at?: string
+          p_sources?: Json
+          p_unit: string
+          p_value: number
+          p_version: number
+        }
+        Returns: undefined
+      }
+      admin_set_setting: {
+        Args: {
+          p_actor: string
+          p_effective_from: string
+          p_key: string
+          p_note?: string
+          p_value: number
+        }
+        Returns: undefined
+      }
       become_rental_provider: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      booking_terms: { Args: never; Returns: Json }
       photo_cleanup: { Args: never; Returns: undefined }
       photo_orphans: {
         Args: never
         Returns: {
           name: string
         }[]
+      }
+      publish_version: {
+        Args: { p_actor: string; p_version: number }
+        Returns: string
       }
       quote_save_booking: {
         Args: {
@@ -687,6 +778,7 @@ export type Database = {
         }[]
       }
       take_rate_tokens: { Args: { checks: Json }; Returns: boolean }
+      verify_price_version: { Args: { p_version: number }; Returns: undefined }
     }
     Enums: {
       offer_status: "pending" | "approved" | "archived"

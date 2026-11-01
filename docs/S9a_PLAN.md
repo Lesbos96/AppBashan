@@ -167,4 +167,4 @@ Reihenfolge ist eine Kette (Konzept 13); der Kundenflow bleibt nach jedem Teil b
 
 ## 9. Offen
 
-Nach Runde 2 gibt es keine weitere Runde. Verbleibende Findings mittel/niedrig stehen mit Einstufung und Teilschritt-Zuordnung (S9a-1 bis S9a-4) in `tmp/proof/s9a-plan-abnahme-runde2.md`; die zuständige Session arbeitet sie vor ihrer Plan-Freigabe ein. Der Plan ändert sich nach der letzten Abnahme nicht mehr (Abnahmestand = Commit-Stand).
+Nach Runde 2 gibt es keine weitere Runde. Verbleibende Findings mittel/niedrig stehen mit Einstufung und Teilschritt-Zuordnung (S9a-1 bis S9a-4) in `docs/OPEN_ISSUES.md`; die zuständige Session arbeitet sie vor ihrer Plan-Freigabe ein. Der Plan ändert sich nach der letzten Abnahme nicht mehr (Abnahmestand = Commit-Stand).

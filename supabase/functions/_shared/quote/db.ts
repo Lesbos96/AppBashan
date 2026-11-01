@@ -38,6 +38,9 @@ export function quoteDb(db: Db): DbDeps {
     async loadPricing() {
       const { version } = must(await db.from('current_price_version').select('version').single())
       if (version === null) throw new Error('keine gültige Tarifversion')
+      // Hash der Version vor dem Rechnen prüfen: bei Abweichung Abbruch (500), nichts wird gespeichert.
+      const verified = await db.rpc('verify_price_version', { p_version: version })
+      if (verified.error) throw verified.error
       const rows = must(await db.from('price_config').select('key, value, unit').eq('version', version))
       return { version, rows }
     },

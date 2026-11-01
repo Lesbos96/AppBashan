@@ -3,11 +3,13 @@
 -- Geldwerte in Cent. Das Preismodul rechnet value / 100 in Euro, wie der Prototyp.
 
 insert into public.price_versions (version, effective_on, note)
-values (1, '2026-10-28', 'Recherche 28.10.2026')
-on conflict (version) do update set effective_on = excluded.effective_on, note = excluded.note;
+select v.version, v.effective_on::date, v.note
+from (values (1, '2026-10-28', 'Recherche 28.10.2026')) as v(version, effective_on, note)
+where not exists (select 1 from public.price_versions p where p.version = v.version);
 
 insert into public.price_config (version, key, value, unit, label, sources, researched_at)
-values
+select v.version, v.key, v.value, v.unit, v.label, v.sources::jsonb, v.researched_at::date
+from (values
   (1, 'team_rate.1', 4800, 'cent/h', 'Team 1 Person mit Fahrzeug, je Stunde',
     '[{"label": "Extraumzug · 48 €/h brutto", "url": "https://www.extraumzug.at/preisliste"}]', '2026-10-28'),
   (1, 'team_rate.2', 5575, 'cent/h', 'Team 2 Personen mit LKW, je Stunde · (42 + 50 + 59 + 72) / 4',
@@ -74,16 +76,44 @@ values
       {"label": "FunCar · Klassenpreise", "url": "https://www.funcar.at/transporter-mieten/"},
       {"label": "MietVan · Schutzpakete", "url": "https://mietvan.at/preisliste-transporter/"},
       {"label": "SIXT · Preisbestandteile als Referenz", "url": "https://www.sixt.at/help-center/sections/preise-gebuhren-und-schutzpakete/"}]', '2026-10-28')
-on conflict (version, key) do update set
-  value = excluded.value, unit = excluded.unit, label = excluded.label,
-  sources = excluded.sources, researched_at = excluded.researched_at;
+) as v(version, key, value, unit, label, sources, researched_at)
+where not exists (select 1 from public.price_config c where c.version = v.version and c.key = v.key);
 
--- Nicht öffentlich: nur rental_provider und admin lesen.
-insert into public.platform_settings (key, version, value, note)
-values
-  ('fee_rate', 1, 0.15, 'Plattformgebühr inkl. USt., Anteil am Gesamtpreis'),
-  ('fee_vat_rate', 1, 0.20, 'USt.-Satz, der in der Plattformgebühr enthalten ist')
-on conflict (key, version) do update set value = excluded.value, note = excluded.note;
+-- Nicht öffentlich: nur rental_provider und admin (aal2) lesen.
+insert into public.platform_settings (key, version, value, note, effective_from)
+select v.key, v.version, v.value, v.note, v.effective_from::date
+from (values
+  ('fee_rate', 1, 0.15, 'Plattformgebühr inkl. USt., Anteil am Gesamtpreis', '2026-10-28'),
+  ('fee_vat_rate', 1, 0.20, 'USt.-Satz, der in der Plattformgebühr enthalten ist', '2026-10-28'),
+  ('fee_notice_days', 1, 30, 'Vorlauf für Änderungen der Gebührenschlüssel in Tagen', '2026-10-28'),
+  ('price_hold_minutes', 1, 30, 'Haltefenster für den alten Preis', '2026-10-28'),
+  ('accept_max_hours', 1, 24, 'Annahmefrist, Obergrenze in Stunden', '2026-10-28'),
+  ('accept_min_hours', 1, 2, 'Annahmefrist, Untergrenze in Stunden', '2026-10-28'),
+  ('accept_lead_share_percent', 1, 50, 'Annahmefrist, Anteil der Vorlaufzeit in Prozent', '2026-10-28'),
+  ('offer_valid_hours', 1, 48, 'Gültigkeit eines Festangebots in Stunden', '2026-10-28'),
+  ('offers_open_max', 1, 3, 'Offene Festangebote je Anfrage', '2026-10-28'),
+  ('change_valid_hours', 1, 2, 'Gültigkeit eines Nachtrags in Stunden', '2026-10-28'),
+  ('partner_access_days', 1, 30, 'Zugriff des Partners auf Kontakt und Fotos nach Abschluss in Tagen', '2026-10-28'),
+  ('completion_days', 1, 7, 'Antwortfrist des Kunden nach dem Termin in Tagen', '2026-10-28'),
+  ('reissue_min_hours', 1, 24, 'Mindestabstand zum Termin für die Neuverteilung in Stunden', '2026-10-28'),
+  ('cancel_free_hours', 1, 48, 'Storno des Kunden kostenlos bis so viele Stunden vor dem Termin', '2026-10-28'),
+  ('cancel_late_percent', 1, 50, 'Storno danach: Prozent des Gesamtpreises', '2026-10-28'),
+  ('cancel_full_percent', 1, 100, 'Storno ab dem Termintag: Prozent des Gesamtpreises', '2026-10-28'),
+  ('cancel_full_days_before', 1, 0, 'Kalendertage vor dem Termin, ab denen cancel_full_percent gilt', '2026-10-28'),
+  ('call_out_fee_cents', 1, 6900, 'Anfahrtspauschale in Cent (vorläufig)', '2026-10-28'),
+  ('offer_max_cents', 1, 800000, 'Obergrenze eines Festangebots ohne Spanne in Cent', '2026-10-28'),
+  ('partner_open_jobs_max', 1, 5, 'Offene angenommene Aufträge je Partner', '2026-10-28'),
+  ('partner_cancel_review_count', 1, 3, 'Prüfung ab so vielen Partner-Stornos', '2026-10-28'),
+  ('partner_cancel_review_days', 1, 30, 'Zeitraum der Partner-Storno-Prüfung in Tagen', '2026-10-28'),
+  ('photo_staging_hours', 1, 24, 'Aufräumfrist für Fotos im Staging-Pfad in Stunden', '2026-10-28'),
+  ('window_start_morning', 1, 480, 'Beginn Vormittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
+  ('window_start_midday', 1, 660, 'Beginn Mittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
+  ('window_start_afternoon', 1, 840, 'Beginn Nachmittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
+  ('window_start_flexible', 1, 480, 'Beginn Flexibel, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28')
+) as v(key, version, value, note, effective_from)
+where not exists (select 1 from public.platform_settings s where s.key = v.key and s.version = v.version);
+
+select private.publish_seed_version(1);
 
 -- Demo-Mietangebote aus sampleOffers (Prototyp Zeile 26). Ohne Vermieter-Konto, als Demo markiert.
 insert into public.rental_offers (

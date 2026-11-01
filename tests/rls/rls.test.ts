@@ -4,6 +4,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
+import { asUser, ownerGrantRole } from '../support/owner.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -104,10 +105,10 @@ beforeAll(async () => {
   otherProvider = await makeUser('vermieter-2')
   admin = await makeUser('admin')
 
-  // Vermieter-Rolle über den vorgesehenen Weg, admin nur über die Service-Role (Dashboard).
+  // Vermieter-Rolle über den vorgesehenen Weg, admin nur über Eigentümer-SQL (admin_grant_role).
   expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
   expect(must(await otherProvider.db.rpc('become_rental_provider'))).toBe('rental_provider')
-  must(await service.from('profiles').update({ role: 'admin' }).eq('id', admin.id).select())
+  ownerGrantRole(admin.id, 'admin')
 
   requestA = must(await service.from('service_requests').insert(requestRow(a.id)).select('id').single()).id
   requestB = must(await service.from('service_requests').insert(requestRow(b.id)).select('id').single()).id
@@ -374,14 +375,17 @@ describe('Gebühren', () => {
   })
 
   it('Vermieter ändert den Satz nicht', async () => {
-    expect((await provider.db.from('platform_settings').insert({ key: 'fee_rate', version: 99, value: 0 })).error).not.toBeNull()
+    expect((await provider.db.from('platform_settings').insert({ key: 'fee_rate', version: 99, value: 0, effective_from: '2999-01-01' })).error?.code).toBe('42501')
     const result = await provider.db.from('platform_settings').update({ value: 0 }).eq('key', 'fee_rate').select()
-    expect(result.data ?? []).toEqual([])
+    expect(result.error?.code).toBe('42501')
     expect(must(await service.from('platform_settings').select('value').eq('key', 'fee_rate').eq('version', 1).single()).value).toBe(0.15)
   })
 
-  it('admin liest alle Aufteilungen', async () => {
-    expect(must(await admin.db.from('fee_splits').select('id')).length).toBeGreaterThanOrEqual(2)
+  it('admin liest Aufteilungen nur mit aal2', async () => {
+    // Anmeldung per Passwort ist aal1: nichts. Positivkontrolle mit gesetztem Claim aal2 (Eigentümer-SQL).
+    expect(must(await admin.db.from('fee_splits').select('id'))).toEqual([])
+    expect(Number(asUser(admin.id, 'aal1', 'select count(*)::int as n from public.fee_splits')[0]!.n)).toBe(0)
+    expect(Number(asUser(admin.id, 'aal2', 'select count(*)::int as n from public.fee_splits')[0]!.n)).toBeGreaterThanOrEqual(2)
   })
 
   it('niemand außer dem Server schreibt Aufteilungen', async () => {
@@ -390,42 +394,44 @@ describe('Gebühren', () => {
       fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, price_version: 1,
     }
     expect((await provider.db.from('fee_splits').insert(row)).error).not.toBeNull()
-    expect((await admin.db.from('fee_splits').insert(row)).error).not.toBeNull()
+    expect((await admin.db.from('fee_splits').insert(row)).error?.code).toBe('42501')
   })
 })
 
 describe('price_config', () => {
-  // Eigener Testschlüssel, damit echte Tarife im Dev-Projekt nie verändert werden.
+  // Eigener Testschlüssel in der unveröffentlichten Testversion, damit echte Tarife im Dev-Projekt nie verändert werden.
   const row = () => ({ version: testVersion, key: testKey, value: 100, unit: 'cent', label: 'RLS-Test' })
+  const args = (value: number, actor = admin.id) => ({
+    p_actor: actor, p_version: testVersion, p_key: testKey, p_value: value, p_unit: 'cent', p_label: 'RLS-Test',
+  })
   const stored = async () => must(await service.from('price_config').select('value').eq('version', testVersion).eq('key', testKey))
 
-  it('Kunde, Vermieter und anon legen nichts an', async () => {
-    for (const db of [a.db, provider.db, anon]) {
-      expect((await db.from('price_config').insert(row())).error).not.toBeNull()
+  it('Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501)', async () => {
+    for (const db of [a.db, provider.db, anon, admin.db]) {
+      expect((await db.from('price_config').insert(row())).error?.code).toBe('42501')
+      expect((await db.from('price_config').update({ value: 1 }).eq('version', testVersion)).error?.code).toBe('42501')
+      expect((await db.from('price_config').delete().eq('version', testVersion)).error?.code).toBe('42501')
     }
     expect(await stored()).toEqual([])
   })
 
-  it('nur admin legt an, ändert und löscht', async () => {
-    must(await admin.db.from('price_config').insert(row()).select())
-    for (const db of [a.db, provider.db]) {
-      expect((await db.from('price_config').update({ value: 1 }).eq('version', testVersion).eq('key', testKey).select()).data ?? []).toEqual([])
-      expect((await db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select()).data ?? []).toEqual([])
-    }
-    expect((await anon.from('price_config').update({ value: 1 }).eq('version', testVersion).eq('key', testKey)).error).not.toBeNull()
+  it('nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert', async () => {
+    const denied = await service.rpc('admin_set_price_config', args(100, a.id))
+    expect(denied.error).toMatchObject({ code: '42501', message: 'not_admin' })
+    expect(await stored()).toEqual([])
+    expect((await service.rpc('admin_set_price_config', args(100))).error).toBeNull()
     expect(await stored()).toEqual([{ value: 100 }])
-    expect(must(await admin.db.from('price_config').update({ value: 101 }).eq('version', testVersion).eq('key', testKey).select('value'))).toEqual([
-      { value: 101 },
-    ])
-    expect(must(await admin.db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())).toHaveLength(1)
+    expect((await service.rpc('admin_set_price_config', args(101))).error).toBeNull()
+    expect(await stored()).toEqual([{ value: 101 }])
+    must(await service.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())
   })
 
   it('DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt', async () => {
-    expect((await admin.db.from('price_config').insert({ ...row(), value: -1 })).error?.code).toBe('23514')
-    must(await admin.db.from('price_config').insert({ ...row(), value: 0 }).select())
-    expect((await admin.db.from('price_config').update({ value: -1 }).eq('version', testVersion).eq('key', testKey)).error?.code).toBe('23514')
+    expect((await service.rpc('admin_set_price_config', args(-1))).error?.code).toBe('23514')
+    expect((await service.rpc('admin_set_price_config', args(0))).error).toBeNull()
+    expect((await service.rpc('admin_set_price_config', args(-1))).error?.code).toBe('23514')
     expect(await stored()).toEqual([{ value: 0 }])
-    must(await admin.db.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())
+    must(await service.from('price_config').delete().eq('version', testVersion).eq('key', testKey).select())
   })
 
   it('Seed: Spanne rate_low ≤ rate ≤ rate_high in der gültigen Version', async () => {
@@ -447,8 +453,8 @@ describe('price_config', () => {
 
 describe('current_price_version', () => {
   it('liefert für anon und Kunden die höchste bereits gültige Version, keine künftige', async () => {
-    const future = must(await anon.from('price_versions').select('version').eq('version', testVersion))
-    expect(future).toHaveLength(1)
+    // die Testversion ist unveröffentlicht: für anon und Kunden unsichtbar
+    expect(must(await anon.from('price_versions').select('version').eq('version', testVersion))).toHaveLength(0)
     for (const db of [anon, a.db]) {
       expect(must(await db.from('current_price_version').select('version')).map((r) => r.version)).toEqual([1])
     }

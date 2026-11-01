@@ -84,6 +84,8 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 
 ### Daten und Sicherheit
 - RLS auf jeder Tabelle. Kein `using (true)` auf personenbezogenen Daten. Views mit `security_invoker = true`. SECURITY-DEFINER-Funktionen mit festem `search_path`.
+- Skripte, die Sperren lockern oder Daten löschen, brechen ab, wenn die Ref nicht die Dev-Ref ist (`scripts/dev-guard.mjs` als erster Import).
+- Admin-Funktionen mit p_actor laufen nur über service_role aus Skripten; p_actor darf nie aus Anfragedaten stammen. Eine Admin-Function für Nutzer-JWTs muss aal2 serverseitig prüfen und p_actor aus dem geprüften Token nehmen.
 - Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `NEXT_PUBLIC_`-Präfix (Vite `envPrefix`), und davon nur URL und Publishable Key.
 - `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über dotenv-cli an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
 - Annahme, Angebot, Nachtrag und Storno laufen über Funktionen mit festem Akteur je Übergang (`docs/S9_KONZEPT.md`, Abschnitt 4.4). Kein direktes UPDATE auf Status.

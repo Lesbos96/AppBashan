@@ -49,6 +49,46 @@ Vor der Plan-Freigabe des jeweiligen Schritts in `docs/S9_KONZEPT.md` einarbeite
 | R11-6 | niedrig | S9a | „Stiege/Tür“ in `request_contacts` aufnehmen (`job_contact` folgt in S9c) |
 | R11-7 | niedrig | S9b | Partner ändern geprüfte Stammdaten selbst: Firmenname, UID, Rechtsform, `stripe_account_id` nur über Admin-Funktion, Spalten-Grant einschränken |
 
+## S9a-Plan · Offene Findings (Berater Runde 2, 2026-11-01, 0 hoch)
+Quelle: `tmp/proof/s9a-plan-abnahme-runde2.md`. Die zuständige Session arbeitet ihre Zeilen vor dem Bau ein. S9a-1 hat R2-M1, M2, M3 (Publish-Teil), M5, N1, N2, N3 und N12 in dieser Session erledigt (Stand siehe `docs/PROGRESS.md`).
+
+| Nr. | Einstufung | Teilschritt | Kurzbeschreibung |
+|---|---|---|---|
+| R2-M1 | mittel | S9a-1 | Rollen-Trigger auf `profiles.role` bricht `become_rental_provider` und das Anlegen von Test-Admins; Testsuite braucht einen Eigentümer-SQL-Weg |
+| R2-M2 | mittel | S9a-1 | Die Prüfung auf `fee_rate`/`fee_vat_rate` in 0016 darf nur bei vorhandenen Zeilen greifen; Werte aus 5.10 gehören nur in die Seeds |
+| R2-M3 | mittel | S9a-1, S9a-3 | Veröffentlichte Testversionen lassen sich nicht löschen; Hash- und Haltefenster-Tests nur als Eigentümer-SQL mit Rollback oder als reine Funktion mit Zeitparameter |
+| R2-M4 | mittel | S9a-2 | `service_role` kann eine Revision `n = 2` einfügen und den Zeiger umsetzen; INSERT-Trigger auf `price_revisions` (nur `submit`, `n = 1`) |
+| R2-M5 | mittel | S9a-1 | Idempotenz des Seeds nicht über `db:push`, sondern mit `db query -f` zweimal nachweisen; Konzept `:658` auf `where not exists` korrigieren |
+| R2-N1 | niedrig | S9a-1 | Schreib-Grants auf `platform_settings` für `authenticated` entziehen, sonst 0 Zeilen statt 42501 |
+| R2-N2 | niedrig | S9a-1 | Unveröffentlichte Preisversionen nicht mehr öffentlich lesbar (Select-Policies auf `published`) |
+| R2-N3 | niedrig | S9a-1 | Seed je Tabelle als ein Statement `insert … select … where not exists`, damit Testparser gültig bleiben |
+| R2-N4 | niedrig | S9a-2 (bzw. S9a-3) | `termin_at`, `accept_deadline`, `too_late` und `setting_missing` gemeinsam in einen Teil legen |
+| R2-N5 | niedrig | S9a-2 | Enum-Tausch: Checks und Default vor `alter column … type` entfernen |
+| R2-N6 | niedrig | S9a-2 | `revoke update` nur für `authenticated`; Status-Trigger prüft nur bei Statusänderung |
+| R2-N7 | niedrig | S9a-2 | `status_events`: Schreibrechte auch für `service_role` entziehen, Trigger-Funktion SECURITY DEFINER |
+| R2-N8 | niedrig | S9a-2 | Status in der DB aus `total/low/high` der Revision ableiten oder per Trigger prüfen |
+| R2-N9 | niedrig | S9a-2 | Fehlende Testanpassungen: Entrümpelung ohne `totalCents`, alte RPC-Signaturen, 23514-Check per `service_role` |
+| R2-N10 | niedrig | S9a-2 | RLS-Tabelle enger als Matrix 6 (admin auf `price_revisions`, Kunde auf `status_events`): als bewusste Abweichung bis S9i vermerken |
+| R2-N11 | niedrig | S9a-3 | Festpreis bei `low = high` centgenau statt „ca.“ anzeigen, `shownTotalCents` = `total`, E2E-Fall Mindestpreis |
+| R2-N12 | niedrig | S9a-1 bis S9a-4 | Append-only-Tabellen sammeln Testzeilen: Ausnahme benennen, Testzeilen mit Lauf-Kennung markieren |
+| R2-N13 | niedrig | S9a-3 | Rot-Beweis per Redeploy: danach aus dem Git-Stand neu deployen, Tests erneut grün, Ergebnis in `s9a3-redproof.json` |
+
+## S9a-1 · Abnahme (Berater `tmp/proof/s9a1-abnahme.md`, 0 hoch)
+| Nr. | Einstufung | Teilschritt | Kurzbeschreibung |
+|---|---|---|---|
+| A1-M1 | mittel | S9a-2 | Rot-Beweis „Marker-Prüfung“ rot aus falschem Grund (Schema `private` für service_role); Probe als Eigentümer ergänzen, `isRed` gegen Schritt und Ist-Wert prüfen |
+| A1-M2 | mittel | S9a-2 | aal1/aal2-Proben und Lockerungen fehlen für `service_requests`, `request_photos`, `rental_offers`, `rental_bookings`, Storage, `platform_settings`, `price_config_select_admin` |
+| A1-M3 | mittel | Beginn S9a-2 | dev-guard fehlt in `tests/support/db.ts`/`owner.ts` (oder vitest globalSetup) und `live-*.mjs`; Kindprozesse des Rot-Beweises ohne eigenes `.env.local` starten; Regel in CLAUDE.md um DB-Testläufe ergänzen |
+| A1-N1 | niedrig | S9a-2 | Rot-Beweis: Restore-SQL vor `apply` in Datei sichern, Wiederholungsversuch |
+| A1-N2 | niedrig | S9a-2 | Lockerung `publish_version` mit nie angelegter Version (z. B. 9990) testen statt 9998 |
+| A1-N3 | niedrig | S9a-2 | Eigene Lockerungen für `assert_admin`, INSERT-Zweig `guard_price_version`, TRUNCATE-Revoke `platform_settings`, `booking_terms` ohne `fee_*` |
+| A1-N4 | niedrig | S9a-2 | `S9_KONZEPT.md:270` und `S9a_PLAN.md:68` beschreiben den alten Hash; jetzt sha256 über jsonb (Version, `effective_on`, key/value/unit/label/sources/researched_at) |
+| A1-N5 | niedrig | S9a-2 | `s9a1-verify.mjs` vergleicht nur key/value/unit mit `seed.sql`, nicht label/sources/researched_at |
+| A1-N6 | niedrig | vor Livegang | GOLIVE Schritt 6: `node scripts/s9a1-verify.mjs` (Veröffentlichung, Hash, 27 Einstellungen) als Prüfweg ergänzen |
+| A1-N7 | niedrig | S9a-2 | Zeilen 8, 14, 36 dieser Datei veraltet (Seed überschreibt nichts mehr, Umbenennungstest entfernt) |
+| A1-N8 | niedrig | S9a-2 | Plan-Abweichungen vermerken: Berichtsname `s9a1-rotbeweis.md` statt `.json`, Seed per `db query -f`, Unit-Test `termin_at` entfällt bis S9a-3 |
+| A1-N9 | niedrig | S9a-2 | `admin_grant_role` schreibt `actor_role = 'owner'` auch bei API-Aufruf (Rot-Beweis hinterließ eine Journalzeile); `become_rental_provider` ohne Journalzeile; Testzeilen ohne Lauf-Kennung |
+
 ## UI
 - **S6 · Farben im Code:** Kacheln der Zusatzleistungen (`#2B8C88`, `#3A7F9A`, `#B39A68`) und der Kartenhintergrund (`#E8EEED`, `#0F272B`) stehen direkt im Code, wie schon in `Profil.tsx`; als Tokens in `theme.css` nachziehen.
 - **S6 · Segmented Control:** Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per `::before` auf 44 px (ersetzt den Punkt aus S3b).

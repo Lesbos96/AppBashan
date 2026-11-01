@@ -176,18 +176,12 @@ describe('Anfrage anlegen (echte DB)', () => {
     expect(other.body.id).not.toBe(x.body.id)
   })
 
-  it('ohne Token 401, mit fremdem Format 400, ohne Gebührensatz 500 ohne Schreiben', async () => {
+  it('ohne Token 401, mit fremdem Format 400 ohne Schreiben', async () => {
     expect((await call(null, moveCall())).status).toBe(401)
-    expect((await call(a, { service: 'move' })).status).toBe(400)
     const before = must(await service.from('service_requests').select('id').eq('customer_id', a.id)).length
-    // Schlüssel vorübergehend umbenennen (Dev-Projekt, wie die Grenz-Tests in route.test.ts)
-    must(await service.from('platform_settings').update({ key: `fee_vat_rate_${run}` }).eq('key', 'fee_vat_rate').select())
-    try {
-      expect(await call(a, clearanceCall())).toMatchObject({ status: 500, body: { error: 'fee_rates_missing' } })
-    } finally {
-      must(await service.from('platform_settings').update({ key: 'fee_vat_rate' }).eq('key', `fee_vat_rate_${run}`).select())
-    }
+    expect((await call(a, { service: 'move' })).status).toBe(400)
     expect(must(await service.from('service_requests').select('id').eq('customer_id', a.id))).toHaveLength(before)
+    // fehlender Gebührensatz (500 fee_rates_missing): Unit-Test tests/unit/quote.test.ts, die Sätze sind in der DB unveränderlich
   })
 })
 
@@ -305,8 +299,8 @@ describe('Rechte (Verweigerung exakt, Positivkontrolle)', () => {
   })
 
   it('Gebührensatz: Kunde sieht nur NULL, Vermieter den Satz, anon verweigert', async () => {
-    expect(must(await a.db.from('current_fee_rates').select('*').single())).toEqual({ fee_rate: null, fee_vat_rate: null })
-    expect(must(await landlord.db.from('current_fee_rates').select('*').single())).toEqual({ fee_rate: 0.15, fee_vat_rate: 0.2 })
+    expect(must(await a.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null, fee_vat_rate: null })
+    expect(must(await landlord.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: 0.15, fee_vat_rate: 0.2, fee_rate_from: '2026-10-28' })
     expect((await anon.from('current_fee_rates').select('*')).error?.code).toBe(DENIED)
   })
 

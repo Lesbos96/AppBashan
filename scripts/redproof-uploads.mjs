@@ -1,6 +1,7 @@
 // Rot-Beweis (nur Dev-Projekt): lockert die Foto-Policies, lässt die Verweigerungstests laufen (müssen rot werden) und stellt
 // die Policies im finally wieder her. Beleg: die Policy-Definitionen vorher und nachher sind identisch.
 // Start: npx dotenv -e .env.local -- node scripts/redproof-uploads.mjs | tee tmp/proof/s8b3-redproof.log
+import './dev-guard.mjs'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
@@ -40,7 +41,7 @@ try {
 }
 
 function restore() {
-  sql(`alter policy request_photos_objects_select on storage.objects using (bucket_id = 'request-photos' and ((storage.foldername(name))[1] = (select auth.uid())::text or (select private.my_role()) = 'admin'));`)
+  sql(`alter policy request_photos_objects_select on storage.objects using (bucket_id = 'request-photos' and ((storage.foldername(name))[1] = (select auth.uid())::text or (select private.is_admin())));`)
   sql(`alter policy request_photos_objects_insert on storage.objects with check (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text and exists (select 1 from public.request_photos p join public.service_requests r on r.id = p.request_id where p.storage_path = name and r.customer_id = (select auth.uid()) and r.status in ('requested', 'inspection_requested')));`)
   sql(`alter policy request_photos_objects_delete on storage.objects using (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text and exists (select 1 from public.service_requests r where r.id::text = (storage.foldername(name))[2] and r.customer_id = (select auth.uid()) and r.status in ('requested', 'inspection_requested')));`)
   sql(`alter policy request_photos_insert on public.request_photos with check (exists (select 1 from public.service_requests r where r.id = request_id and r.customer_id = (select auth.uid()) and r.status in ('requested', 'inspection_requested')) and starts_with(storage_path, (select auth.uid())::text || '/' || request_id::text || '/'));`)
