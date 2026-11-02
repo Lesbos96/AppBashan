@@ -5,7 +5,7 @@ const invoke = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
 
 const { attemptKey, draftKeys, purgeHandover, readSent, readShown, rememberShown, shownKey, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
-const { QuoteError, buildBody, parseSnapshot, priceLabel, refFor, sendQuote } = await import('../../src/lib/quote')
+const { QuoteError, buildBody, parseSnapshot, priceLabel, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
 
 const store = () => {
   const map = new Map<string, string>()
@@ -142,6 +142,33 @@ describe('buildBody', () => {
     montageDraft()
     session.setItem('movenow.termin.montage', JSON.stringify({ date: null, window: 'morning', place: 'x y z', point: null, consent: false }))
     expect(buildBody('montage', tariffs, confirmed)).toBeNull()
+  })
+
+  it('ohne gemerkten Preis kein Aufruf: shown wird nie beim Senden neu gerechnet', () => {
+    montageDraft()
+    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toBeNull()
+  })
+
+  it('ohne bestätigten Preis geht der gemerkte Preis als shown mit', () => {
+    montageDraft()
+    const stored = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
+    rememberShown('montage', 77040, stored)
+    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toMatchObject({ shown: stored })
+  })
+
+  it('Anzeige: Festpreis mit Cent, Spanne in ganzen Euro, Angebot als „Preis nach Prüfung“', () => {
+    expect(shownLabel({ kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 })).toBe('689,61 €')
+    expect(shownLabel({ kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })).toBe('950 € bis 1.550 €')
+    expect(shownLabel({ kind: 'offer', reasons: ['special_case'] })).toBe('Preis nach Prüfung')
+  })
+
+  it('Bedingungen in Worten aus den Werten des Hashes', () => {
+    const terms = { cancel_free_hours: 48, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 0, call_out_fee_cents: 2500, termsHash: 'a'.repeat(64) }
+    expect(termsText(terms)).toEqual({
+      storno: ['Kostenlos stornieren kannst du bis 48 Stunden vor dem Termin.', 'Danach werden 50 % des Preises berechnet, ab dem Tag des Termins 100 %.'],
+      callOutCents: 2500,
+    })
+    expect(termsText({ ...terms, cancel_full_days_before: 2, call_out_fee_cents: 0 })).toMatchObject({ storno: [expect.any(String), 'Danach werden 50 % des Preises berechnet, ab 2 Tagen vor dem Termin 100 %.'], callOutCents: 0 })
   })
 
   it('Umzug: Koordinaten nur wenn bestätigt, die gespeicherte Route geht nie mit', () => {

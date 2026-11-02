@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
-import { anonymousPrices, answer, cors, mockQuote, pickDate, price, range, type Reply } from '../e2e/anfrage-helpers'
+import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price, range, toSummary, type Reply } from '../e2e/anfrage-helpers'
 import { mockPhotos, sendWithPhotos, storageError } from '../e2e/fotos-helpers'
-import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress } from '../e2e/konfigurator-helpers'
+import { addPhotos, fillUmzugBeispiel, mockRoute, setAddress, setTerminAddress } from '../e2e/konfigurator-helpers'
 
 // Der Browser meldet gemockte Fehlerantworten selbst als Konsolenfehler; die App fängt sie ab.
 const failed = /status of 4\d\d|ERR_FAILED/
@@ -259,12 +259,6 @@ const day15 = (() => {
   return d.toISOString().slice(0, 10)
 })()
 
-const montageDraft = (page: Page) =>
-  page.evaluate((date) => {
-    sessionStorage.setItem('movenow.flow.montage', JSON.stringify({ draft: { kind: 'kitchen', lm: 3.2, upper: 2.4, tall: 0.6 } }))
-    sessionStorage.setItem('movenow.termin.montage', JSON.stringify({ date, window: 'morning', place: 'Neubaugasse 12, 1070 Wien' }))
-  }, day15)
-
 /** Zusammenfassung der Montage-Küche, angemeldet; `reply` ist die Antwort von `quote`, `send` tippt auf „Anfrage senden“. */
 const summary = (reply?: Reply, send = true) => async (page: Page) => {
   await anonymousPrices(page)
@@ -272,8 +266,7 @@ const summary = (reply?: Reply, send = true) => async (page: Page) => {
   await mockQuote(page, () => reply ?? { json: answer(price(77040)) })
   await page.goto('/anmelden')
   await signInWithCode(page)
-  await montageDraft(page)
-  await page.goto('/montage/zusammenfassung')
+  await toSummary(page)
   await page.getByRole('checkbox').check()
   if (send) await page.getByRole('button', { name: 'Anfrage senden' }).click()
 }
@@ -283,7 +276,8 @@ const umzugDraft = (page: Page) =>
   page.evaluate((date) => {
     const place = (label: string) => ({ label, point: null })
     sessionStorage.setItem('movenow.flow.move', JSON.stringify({ goods: 'normal', description: '', volume: 12, crew: 3, vehicles: 1, vehicleType: 'van', fromFloor: 3, toFloor: 1, fromLift: true, toLift: false, from: place('Neubaugasse 12, 1070 Wien'), to: place('Praterstraße 30, 1020 Wien'), routeConsent: true, returnTrip: true, route: { region: 'vienna', outsideKm: 0, driveHours: 0.3, distanceKm: 4.8, totalKm: 9.6, geometry: [[16.35, 48.2], [16.4, 48.21]] }, hours: 5, assembly: true, assemblyLm: 3, boxes: 20, parking: 1, packing: false }))
-    sessionStorage.setItem('movenow.termin.umzug', JSON.stringify({ date, window: 'flexible', place: '' }))
+    sessionStorage.setItem('movenow.termin.umzug', JSON.stringify({ date, window: 'flexible', place: '', point: null, consent: false }))
+    sessionStorage.setItem('movenow.shownfull.umzug', JSON.stringify({ kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 }))
   }, day15)
 
 const errored = /status of [45]\d\d|ERR_FAILED/
@@ -293,7 +287,7 @@ const anfrageRoutes: (typeof routes)[number][] = [
     name: 'termin-montage',
     path: '/montage/termin',
     steps: async (page) => {
-      await page.getByLabel('Adresse').fill('Neubaugasse 12, 1070 Wien')
+      await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
       await pickDate(page)
     },
   },
@@ -311,8 +305,7 @@ const anfrageRoutes: (typeof routes)[number][] = [
     path: '/montage',
     steps: async (page) => {
       await anonymousPrices(page)
-      await montageDraft(page)
-      await page.goto('/montage/zusammenfassung')
+      await toSummary(page)
       await expect(page.getByRole('button', { name: 'Anmelden und senden' })).toBeVisible()
     },
   },
@@ -327,6 +320,7 @@ const anfrageRoutes: (typeof routes)[number][] = [
       await signInWithCode(page)
       await umzugDraft(page)
       await page.goto('/umzug/zusammenfassung')
+      await fillContact(page)
       await page.getByRole('checkbox').check()
       await expect(page.getByText('Einfache Strecke')).toBeVisible()
     },
@@ -345,6 +339,9 @@ const anfrageRoutes: (typeof routes)[number][] = [
   { name: 'zusammenfassung-fehler-400', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 400, json: { error: 'invalid_input', message: 'preferredDate: x' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-fehler-429', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 429, json: { error: 'rate_limited' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-fehler-500', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 500, json: { error: 'internal' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
+  { name: 'zusammenfassung-preis-aktualisiert', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } })(page); await expect(page.getByRole('alert')).toContainText('Der Preis wurde aktualisiert.') } },
+  { name: 'zusammenfassung-bedingungen', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 409, json: { error: 'terms_changed', terms: { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) } } })(page); await expect(page.getByRole('alert')).toContainText('Bedingungen') } },
+  { name: 'zusammenfassung-ausserhalb-wien', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 422, json: { error: 'pickup_outside_vienna' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-offline', path: '/', expectedError: errored, steps: async (page) => { await summary({ abort: true })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-wird-gesendet', path: '/', steps: async (page) => { await summary({ json: answer(price(77040)), delay: 20_000 })(page); await expect(page.getByRole('button', { name: 'Wird gesendet …' })).toBeVisible() } },
   { name: 'gesendet-preis', path: '/', steps: async (page) => { await summary()(page); await expect(page.getByRole('heading', { name: 'Anfrage gesendet.' })).toBeVisible() } },

@@ -1,0 +1,338 @@
+
+Running 108 tests using 2 workers
+
+  ok   2 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › termin-montage (4.4s)
+  ok   1 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › termin-montage (4.4s)
+  ok   4 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (8.6s)
+  ok   3 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (9.2s)
+  x    5 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  x    6 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  ok   7 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.2s)
+  ok   8 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.2s)
+  ok   9 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (10.6s)
+  ok  10 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (10.1s)
+  ok  11 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.0s)
+  ok  12 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.2s)
+  ok  13 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.3s)
+  ok  14 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.2s)
+  ok  15 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (10.0s)
+  ok  16 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (10.2s)
+  ok  17 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (10.0s)
+  ok  18 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (10.0s)
+  ok  19 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (10.1s)
+  ok  20 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (10.2s)
+  ok  22 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (12.1s)
+  ok  21 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (12.8s)
+  ok  23 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.2s)
+  ok  24 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.2s)
+  ok  25 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.1s)
+  ok  26 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.2s)
+  ok  27 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.4s)
+  ok  28 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.5s)
+  ok  29 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.3s)
+  ok  30 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.3s)
+  ok  31 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.2s)
+  ok  32 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.3s)
+  ok  33 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.0s)
+  ok  34 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.1s)
+  ok  35 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (3.8s)
+  ok  36 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (3.8s)
+  ok  37 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › termin-montage (3.7s)
+  ok  38 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › termin-montage (3.7s)
+  ok  40 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (11.2s)
+  ok  39 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (12.3s)
+  x   41 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  x   42 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  ok  43 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.3s)
+  ok  44 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.3s)
+  ok  46 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (12.2s)
+  ok  45 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (12.8s)
+  ok  47 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.2s)
+  ok  48 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.1s)
+  ok  49 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.3s)
+  ok  50 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.9s)
+  ok  51 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (10.6s)
+  ok  52 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (10.3s)
+  ok  53 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (10.2s)
+  ok  54 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (10.1s)
+  ok  55 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (9.5s)
+  ok  56 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (9.6s)
+  ok  57 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (10.2s)
+  ok  58 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (10.1s)
+  ok  59 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.1s)
+  ok  60 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.1s)
+  ok  61 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.2s)
+  ok  62 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.1s)
+  ok  63 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.3s)
+  ok  64 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.2s)
+  ok  65 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.4s)
+  ok  66 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.5s)
+  ok  67 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.4s)
+  ok  68 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.5s)
+  ok  69 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.2s)
+  ok  70 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.4s)
+  ok  71 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (4.1s)
+  ok  72 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (4.1s)
+  ok  73 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › termin-montage (4.0s)
+  ok  74 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › termin-montage (4.0s)
+  ok  76 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (9.6s)
+  ok  75 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-abgemeldet (9.6s)
+  x   77 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  x   78 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (1.0m)
+  ok  79 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.5s)
+  ok  80 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-umzug (3.5s)
+  ok  82 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (10.4s)
+  ok  81 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-angemeldet (11.2s)
+  ok  83 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.7s)
+  ok  84 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-400 (10.8s)
+  ok  85 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.4s)
+  ok  86 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-429 (10.7s)
+  ok  87 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (12.6s)
+  ok  88 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-fehler-500 (11.6s)
+  ok  89 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (11.0s)
+  ok  90 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-preis-aktualisiert (11.1s)
+  ok  91 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (10.6s)
+  ok  92 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-bedingungen (10.9s)
+  ok  93 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (10.5s)
+  ok  94 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-ausserhalb-wien (10.7s)
+  ok  95 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.4s)
+  ok  96 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-offline (10.4s)
+  ok  97 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.6s)
+  ok  98 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-wird-gesendet (10.4s)
+  ok  99 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.5s)
+  ok 100 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis (10.6s)
+  ok 101 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.4s)
+  ok 102 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › gesendet-preis-aktualisiert (3.5s)
+  ok 103 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.4s)
+  ok 104 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › gesendet-spanne (3.4s)
+  ok 105 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.5s)
+  ok 106 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › gesendet-angebot (10.6s)
+  ok 107 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (4.0s)
+  ok 108 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › auftraege-liste (4.0s)
+
+
+  1) [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ───────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-light\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-light\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-light\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-light\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ────────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-dark\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-dark\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-dark\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-390-dark\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ───────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-light\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-light\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-light\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-light\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ────────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-dark\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-dark\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-dark\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-430-dark\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ──────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-light\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-light\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-light\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-light\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ───────────────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Name')
+
+
+       at e2e\anfrage-helpers.ts:62
+
+      60 | /** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+      61 | export async function fillContact(page: Page) {
+    > 62 |   await page.getByLabel('Name').fill('Anna Muster')
+         |                                 ^
+      63 |   await page.getByLabel('Telefon').fill('+43 660 1234567')
+      64 |   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
+      65 | }
+        at fillContact (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage-helpers.ts:62:33)
+        at steps (C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:322:13)
+        at C:\Users\gesch\Music\MoveNow\tests\shots\shots.spec.ts:398:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-dark\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-dark\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-dark\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\shots-shots-zusammenfassung-umzug-shots-1280-dark\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ────────────────────
+    [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ─────────────────────
+    [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ────────────────────
+    [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ─────────────────────
+    [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ───────────────────
+    [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug ────────────────────
+  102 passed (10.4m)
+EXIT=1

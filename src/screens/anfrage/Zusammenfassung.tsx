@@ -7,13 +7,13 @@ import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
-import { type Path, type Shown, finishDraft, readContact, writeContact, readShown, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
+import { type Path, type Shown, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
 import { takePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { formatEuro } from '../../lib/money'
-import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot } from '../../lib/quote'
+import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { queueUploads } from '../../lib/uploads'
@@ -189,6 +189,10 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   }, [wait])
 
   if (!summary || !termin.date) return <Navigate to={summary ? `/${path}/termin` : config.back} replace />
+  // Ohne gemerkten Preis gibt es nichts, was der Kunde bestätigen könnte: zurück zum Preis-Schritt.
+  const shownPrice = readShownFull(path)
+  if (!shownPrice) return <Navigate to={config.back} replace />
+  const storno = termsText(terms)
 
   const toLogin = () => {
     stashDraft(path)
@@ -265,6 +269,14 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
 
         {config.hasAddresses && <p className="m-0 px-4 text-subhead text-text-secondary">Die Abholung muss in Wien liegen. Abholung außerhalb Wiens ist noch nicht buchbar. Das Ziel kann in ganz Österreich liegen.</p>}
 
+        {confirmChange?.kind !== 'price_changed' && (
+          <Card className="flex flex-col gap-1 p-4">
+            <span className="text-[12.5px]/4 text-text-secondary">{shownPrice.kind === 'offer' ? 'Preis' : 'Richtpreis'}</span>
+            <strong className="text-title1 font-bold whitespace-nowrap tabular-nums">{shownLabel(shownPrice)}</strong>
+            <p className="m-0 text-footnote text-text-secondary">{shownPrice.kind === 'offer' ? 'Ein Partner erstellt dir ein persönliches Angebot.' : 'Inklusive 20 % USt. Den Endpreis bestätigt der Partner.'}</p>
+          </Card>
+        )}
+
         <section className="flex flex-col gap-2">
           <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Dein Kontakt</h2>
           <GroupedList>
@@ -275,6 +287,24 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
           </GroupedList>
           <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
         </section>
+
+        {confirmChange?.kind !== 'terms_changed' && (
+          <section className="flex flex-col gap-2">
+            <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Stornierung</h2>
+            <GroupedList>
+              {storno.storno.map((line) => (
+                <li key={line} className="px-4 py-2.5 text-subhead">
+                  {line}
+                </li>
+              ))}
+              {storno.callOutCents > 0 && (
+                <li className="px-4 py-2.5 text-subhead">
+                  Anfahrtspauschale: <span className="whitespace-nowrap tabular-nums">{formatEuro(storno.callOutCents)}</span>
+                </li>
+              )}
+            </GroupedList>
+          </section>
+        )}
 
         <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
           <input type="checkbox" checked={consent} onChange={(e) => setConsentFor(e.target.checked ? accountId : '')} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
@@ -322,10 +352,17 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
             ) : (
               <>
                 <p className="m-0 text-headline">Die Bedingungen wurden aktualisiert.</p>
-                <p className="m-0 text-body">
-                  Kostenlos stornierbar bis {String(confirmChange.conflict.terms?.['cancel_free_hours'] ?? '')} Stunden vor dem Termin. Anfahrtspauschale:{' '}
-                  <span className="whitespace-nowrap tabular-nums">{formatEuro(Number(confirmChange.conflict.terms?.['call_out_fee_cents'] ?? 0))}</span>.
-                </p>
+                {confirmChange.conflict.terms &&
+                  termsText(confirmChange.conflict.terms).storno.map((line) => (
+                    <p key={line} className="m-0 text-body">
+                      {line}
+                    </p>
+                  ))}
+                {confirmChange.conflict.terms && termsText(confirmChange.conflict.terms).callOutCents > 0 && (
+                  <p className="m-0 text-body">
+                    Anfahrtspauschale: <span className="whitespace-nowrap tabular-nums">{formatEuro(termsText(confirmChange.conflict.terms).callOutCents)}</span>
+                  </p>
+                )}
               </>
             )}
             <Button variant="tinted" onClick={acceptChange}>

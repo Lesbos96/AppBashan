@@ -1,0 +1,9 @@
+OK  current_price_version = 1 (1)
+OK  Version 1 veröffentlicht mit Hash
+OK  price_config Version 1: 28 Zeilen (erwartet 28)
+OK  seed.sql: 28 Zeilen gelesen (erwartet 28)
+OK  price_config Version 1 gleich seed.sql (key, value, unit, label, sources, researched_at)
+OK  verify_price_version(1) ohne Abweichung
+OK  platform_settings: 27 Zeilen (erwartet 27)
+OK  booking_terms liefert Werte ohne fee_*
+EXIT=0

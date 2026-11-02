@@ -1,0 +1,18 @@
+
+Running 12 tests using 2 workers
+
+  ok  2 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.5s)
+  ok  1 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.5s)
+  ok  3 [shots-390-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (4.8s)
+  ok  4 [shots-390-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (4.8s)
+  ok  5 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.2s)
+  ok  6 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.2s)
+  ok  7 [shots-430-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (4.9s)
+  ok  8 [shots-430-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (4.8s)
+  ok 10 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.4s)
+  ok  9 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › termin-umzug (3.4s)
+  ok 11 [shots-1280-light] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (5.0s)
+  ok 12 [shots-1280-dark] › tests\shots\shots.spec.ts:388:3 › zusammenfassung-umzug (5.1s)
+
+  12 passed (30.7s)
+EXIT=0

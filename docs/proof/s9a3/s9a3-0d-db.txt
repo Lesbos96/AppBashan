@@ -1,0 +1,30 @@
+## role_table_grants rental_bookings (service_role, anon, authenticated)
+{"grantee":"authenticated","privilege_type":"SELECT"}
+{"grantee":"service_role","privilege_type":"INSERT"}
+{"grantee":"service_role","privilege_type":"REFERENCES"}
+{"grantee":"service_role","privilege_type":"SELECT"}
+{"grantee":"service_role","privilege_type":"TRIGGER"}
+
+## Trigger request_delete_guard / TRUNCATE-Schutz (tgenabled: O = aktiv, D = aus)
+{"relname":"audit_log","tgenabled":"O","tgname":"append_only_truncate"}
+{"relname":"platform_settings","tgenabled":"O","tgname":"guard_platform_setting_truncate"}
+{"relname":"price_config","tgenabled":"O","tgname":"guard_price_config_truncate"}
+{"relname":"price_revisions","tgenabled":"O","tgname":"revision_immutable_truncate"}
+{"relname":"price_versions","tgenabled":"O","tgname":"guard_price_version_truncate"}
+{"relname":"service_requests","tgenabled":"O","tgname":"request_delete_guard"}
+{"relname":"service_requests","tgenabled":"O","tgname":"request_delete_guard_truncate"}
+{"relname":"status_events","tgenabled":"O","tgname":"append_only_truncate"}
+
+## Funktion private.immutable_row (Löschschutz-Trigger ruft sie auf)
+{"def":"CREATE OR REPLACE FUNCTION private.immutable_row()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nbegin\n  if tg_op = 'DELETE' and pg_trigger_depth() > 1 then\n    return old;\n  end if;\n  raise exception '%', tg_argv[0];\nend\n$function$\n","proconfig":["search_path=\"\""],"proname":"immutable_row","prosecdef":false}
+
+## Trigger-Definition request_delete_guard
+{"def":"CREATE TRIGGER request_delete_guard BEFORE DELETE ON public.service_requests FOR EACH ROW EXECUTE FUNCTION private.immutable_row('request_immutable')"}
+
+## has_function_privilege admin_grant_role (Abfrage: select r, has_function_privilege(r, public.admin_grant_role(uuid, public.user_role), execute) für anon, authenticated, service_role, postgres)
+{"can_exec":false,"r":"anon"}
+{"can_exec":false,"r":"authenticated"}
+{"can_exec":false,"r":"service_role"}
+{"can_exec":true,"r":"postgres"}
+
+EXIT=0

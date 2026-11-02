@@ -1,4 +1,4 @@
-const nbsp = ' '
+const nbsp = String.fromCharCode(160)
 
 /** Integer-Cent → "1.175,00 €" (Tausenderpunkt, Dezimalkomma, geschütztes Leerzeichen vor €). Ohne Intl, damit Node, Deno und Browser dasselbe liefern. */
 export function formatEuro(cents: number): string {

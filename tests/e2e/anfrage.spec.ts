@@ -9,8 +9,9 @@ const failed = /status of [45]\d\d|ERR_FAILED/
 const send = (page: Page) => page.getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
 
 /** Zusammenfassung mit Anmeldung über den Code-Weg; danach steht die Seite wieder auf der Zusammenfassung. */
-async function signedInSummary(page: Page) {
+async function signedInSummary(page: Page, before?: (page: Page) => Promise<void>) {
   await anonymousPrices(page)
+  await before?.(page)
   await mockAuth(page)
   await toSummary(page)
   // Die Einwilligung ist nicht vorbelegt: ohne Haken geht weder das Anmelden noch das Senden
@@ -121,12 +122,13 @@ test('Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf', async ({ pag
   expect(calls).toHaveLength(1)
 })
 
-test('Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Preis', async ({ page }) => {
+test('Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis', async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 500, json: { error: 'internal' } } : n === 2 ? { abort: true } : { json: answer(price(77040)) }))
   await signedInSummary(page)
   await send(page).click()
   await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt')
-  await expect(page.locator('main')).not.toContainText('770,40')
+  // die Seite zeigt weiter nur den gemerkten Richtpreis, keinen Preis aus einer Serverantwort
+  await expect(page.getByRole('alert')).not.toContainText('€')
   await page.getByRole('button', { name: 'Erneut senden' }).click()
   await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
   await page.getByRole('button', { name: 'Erneut senden' }).click()
@@ -230,6 +232,35 @@ test('Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit', async
   expect(await tab.evaluate(() => localStorage.getItem('movenow.handover'))).toBeNull()
 })
 
+test('Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash', async ({ page }) => {
+  const terms = { cancel_free_hours: 24, cancel_late_percent: 30, cancel_full_percent: 90, cancel_full_days_before: 2, call_out_fee_cents: 2500, termsHash: 'c'.repeat(64) }
+  const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
+  await signedInSummary(page, async (p) => {
+    await p.route(/\/rest\/v1\/rpc\/booking_terms/, (r) => r.fulfill({ headers: cors, json: terms }))
+  })
+  const main = page.locator('main')
+  await expect(main.getByText('Richtpreis', { exact: true })).toBeVisible()
+  await expect(main.getByText(/^770,40\s€$/)).toBeVisible()
+  await expect(main.getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')).toBeVisible()
+  await expect(main.getByText('Danach werden 30 % des Preises berechnet, ab 2 Tagen vor dem Termin 90 %.')).toBeVisible()
+  await expect(main.getByText(/^Anfahrtspauschale:/)).toContainText(/25,00\s€/)
+  await send(page).click()
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(1)
+  expect(calls[0]!.body['shown']).toEqual({ kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
+  expect(calls[0]!.body['termsHash']).toBe('c'.repeat(64))
+})
+
+test('ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts', async ({ page }) => {
+  const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
+  await anonymousPrices(page)
+  await toSummary(page)
+  await page.evaluate(() => sessionStorage.removeItem('movenow.shownfull.montage'))
+  await page.reload()
+  await expect(page).toHaveURL(/\/montage$/)
+  expect(calls).toHaveLength(0)
+})
+
 test('409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich', async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : { json: answer(price(80000)) }))
   await signedInSummary(page)
@@ -256,7 +287,8 @@ test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clien
   await send(page).click()
   const alert = page.getByRole('alert')
   await expect(alert).toContainText('Die Bedingungen wurden aktualisiert.')
-  await expect(alert).toContainText('Kostenlos stornierbar bis 24 Stunden')
+  await expect(alert).toContainText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')
+  await expect(alert).toContainText('Danach werden 50 % des Preises berechnet, ab einem Tag vor dem Termin 100 %.')
   await page.waitForTimeout(500)
   expect(calls).toHaveLength(1)
   await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
@@ -351,11 +383,12 @@ test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', async ({ pag
   expect(calls).toHaveLength(0)
 })
 
-test('Zusammenfassung: kein Preis vor dem Senden, Links und Knöpfe mindestens 44 px', async ({ page }) => {
+test('Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px', async ({ page }) => {
   await signedInSummary(page)
   // Im Seitenübergang stehen kurz zwei main: erst auf das Ende warten, dann gilt die Prüfung der einen Seite.
   await expect(page.locator('main')).toHaveCount(1)
-  await expect(page.locator('main')).not.toContainText('€')
+  await expect(page.locator('main')).toContainText(/Richtpreis\s*770,40\s€/)
+  await expect(page.locator('main')).not.toContainText(/Gebühr|Provision|15 ?%/)
   for (const target of [page.getByRole('link', { name: 'AGB' }), page.getByRole('link', { name: 'Datenschutz' }), page.getByRole('button', { name: 'Anderes Konto' })]) {
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44)
   }
@@ -377,6 +410,7 @@ test('Serverpreis gleich der Vorschau: kein Hinweis', async ({ page }) => {
   await signedInSummary(page)
   await send(page).click()
   await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  await expect(page.locator('main')).toHaveCount(1)
   await expect(page.locator('main').getByText('770,40 €')).toBeVisible()
   await expect(page.getByText('Der Preis wurde aktualisiert.')).toHaveCount(0)
 })

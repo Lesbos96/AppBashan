@@ -33,7 +33,9 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 ## Sessions und Modelle
 - Eine Session = ein Abschnitt aus `docs/ROADMAP.md`. Am Ende: Checks grün, ROADMAP abhaken, 3–5 Zeilen in `docs/PROGRESS.md`, Commit, Push (falls ein Remote gesetzt ist), Bericht, Stopp.
 - Ein Commit beendet die Session. Danach keine weitere Aufgabe beginnen; die nächste Session starte ich.
+- Eine Session startet keine weiteren Sessions; neue Sessions startet nur Beks.
 - Ab etwa 150.000 Tokens Kontext: Zwischenstand committen, in PROGRESS.md festhalten, wo es weitergeht, Bescheid geben, Stopp. Ich setze die Session in einer neuen Session fort.
+- Zwischenstände, die nicht alle Tests bestehen, auf einen eigenen Branch, nicht auf main.
 - Hauptsession: Sonnet 5.5, Effort medium (beides in `.claude/settings.json`). Opus 5.5 nur auf meine ausdrückliche Anfrage (Architektur, harte Fehlersuche). Effort high nur, wo die ROADMAP-Überschrift es vermerkt, sonst nur bei harten Problemen.
 - Zu Beginn prüfen, ob du mit dem vorgesehenen Modell läufst (S1: Opus 5.5, sonst Sonnet 5.5). Wenn nicht: sag es mir und warte. Vermerkt die ROADMAP-Überschrift „Effort high", erinnere mich im ersten Satz daran.
 - Mechanische Arbeit gibst du an Haiku 5.5 (`mech-editor`), Prüfläufe und Screenshots an Haiku 5.5 (`test-runner`), Reviews an Sonnet 5.5 (`reviewer`). Der Hauptkontext bleibt klein.

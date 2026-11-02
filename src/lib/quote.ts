@@ -3,7 +3,7 @@ import type { Tariffs } from '@pricing'
 import { type Path, type Shown, attemptKey, readShownFull, readTermin, services } from './draft'
 import { readClearanceFlow, readFlow, readMontageFlow, toAssembly } from './flow'
 import { formatEuro, formatEuroRounded } from './money'
-import { clearanceFields, offerReasonText, previewAssembly, previewClearance, previewTransport, shownOf, transportFields } from './preview'
+import { clearanceFields, offerReasonText, transportFields } from './preview'
 import { supabase } from './supabase'
 
 type Body = Record<string, unknown>
@@ -19,31 +19,30 @@ const text = (s: string) => s.trim() || undefined
 
 /**
  * Aufruf für `quote` aus Flow und Termin im sessionStorage. Er enthält nur die Kundenwahl: keine Preise, Kilometer, Region oder Status.
- * `null`, solange der Termin unvollständig ist. Die Strecke berechnet `quote` selbst aus den bestätigten Koordinaten.
+ * `null`, solange der Termin unvollständig ist oder kein gezeigter Preis gemerkt wurde: `shown` ist die Zustimmung des Kunden
+ * und stammt nie aus einer Neuberechnung beim Senden. Die Strecke berechnet `quote` selbst aus den bestätigten Koordinaten.
  */
 export function buildBody(path: Path, tariffs: Tariffs, confirmed: Confirmed): Body | null {
   const termin = readTermin(path)
-  if (!termin.date) return null
+  const shown = confirmed.shown ?? readShownFull(path)
+  if (!termin.date || !shown) return null
   const { stairsDoor, ...contact } = confirmed.contact
-  const base = { service: services[path].service, preferredDate: termin.date, priceVersion: confirmed.priceVersion, termsHash: confirmed.termsHash, contact: { ...contact, ...(stairsDoor.trim() && { stairsDoor: stairsDoor.trim() }) } }
+  const base = { service: services[path].service, preferredDate: termin.date, priceVersion: confirmed.priceVersion, termsHash: confirmed.termsHash, shown, contact: { ...contact, ...(stairsDoor.trim() && { stairsDoor: stairsDoor.trim() }) } }
   switch (services[path].service) {
     case 'transport':
     case 'move': {
       const f = readFlow(services[path].service as 'transport' | 'move')
       if (!f.from || !f.to) return null
-      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewTransport(tariffs, services[path].service as 'transport' | 'move', f))
-      return { ...base, shown, inputs: transportFields(tariffs, services[path].service as 'transport' | 'move', f), from: place(f.from), to: place(f.to), returnTrip: f.returnTrip, description: text(f.description), volume: f.volume }
+      return { ...base, inputs: transportFields(tariffs, services[path].service as 'transport' | 'move', f), from: place(f.from), to: place(f.to), returnTrip: f.returnTrip, description: text(f.description), volume: f.volume }
     }
     case 'clearance': {
       const f = readClearanceFlow()
       if (!f.object || !text(termin.place) || !termin.point) return null
-      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewClearance(tariffs, f))
-      return { ...base, shown, inputs: clearanceFields(f), from: { label: termin.place.trim(), point: termin.point }, description: text(f.description), timeWindow: termin.window }
+      return { ...base, inputs: clearanceFields(f), from: { label: termin.place.trim(), point: termin.point }, description: text(f.description), timeWindow: termin.window }
     }
     case 'assembly': {
       if (!text(termin.place) || !termin.point) return null
-      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewAssembly(tariffs, readMontageFlow().draft))
-      return { ...base, shown, inputs: toAssembly(readMontageFlow().draft), from: { label: termin.place.trim(), point: termin.point }, timeWindow: termin.window }
+      return { ...base, inputs: toAssembly(readMontageFlow().draft), from: { label: termin.place.trim(), point: termin.point }, timeWindow: termin.window }
     }
   }
 }
@@ -185,6 +184,22 @@ export async function loadTerms(): Promise<Terms> {
   const terms = parseTerms(data)
   if (error || !terms) throw error ?? new Error('Bedingungen unlesbar')
   return terms
+}
+
+/** Der Preis, den der Kunde vor dem Senden sieht (und mit `shown` bestätigt): Festpreis mit Cent, Spanne in ganzen Euro, beim Angebot „Preis nach Prüfung“. */
+export function shownLabel(s: Shown): string {
+  return s.kind === 'offer' ? 'Preis nach Prüfung' : priceLabel({ kind: 'price', totalCents: s.totalCents, lowCents: s.lowCents, highCents: s.highCents, lines: [] }).main
+}
+
+/** Stornobedingungen in Worten, aus genau den Werten, deren `termsHash` der Kunde mit dem Absenden bestätigt. `callOutCents` 0: keine Anfahrtspauschale. */
+export function termsText(terms: Terms): { storno: string[]; callOutCents: number } {
+  const n = (k: string) => Number(terms[k])
+  const days = n('cancel_full_days_before')
+  const from = days === 0 ? 'dem Tag des Termins' : days === 1 ? 'einem Tag vor dem Termin' : `${days} Tagen vor dem Termin`
+  return {
+    storno: [`Kostenlos stornieren kannst du bis ${n('cancel_free_hours')} Stunden vor dem Termin.`, `Danach werden ${n('cancel_late_percent')} % des Preises berechnet, ab ${from} ${n('cancel_full_percent')} %.`],
+    callOutCents: n('call_out_fee_cents'),
+  }
 }
 
 /** Anzeige eines Serverpreises im Format von `shown`: Festpreis bei gesetztem Gesamtbetrag, sonst Spanne bzw. Angebot. */

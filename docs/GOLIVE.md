@@ -4,6 +4,8 @@ Quelle: `docs/OPEN_ISSUES.md` und `docs/ROADMAP.md` (S5b, S8a, S8b-1, S10). Ein 
 
 **Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt `--include-seed` (Demo-Angebote). Gegen Produktion deshalb nur mit einer eigenen Env-Datei und ohne `--include-seed` aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
 
+Dev-Projekt-Ref: `vcpbbzdyltvffvzjrzdi` (Name: „bekhanidrisov74-hub's Project“, laut `supabase/.temp/linked-project.json`). Jede Ref, die davon abweicht, ist nicht Dev.
+
 Reihenfolge: Abschnitt 1 bis 5.
 
 ## 1 · Projekt und Schlüssel

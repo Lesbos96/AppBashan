@@ -311,6 +311,9 @@ describe('Nutzerlimit (echte Zähler)', () => {
     const user = await makeUser('quote-limit')
     limited = true
     try {
+      // Die Zähler nutzen feste Minutenfenster (Epoche): nicht kurz vor dem Wechsel starten, sonst beginnt der 7. Aufruf ein neues Fenster.
+      const second = new Date().getUTCSeconds()
+      if (second > 45) await new Promise((resolve) => setTimeout(resolve, (61 - second) * 1000))
       const results: number[] = []
       for (let i = 0; i < 7; i++) results.push((await call(user, { service: 'move' })).status) // ungültig, zählt trotzdem
       expect(results).toEqual([400, 400, 400, 400, 400, 400, 429])

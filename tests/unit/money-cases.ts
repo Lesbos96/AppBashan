@@ -1,5 +1,5 @@
 // Geteilt von Vitest (money.test.ts) und Deno (money-deno.ts): Erwartung als Text mit geschütztem Leerzeichen.
-const nbsp = ' '
+const nbsp = String.fromCharCode(160)
 
 export const moneyCases: [cents: number, expected: string][] = [
   [0, '0,00'],
