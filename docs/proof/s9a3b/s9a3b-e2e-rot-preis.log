@@ -1,0 +1,45 @@
+
+Running 1 test using 1 worker
+
+[1/1] [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn
+  1) [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('main').getByText(/^800,00\s€$/)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('main').getByText(/^800,00\s€$/) with timeout 5000ms
+      - waiting for locator('main').getByText(/^800,00\s€$/)
+
+
+      308 |   const main = page.locator('main')
+      309 |   await expect(main.getByText('Richtpreis', { exact: true })).toBeVisible()
+    > 310 |   await expect(main.getByText(/^800,00\s€$/)).toBeVisible()
+          |                                               ^
+      311 |   await expect(main.getByText(/^770,40\s€$/)).toHaveCount(0)
+      312 |   await send(page).click()
+      313 |   await expect(page).toHaveURL(/\/montage\/gesendet$/)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:310:47
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+EXIT=1

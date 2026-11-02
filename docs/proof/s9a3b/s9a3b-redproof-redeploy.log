@@ -1,0 +1,22 @@
+ae71b0da5eaa26204ebaa24ecbcdf5bc *supabase/functions/_shared/quote/handler.ts
+PRECHECK_DIRTY=0
+OK     [Schicht] quote: Abholung außerhalb Wiens nicht mehr geprüft (Schicht: Bezirk aus Polygon)
+         gelockert: 1 rot (AssertionError: expected { status: 422, …(1) } to match object { status: 422, …(1) })
+         neu deployt: 1 grün, 0 rot; md5 supabase/functions/_shared/quote/handler.ts vorher ae71b0da5eaa26204ebaa24ecbcdf5bc, nachher ae71b0da5eaa26204ebaa24ecbcdf5bc: gleich
+OK     [Sperre] quote: gezeigter Betrag nicht mehr abgeglichen (Kundenpreis ohne Zustimmung)
+         gelockert: 1 rot (AssertionError: expected { status: 200, body: { …(5) } } to match object { status: 409, body: { …(3) } })
+         neu deployt: 1 grün, 0 rot; md5 supabase/functions/_shared/quote/handler.ts vorher ae71b0da5eaa26204ebaa24ecbcdf5bc, nachher ae71b0da5eaa26204ebaa24ecbcdf5bc: gleich
+OK     [Sperre] quote: Haltefenster nicht mehr geprüft (abgelaufene Version zählt)
+         gelockert: 1 rot (AssertionError: expected 200 to be 409 // Object.is equality)
+         neu deployt: 1 grün, 0 rot; md5 supabase/functions/_shared/quote/handler.ts vorher ae71b0da5eaa26204ebaa24ecbcdf5bc, nachher ae71b0da5eaa26204ebaa24ecbcdf5bc: gleich
+OK     [Sperre] quote: Bedingungen-Hash nicht mehr abgeglichen
+         gelockert: 1 rot (AssertionError: expected 200 to be 409 // Object.is equality)
+         neu deployt: 1 grün, 0 rot; md5 supabase/functions/_shared/quote/handler.ts vorher ae71b0da5eaa26204ebaa24ecbcdf5bc, nachher ae71b0da5eaa26204ebaa24ecbcdf5bc: gleich
+OK     [Schicht] quote: Client-Punkt bindet nicht mehr an den Kandidaten (Schicht: Bezirk/Wien-Prüfung)
+         gelockert: 1 rot (AssertionError: expected { status: 422, …(1) } to match object { status: 422, …(1) })
+         neu deployt: 1 grün, 0 rot; md5 supabase/functions/_shared/quote/handler.ts vorher ae71b0da5eaa26204ebaa24ecbcdf5bc, nachher ae71b0da5eaa26204ebaa24ecbcdf5bc: gleich
+Definitionen vorher und nachher identisch.
+REDPROOF BESTANDEN
+EXIT=0
+ae71b0da5eaa26204ebaa24ecbcdf5bc *supabase/functions/_shared/quote/handler.ts
+POSTCHECK_DIRTY=0

@@ -1,0 +1,23 @@
+
+Running 18 tests using 2 workers
+
+[1/18] [shots-390-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[2/18] [shots-390-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[3/18] [shots-390-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[4/18] [shots-390-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[5/18] [shots-390-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+[6/18] [shots-390-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+[7/18] [shots-430-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[8/18] [shots-430-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[9/18] [shots-430-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[10/18] [shots-430-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[11/18] [shots-430-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+[12/18] [shots-430-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+[13/18] [shots-1280-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[14/18] [shots-1280-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-aktualisiert
+[15/18] [shots-1280-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[16/18] [shots-1280-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-preis-uebernommen-fehler
+[17/18] [shots-1280-light] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+[18/18] [shots-1280-dark] › tests\shots\shots.spec.ts:415:3 › zusammenfassung-bedingungen-uebernommen-fehler
+  18 passed (2.0m)
+EXIT=0

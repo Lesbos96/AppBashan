@@ -1,0 +1,47 @@
+
+Running 1 test using 1 worker
+
+[1/1] [e2e] › tests\e2e\anfrage.spec.ts:352:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt
+  1) [e2e] › tests\e2e\anfrage.spec.ts:352:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ }) with timeout 5000ms
+      - waiting for getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
+        14 × locator resolved to <button type="button" aria-busy="false" class="press w-full px-5 disabled:opacity-40 h-[54px] rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button disabled:opacity-70!">Erneut senden</button>
+           - unexpected value "enabled"
+
+
+      357 |   const accept = page.getByRole('button', { name: 'Bedingungen bestätigen und senden' })
+      358 |   await expect(accept).toBeEnabled()
+    > 359 |   await expect(send(page)).toBeDisabled()
+          |                            ^
+      360 |   await page.getByRole('checkbox').uncheck()
+      361 |   await expect(accept).toBeDisabled()
+      362 |   await page.getByRole('checkbox').check()
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:359:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [e2e] › tests\e2e\anfrage.spec.ts:352:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt 
+EXIT=1

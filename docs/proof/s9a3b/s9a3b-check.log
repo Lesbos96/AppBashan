@@ -1,0 +1,48 @@
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 10ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 11ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 19ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 24ms
+ ✓ |unit| tests/unit/uploads.test.ts (11 tests) 48ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 10ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 87ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 75ms
+ ✓ |unit| tests/unit/auth.test.ts (54 tests) 23ms
+ ✓ |unit| tests/unit/draft.test.ts (43 tests) 87ms
+ ✓ |unit| tests/unit/quote.test.ts (57 tests) 198ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 643ms
+
+ Test Files  13 passed (13)
+      Tests  365 passed (365)
+   Start at  18:39:11
+   Duration  1.10s (tests 42%, import 35%, transform 18%, worker 5%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=0

@@ -1,0 +1,347 @@
+
+Running 9 tests using 1 worker
+
+[1/9] [e2e] › tests\e2e\anfrage.spec.ts:264:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich
+[2/9] [e2e] › tests\e2e\anfrage.spec.ts:283:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen
+[3/9] [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn
+  1) [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Browser logs:
+
+    <launching> C:\Users\gesch\AppData\Local\ms-playwright\chromium_headless_shell-1248\chrome-headless-shell-win64\chrome-headless-shell.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,AvoidCorsURLLoaderRestartOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\Users\gesch\AppData\Local\Temp\playwright_chromiumdev_profile-V06r0s --remote-debugging-pipe --no-startup-window
+    <launched> pid=32020
+    [pid=32020][err] [1102/183258.088:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183258.100:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183258.463:INFO:CONSOLE:15802] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source: http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b88121e (15802)
+    [pid=32020][err] [1102/183311.993:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183311.993:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183311.993:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183311.993:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183311.993:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183312.343:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183312.352:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183312.973:INFO:CONSOLE:15802] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source: http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b88121e (15802)
+    [pid=32020][err] [1102/183314.272:INFO:CONSOLE:1024] "[vite] hot updated: /src/index.css", source: http://localhost:5173/@vite/client (1024)
+    [pid=32020][err] [1102/183314.730:INFO:CONSOLE:1024] "[vite] hot updated: /src/index.css", source: http://localhost:5173/@vite/client (1024)
+    [pid=32020][err] [1102/183315.029:INFO:CONSOLE:1024] "[vite] hot updated: /src/index.css", source: http://localhost:5173/@vite/client (1024)
+    [pid=32020][err] [1102/183322.604:INFO:CONSOLE:1024] "[vite] hot updated: /src/index.css", source: http://localhost:5173/@vite/client (1024)
+    [pid=32020][err] [1102/183322.905:INFO:CONSOLE:1024] "[vite] hot updated: /src/index.css", source: http://localhost:5173/@vite/client (1024)
+    [pid=32020][err] [1102/183323.262:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183323.262:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183323.262:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183323.262:ERROR:gpu\command_buffer\service\shared_image\shared_image_manager.cc:401] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.
+    [pid=32020][err] [1102/183323.633:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183323.640:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183324.272:INFO:CONSOLE:15802] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source: http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b88121e (15802)
+    [pid=32020][err] [1102/183332.208:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183332.450:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183333.087:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183333.095:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183333.728:INFO:CONSOLE:15802] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source: http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b88121e (15802)
+    [pid=32020][err] [1102/183344.977:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183345.391:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183345.790:INFO:CONSOLE:946] "[vite] connecting...", source: http://localhost:5173/@vite/client (946)
+    [pid=32020][err] [1102/183345.796:INFO:CONSOLE:1055] "[vite] connected.", source: http://localhost:5173/@vite/client (1055)
+    [pid=32020][err] [1102/183346.337:INFO:CONSOLE:15802] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source: http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=7b88121e (15802)
+    [pid=32020] <gracefully close start>
+    Call log:
+      - waiting for getByRole('button', { name: 'Code senden' })
+        - locator resolved to <button type="submit" class="press w-full px-5 disabled:opacity-40 h-[54px] rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button ">Code senden</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+          - waiting 100ms
+        - waiting for element to be visible, enabled and stable
+        - element is not stable
+      - retrying click action
+        - waiting 500ms
+        - waiting for "http://localhost:5173/anmelden" navigation to finish...
+        - navigated to "http://localhost:5173/anmelden"
+        - waiting for element to be visible, enabled and stable
+      - element was detached from the DOM, retrying
+        - waiting for "http://localhost:5173/anmelden" navigation to finish...
+        - navigated to "http://localhost:5173/anmelden"
+        - locator resolved to <button disabled type="submit" class="press w-full px-5 disabled:opacity-40 h-[54px] rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button ">Code senden</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        19 × waiting for element to be visible, enabled and stable
+           - element is not enabled
+         - retrying click action
+           - waiting 500ms
+        - waiting for "http://localhost:5173/anmelden" navigation to finish...
+        - navigated to "http://localhost:5173/anmelden"
+        - waiting for element to be visible, enabled and stable
+      - element was detached from the DOM, retrying
+        - locator resolved to <button disabled type="submit" class="press w-full px-5 disabled:opacity-40 h-[54px] rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button ">Code senden</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        74 × waiting for element to be visible, enabled and stable
+           - element is not enabled
+         - retrying click action
+           - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+       at e2e\auth-helpers.ts:55
+
+      53 | export async function signInWithCode(page: Page) {
+      54 |   await page.getByLabel('E-Mail').fill(EMAIL)
+    > 55 |   await page.getByRole('button', { name: 'Code senden' }).click()
+         |                                                           ^
+      56 |   await page.getByLabel('Code').fill(CODE)
+      57 |   await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
+      58 |   await expect(page).not.toHaveURL(/\/anmelden/)
+        at signInWithCode (C:\Users\gesch\Music\MoveNow\tests\e2e\auth-helpers.ts:55:59)
+        at signedInSummary (C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:22:3)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:304:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[4/9] [e2e] › tests\e2e\anfrage.spec.ts:320:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash
+  2) [e2e] › tests\e2e\anfrage.spec.ts:320:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('main').getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('main').getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.') with timeout 5000ms
+      - waiting for locator('main').getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')
+
+
+      330 |   await page.getByRole('button', { name: 'Bedingungen bestätigen und senden' }).click()
+      331 |   await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
+    > 332 |   await expect(main.getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')).toBeVisible()
+          |                                                                                                 ^
+      333 |   await expect(main.getByText('Danach werden 50 % des Preises berechnet, ab einem Tag vor dem Termin 100 %.')).toBeVisible()
+      334 |   await expect(main.getByText(/bis 48 Stunden/)).toHaveCount(0)
+      335 |   await send(page).click()
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:332:97
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[5/9] [e2e] › tests\e2e\anfrage.spec.ts:342:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte
+  3) [e2e] › tests\e2e\anfrage.spec.ts:342:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ }) with timeout 5000ms
+      - waiting for getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
+        14 × locator resolved to <button type="button" aria-busy="false" class="press w-full px-5 disabled:opacity-40 h-[54px] rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button disabled:opacity-70!">Erneut senden</button>
+           - unexpected value "enabled"
+
+
+      345 |   await send(page).click()
+      346 |   await expect(page.getByRole('alert')).toContainText('Der Preis wurde aktualisiert.')
+    > 347 |   await expect(send(page)).toBeDisabled()
+          |                            ^
+      348 |   await page.waitForTimeout(500)
+      349 |   expect(calls).toHaveLength(1)
+      350 | })
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:347:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[6/9] [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf
+  4) [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "Das hat nicht geklappt."
+    Received string:    "Der Preis wurde aktualisiert.Neuer Preis: 800,00 €Neuen Preis übernehmen und senden"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+        14 × locator resolved to <div role="alert" class="flex flex-col gap-2 rounded-grouped-list border border-accent/40 bg-surface p-4 shadow-card">…</div>
+           - unexpected value "Der Preis wurde aktualisiert.Neuer Preis: 800,00 €Neuen Preis übernehmen und senden"
+
+
+      361 |     await signedInSummary(page)
+      362 |     await send(page).click()
+    > 363 |     await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt.')
+          |                                           ^
+      364 |     await expect(page.getByRole('button', { name: /übernehmen und senden|bestätigen und senden/ })).toHaveCount(0)
+      365 |     await page.waitForTimeout(500)
+      366 |     expect(calls).toHaveLength(1)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:363:43
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[7/9] [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[8/9] [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf
+  5) [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "Das hat nicht geklappt."
+    Received string:    "Die Bedingungen wurden aktualisiert.Bedingungen bestätigen und senden"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+        14 × locator resolved to <div role="alert" class="flex flex-col gap-2 rounded-grouped-list border border-accent/40 bg-surface p-4 shadow-card">…</div>
+           - unexpected value "Die Bedingungen wurden aktualisiert.Bedingungen bestätigen und senden"
+
+
+      361 |     await signedInSummary(page)
+      362 |     await send(page).click()
+    > 363 |     await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt.')
+          |                                           ^
+      364 |     await expect(page.getByRole('button', { name: /übernehmen und senden|bestätigen und senden/ })).toHaveCount(0)
+      365 |     await page.waitForTimeout(500)
+      366 |     expect(calls).toHaveLength(1)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:363:43
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[9/9] [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf
+  6) [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "Das hat nicht geklappt."
+    Received string:    "Die Bedingungen wurden aktualisiert.Bedingungen bestätigen und senden"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+        14 × locator resolved to <div role="alert" class="flex flex-col gap-2 rounded-grouped-list border border-accent/40 bg-surface p-4 shadow-card">…</div>
+           - unexpected value "Die Bedingungen wurden aktualisiert.Bedingungen bestätigen und senden"
+
+
+      361 |     await signedInSummary(page)
+      362 |     await send(page).click()
+    > 363 |     await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt.')
+          |                                           ^
+      364 |     await expect(page.getByRole('button', { name: /übernehmen und senden|bestätigen und senden/ })).toHaveCount(0)
+      365 |     await page.waitForTimeout(500)
+      366 |     expect(calls).toHaveLength(1)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\anfrage.spec.ts:363:43
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  6 failed
+    [e2e] › tests\e2e\anfrage.spec.ts:302:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+    [e2e] › tests\e2e\anfrage.spec.ts:320:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash 
+    [e2e] › tests\e2e\anfrage.spec.ts:342:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte 
+    [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests\e2e\anfrage.spec.ts:359:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+  3 passed (3.4m)
+EXIT=1
