@@ -14,15 +14,29 @@ import {
   rec,
 } from '../pricing/index.ts'
 import { type Point, point } from '../route/facts.ts'
+import type { Shown } from './hold.ts'
 import { instantOf } from './time.ts'
 
-export type Place = { label: string; postcode: string | null; point: Point | null }
+/** Vom Client nur Label und Punkt; die PLZ kommt allein vom serverseitig geprüften Kandidaten. */
+export type Place = { label: string; point: Point | null }
+export type Contact = { name: string; phone: string; email: string; stairsDoor: string | null }
 
 /** Zeitfenster für Entrümpelung und Montage (fester Satz, kein Freitext). */
 export const TIME_WINDOWS = ['morning', 'midday', 'afternoon', 'flexible'] as const
 
 /** `clientRef` (je Absendeversuch von der App erzeugt) ist Pflicht und macht das Anlegen idempotent; Bearbeiten nach dem Absenden gibt es nicht. */
-type Common = { service: 'transport' | 'move' | 'clearance' | 'assembly'; clientRef: string; from: Place | null; to: Place | null; returnTrip: boolean }
+type Common = {
+  service: 'transport' | 'move' | 'clearance' | 'assembly'
+  clientRef: string
+  from: Place | null
+  to: Place | null
+  returnTrip: boolean
+  /** Was der Kunde sah: Preisversion, Bedingungen-Hash, Betrag bzw. Art, Kontakt. */
+  priceVersion: number
+  termsHash: string
+  shown: Shown
+  contact: Contact
+}
 export type Extras = { description: string | null; volumeM3: number | null; preferredDate: string; timeWindow: (typeof TIME_WINDOWS)[number] | null }
 
 export type RequestCall =
@@ -30,19 +44,21 @@ export type RequestCall =
   | (Common & Extras & { kind: 'request'; service: 'clearance'; inputs: ClearanceInput })
   | (Common & Extras & { kind: 'request'; service: 'assembly'; inputs: AssemblyInput })
   /** `pickupAt`/`returnAt` in `input` sind Wiener Wanduhrzeit (Preis), `pickupInstant`/`returnInstant` die Zeitpunkte (ISO, UTC) für die Spalten. */
-  | { kind: 'rental'; clientRef: string; offerId: string; input: RentalInput; pickupInstant: string; returnInstant: string }
+  | { kind: 'rental'; clientRef: string; priceVersion: number; shownTotalCents: number; offerId: string; input: RentalInput; pickupInstant: string; returnInstant: string }
 
 export type QuoteCall = RequestCall
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u0009\u000b-\u001f\u007f]/ // Zeilenumbruch bleibt erlaubt (Beschreibung)
-const POSTCODE = /^[0-9A-Za-z -]{3,12}$/
+const EMAIL = /^[^@s]+@[^@s]+.[^@s]+$/
+const PHONE = /^[0-9+()/ .-]{5,40}$/
+const HASH = /^[0-9a-f]{64}$/
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 const KEYS = {
-  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'clientRef'],
-  rental: ['service', 'offerId', 'inputs', 'clientRef'],
+  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'clientRef', 'priceVersion', 'termsHash', 'shown', 'contact'],
+  rental: ['service', 'offerId', 'inputs', 'clientRef', 'priceVersion', 'shownTotalCents'],
 } as const
 
 const only = (raw: Record<string, unknown>, keys: readonly string[]) => Object.fromEntries(keys.filter((k) => raw[k] !== undefined).map((k) => [k, raw[k]]))
@@ -62,10 +78,6 @@ function place(v: unknown, key: string): Place | null {
   const p = r['point']
   return {
     label: text(r['label'], `${key}.label`, 1, 200),
-    postcode: optional(r['postcode'], (x) => {
-      if (typeof x !== 'string' || !POSTCODE.test(x)) throw new InputError(`${key}.postcode: ungültig`)
-      return x
-    }),
     point: p === undefined || p === null ? null : coordinates(p, key),
   }
 }
@@ -122,6 +134,8 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
     return {
       kind: 'rental',
       clientRef: uuid(r['clientRef'], 'clientRef'),
+      priceVersion: version(r['priceVersion']),
+      shownTotalCents: wholeCents(r['shownTotalCents'], 'shownTotalCents'),
       offerId: uuid(r['offerId'], 'offerId'),
       input: parsed,
       pickupInstant: instantOf(parsed.pickupAt, 'pickupAt'),
@@ -138,6 +152,13 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
     from: place(r['from'], 'from'),
     to: service === 'transport' || service === 'move' ? place(r['to'], 'to') : null,
     returnTrip: optional(r['returnTrip'], flag) ?? false,
+    priceVersion: version(r['priceVersion']),
+    termsHash: ((h) => {
+      if (typeof h !== 'string' || !HASH.test(h)) throw new InputError('termsHash: sha256 (hex) erwartet')
+      return h
+    })(r['termsHash']),
+    shown: shownOf(r['shown']),
+    contact: contactOf(r['contact']),
     preferredDate: day(r['preferredDate'], 'preferredDate', today),
     timeWindow: wantsWindow ? optional(r['timeWindow'], (v) => oneOfWindow(v)) : null,
   }
@@ -155,4 +176,34 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
     case 'assembly':
       return { ...common, service, inputs: parseAssembly(inputs), description: null, volumeM3: null }
   }
+}
+
+const wholeCents = (v: unknown, key: string): number => {
+  if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 0) throw new InputError(`${key}: ganze Cent erwartet`)
+  return v
+}
+
+const version = (v: unknown): number => {
+  if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 1) throw new InputError('priceVersion: ganze Zahl ab 1 erwartet')
+  return v
+}
+
+function shownOf(v: unknown): Shown {
+  const r = rec(v, 'shown')
+  if (r['kind'] === 'offer') {
+    const reasons = r['reasons']
+    if (!Array.isArray(reasons) || reasons.length === 0 || reasons.length > 10 || reasons.some((x) => typeof x !== 'string' || x.length > 60)) throw new InputError('shown.reasons: Liste von Gründen erwartet')
+    return { kind: 'offer', reasons: reasons as string[] }
+  }
+  if (r['kind'] !== 'price') throw new InputError('shown.kind: price oder offer erwartet')
+  return { kind: 'price', totalCents: r['totalCents'] === null || r['totalCents'] === undefined ? null : wholeCents(r['totalCents'], 'shown.totalCents'), lowCents: wholeCents(r['lowCents'], 'shown.lowCents'), highCents: wholeCents(r['highCents'], 'shown.highCents') }
+}
+
+function contactOf(v: unknown): Contact {
+  const r = rec(v, 'contact')
+  const phone = text(r['phone'], 'contact.phone', 5, 40)
+  const email = text(r['email'], 'contact.email', 3, 200)
+  if (!PHONE.test(phone) || (phone.match(/[0-9]/g) ?? []).length < 5) throw new InputError('contact.phone: ungültig')
+  if (!EMAIL.test(email)) throw new InputError('contact.email: ungültig')
+  return { name: text(r['name'], 'contact.name', 1, 120), phone, email, stairsDoor: optional(r['stairsDoor'], (x) => text(x, 'contact.stairsDoor', 1, 60)) }
 }

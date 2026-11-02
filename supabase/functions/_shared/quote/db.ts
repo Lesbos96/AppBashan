@@ -4,7 +4,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
 import { routeDb } from '../route/db.ts'
 import type { QuoteDeps, QuoteResponse, SaveBooking, SaveRequest } from './handler.ts'
+import type { Candidate } from '../route/facts.ts'
 import type { Snapshot } from './snapshot.ts'
+import type { VersionHold } from './hold.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -13,7 +15,7 @@ const must = <T>(r: { data: T; error: unknown }): NonNullable<T> => {
   return r.data
 }
 
-type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'loadPricing' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
+type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'currentVersion' | 'loadPricing' | 'loadHold' | 'loadTerms' | 'geocodeCache' | 'district' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
   route: Pick<QuoteDeps['route'], 'cache' | 'geoFacts'>
 }
 
@@ -26,14 +28,45 @@ export function quoteDb(db: Db): DbDeps {
       const { data, error } = await db.auth.getUser(jwt)
       return error ? null : (data.user?.id ?? null)
     },
-    async loadPricing() {
+    async currentVersion() {
       const { version } = must(await db.from('current_price_version').select('version').single())
       if (version === null) throw new Error('keine gültige Tarifversion')
+      return version
+    },
+    async loadPricing(version) {
       // Hash der Version vor dem Rechnen prüfen: bei Abweichung Abbruch (500), nichts wird gespeichert.
       const verified = await db.rpc('verify_price_version', { p_version: version })
       if (verified.error) throw verified.error
       const rows = must(await db.from('price_config').select('key, value, unit').eq('version', version))
       return { version, rows }
+    },
+    async loadHold(version): Promise<VersionHold | null> {
+      const { data, error } = await db.rpc('price_version_hold', { p_version: version })
+      if (error) throw error
+      const row = data?.[0]
+      return row ? { started: row.started, isCurrent: row.is_current, replacedAt: row.replaced_at, holdMinutes: row.hold_minutes === null ? null : Number(row.hold_minutes) } : null
+    },
+    async loadTerms() {
+      const { data, error } = await db.rpc('booking_terms')
+      if (error) throw error
+      return data as Record<string, unknown>
+    },
+    geocodeCache: {
+      async get(key) {
+        const { data, error } = await db.from('geocode_cache').select('value').eq('key', key).gt('expires_at', new Date().toISOString()).maybeSingle()
+        if (error) throw error
+        return (data?.value as Candidate[] | undefined) ?? null
+      },
+      async set(key, value, ttlSeconds) {
+        const { error } = await db.from('geocode_cache').upsert({ key, value: value as never, expires_at: new Date(Date.now() + ttlSeconds * 1000).toISOString() })
+        if (error) throw error
+      },
+    },
+    async district(lon, lat) {
+      const { data, error } = await db.rpc('quote_district', { p_lon: lon, p_lat: lat })
+      const row = data?.[0]
+      if (error || !row) throw error ?? new Error('keine Grenze für den Bezirk')
+      return { inVienna: row.in_vienna, inAustria: row.in_austria, district: row.district }
     },
     async loadOffer(id) {
       // service_role umgeht RLS: nur freigegebene Angebote
@@ -95,19 +128,20 @@ export function quoteDb(db: Db): DbDeps {
         p_low: a.lowCents,
         p_high: a.highCents,
         p_from_address: a.from?.label ?? null,
-        p_from_postcode: a.from?.postcode ?? null,
         p_from_lon: a.from?.point?.lon ?? null,
         p_from_lat: a.from?.point?.lat ?? null,
         p_to_address: a.to?.label ?? null,
-        p_to_postcode: a.to?.postcode ?? null,
         p_to_lon: a.to?.point?.lon ?? null,
         p_to_lat: a.to?.point?.lat ?? null,
         p_route: a.route,
-        p_region: a.route?.region ?? null,
+        p_region: a.region,
+        p_district: a.district,
         p_preferred_date: a.preferredDate,
         p_time_window: a.timeWindow,
         p_description: a.description,
         p_volume: a.volumeM3,
+        p_contact: a.contact,
+        p_confirmed: a.confirmed,
       }
       // Die generierten Typen kennen keine NULL-Argumente; die Funktion nimmt sie an.
       const row = must(await db.rpc('quote_save_request', args as never))[0]

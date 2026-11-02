@@ -2,7 +2,7 @@
 // Netz und DB prüft. Logs enthalten nur Modus, Status, Latenz und Fehlercode: keine Adressen, Koordinaten, IPs.
 import { clientIp, corsHeaders, json, readLimited } from '../http.ts'
 import { computeRouteFacts, type RouteDeps } from './compute.ts'
-import { HttpError, parseGeocode, parseRoute } from './facts.ts'
+import { HttpError, canonicalLabel, parseGeocode, parseRoute } from './facts.ts'
 import { ProviderError } from './provider.ts'
 
 export type RateCheck = { bucket: string; max: number; window_seconds: number }
@@ -72,7 +72,7 @@ export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Resp
     if (mode === 'geocode') {
       try {
         const candidates = await deps.provider.geocode((input as { q: string }).q)
-        return finish(200, { candidates })
+        return finish(200, { candidates: candidates.map((c) => ({ ...c, label: canonicalLabel(c) })) })
       } catch (e) {
         if (e instanceof ProviderError) throw new HttpError(502, 'provider_unavailable')
         throw e

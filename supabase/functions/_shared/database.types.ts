@@ -155,6 +155,48 @@ export type Database = {
         }
         Relationships: []
       }
+      geo_districts: {
+        Row: {
+          district: number
+          geom: unknown
+          imported_at: string
+          name: string
+          source: string
+        }
+        Insert: {
+          district: number
+          geom: unknown
+          imported_at?: string
+          name: string
+          source: string
+        }
+        Update: {
+          district?: number
+          geom?: unknown
+          imported_at?: string
+          name?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      geocode_cache: {
+        Row: {
+          expires_at: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          expires_at: string
+          key: string
+          value: Json
+        }
+        Update: {
+          expires_at?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -625,10 +667,9 @@ export type Database = {
           current_revision: string | null
           customer_id: string
           description: string | null
-          district: number | null
+          district: number
           from_address: string | null
           from_point: unknown
-          from_postcode: string | null
           id: string
           preferred_date: string | null
           region: Database["public"]["Enums"]["region"] | null
@@ -639,7 +680,6 @@ export type Database = {
           time_window: string | null
           to_address: string | null
           to_point: unknown
-          to_postcode: string | null
           updated_at: string
           volume_m3: number | null
         }
@@ -650,10 +690,9 @@ export type Database = {
           current_revision?: string | null
           customer_id: string
           description?: string | null
-          district?: number | null
+          district: number
           from_address?: string | null
           from_point?: unknown
-          from_postcode?: string | null
           id?: string
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
@@ -664,7 +703,6 @@ export type Database = {
           time_window?: string | null
           to_address?: string | null
           to_point?: unknown
-          to_postcode?: string | null
           updated_at?: string
           volume_m3?: number | null
         }
@@ -675,10 +713,9 @@ export type Database = {
           current_revision?: string | null
           customer_id?: string
           description?: string | null
-          district?: number | null
+          district?: number
           from_address?: string | null
           from_point?: unknown
-          from_postcode?: string | null
           id?: string
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
@@ -689,7 +726,6 @@ export type Database = {
           time_window?: string | null
           to_address?: string | null
           to_point?: unknown
-          to_postcode?: string | null
           updated_at?: string
           volume_m3?: number | null
         }
@@ -819,9 +855,26 @@ export type Database = {
           name: string
         }[]
       }
+      price_version_hold: {
+        Args: { p_version: number }
+        Returns: {
+          hold_minutes: number
+          is_current: boolean
+          replaced_at: string
+          started: boolean
+        }[]
+      }
       publish_version: {
         Args: { p_actor: string; p_version: number }
         Returns: string
+      }
+      quote_district: {
+        Args: { p_lat: number; p_lon: number }
+        Returns: {
+          district: number
+          in_austria: boolean
+          in_vienna: boolean
+        }[]
       }
       quote_save_booking: {
         Args: {
@@ -848,12 +901,14 @@ export type Database = {
       quote_save_request: {
         Args: {
           p_client_ref: string
+          p_confirmed: Json
+          p_contact: Json
           p_customer: string
           p_description: string
+          p_district: number
           p_from_address: string
           p_from_lat: number
           p_from_lon: number
-          p_from_postcode: string
           p_high: number
           p_inputs: Json
           p_low: number
@@ -867,7 +922,6 @@ export type Database = {
           p_to_address: string
           p_to_lat: number
           p_to_lon: number
-          p_to_postcode: string
           p_total: number
           p_volume: number
         }

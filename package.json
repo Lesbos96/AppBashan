@@ -54,6 +54,7 @@
     "svg:extract": "node scripts/extract-svg.mjs",
     "fixtures:pricing": "node scripts/gen-golden.mjs",
     "geo:import": "dotenv -e .env.local -- node scripts/import-boundaries.mjs",
+    "geo:districts": "dotenv -e .env.local -- node scripts/import-districts.mjs",
     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
     "setup:photo-cleanup": "dotenv -e .env.local -- node scripts/setup-photo-cleanup.mjs",
     "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",

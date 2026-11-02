@@ -27,7 +27,10 @@ const TIMEOUT_MS = 8000
 const VIENNA = { lon: 16.3738, lat: 48.2082 } // Suchschwerpunkt, keine Einschränkung auf ein Land
 
 type OrsGeocode = {
-  features?: { geometry?: { coordinates?: number[] }; properties?: { label?: string; postalcode?: string; country_a?: string } }[]
+  features?: {
+    geometry?: { coordinates?: number[] }
+    properties?: { label?: string; postalcode?: string; country_a?: string; layer?: string; street?: string; housenumber?: string; locality?: string }
+  }[]
 }
 type OrsRoute = {
   features?: {
@@ -66,7 +69,20 @@ export function orsProvider(apiKey: string | undefined, fetchFn: typeof fetch = 
       return (body.features ?? []).slice(0, 5).flatMap((f) => {
         const [lon, lat] = f.geometry?.coordinates ?? []
         if (typeof lon !== 'number' || typeof lat !== 'number' || !f.properties?.label) return []
-        return [{ label: f.properties.label, lat, lon, postcode: f.properties.postalcode ?? null, country: f.properties.country_a ?? null }]
+        const p = f.properties
+        return [
+          {
+            label: p.label ?? '',
+            lat,
+            lon,
+            postcode: p.postalcode ?? null,
+            country: p.country_a ?? null,
+            layer: p.layer ?? null,
+            street: p.street ?? null,
+            housenumber: p.housenumber ?? null,
+            locality: p.locality ?? null,
+          },
+        ]
       })
     },
 

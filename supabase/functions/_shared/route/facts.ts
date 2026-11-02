@@ -4,7 +4,28 @@
 import type { RouteFacts } from '../pricing/transport.ts'
 
 export type Point = { lat: number; lon: number }
-export type Candidate = { label: string; lat: number; lon: number; postcode: string | null; country: string | null }
+export type Candidate = {
+  label: string
+  lat: number
+  lon: number
+  postcode: string | null
+  country: string | null
+  /** Ebene des Anbieters (`address`, `venue`, `street`, …), Straße und Hausnummer für die Genauigkeitsprüfung. */
+  layer: string | null
+  street: string | null
+  housenumber: string | null
+  locality: string | null
+}
+
+/** Das einzige Adresslabel, das gespeichert und angezeigt wird: „Straße Nr, PLZ Ort“. Fehlen Teile, gilt das Label des Anbieters. */
+export function canonicalLabel(c: Candidate): string {
+  if (!c.street || !c.housenumber) return c.label
+  const place = [c.postcode, c.locality].filter(Boolean).join(' ')
+  return place ? `${c.street} ${c.housenumber}, ${place}` : `${c.street} ${c.housenumber}`
+}
+
+/** Hausnummerngenau: Ebene `address` oder `venue` mit Straße und Hausnummer. */
+export const isPrecise = (c: Candidate): boolean => (c.layer === 'address' || c.layer === 'venue') && !!c.street && !!c.housenumber
 /** Rohantwort des Anbieters. `line` als [lon, lat]. */
 export type ProviderRoute = { legMeters: number[]; durationSeconds: number; line: [number, number][] }
 /** Fakten aus den Grenzen in der DB (PostGIS). */

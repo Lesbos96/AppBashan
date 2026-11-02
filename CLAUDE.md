@@ -62,6 +62,7 @@ bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/ref
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
 - Abschlussberichte jedes Schritts nach `docs/proof/<schritt>/`, vorher Secret-Scan (`npm run scan:proof`, Exit 0 nötig); `tmp/proof/` bleibt Arbeitsordner.
 - Ein Rot-Beweis zählt nur, wenn die fehlschlagende Prüfung die Wirkung der gelockerten Sperre misst (Ist-Wert: Zeilen sichtbar, Aufruf erfolgreich, Wert geändert), nicht nur, dass ein Schritt fehlschlägt.
+- Jeder Testlauf schreibt seinen Exit-Code ins Log (Bash: `; echo EXIT=$?`, PowerShell: `; "EXIT=$LASTEXITCODE"`) und nennt ihn im Bericht.
 - Nachweisdateien werden nach dem Schreiben nie verändert; Hinweise in eine `README.md` im selben `docs/proof`-Ordner.
 
 ## Ausgaben

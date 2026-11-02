@@ -14,9 +14,12 @@ import {
 } from '../pricing/index.ts'
 import { clientIp, corsHeaders, json, readLimited } from '../http.ts'
 import { computeRouteFacts, type RouteDeps } from '../route/compute.ts'
-import { HttpError, type RouteResult } from '../route/facts.ts'
+import { type Candidate, HttpError, type Point, type RouteResult, canonicalLabel } from '../route/facts.ts'
+import { ProviderError } from '../route/provider.ts'
 import { LIMITS as ROUTE_LIMITS, type RateCheck } from '../route/handler.ts'
-import { type Place, type QuoteCall, parseQuoteCall } from './parse.ts'
+import { pickCandidate } from './address.ts'
+import { type VersionHold, holdAllows, matchesShown } from './hold.ts'
+import { type Contact, type Place, type QuoteCall, parseQuoteCall } from './parse.ts'
 import { buildSnapshot, type Snapshot } from './snapshot.ts'
 import { viennaToday } from './time.ts'
 import { type PriceConfigRow, TariffError, buildTariffs } from './tariffs.ts'
@@ -25,6 +28,9 @@ const MAX_BODY_BYTES = 16 * 1024
 const MINUTE = 60
 const DAY = 86400
 /** Aufrufe je Nutzer (angemeldet, aber nicht vertrauenswürdig): verhindert Massen-Anfragen und Rechenlast. */
+/** Eigenes Geocode-Kontingent von `quote`, getrennt vom Zähler der öffentlichen Function `route`: zusammen mit deren 800/Tag unter 1000/Tag des ORS-Plans. */
+const GEOCODE_LIMITS = { minute: 25, day: 150, userDay: 10 } as const
+const GEOCODE_TTL_SECONDS = 24 * 60 * 60
 const JWT_FORM = /^[\w-]+\.[\w-]+\.[\w-]+$/
 const USER_LIMITS = { minute: 6, day: 30 } as const
 
@@ -39,9 +45,15 @@ export type SaveRequest = {
   totalCents: number | null
   lowCents: number | null
   highCents: number | null
+  /** Geprüfte Adressen: kanonisches Label und Koordinaten des Kandidaten, nie der Client-Wert. */
   from: Place | null
   to: Place | null
   route: RouteResult | null
+  region: 'vienna' | 'austria' | 'international' | null
+  district: number
+  contact: Contact
+  /** Beleg für das Journal: was der Kunde bestätigt hat (Betrag bzw. Art, Bedingungen-Hash). */
+  confirmed: Record<string, unknown>
   preferredDate: string
   timeWindow: string | null
   description: string | null
@@ -78,8 +90,17 @@ export type QuoteDeps = {
   takeTokens(checks: RateCheck[]): Promise<boolean>
   /** Nutzer-ID zum JWT, `null` bei ungültigem Token. */
   getUserId(jwt: string): Promise<string | null>
-  /** Aktuelle Version über die View `current_price_version` und deren Zeilen aus `price_config`. */
-  loadPricing(): Promise<{ version: number; rows: PriceConfigRow[] }>
+  /** Aktuelle Version über die View `current_price_version`. */
+  currentVersion(): Promise<number>
+  /** Zeilen aus `price_config` der Version (Hash geprüft). */
+  loadPricing(version: number): Promise<{ version: number; rows: PriceConfigRow[] }>
+  /** Zustand einer Version für das Haltefenster; `null`: unbekannt oder unveröffentlicht. */
+  loadHold(version: number): Promise<VersionHold | null>
+  /** `booking_terms()`: Stornostufen, Anfahrtspauschale, `termsHash`. */
+  loadTerms(): Promise<Record<string, unknown>>
+  geocodeCache: { get(key: string): Promise<Candidate[] | null>; set(key: string, value: Candidate[], ttlSeconds: number): Promise<void> }
+  /** Land und Bezirk am geprüften Punkt (Polygone in der DB). */
+  district(lon: number, lat: number): Promise<{ inVienna: boolean; inAustria: boolean; district: number | null }>
   loadOffer(id: string): Promise<OfferRow | null>
   /** Bereits gespeicherte Anfrage zu dieser `clientRef` (idempotenter Wiederholungsaufruf). */
   findExisting(customerId: string, clientRef: string, kind: 'request' | 'rental'): Promise<QuoteResponse | null>
@@ -119,7 +140,45 @@ function limitedRoute(route: RouteDeps, req: Request, deps: QuoteDeps): RouteDep
   }
 }
 
-const restricted = (e: unknown): e is HttpError => e instanceof HttpError && e.status === 503
+/** 409 mit Inhalt: der Kunde bestätigt Preis bzw. Bedingungen neu; gespeichert wurde nichts. */
+class Conflict extends Error {
+  constructor(readonly body: Record<string, unknown>) {
+    super(String(body['error']))
+  }
+}
+
+const normalize = (label: string) => label.trim().toLowerCase().replace(/s+/g, ' ')
+
+/** Geocodiert das Label serverseitig (Cache, eigenes Kontingent) und liefert den Kandidaten, der dem Client-Punkt entspricht. */
+async function verifyAddress(place: Place | null, customerId: string, deps: QuoteDeps): Promise<Candidate> {
+  if (!place?.point) throw new HttpError(422, 'address_point_required')
+  const key = await deps.hmac(['geocode', deps.route.provider.id, normalize(place.label)].join('|'))
+  let candidates = await deps.geocodeCache.get(key)
+  if (!candidates) {
+    const userBucket = await deps.hmac(`user|${customerId}`)
+    let allowed: boolean
+    try {
+      allowed = await deps.takeTokens([
+        { bucket: 'qgeo:min:global', max: GEOCODE_LIMITS.minute, window_seconds: MINUTE },
+        { bucket: 'qgeo:day:global', max: GEOCODE_LIMITS.day, window_seconds: DAY },
+        { bucket: `qgeo:day:${userBucket}`, max: GEOCODE_LIMITS.userDay, window_seconds: DAY },
+      ])
+    } catch {
+      throw new HttpError(503, 'limiter_unavailable')
+    }
+    if (!allowed) throw new HttpError(429, 'rate_limited')
+    try {
+      candidates = await deps.route.provider.geocode(place.label)
+    } catch (e) {
+      if (e instanceof ProviderError) throw new HttpError(503, 'provider_unavailable')
+      throw e
+    }
+    await deps.geocodeCache.set(key, candidates, GEOCODE_TTL_SECONDS)
+  }
+  return pickCandidate(candidates, place.point)
+}
+
+const placeOf = (c: Candidate): Place => ({ label: canonicalLabel(c), point: { lat: c.lat, lon: c.lon } })
 
 export async function handleQuote(req: Request, deps: QuoteDeps): Promise<Response> {
   const started = Date.now()
@@ -168,23 +227,18 @@ export async function handleQuote(req: Request, deps: QuoteDeps): Promise<Respon
       if (existing) return finish(200, existing)
     }
 
-    // Vollständiger Tarifsatz, sonst Abbruch ohne zu schreiben.
-    const pricing = await deps.loadPricing()
-    const tariffs = buildTariffs(pricing.rows)
-
-    const response =
-      call.kind === 'rental'
-        ? await quoteRental(call, customerId, pricing.version, deps)
-        : await quoteRequest(call, customerId, pricing.version, tariffs, req, deps)
+    const response = call.kind === 'rental' ? await quoteRental(call, customerId, deps) : await quoteRequest(call, customerId, req, deps)
     return finish(200, response)
   } catch (e) {
     if (e instanceof HttpError) return finish(e.status, { error: e.code }, e.code, e.status === 429 ? { 'Retry-After': String(MINUTE) } : {})
+    if (e instanceof Conflict) return finish(409, e.body, String(e.body['error']))
     if (e instanceof InputError) return finish(400, { error: 'invalid_input', message: e.message }, 'invalid_input')
     if (e instanceof TariffError) return finish(500, { error: 'tariff_incomplete' }, 'tariff_incomplete')
     // Fehler der Schreib-Funktion: P0001 mit dem Code als Meldung (too_late: Termin zu nah, setting_missing: Einstellung fehlt).
     const { code: pg, message } = (e ?? {}) as { code?: unknown; message?: unknown }
     if (pg === 'P0001' && message === 'too_late') return finish(422, { error: 'too_late' }, 'too_late')
-    if (pg === 'P0001' && message === 'setting_missing') return finish(500, { error: 'setting_missing' }, 'setting_missing')
+    if (pg === 'P0001' && message === 'district_required') return finish(422, { error: 'district_required' }, 'district_required')
+    if ((pg === 'P0001' && message === 'setting_missing') || (e instanceof Error && e.message === 'setting_missing')) return finish(500, { error: 'setting_missing' }, 'setting_missing')
     const cause = typeof pg === 'string' && /^[0-9A-Z]{5}$/.test(pg) ? pg : e instanceof Error ? e.name : 'unknown'
     return finish(500, { error: 'internal' }, `internal:${cause}`)
   }
@@ -197,15 +251,42 @@ function amounts(r: PriceResult | OfferResult) {
   return { totalCents: r.lowCents === r.highCents ? r.totalCents : null, lowCents: r.lowCents, highCents: r.highCents }
 }
 
-async function quoteRequest(call: RequestCall, customerId: string, priceVersion: number, tariffs: ReturnType<typeof buildTariffs>, req: Request, deps: QuoteDeps): Promise<QuoteResponse> {
-  // Strecke nur aus Koordinaten über `route`. Scheitert der Anbieter oder greift ein Limit, wird die Anfrage ein Angebot
-  // (`route_missing`, kein Preis, keine Gebühr); der Ausfall des Limiters (503) und alle übrigen Fehler brechen ab.
+/** Version, mit der gerechnet wird: die gezeigte, solange das Haltefenster sie trägt, sonst die aktuelle (dann folgt 409 price_changed). */
+async function versionFor(shown: number, deps: QuoteDeps): Promise<number> {
+  return holdAllows(await deps.loadHold(shown), deps.now()) ? shown : await deps.currentVersion()
+}
+
+async function quoteRequest(call: RequestCall, customerId: string, req: Request, deps: QuoteDeps): Promise<QuoteResponse> {
+  // Bedingungen: der Kunde bestätigt genau die Werte, die gespeichert werden.
+  const terms = await deps.loadTerms()
+  if (terms['termsHash'] !== call.termsHash) throw new Conflict({ error: 'terms_changed', terms })
+  const priceVersion = await versionFor(call.priceVersion, deps)
+  // Vollständiger Tarifsatz, sonst Abbruch ohne zu schreiben.
+  const tariffs = buildTariffs((await deps.loadPricing(priceVersion)).rows)
+
+  // Adressen nur über den serverseitig geprüften Kandidaten; der Client-Punkt bindet nie (Konzept 5.5).
+  const fromCandidate = await verifyAddress(call.from, customerId, deps)
+  const pickup = await deps.district(fromCandidate.lon, fromCandidate.lat)
+  if (!pickup.inVienna) throw new HttpError(422, 'pickup_outside_vienna')
+  if (pickup.district === null) throw new HttpError(422, 'district_required')
+  const from = placeOf(fromCandidate)
+  let to: Place | null = null
+  if (call.service === 'transport' || call.service === 'move') {
+    const toCandidate = await verifyAddress(call.to, customerId, deps)
+    if (!(await deps.district(toCandidate.lon, toCandidate.lat)).inAustria) throw new HttpError(422, 'offer_not_bookable')
+    to = placeOf(toCandidate)
+  }
+
+  // Strecke nur aus den geprüften Punkten über `route`. Nur `no_route` macht die Anfrage zum Angebot (`route_missing`);
+  // Ausfall und Limit des Anbieters brechen ab (503/429), nichts wird gespeichert.
   let route: RouteResult | null = null
-  if ((call.service === 'transport' || call.service === 'move') && call.from?.point && call.to?.point) {
+  if (to) {
     try {
-      route = await computeRouteFacts(limitedRoute(deps.route, req, deps), call.from.point, call.to.point, call.returnTrip)
+      route = await computeRouteFacts(limitedRoute(deps.route, req, deps), from.point as Point, to.point as Point, call.returnTrip)
     } catch (e) {
-      if (!(e instanceof HttpError) || restricted(e)) throw e
+      if (!(e instanceof HttpError)) throw e
+      if (e.status === 502) throw new HttpError(503, 'provider_unavailable')
+      if (!(e.status === 422 && e.code === 'no_route')) throw e
     }
   }
 
@@ -223,7 +304,9 @@ async function quoteRequest(call: RequestCall, customerId: string, priceVersion:
       break
   }
 
-  const snapshot = buildSnapshot(call.service, result)
+  const snapshot = { ...buildSnapshot(call.service, result), terms }
+  // Nur was der Kunde sah wird gespeichert: andere Version oder anderer Betrag (auch bei gleicher Version, z. B. Strecke) → 409.
+  if (priceVersion !== call.priceVersion || !matchesShown(snapshot, call.shown)) throw new Conflict({ error: 'price_changed', priceVersion, snapshot })
   const saved = await deps.saveRequest({
     customerId,
     clientRef: call.clientRef,
@@ -232,9 +315,13 @@ async function quoteRequest(call: RequestCall, customerId: string, priceVersion:
     snapshot,
     priceVersion,
     ...amounts(result),
-    from: call.from,
-    to: call.to,
+    from,
+    to,
     route,
+    region: route?.region ?? null,
+    district: pickup.district,
+    contact: call.contact,
+    confirmed: { shown: call.shown, termsHash: call.termsHash },
     preferredDate: call.preferredDate,
     timeWindow: call.timeWindow,
     description: call.description,
@@ -243,7 +330,11 @@ async function quoteRequest(call: RequestCall, customerId: string, priceVersion:
   return answer(saved, priceVersion, snapshot, call.clientRef, customerId, 'request', deps)
 }
 
-async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, customerId: string, priceVersion: number, deps: QuoteDeps): Promise<QuoteResponse> {
+async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, customerId: string, deps: QuoteDeps): Promise<QuoteResponse> {
+  // Miete ohne Haltefenster: nur die aktuelle Version, nur der gezeigte Betrag.
+  const priceVersion = await deps.currentVersion()
+  if (priceVersion !== call.priceVersion) throw new Conflict({ error: 'price_changed', priceVersion })
+  buildTariffs((await deps.loadPricing(priceVersion)).rows)
   const offer = await deps.loadOffer(call.offerId)
   if (!offer) throw new HttpError(404, 'offer_not_found')
   // nur die Tarifwerte: computeRental prüft jedes Feld des Angebots
@@ -269,6 +360,7 @@ async function quoteRental(call: Extract<QuoteCall, { kind: 'rental' }>, custome
       depositCents: offer.depositCents,
     },
   }
+  if (result.totalCents !== call.shownTotalCents) throw new Conflict({ error: 'price_changed', priceVersion, snapshot })
   const saved = await deps.saveBooking({
     customerId,
     clientRef: call.clientRef,
