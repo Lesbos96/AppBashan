@@ -57,15 +57,15 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 
 ## Arbeits-Loop
 bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/reference/design/screens/`) → fixen. Wiederholen, bis alles grün ist, höchstens 5 Runden je Screen bzw. Aufgabe. Was danach rot bleibt: in `docs/OPEN_ISSUES.md` mit Begründung, dann weiter oder Blocker einmal berichten.
-- In jeder Runde: `shots` (390 px, Light und Dark). Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
-- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Fehlt das, gilt die Zeile als ungeprüft. Maße (Breiten, Abstände, Überlauf) misst du nur per Playwright `boundingBox()` oder `getComputedStyle`, nie aus dem Bild geschätzt.
-- Vor dem Commit einer UI-Session einmal `shots:all`; der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und alle Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
+- In jeder Runde: `shots` nur für die betroffenen Screens bei 390 px, 430 px und Desktop (1280 px), je Light und Dark. Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
+- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Jede Zeile braucht ihre eigene Bildbeobachtung; „wie Light“ oder „wie 390 px“ zählt nicht. Fehlt das, gilt die Zeile als ungeprüft. Maße (Breiten, Abstände, Überlauf) misst du nur per Playwright `boundingBox()` oder `getComputedStyle`, nie aus dem Bild geschätzt.
+- `shots:all` höchstens einmal am Ende einer UI-Session und nur bei mehr als 3 betroffenen Screens; sonst genügen die Shots der Runden. Der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und die vorhandenen Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
 - Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
 - Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
 - Abschlussberichte jedes Schritts nach `docs/proof/<schritt>/`, vorher Secret-Scan (`npm run scan:proof`, Exit 0 nötig); `tmp/proof/` bleibt Arbeitsordner.
 - Ein Rot-Beweis zählt nur, wenn die fehlschlagende Prüfung die Wirkung der gelockerten Sperre misst (Ist-Wert: Zeilen sichtbar, Aufruf erfolgreich, Wert geändert), nicht nur, dass ein Schritt fehlschlägt.
 - Jeder Testlauf schreibt seinen Exit-Code ins Log (Bash: `; echo EXIT=$?`, PowerShell: `; "EXIT=$LASTEXITCODE"`) und nennt ihn im Bericht.
-- Nachweisdateien werden nach dem Schreiben nie verändert; Hinweise in eine `README.md` im selben `docs/proof`-Ordner.
+- Nachweisdateien werden nach dem Schreiben nie verändert; Hinweise (z. B. warum eine Datei fehlt oder ein Scanner-Fehlalarm vorlag) gehören in `docs/PROGRESS.md`, keine README in `docs/proof/`.
 
 ## Ausgaben
 - Befehlsausgaben nur bei Fehlern im Wortlaut zeigen, sonst nur „bestanden".

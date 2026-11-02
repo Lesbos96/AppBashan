@@ -299,6 +299,100 @@ test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clien
   expect(calls[1]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
 })
 
+test('409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn', async ({ page }) => {
+  const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : n === 2 ? { abort: true } : { json: answer(price(80000)) }))
+  await signedInSummary(page)
+  await send(page).click()
+  await page.getByRole('button', { name: 'Neuen Preis übernehmen und senden' }).click()
+  await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
+  const main = page.locator('main')
+  await expect(main.getByText('Richtpreis', { exact: true })).toBeVisible()
+  await expect(main.getByText(/^800,00\s€$/)).toBeVisible()
+  await expect(main.getByText(/^770,40\s€$/)).toHaveCount(0)
+  await send(page).click()
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(3)
+  expect(calls[2]!.body['shown']).toEqual({ kind: 'price', totalCents: 80000, lowCents: 80000, highCents: 80000 })
+  expect(calls[2]!.body['priceVersion']).toBe(2)
+  expect(calls[2]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
+})
+
+test('409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash', async ({ page }) => {
+  const old = { cancel_free_hours: 48, cancel_late_percent: 20, cancel_full_percent: 80, cancel_full_days_before: 3, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) }
+  const next = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
+  const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'terms_changed', terms: next } } : n === 2 ? { abort: true } : { json: answer(price(77040)) }))
+  await signedInSummary(page, async (p) => {
+    await p.route(/\/rest\/v1\/rpc\/booking_terms/, (r) => r.fulfill({ headers: cors, json: old }))
+  })
+  const main = page.locator('main')
+  await expect(main.getByText('Kostenlos stornieren kannst du bis 48 Stunden vor dem Termin.')).toBeVisible()
+  await send(page).click()
+  await page.getByRole('button', { name: 'Bedingungen bestätigen und senden' }).click()
+  await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
+  await expect(main.getByText('Kostenlos stornieren kannst du bis 24 Stunden vor dem Termin.')).toBeVisible()
+  await expect(main.getByText('Danach werden 50 % des Preises berechnet, ab einem Tag vor dem Termin 100 %.')).toBeVisible()
+  await expect(main.getByText(/bis 48 Stunden/)).toHaveCount(0)
+  await send(page).click()
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(3)
+  expect(calls[2]!.body['termsHash']).toBe('b'.repeat(64))
+  expect(calls[2]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
+})
+
+test('409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte', async ({ page }) => {
+  const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : { json: answer(price(80000)) }))
+  await signedInSummary(page)
+  await send(page).click()
+  await expect(page.getByRole('alert')).toContainText('Der Preis wurde aktualisiert.')
+  await expect(send(page)).toBeDisabled()
+  await page.waitForTimeout(500)
+  expect(calls).toHaveLength(1)
+})
+
+test('409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt', async ({ page, context }) => {
+  const terms = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
+  const calls = await mockQuote(page, () => ({ status: 409, json: { error: 'terms_changed', terms } }))
+  await signedInSummary(page)
+  await send(page).click()
+  const accept = page.getByRole('button', { name: 'Bedingungen bestätigen und senden' })
+  await expect(accept).toBeEnabled()
+  await expect(send(page)).toBeDisabled()
+  await page.getByRole('checkbox').uncheck()
+  await expect(accept).toBeDisabled()
+  await page.getByRole('checkbox').check()
+  await expect(accept).toBeEnabled()
+  const other = await context.newPage()
+  await other.goto('/')
+  await other.evaluate(() => {
+    const key = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k))!
+    const session = JSON.parse(localStorage.getItem(key)!)
+    session.user.id = 'u-fremd'
+    localStorage.setItem(key, JSON.stringify(session))
+    new BroadcastChannel(key).postMessage({ event: 'SIGNED_IN', session })
+  })
+  await expect(page.getByRole('checkbox')).not.toBeChecked()
+  await expect(accept).toBeDisabled()
+  expect(calls).toHaveLength(1)
+})
+
+const incomplete: [string, object][] = [
+  ['Preis ohne Preisversion', { error: 'price_changed', snapshot: price(80000) }],
+  ['Preis ohne Snapshot', { error: 'price_changed', priceVersion: 2 }],
+  ['Bedingungen ohne terms', { error: 'terms_changed' }],
+  ['Bedingungen unlesbar', { error: 'terms_changed', terms: { termsHash: 'b'.repeat(64) } }],
+]
+for (const [name, json] of incomplete) {
+  test(`409 unvollständig (${name}): wie nicht verfügbar behandelt, kein zweiter Aufruf`, async ({ page }) => {
+    const calls = await mockQuote(page, () => ({ status: 409, json }))
+    await signedInSummary(page)
+    await send(page).click()
+    await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt.')
+    await expect(page.getByRole('button', { name: /übernehmen und senden|bestätigen und senden/ })).toHaveCount(0)
+    await page.waitForTimeout(500)
+    expect(calls).toHaveLength(1)
+  })
+}
+
 test('422 pickup_outside_vienna: klare Meldung, Link zu den Angaben', async ({ page }) => {
   await mockQuote(page, () => ({ status: 422, json: { error: 'pickup_outside_vienna' } }))
   await signedInSummary(page)

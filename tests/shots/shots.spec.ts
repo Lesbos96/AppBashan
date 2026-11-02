@@ -271,6 +271,21 @@ const summary = (reply?: Reply, send = true) => async (page: Page) => {
   if (send) await page.getByRole('button', { name: 'Anfrage senden' }).click()
 }
 
+/** S9a-3b: 409, der Kunde übernimmt (`accept`), der zweite Aufruf scheitert: die Seite zeigt danach den übernommenen Preis bzw. die übernommenen Bedingungen. */
+const afterAccept = (conflict: object, accept: string, oldTerms?: object) => async (page: Page) => {
+  await anonymousPrices(page)
+  if (oldTerms) await page.route(/\/rest\/v1\/rpc\/booking_terms/, (r) => r.fulfill({ headers: cors, json: oldTerms }))
+  await mockAuth(page)
+  await mockQuote(page, (n) => (n === 1 ? { status: 409, json: conflict } : { abort: true }))
+  await page.goto('/anmelden')
+  await signInWithCode(page)
+  await toSummary(page)
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'Anfrage senden' }).click()
+  await page.getByRole('button', { name: accept }).click()
+  await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
+}
+
 /** Umzug mit berechneter Strecke (4,8 km in Wien), Etagen, Kartons und Halteverbot; die Seite wird vor dem Setzen geöffnet. */
 const umzugDraft = (page: Page) =>
   page.evaluate((date) => {
@@ -341,6 +356,17 @@ const anfrageRoutes: (typeof routes)[number][] = [
   { name: 'zusammenfassung-fehler-500', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 500, json: { error: 'internal' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-preis-aktualisiert', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } })(page); await expect(page.getByRole('alert')).toContainText('Der Preis wurde aktualisiert.') } },
   { name: 'zusammenfassung-bedingungen', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 409, json: { error: 'terms_changed', terms: { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) } } })(page); await expect(page.getByRole('alert')).toContainText('Bedingungen') } },
+  { name: 'zusammenfassung-preis-uebernommen-fehler', path: '/', expectedError: errored, steps: afterAccept({ error: 'price_changed', priceVersion: 2, snapshot: price(80000) }, 'Neuen Preis übernehmen und senden') },
+  {
+    name: 'zusammenfassung-bedingungen-uebernommen-fehler',
+    path: '/',
+    expectedError: errored,
+    steps: afterAccept(
+      { error: 'terms_changed', terms: { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) } },
+      'Bedingungen bestätigen und senden',
+      { cancel_free_hours: 48, cancel_late_percent: 20, cancel_full_percent: 80, cancel_full_days_before: 3, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) },
+    ),
+  },
   { name: 'zusammenfassung-ausserhalb-wien', path: '/', expectedError: errored, steps: async (page) => { await summary({ status: 422, json: { error: 'pickup_outside_vienna' } })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-offline', path: '/', expectedError: errored, steps: async (page) => { await summary({ abort: true })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-wird-gesendet', path: '/', steps: async (page) => { await summary({ json: answer(price(77040)), delay: 20_000 })(page); await expect(page.getByRole('button', { name: 'Wird gesendet …' })).toBeVisible() } },

@@ -7,7 +7,7 @@ import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
-import { type Path, type Shown, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
+import { type Path, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
 import { takePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
@@ -150,8 +150,12 @@ export function Zusammenfassung({ path }: { path: Path }) {
 }
 
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'error'; error: QuoteError }
-/** Vom Kunden bestätigte Änderungen nach einem 409; `clientRef` bleibt dabei stabil, weil nichts gespeichert wurde. */
-type Override = { priceVersion?: number; termsHash?: string; shown?: Shown }
+/**
+ * Vom Kunden bestätigte Änderungen nach einem 409; `clientRef` bleibt dabei stabil, weil nichts gespeichert wurde.
+ * Der angenommene Preis steht im sessionStorage (`rememberShown`), wie der aus dem Konfigurator: Anzeige und gesendetes `shown` lesen dieselbe Quelle.
+ * Die Preisversion gilt nur in dieser Ansicht; nach einem Neuladen gilt die frisch geladene (im Zweifel folgt ein weiteres 409).
+ */
+type Accepted = { priceVersion?: number; terms?: Terms }
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const PHONE = /^[0-9+()/ .-]{5,40}$/
@@ -171,7 +175,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [wait, setWait] = useState(0)
   const busy = useRef(false)
-  const override = useRef<Override>({})
+  const [accepted, setAccepted] = useState<Accepted>({})
   const [saved] = useState(() => readContact(path))
   const [name, setName] = useState(saved.name)
   const [phone, setPhone] = useState(saved.phone)
@@ -192,7 +196,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   // Ohne gemerkten Preis gibt es nichts, was der Kunde bestätigen könnte: zurück zum Preis-Schritt.
   const shownPrice = readShownFull(path)
   if (!shownPrice) return <Navigate to={config.back} replace />
-  const storno = termsText(terms)
+  const storno = termsText(accepted.terms ?? terms)
 
   const toLogin = () => {
     stashDraft(path)
@@ -205,8 +209,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
     void navigate(`/anmelden?next=${encodeURIComponent(`/${path}/zusammenfassung`)}`)
   }
 
-  /** `shownId`: das Konto, dessen E-Mail der Kunde gerade sieht. Hat sich die Sitzung geändert, wird nichts gesendet. */
-  async function send(shownId: string) {
+  /** `shownId`: das Konto, dessen E-Mail der Kunde gerade sieht. Hat sich die Sitzung geändert, wird nichts gesendet. `now`: die Annahme, die der Render noch nicht kennt. */
+  async function send(shownId: string, now: Accepted = accepted) {
     if (busy.current) return
     busy.current = true
     setStatus({ kind: 'sending' })
@@ -218,7 +222,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         setStatus({ kind: 'changed' })
         return
       }
-      const body = buildBody(path, tariffs, { priceVersion: override.current.priceVersion ?? version, termsHash: override.current.termsHash ?? terms.termsHash, shown: override.current.shown, contact })
+      // `shown` kommt aus dem sessionStorage (buildBody), also aus derselben Quelle wie die Preiskarte
+      const body = buildBody(path, tariffs, { priceVersion: now.priceVersion ?? version, termsHash: (now.terms ?? terms).termsHash, contact })
       if (!body) {
         void navigate(`/${path}/termin`, { replace: true })
         return
@@ -231,9 +236,9 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
       if (error.kind === 'rate_limited') setWait(60)
-      if (error.kind === 'price_changed' && !error.conflict.snapshot) setStatus({ kind: 'error', error: new QuoteError('unavailable') })
-      else
-      setStatus({ kind: 'error', error })
+      // Ein 409 ohne alles, was der Kunde bestätigen müsste, ist nicht bestätigbar: wie nicht verfügbar behandeln (sonst Schleife aus 409)
+      const incomplete = (error.kind === 'price_changed' && (!error.conflict.snapshot || error.conflict.priceVersion === undefined)) || (error.kind === 'terms_changed' && !error.conflict.terms)
+      setStatus({ kind: 'error', error: incomplete ? new QuoteError('unavailable') : error })
     } finally {
       busy.current = false
     }
@@ -242,12 +247,29 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const sending = status.kind === 'sending'
   const error = status.kind === 'error' ? status.error : null
   const confirmChange = error?.kind === 'price_changed' || error?.kind === 'terms_changed' ? error : null
+  // Einwilligung, Kontakt und Wartezeit gelten wie für die Leiste: die Karte ist im 409-Zustand der einzige Weg zum Senden
+  const canSend = consent && contactOk && !sending && wait <= 0
   const acceptChange = () => {
-    if (!confirmChange) return
+    if (!confirmChange || !canSend) return
     const { conflict } = confirmChange
-    if (confirmChange.kind === 'price_changed' && conflict.snapshot && conflict.priceVersion !== undefined) override.current = { ...override.current, priceVersion: conflict.priceVersion, shown: shownFromSnapshot(conflict.snapshot) }
-    if (confirmChange.kind === 'terms_changed' && conflict.terms) override.current = { ...override.current, termsHash: conflict.terms.termsHash }
-    void send(session?.user.id ?? '')
+    let next: Accepted
+    if (confirmChange.kind === 'price_changed') {
+      const { snapshot, priceVersion } = conflict
+      if (!snapshot || priceVersion === undefined) return
+      const shown = shownFromSnapshot(snapshot)
+      rememberShown(path, snapshot.kind === 'price' ? snapshot.totalCents : null, shown)
+      // Ohne gespeicherten Wert würde die Karte einen anderen Preis zeigen, als gesendet wird: dann nichts senden
+      if (JSON.stringify(readShownFull(path)) !== JSON.stringify(shown)) {
+        setStatus({ kind: 'error', error: new QuoteError('unavailable') })
+        return
+      }
+      next = { ...accepted, priceVersion }
+    } else {
+      if (!conflict.terms) return
+      next = { ...accepted, terms: conflict.terms }
+    }
+    setAccepted(next)
+    void send(session?.user.id ?? '', next)
   }
   const newSnapshot = confirmChange?.conflict.snapshot
   const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
@@ -365,7 +387,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
                 )}
               </>
             )}
-            <Button variant="tinted" onClick={acceptChange}>
+            <Button variant="tinted" disabled={!canSend} onClick={acceptChange}>
               {confirmChange.kind === 'price_changed' ? 'Neuen Preis übernehmen und senden' : 'Bedingungen bestätigen und senden'}
             </Button>
           </div>
@@ -397,7 +419,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
               Angaben ändern
             </Link>
           ) : (
-            <Button disabled={!consent || !contactOk || sending || wait > 0} aria-busy={sending} className="disabled:opacity-70!" onClick={() => void send(session.user.id)}>
+            <Button disabled={!canSend || confirmChange !== null} aria-busy={sending} className="disabled:opacity-70!" onClick={() => void send(session.user.id)}>
               {sending ? 'Wird gesendet …' : wait > 0 ? `Bitte warten (${wait} s)` : error ? 'Erneut senden' : 'Anfrage senden'}
             </Button>
           )}

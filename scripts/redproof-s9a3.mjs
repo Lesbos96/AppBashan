@@ -1,7 +1,7 @@
 // Rot-Beweis S9a-3 (nur Dev-Projekt). Drei Teile, jede Prüfung misst den Ist-Wert:
 //  1. SQL-Sperren aus 0019: lockern (committet, Eigentümer-SQL), Probe „Ergebnis | Wert“ (Rollback), wiederherstellen, Probe erneut, zuständiger Test muss gelockert rot werden.
 //  2. Function-Sperren in quote (Redeploy-Beweis R2-N13): Quelltext lockern, deployen, Test muss rot werden (Ist-Wert = Fehlermeldung des Tests),
-//     aus dem Git-Stand zurücksetzen, neu deployen, Test muss grün sein.
+//     aus dem vorher gelesenen Inhalt zurückschreiben (md5 vorher/nachher gleich), neu deployen, Test muss grün sein. Bricht mit Exit 2 ab, wenn supabase/functions nicht sauber committet ist.
 //  3. Werkzeuge: Negativbeweis N-15 (falsche Ref in SUPABASE_PROJECT_ID erreicht Dev nicht), N-16 (scan-proof findet Token, URL, fehlendes Verzeichnis).
 // „Schicht“: eine zweite Sperre dahinter hält; der erwartete Wert ist der Fehler der zweiten Schicht, kein Beweis der ersten.
 // Vorher/Nachher: Definitionen (md5), Policies, Trigger (inkl. tgenabled) und Rechte werden verglichen. Bericht: tmp/proof/s9a3-rotbeweis.md
@@ -9,7 +9,7 @@
 import './dev-guard.mjs'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
@@ -22,6 +22,15 @@ const sql = (q) => {
   return json.rows
 }
 const q1 = (s) => `'${s.replaceAll("'", "''")}'`
+const md5 = (s) => createHash('md5').update(s).digest('hex')
+
+// Der Redeploy-Teil überschreibt handler.ts und stellt sie aus dem gelesenen Inhalt wieder her; `functions deploy` lädt die ganze Function hoch.
+// Uncommittete Änderungen in supabase/functions würden ungeprüft auf Dev landen und dort bleiben: darum vorher abbrechen (vor jeder Änderung an Dev).
+const H = 'supabase/functions/_shared/quote/handler.ts'
+if (!process.argv.includes('--no-code') && execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim() !== '') {
+  console.error('ABBRUCH: supabase/functions hat uncommittete Änderungen (git status --porcelain nicht leer). Erst committen oder verwerfen.')
+  process.exit(2)
+}
 
 const OBJECTS = `('public.service_requests'::regclass, 'public.price_revisions'::regclass, 'public.status_events'::regclass, 'public.rental_bookings'::regclass, 'public.request_contacts'::regclass, 'public.geocode_cache'::regclass, 'public.geo_districts'::regclass, 'public.profiles'::regclass)`
 const SNAPSHOT = `
@@ -287,7 +296,6 @@ const run = async () => {
   await runSql(selected, withTests, testRun)
 
   // --- Teil 2: Function quote, Redeploy-Beweis (R2-N13) -------------------------------------------------------------------------------
-  const H = 'supabase/functions/_shared/quote/handler.ts'
   const code = [
     { label: 'quote: Abholung außerhalb Wiens nicht mehr geprüft (Schicht: Bezirk aus Polygon)', kind: 'Schicht', file: H, from: "if (!pickup.inVienna) throw new HttpError(422, 'pickup_outside_vienna')", to: "if (false) throw new HttpError(422, 'pickup_outside_vienna')", test: 'Abholung außerhalb Wiens', note: 'zweite Schicht: district null → district_required' },
     { label: 'quote: gezeigter Betrag nicht mehr abgeglichen (Kundenpreis ohne Zustimmung)', kind: 'Sperre', file: H, from: '|| !matchesShown(snapshot, call.shown)) throw new Conflict', to: ') throw new Conflict', test: 'gleiche Version, anderer Betrag' },
@@ -300,20 +308,23 @@ const run = async () => {
     for (const c of code) {
       const original = readFileSync(c.file, 'utf8')
       if (!original.includes(c.from)) throw new Error(`Muster nicht gefunden: ${c.from}`)
-      let loose, restored, diffClean
+      const md5Before = md5(original)
+      let loose, restored, diffClean, md5After
       try {
         writeFileSync(c.file, original.replace(c.from, c.to))
         deploy()
         loose = testRun(c.test, 'tests/rls/quote-hardening.test.ts')
       } finally {
-        execFileSync('git', ['checkout', '--', c.file])
+        // Die Datei kommt aus dem vor dem Lockern gelesenen Inhalt zurück, nicht aus Git: eigene Änderungen am Handler gehen nie verloren.
+        writeFileSync(c.file, original)
+        md5After = md5(readFileSync(c.file, 'utf8'))
         deploy()
         restored = testRun(c.test, 'tests/rls/quote-hardening.test.ts')
-        diffClean = spawnSync('git', ['diff', '--quiet', '--', c.file]).status === 0
+        diffClean = md5After === md5Before
       }
       const good = loose.failed.length > 0 && restored.failed.length === 0 && restored.passed > 0 && diffClean
-      results.push({ ...c, part: 'Redeploy', looseValue: `${loose.failed.length} Test(s) rot: ${loose.message ?? '–'}`, lockedValue: `${restored.passed} grün, ${restored.failed.length} rot`, loose: 'Test rot', locked: 'Test grün', good, effect: loose.failed.length > 0, blocked: restored.failed.length === 0, diffClean })
-      console.log(`${good ? 'OK    ' : 'FEHLER'} [${c.kind}] ${c.label}\n         gelockert: ${loose.failed.length} rot (${loose.message ?? '–'})\n         neu deployt: ${restored.passed} grün, ${restored.failed.length} rot; Datei gleich Git-Stand: ${diffClean}`)
+      results.push({ ...c, part: 'Redeploy', looseValue: `${loose.failed.length} Test(s) rot: ${loose.message ?? '–'}`, lockedValue: `${restored.passed} grün, ${restored.failed.length} rot`, loose: 'Test rot', locked: 'Test grün', good, effect: loose.failed.length > 0, blocked: restored.failed.length === 0, diffClean, md5Before, md5After })
+      console.log(`${good ? 'OK    ' : 'FEHLER'} [${c.kind}] ${c.label}\n         gelockert: ${loose.failed.length} rot (${loose.message ?? '–'})\n         neu deployt: ${restored.passed} grün, ${restored.failed.length} rot; md5 ${c.file} vorher ${md5Before}, nachher ${md5After}: ${diffClean ? 'gleich' : 'ABWEICHUNG'}`)
     }
   }
 
@@ -367,7 +378,7 @@ const count = (part, kind) => results.filter((r) => r.good && r.part === part &&
 const report = [
   '# S9a-3 Rot-Beweis',
   '',
-  `Stand ${new Date().toISOString()} (Dev-Projekt). Teil 1 SQL: lockern (committet), Ist-Wert-Probe (Rollback) und zuständigen Test laufen lassen, Original wiederherstellen (Restore-SQL vorher nach tmp/proof/s9a3-restore-*.sql), Probe erneut. Teil 2 Redeploy (R2-N13): Quelltext lockern, quote deployen, Test muss rot werden, per \`git checkout\` zurück, neu deployen, Test grün, Datei gleich Git-Stand. Teil 3 Werkzeuge (N-15, N-16).`,
+  `Stand ${new Date().toISOString()} (Dev-Projekt). Teil 1 SQL: lockern (committet), Ist-Wert-Probe (Rollback) und zuständigen Test laufen lassen, Original wiederherstellen (Restore-SQL vorher nach tmp/proof/s9a3-restore-*.sql), Probe erneut. Teil 2 Redeploy (R2-N13): Quelltext lockern, quote deployen, Test muss rot werden, Datei aus dem vorher gelesenen Inhalt zurück, neu deployen, Test grün, md5 der Datei vorher und nachher gleich. Teil 3 Werkzeuge (N-15, N-16).`,
   '',
   'Format der Probe: „Ergebnis | Wert“. Ergebnis ist „ok“ oder „SQLSTATE: Meldung“; Wert ist der Zustand danach. „Schicht“: eine zweite Sperre dahinter hält, kein Beweis der ersten.',
   '',
@@ -376,7 +387,7 @@ for (const r of results) {
   report.push(`## ${r.label}`, '', `- Teil: ${r.part}; Art: ${r.kind === 'Schicht' ? `Schicht (zweite Sperre dahinter${r.note ? `: ${r.note}` : ''}, kein Beweis der ersten)` : r.kind}`)
   report.push(`- Gelockert/Beobachtet: \`${r.looseValue}\` (erwartet \`${r.loose}\`) ${r.effect ? '✓' : '✗ ABWEICHUNG'}`, `- Gesperrt/Wiederhergestellt: \`${r.lockedValue}\` (erwartet \`${r.locked}\`) ${r.blocked ? '✓' : '✗ ABWEICHUNG'}`)
   if (r.part === 'SQL') report.push(r.tests ? `- Test \`${r.testFile ?? 'tests/rls/status.test.ts'}\` -t "${r.tests}" gelockert: ${r.redTests ? `${r.redTests.failed.length} rot von ${r.redTests.ran} gelaufen${r.redTests.message ? ` (${r.redTests.message})` : ''}` : 'nicht ausgeführt'} ${r.testsRed ? '✓' : '✗ (Lücke im Test!)'}` : '- Test: keiner (Wirkung durch die Probe belegt)')
-  if (r.part === 'Redeploy') report.push(`- Datei nach \`git checkout\` gleich Git-Stand: ${r.diffClean ? 'ja' : 'NEIN'}`)
+  if (r.part === 'Redeploy') report.push(`- md5 der Datei vorher \`${r.md5Before}\`, nachher \`${r.md5After}\`: ${r.diffClean ? 'gleich' : 'ABWEICHUNG'}`)
   report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
 }
 report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Constraints, Funktionen (md5) und Rechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
