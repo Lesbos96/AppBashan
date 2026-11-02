@@ -103,11 +103,13 @@ beforeAll(async () => {
   ownerGrantRole(admin.id, 'admin')
 
   requestA = await makeRequest(a.id)
-  requestB = await makeRequest(b.id)
 
-  // Ablauf wie in der App: erst Eintrag (Limit 8), dann Upload in den eingetragenen Pfad.
-  photoPathB = must(await b.db.from('request_photos').insert({ request_id: requestB }).select('storage_path').single()).storage_path
+  // Ablauf seit 0020: erst Upload in den Staging-Ordner {uid}/{client_ref}/, dann übernimmt das Absenden die Datei.
+  const refB = crypto.randomUUID()
+  const photoIdB = crypto.randomUUID()
+  photoPathB = `${b.id}/${refB}/${photoIdB}.jpg`
   must(await b.db.storage.from('request-photos').upload(photoPathB, png, { contentType: 'image/jpeg' }))
+  requestB = await makeRequest(b.id, { p_client_ref: refB, p_photo_ids: [photoIdB] })
 
   const offer = must(
     await provider.db
@@ -193,7 +195,9 @@ describe('Kunden sehen nur Eigenes', () => {
   it('kein Upload und kein Foto-Eintrag in fremde Anfragen', async () => {
     const foreign = `${b.id}/${requestB}/${crypto.randomUUID()}.jpg`
     expect((await a.db.storage.from('request-photos').upload(foreign, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
-    const ownFolder = `${a.id}/${requestB}/${crypto.randomUUID()}.jpg`
+    // eigener Ordner, aber zu dessen client_ref gibt es schon eine Anfrage (nach dem Absenden ist Staging zu)
+    const refA = must(await service.from('service_requests').select('client_ref').eq('id', requestA).single()).client_ref
+    const ownFolder = `${a.id}/${refA}/${crypto.randomUUID()}.jpg`
     expect((await a.db.storage.from('request-photos').upload(ownFolder, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
     expect((await a.db.from('request_photos').insert({ request_id: requestB })).error).not.toBeNull()
   })
@@ -204,18 +208,6 @@ describe('Kunden sehen nur Eigenes', () => {
     await a.db.storage.from('request-photos').remove([photoPathB])
     expect(must(await service.from('request_photos').select('id').eq('storage_path', photoPathB))).toHaveLength(1)
     expect((await service.storage.from('request-photos').download(photoPathB)).error).toBeNull()
-  })
-
-  it('höchstens 8 Fotos je Anfrage, in Storage und Tabelle', async () => {
-    for (let i = 2; i <= 8; i++) {
-      const path = must(await b.db.from('request_photos').insert({ request_id: requestB }).select('storage_path').single()).storage_path
-      must(await b.db.storage.from('request-photos').upload(path, png, { contentType: 'image/jpeg' }))
-      extraPhotos.push(path)
-    }
-    const ninth = await b.db.from('request_photos').insert({ request_id: requestB })
-    expect(ninth.error?.message).toBe('Höchstens 8 Fotos je Anfrage')
-    expect(ninth.error?.code).toBe('23514')
-    expect(must(await b.db.from('request_photos').select('id'))).toHaveLength(8)
   })
 
   it('Mietanfragen', async () => {
@@ -258,7 +250,8 @@ describe('Kunden setzen nur „zurückgezogen"', () => {
   })
 
   it('keine Fotos zu einer zurückgezogenen Anfrage', async () => {
-    const path = `${a.id}/${requestA}/${crypto.randomUUID()}.jpg`
+    const refA = must(await service.from('service_requests').select('client_ref').eq('id', requestA).single()).client_ref
+    const path = `${a.id}/${refA}/${crypto.randomUUID()}.jpg`
     expect((await a.db.storage.from('request-photos').upload(path, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
     expect((await a.db.from('request_photos').insert({ request_id: requestA })).error).not.toBeNull()
   })

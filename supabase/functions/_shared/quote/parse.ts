@@ -37,7 +37,8 @@ type Common = {
   shown: Shown
   contact: Contact
 }
-export type Extras = { description: string | null; volumeM3: number | null; preferredDate: string; timeWindow: (typeof TIME_WINDOWS)[number] | null }
+/** `photoIds`: die vor dem Absenden hochgeladenen Staging-Fotos ({uid}/{clientRef}/{id}.jpg); die Datenbank prüft Besitz, Ablauf und Anzahl. */
+export type Extras = { description: string | null; volumeM3: number | null; preferredDate: string; timeWindow: (typeof TIME_WINDOWS)[number] | null; photoIds: string[] }
 
 export type RequestCall =
   | (Common & Extras & { kind: 'request'; service: 'transport' | 'move'; inputs: TransportInput })
@@ -57,7 +58,7 @@ const HASH = /^[0-9a-f]{64}$/
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 const KEYS = {
-  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'clientRef', 'priceVersion', 'termsHash', 'shown', 'contact'],
+  request: ['service', 'inputs', 'from', 'to', 'returnTrip', 'description', 'volume', 'preferredDate', 'timeWindow', 'clientRef', 'priceVersion', 'termsHash', 'shown', 'contact', 'photoIds'],
   rental: ['service', 'offerId', 'inputs', 'clientRef', 'priceVersion', 'shownTotalCents'],
 } as const
 
@@ -161,6 +162,11 @@ export function parseQuoteCall(body: unknown, today: string): QuoteCall {
     contact: contactOf(r['contact']),
     preferredDate: day(r['preferredDate'], 'preferredDate', today),
     timeWindow: wantsWindow ? optional(r['timeWindow'], (v) => oneOfWindow(v)) : null,
+    photoIds: optional(r['photoIds'], (v) => {
+      // Die Obergrenze 8 prüft die Datenbank (422 too_many_photos); hier nur eine grobe Grenze gegen übergroße Aufrufe.
+      if (!Array.isArray(v) || v.length > 50) throw new InputError('photoIds: Liste von höchstens 50 UUIDs erwartet')
+      return v.map((x) => uuid(x, 'photoIds'))
+    }) ?? [],
   }
   const volume = optional(r['volume'], (v) => {
     if (typeof v !== 'number' || !Number.isFinite(v) || v < 1 || v > 100) throw new InputError('volume: Zahl zwischen 1 und 100 erwartet')

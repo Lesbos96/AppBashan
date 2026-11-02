@@ -142,6 +142,7 @@ export function quoteDb(db: Db): DbDeps {
         p_volume: a.volumeM3,
         p_contact: a.contact,
         p_confirmed: a.confirmed,
+        p_photo_ids: a.photoIds,
       }
       // Die generierten Typen kennen keine NULL-Argumente; die Funktion nimmt sie an.
       const row = must(await db.rpc('quote_save_request', args as never))[0]

@@ -1,3 +1,4 @@
+// Stand 0019, nach 0020 nicht mehr lauffähig (quote_save_request hat eine neue Signatur); der Nachweis bleibt docs/proof/s9a3/. Aktuell: redproof-s9a4.mjs.
 // Rot-Beweis S9a-3 (nur Dev-Projekt). Drei Teile, jede Prüfung misst den Ist-Wert:
 //  1. SQL-Sperren aus 0019: lockern (committet, Eigentümer-SQL), Probe „Ergebnis | Wert“ (Rollback), wiederherstellen, Probe erneut, zuständiger Test muss gelockert rot werden.
 //  2. Function-Sperren in quote (Redeploy-Beweis R2-N13): Quelltext lockern, deployen, Test muss rot werden (Ist-Wert = Fehlermeldung des Tests),

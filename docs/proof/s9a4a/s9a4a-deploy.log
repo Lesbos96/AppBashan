@@ -1,0 +1,32 @@
+Uploading asset (quote): supabase/functions/quote/index.ts
+Uploading asset (quote): supabase/functions/_shared/quote/handler.ts
+Uploading asset (quote): supabase/functions/_shared/quote/tariffs.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/index.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/transport.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/result.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/money.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/limits.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/input.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/assembly.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/tariffs.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/rental.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/fee.ts
+Uploading asset (quote): supabase/functions/_shared/pricing/clearance.ts
+Uploading asset (quote): supabase/functions/_shared/quote/time.ts
+Uploading asset (quote): supabase/functions/_shared/quote/snapshot.ts
+Uploading asset (quote): supabase/functions/_shared/quote/parse.ts
+Uploading asset (quote): supabase/functions/_shared/quote/hold.ts
+Uploading asset (quote): supabase/functions/_shared/route/facts.ts
+Uploading asset (quote): supabase/functions/_shared/quote/address.ts
+Uploading asset (quote): supabase/functions/_shared/route/handler.ts
+Uploading asset (quote): supabase/functions/_shared/route/provider.ts
+Uploading asset (quote): supabase/functions/_shared/route/compute.ts
+Uploading asset (quote): supabase/functions/_shared/http.ts
+Uploading asset (quote): supabase/functions/_shared/quote/db.ts
+Uploading asset (quote): supabase/functions/_shared/route/db.ts
+Uploading asset (quote): supabase/functions/_shared/database.types.ts
+Uploading asset (quote): supabase/functions/_shared/route/hmac.ts
+{"project_ref":"vcpbbzdyltvffvzjrzdi","functions":["quote"],"dashboard_url":"https://supabase.com/dashboard/project/vcpbbzdyltvffvzjrzdi/functions","message":"Deployed Functions."}
+A new version of Supabase CLI is available: v3.0.0 (currently installed v2.122.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+EXIT=0

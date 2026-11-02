@@ -855,6 +855,7 @@ export type Database = {
           name: string
         }[]
       }
+      photo_staging_interval: { Args: never; Returns: string }
       price_version_hold: {
         Args: { p_version: number }
         Returns: {
@@ -912,6 +913,7 @@ export type Database = {
           p_high: number
           p_inputs: Json
           p_low: number
+          p_photo_ids?: string[]
           p_preferred_date: string
           p_price_version: number
           p_region: Database["public"]["Enums"]["region"]

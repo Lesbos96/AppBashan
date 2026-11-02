@@ -58,6 +58,7 @@ export type SaveRequest = {
   timeWindow: string | null
   description: string | null
   volumeM3: number | null
+  photoIds: string[]
 }
 
 export type SaveBooking = {
@@ -153,6 +154,9 @@ const WRITE_ERRORS: Record<string, number> = {
   district_required: 422,
   contact_required: 422,
   preferred_date_required: 400,
+  too_many_photos: 422,
+  photo_missing: 422,
+  photo_expired: 422,
   terms_missing: 500,
   confirmed_required: 500,
 }
@@ -336,6 +340,7 @@ async function quoteRequest(call: RequestCall, customerId: string, req: Request,
     timeWindow: call.timeWindow,
     description: call.description,
     volumeM3: call.volumeM3,
+    photoIds: call.photoIds,
   })
   return answer(saved, priceVersion, snapshot, call.clientRef, customerId, 'request', deps)
 }
