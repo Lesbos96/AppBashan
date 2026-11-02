@@ -230,6 +230,51 @@ test('Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit', async
   expect(await tab.evaluate(() => localStorage.getItem('movenow.handover'))).toBeNull()
 })
 
+test('409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich', async ({ page }) => {
+  const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : { json: answer(price(80000)) }))
+  await signedInSummary(page)
+  await send(page).click()
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('Der Preis wurde aktualisiert.')
+  await expect(alert).toContainText(/800,00\s€/)
+  // ohne Zustimmung geht nichts weiter: kein zweiter Aufruf, keine Bestätigungsseite
+  await page.waitForTimeout(500)
+  expect(calls).toHaveLength(1)
+  await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
+  await page.getByRole('button', { name: 'Neuen Preis übernehmen und senden' }).click()
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(2)
+  expect(calls[1]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
+  expect(calls[1]!.body['priceVersion']).toBe(2)
+  expect(calls[1]!.body['shown']).toEqual({ kind: 'price', totalCents: 80000, lowCents: 80000, highCents: 80000 })
+})
+
+test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen', async ({ page }) => {
+  const terms = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
+  const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'terms_changed', terms } } : { json: answer(price(77040)) }))
+  await signedInSummary(page)
+  await send(page).click()
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('Die Bedingungen wurden aktualisiert.')
+  await expect(alert).toContainText('Kostenlos stornierbar bis 24 Stunden')
+  await page.waitForTimeout(500)
+  expect(calls).toHaveLength(1)
+  await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
+  await page.getByRole('button', { name: 'Bedingungen bestätigen und senden' }).click()
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(2)
+  expect(calls[1]!.body['termsHash']).toBe('b'.repeat(64))
+  expect(calls[1]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
+})
+
+test('422 pickup_outside_vienna: klare Meldung, Link zu den Angaben', async ({ page }) => {
+  await mockQuote(page, () => ({ status: 422, json: { error: 'pickup_outside_vienna' } }))
+  await signedInSummary(page)
+  await send(page).click()
+  await expect(page.getByRole('alert')).toContainText('Abholung außerhalb Wiens ist noch nicht buchbar.')
+  await expect(page.getByRole('link', { name: 'Angaben ändern' })).toBeVisible()
+})
+
 test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', async ({ page }) => {
   await mockAuth(page)
   const urls: string[] = []
