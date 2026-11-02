@@ -18,8 +18,9 @@ export const routeFixture = {
 }
 
 const candidates: Record<string, object> = {
-  Neubaugasse: { label: 'Neubaugasse 12, 1070 Wien', lat: 48.2, lon: 16.352, postcode: '1070', country: 'AT' },
-  Praterstraße: { label: 'Praterstraße 30, 1020 Wien', lat: 48.217, lon: 16.396, postcode: '1020', country: 'AT' },
+  Neubaugasse: { label: 'Neubaugasse 12, 1070 Wien', lat: 48.2, lon: 16.352, postcode: '1070', country: 'AT', layer: 'address', street: 'Neubaugasse', housenumber: '12', locality: 'Wien' },
+  Praterstraße: { label: 'Praterstraße 30, 1020 Wien', lat: 48.217, lon: 16.396, postcode: '1020', country: 'AT', layer: 'address', street: 'Praterstraße', housenumber: '30', locality: 'Wien' },
+  Kärntner: { label: 'Kärntner Straße, 1010 Wien', lat: 48.205, lon: 16.37, postcode: '1010', country: 'AT', layer: 'street', street: 'Kärntner Straße', housenumber: null, locality: 'Wien' },
 }
 
 type Mock = { routeStatus?: number; calls?: { geocode: number; route: number } }
@@ -45,6 +46,19 @@ export async function mockRoute(page: Page, mock: Mock = {}) {
 /** Adresse über das Sheet suchen und den Treffer bestätigen (mit Einwilligung). */
 export async function setAddress(page: Page, which: 'Abholung' | 'Ziel', text: string) {
   await page.getByRole('button', { name: new RegExp(`^${which}`) }).click()
+  const sheet = page.locator('dialog[open]')
+  const consent = sheet.getByRole('switch', { name: /Routenberechnung/ })
+  if ((await consent.getAttribute('aria-checked')) === 'false') await consent.click()
+  await sheet.getByLabel(/Straße, Hausnummer/).fill(text)
+  await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
+  await sheet.getByRole('button', { name: text }).click()
+  await expect(page.locator('dialog[open]')).toHaveCount(0)
+}
+
+/** Adresse im Termin-Schritt (Entrümpelung, Montage): Suche mit Einwilligung, Treffer bestätigen. */
+export async function setTerminAddress(page: Page, text: string) {
+  await mockRoute(page)
+  await page.getByRole('button', { name: /^Adresse/ }).click()
   const sheet = page.locator('dialog[open]')
   const consent = sheet.getByRole('switch', { name: /Routenberechnung/ })
   if ((await consent.getAttribute('aria-checked')) === 'false') await consent.click()

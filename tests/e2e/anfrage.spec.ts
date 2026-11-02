@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { EMAIL, HASH, mockAuth, signInWithCode } from './auth-helpers'
 import { anonymousPrices, answer, cors, mockQuote, price, range, toSummary, UUID } from './anfrage-helpers'
 import { collectErrors } from './console'
+import { setTerminAddress } from './konfigurator-helpers'
 
 // Der Browser meldet gemockte Fehlerantworten selbst als Konsolenfehler; die App fängt sie ab.
 const failed = /status of [45]\d\d|ERR_FAILED/
@@ -42,7 +43,7 @@ test('Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Au
 test('Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter', async ({ page }) => {
   await page.goto('/montage')
   await page.getByRole('button', { name: 'Weiter' }).click()
-  await page.getByLabel('Adresse').fill('Neubaugasse 12, 1070 Wien')
+  await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
   await expect(page.getByRole('button', { name: 'Zur Zusammenfassung' })).toBeDisabled()
   await page.getByRole('button', { name: 'Nächster Monat' }).focus()
   await page.keyboard.press('Enter')
@@ -67,9 +68,14 @@ test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Tok
   expect(calls[0]!.authorization).toMatch(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/)
   const body = calls[0]!.body
   expect(body['clientRef']).toMatch(UUID)
-  // Der Aufruf kennt nur die Kundenwahl
-  expect(Object.keys(body).sort()).toEqual(['clientRef', 'from', 'inputs', 'preferredDate', 'service', 'timeWindow'])
-  expect(JSON.stringify(body)).not.toMatch(/cents|fee|price|total|status/i)
+  // Der Aufruf kennt nur die Kundenwahl und das, was der Kunde bestätigt hat (Version, Bedingungen, gezeigter Preis, Kontakt)
+  expect(Object.keys(body).sort()).toEqual(['clientRef', 'contact', 'from', 'inputs', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
+  expect(body['shown']).toMatchObject({ kind: 'price', totalCents: 77040 })
+  expect(body['contact']).toEqual({ name: 'Anna Muster', phone: '+43 660 1234567', email: 'anna@movenow.test' })
+  const { shown: _shown, priceVersion: _version, ...rest } = body
+  void _shown
+  void _version
+  expect(JSON.stringify(rest)).not.toMatch(/cents|fee|price|total|status/i)
 })
 
 test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur', async ({ page }) => {
@@ -278,7 +284,8 @@ test('Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält
   await page.getByText('Noch keine Aufträge').or(page.getByText(/Aktiv ·/)).waitFor()
   expect(requested.filter((u) => /fee_splits|platform_settings|current_fee_rates/.test(u))).toEqual([])
   expect(keys.length).toBeGreaterThan(0)
-  expect(keys.filter((k) => /fee|payout|platform|share|anteil|vat/i.test(k))).toEqual([])
+  // call_out_fee_cents ist die Anfahrtspauschale aus den Bedingungen, keine Plattformgebühr
+  expect(keys.filter((k) => k !== 'call_out_fee_cents' && /fee|payout|platform|share|anteil|vat/i.test(k))).toEqual([])
 })
 
 test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', async ({ page, context }) => {

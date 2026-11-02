@@ -12,7 +12,7 @@ import { type ClearanceFlow, useClearanceFlow } from '../../lib/flow'
 import { formatEuro, formatEuroRounded } from '../../lib/money'
 import { usePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
-import { clearanceLineText, floorText, offerReasonText, previewClearance, toTariffs } from '../../lib/preview'
+import { clearanceLineText, floorText, offerReasonText, previewClearance, shownOf, toTariffs } from '../../lib/preview'
 import { spring } from '../../lib/motion'
 import { Position } from '../konfigurator/Preis'
 import { BackIcon, Kopf, backClass } from './Kopf'
@@ -151,7 +151,7 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
       <ActionBar>
         <Button
           onClick={() => {
-            rememberShown('entruempelung', price ? price.totalCents : null)
+            rememberShown('entruempelung', price ? price.totalCents : null, shownOf(preview))
             void navigate('/entruempelung/termin')
           }}
         >{price ? 'Ort & Wunschtermin' : 'Besichtigung anfragen'}</Button>

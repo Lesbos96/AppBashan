@@ -11,7 +11,7 @@ import { rememberShown } from '../lib/draft'
 import { type Place, type Service, type TransportFlow, initialFlow, useFlow } from '../lib/flow'
 import { formatEuro } from '../lib/money'
 import { loadPrices, useLoad } from '../lib/prices'
-import { floorText, hoursText, lmText, maxHours, minHours, previewTransport, stepHours, toTariffs, lineText } from '../lib/preview'
+import { floorText, hoursText, lmText, maxHours, minHours, previewTransport, stepHours, toTariffs, lineText, shownOf } from '../lib/preview'
 import { InfoLink } from '../components/InfoLink'
 import { Fotos } from './konfigurator/Fotos'
 import { PreisLeiste, PreisSheet } from './konfigurator/Preis'
@@ -217,12 +217,12 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
         </Step>
       </div>
 
-      <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from && !!flow.to && !calc.loading} onContinue={() => {
-        rememberShown(copy[service].path, price ? price.totalCents : null)
+      <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from?.point && !!flow.to?.point && !calc.loading} onContinue={() => {
+        rememberShown(copy[service].path, price ? price.totalCents : null, shownOf(preview))
         void navigate(`/${copy[service].path}/termin`)
       }} />
       <PreisSheet note="Richtwert auf Basis deiner Angaben. Dauer, Team und Fahrzeug bestätigt der Partner." open={sheet === 'price'} onClose={() => setSheet(null)} preview={preview} describe={(key) => (price ? lineText(key as Parameters<typeof lineText>[0], price, flow, tariffs) : { label: key })} />
-      <AdresseSheet which={sheet === 'from' || sheet === 'to' ? sheet : null} flow={flow} onClose={() => setSheet(null)} onConsent={consent} onPick={pick} />
+      <AdresseSheet which={sheet === 'from' || sheet === 'to' ? sheet : null} place={sheet === 'from' || sheet === 'to' ? flow[sheet] : null} consent={flow.routeConsent} onClose={() => setSheet(null)} onConsent={consent} onPick={pick} />
 
       <Sheet open={sheet === 'vehicle'} onClose={() => setSheet(null)} title="Fahrzeugart" detents={[0.4, 0.6]}>
         <div role="radiogroup" aria-label="Fahrzeugart" className="flex flex-col overflow-hidden rounded-grouped-list bg-surface shadow-card">

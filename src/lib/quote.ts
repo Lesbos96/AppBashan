@@ -1,13 +1,18 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import type { Tariffs } from '@pricing'
-import { type Path, attemptKey, readTermin, services } from './draft'
+import { type Path, type Shown, attemptKey, readShownFull, readTermin, services } from './draft'
 import { readClearanceFlow, readFlow, readMontageFlow, toAssembly } from './flow'
 import { formatEuro, formatEuroRounded } from './money'
-import { clearanceFields, offerReasonText, transportFields } from './preview'
+import { clearanceFields, offerReasonText, previewAssembly, previewClearance, previewTransport, shownOf, transportFields } from './preview'
 import { supabase } from './supabase'
 
 type Body = Record<string, unknown>
 type Place = { label: string; point?: { lat: number; lon: number } }
+export type Contact = { name: string; phone: string; email: string; stairsDoor: string }
+/** Bedingungen aus `booking_terms()`; `termsHash` bestätigt der Kunde mit dem Absenden. */
+export type Terms = { termsHash: string } & Record<string, unknown>
+/** Was der Kunde bestätigt hat bzw. gerade bestätigt: Preisversion, Bedingungen, gezeigter Preis (sonst die Vorschau aus dem Konfigurator), Kontakt. */
+export type Confirmed = { priceVersion: number; termsHash: string; shown?: Shown; contact: Contact }
 
 const place = (p: { label: string; point: { lat: number; lon: number } | null } | null): Place | undefined => (p ? { label: p.label, ...(p.point && { point: p.point }) } : undefined)
 const text = (s: string) => s.trim() || undefined
@@ -16,25 +21,29 @@ const text = (s: string) => s.trim() || undefined
  * Aufruf für `quote` aus Flow und Termin im sessionStorage. Er enthält nur die Kundenwahl: keine Preise, Kilometer, Region oder Status.
  * `null`, solange der Termin unvollständig ist. Die Strecke berechnet `quote` selbst aus den bestätigten Koordinaten.
  */
-export function buildBody(path: Path, tariffs: Tariffs): Body | null {
+export function buildBody(path: Path, tariffs: Tariffs, confirmed: Confirmed): Body | null {
   const termin = readTermin(path)
   if (!termin.date) return null
-  const base = { service: services[path].service, preferredDate: termin.date }
+  const { stairsDoor, ...contact } = confirmed.contact
+  const base = { service: services[path].service, preferredDate: termin.date, priceVersion: confirmed.priceVersion, termsHash: confirmed.termsHash, contact: { ...contact, ...(stairsDoor.trim() && { stairsDoor: stairsDoor.trim() }) } }
   switch (services[path].service) {
     case 'transport':
     case 'move': {
       const f = readFlow(services[path].service as 'transport' | 'move')
       if (!f.from || !f.to) return null
-      return { ...base, inputs: transportFields(tariffs, services[path].service as 'transport' | 'move', f), from: place(f.from), to: place(f.to), returnTrip: f.returnTrip, description: text(f.description), volume: f.volume }
+      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewTransport(tariffs, services[path].service as 'transport' | 'move', f))
+      return { ...base, shown, inputs: transportFields(tariffs, services[path].service as 'transport' | 'move', f), from: place(f.from), to: place(f.to), returnTrip: f.returnTrip, description: text(f.description), volume: f.volume }
     }
     case 'clearance': {
       const f = readClearanceFlow()
-      if (!f.object || !text(termin.place)) return null
-      return { ...base, inputs: clearanceFields(f), from: { label: termin.place.trim() }, description: text(f.description), timeWindow: termin.window }
+      if (!f.object || !text(termin.place) || !termin.point) return null
+      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewClearance(tariffs, f))
+      return { ...base, shown, inputs: clearanceFields(f), from: { label: termin.place.trim(), point: termin.point }, description: text(f.description), timeWindow: termin.window }
     }
     case 'assembly': {
-      if (!text(termin.place)) return null
-      return { ...base, inputs: toAssembly(readMontageFlow().draft), from: { label: termin.place.trim() }, timeWindow: termin.window }
+      if (!text(termin.place) || !termin.point) return null
+      const shown = confirmed.shown ?? readShownFull(path) ?? shownOf(previewAssembly(tariffs, readMontageFlow().draft))
+      return { ...base, shown, inputs: toAssembly(readMontageFlow().draft), from: { label: termin.place.trim(), point: termin.point }, timeWindow: termin.window }
     }
   }
 }
@@ -60,13 +69,18 @@ export function refFor(path: Path, body: Body): string {
   return ref
 }
 
-export type QuoteErrorKind = 'invalid_input' | 'unauthorized' | 'rate_limited' | 'offline' | 'unavailable'
+export type QuoteErrorKind = 'invalid_input' | 'unauthorized' | 'rate_limited' | 'offline' | 'unavailable' | 'provider' | 'rejected' | 'price_changed' | 'terms_changed'
 
-/** `field`: Präfix der Servermeldung (`preferredDate`, `from.label`, …); die App zeigt eigene Texte, nie die Servermeldung. */
+/** Antwort eines 409: nichts wurde gespeichert, der Kunde bestätigt den neuen Preis bzw. die neuen Bedingungen. */
+export type Conflict = { priceVersion?: number; snapshot?: Snapshot | null; terms?: Terms }
+
+/** `field`: Präfix der Servermeldung (`preferredDate`, `from.label`, …); `code`: Fehlercode eines 422; die App zeigt eigene Texte, nie die Servermeldung. */
 export class QuoteError extends Error {
   constructor(
     readonly kind: QuoteErrorKind,
     readonly field: string | null = null,
+    readonly code: string | null = null,
+    readonly conflict: Conflict = {},
   ) {
     super(kind)
   }
@@ -98,17 +112,15 @@ export function parseSnapshot(raw: unknown): Snapshot | null {
   return fits ? { kind: 'price', totalCents: total, lowCents: r.lowCents, highCents: r.highCents, lines: ok } : null
 }
 
-/**
- * Anzeige des Preises. Schätzpreise (Entrümpelung, auch am Mindestpreis ohne Spanne) stehen als „ca.“ in ganzen Euro,
- * alle anderen Richtpreise mit Cent. Gerundet wird nur hier.
- */
-export function priceLabel(s: Snapshot & { kind: 'price' }, estimate: boolean): { main: string; range: string | null } {
+/** Anzeige des Preises: Festpreise mit Cent, eine Spanne (Entrümpelung) als „X bis Y“ bzw. „ca. X“ in ganzen Euro. Gerundet wird nur hier. */
+export function priceLabel(s: Snapshot & { kind: 'price' }): { main: string; range: string | null } {
+  // Festpreis (auch Mindestpreis mit low = high) centgenau; nur eine Spanne wird als Schätzung gerundet
   if (s.totalCents === null) {
     const low = formatEuroRounded(s.lowCents)
     const high = formatEuroRounded(s.highCents)
     return { main: low === high ? `ca. ${low}` : `${low} bis ${high}`, range: null }
   }
-  return { main: estimate ? `ca. ${formatEuroRounded(s.totalCents)}` : formatEuro(s.totalCents), range: null }
+  return { main: formatEuro(s.totalCents), range: null }
 }
 
 export type Quote = { id: string; status: 'requested' | 'awaiting_offer'; needsQuote: boolean; snapshot: Snapshot | null }
@@ -134,10 +146,17 @@ export async function sendQuote(body: Body, clientRef: string, accessToken: stri
       const status = error.context.status
       if (status === 401) throw new QuoteError('unauthorized')
       if (status === 429) throw new QuoteError('rate_limited')
-      if (status === 422) throw new QuoteError('invalid_input', 'preferredDate') // too_late: Termin zu nah
+      if (status === 503) throw new QuoteError('provider')
+      const detail: unknown = status === 400 || status === 409 || status === 422 ? await error.context.json().catch(() => null) : null
+      const d = detail && typeof detail === 'object' ? (detail as Record<string, unknown>) : {}
+      if (status === 409 && d.error === 'price_changed') throw new QuoteError('price_changed', null, null, { priceVersion: typeof d.priceVersion === 'number' ? d.priceVersion : undefined, snapshot: parseSnapshot(d.snapshot) })
+      if (status === 409 && d.error === 'terms_changed') throw new QuoteError('terms_changed', null, null, { terms: parseTerms(d.terms) ?? undefined })
+      if (status === 422) {
+        if (d.error === 'too_late') throw new QuoteError('invalid_input', 'preferredDate')
+        throw new QuoteError('rejected', null, typeof d.error === 'string' ? d.error : null)
+      }
       if (status === 400) {
-        const detail: unknown = await error.context.json().catch(() => null)
-        const message = detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string' ? detail.message : ''
+        const message = typeof d.message === 'string' ? d.message : ''
         throw new QuoteError('invalid_input', /^([A-Za-z][\w.]*):/.exec(message)?.[1] ?? null)
       }
     }
@@ -152,7 +171,39 @@ const FIELD_TEXT: [RegExp, string][] = [
   [/^timeWindow$/, 'Das Zeitfenster geht nicht. Wähle ein anderes.'],
 ]
 
-export const errorText: Record<Exclude<QuoteErrorKind, 'invalid_input'>, string> = {
+const TERM_KEYS = ['cancel_free_hours', 'cancel_late_percent', 'cancel_full_percent', 'cancel_full_days_before', 'call_out_fee_cents']
+
+/** Bedingungen nur mit allen Werten und gültigem Hash. */
+export function parseTerms(raw: unknown): Terms | null {
+  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null
+  if (!r || typeof r.termsHash !== 'string' || !/^[0-9a-f]{64}$/.test(r.termsHash) || TERM_KEYS.some((k) => typeof r[k] !== 'number')) return null
+  return r as Terms
+}
+
+export async function loadTerms(): Promise<Terms> {
+  const { data, error } = await supabase.rpc('booking_terms')
+  const terms = parseTerms(data)
+  if (error || !terms) throw error ?? new Error('Bedingungen unlesbar')
+  return terms
+}
+
+/** Anzeige eines Serverpreises im Format von `shown`: Festpreis bei gesetztem Gesamtbetrag, sonst Spanne bzw. Angebot. */
+export function shownFromSnapshot(s: Snapshot): Shown {
+  return s.kind === 'offer' ? { kind: 'offer', reasons: s.reasons } : { kind: 'price', totalCents: s.totalCents, lowCents: s.lowCents, highCents: s.highCents }
+}
+
+/** Meldungen zu den 422-Codes von `quote`. */
+export const rejectedText: Record<string, string> = {
+  pickup_outside_vienna: 'Abholung außerhalb Wiens ist noch nicht buchbar.',
+  district_required: 'Zur Abholadresse finden wir keinen Wiener Bezirk. Prüfe die Adresse.',
+  address_mismatch: 'Die Adresse passt nicht zur Auswahl. Suche sie bitte neu und tippe sie an.',
+  address_imprecise: 'Die Adresse braucht eine Hausnummer. Suche sie bitte neu.',
+  address_point_required: 'Bestätige die Adresse über die Suche.',
+  offer_not_bookable: 'Ziele im Ausland sind noch nicht buchbar.',
+}
+
+export const errorText: Record<Exclude<QuoteErrorKind, 'invalid_input' | 'rejected' | 'price_changed' | 'terms_changed'>, string> = {
+  provider: 'Die Adressprüfung ist gerade nicht erreichbar. Dein Entwurf bleibt erhalten, versuche es in einer Minute erneut.',
   unauthorized: 'Deine Anmeldung ist abgelaufen. Melde dich neu an, dein Entwurf bleibt erhalten.',
   rate_limited: 'Gerade sind zu viele Anfragen unterwegs. Warte etwa eine Minute und versuche es dann erneut.',
   offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut. Dein Entwurf bleibt erhalten.',

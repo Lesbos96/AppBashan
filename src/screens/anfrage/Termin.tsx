@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ActionBar, NavBar } from '../../components/Bars'
 import { Button } from '../../components/Button'
+import { Sheet } from '../../components/Sheet'
 import { Segmented } from '../../components/Controls'
 import { Icon } from '../../components/Icon'
-import { Card, Field, GroupedList } from '../../components/Surfaces'
+import { Card } from '../../components/Surfaces'
 import { type Path, type TimeWindow, services, timeWindows, useTermin, viennaToday } from '../../lib/draft'
 import { readFlow } from '../../lib/flow'
+import { Suche } from '../konfigurator/Strecke'
 import { longDay, shortDayText, utc } from './format'
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -88,7 +90,8 @@ export function Termin({ path }: { path: Path }) {
   const config = services[path]
   const [termin, update] = useTermin(path)
   const flow = config.hasAddresses ? readFlow(config.service as 'transport' | 'move') : null
-  const ready = termin.date !== null && (config.hasAddresses || termin.place.trim().length >= 3)
+  const [searching, setSearching] = useState(false)
+  const ready = termin.date !== null && (config.hasAddresses || termin.point !== null)
 
   return (
     <main>
@@ -110,9 +113,13 @@ export function Termin({ path }: { path: Path }) {
             <Icon name="chevron-right" width={18} height={18} className="shrink-0 text-text-secondary opacity-60" />
           </Link>
         ) : (
-          <GroupedList>
-            <Field label="Adresse" name="address" autoComplete="street-address" maxLength={200} placeholder="Straße, PLZ" value={termin.place} onChange={(e) => update({ place: e.target.value })} />
-          </GroupedList>
+          <button type="button" onClick={() => setSearching(true)} className="press flex min-h-14 w-full items-center justify-between gap-3 rounded-grouped-list bg-surface px-4 py-2 text-left shadow-card">
+            <span className="flex min-w-0 flex-col">
+              <span className="text-[13px]/4 text-text-secondary">Adresse</span>
+              <span className={`text-body break-words ${termin.place ? '' : 'text-text-secondary'}`}>{termin.place || 'Adresse eingeben'}</span>
+            </span>
+            {termin.point ? <Icon name="check-circle" width={22} height={22} role="img" aria-label="Adresse bestätigt" className="shrink-0 text-primary" /> : <Icon name="chevron-right" width={18} height={18} className="shrink-0 text-text-secondary opacity-60" />}
+          </button>
         )}
 
         <Kalender value={termin.date} onChange={(date) => update({ date })} />
@@ -133,6 +140,20 @@ export function Termin({ path }: { path: Path }) {
           </div>
         </Card>
       </div>
+      <Sheet open={searching} onClose={() => setSearching(false)} title="Adresse" detents={[0.7, 0.92]}>
+        {searching && (
+          <Suche
+            title="Adresse"
+            place={termin.point ? { label: termin.place, point: termin.point } : null}
+            consent={termin.consent}
+            onConsent={(consent) => update({ consent, ...(consent ? {} : { place: '', point: null }) })}
+            onPick={(p) => {
+              update({ place: p.label, point: p.point })
+              setSearching(false)
+            }}
+          />
+        )}
+      </Sheet>
       <ActionBar>
         <Button disabled={!ready} onClick={() => void navigate(`/${path}/zusammenfassung`)}>
           Zur Zusammenfassung

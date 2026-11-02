@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { mockAuth, signInWithCode } from './auth-helpers'
-import { anonymousPrices, answer, cors, mockQuote, pickDate, price, type Reply } from './anfrage-helpers'
+import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price, type Reply } from './anfrage-helpers'
+import { setTerminAddress } from './konfigurator-helpers'
 import { fillEntruempelungBeispiel } from './dienste-helpers'
 
 // Foto-Uploads nach dem Senden (Bestätigungsseite). Alle Aufrufe an PostgREST und Storage sind abgefangen.
@@ -49,9 +50,10 @@ export async function sendWithPhotos(page: Page, photo?: Buffer) {
   await page.goto('/entruempelung')
   await fillEntruempelungBeispiel(page, photo)
   await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
-  await page.getByLabel('Adresse').fill('Neubaugasse 12, 1070 Wien')
+  await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
   await pickDate(page)
   await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
+  await fillContact(page)
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Anmelden und senden' }).click()
   await signInWithCode(page)

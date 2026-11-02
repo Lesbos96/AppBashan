@@ -7,7 +7,7 @@ import { ErrorState, Loading } from '../components/States'
 import { rememberShown } from '../lib/draft'
 import { type AssemblyDraft, initialMontage, useMontageFlow } from '../lib/flow'
 import { loadPrices, useLoad } from '../lib/prices'
-import { assemblyText, previewAssembly, toTariffs } from '../lib/preview'
+import { assemblyText, previewAssembly, shownOf, toTariffs } from '../lib/preview'
 import { AssemblyEditor } from './konfigurator/AssemblyEditor'
 import { PreisLeiste, PreisSheet } from './konfigurator/Preis'
 
@@ -55,7 +55,7 @@ function Formular({ tariffs }: { tariffs: Record<string, number> }) {
         />
       </div>
       <PreisLeiste preview={preview} onOpen={() => setSheet(true)} canContinue onContinue={() => {
-        rememberShown('montage', preview.state === 'price' ? preview.price.totalCents : null)
+        rememberShown('montage', preview.state === 'price' ? preview.price.totalCents : null, shownOf(preview))
         void navigate('/montage/termin')
       }} />
       <PreisSheet

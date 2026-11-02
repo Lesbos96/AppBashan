@@ -15,10 +15,10 @@ export function Gesendet({ path }: { path: Path }) {
   const sent = readSent()
   if (!sent || sent.path !== path) return <Navigate to="/auftraege" replace />
   const snapshot = parseSnapshot(sent.snapshot)
-  const price = snapshot?.kind === 'price' ? priceLabel(snapshot, path === 'entruempelung') : null
+  const price = snapshot?.kind === 'price' ? priceLabel(snapshot) : null
   const awaiting = sent.status === 'awaiting_offer'
   // Der Serverpreis ist maßgeblich. Weicht er vom zuletzt angezeigten Richtpreis ab (auch zu „Angebot nötig“), steht das sichtbar da, nie still.
-  const estimate = path === 'entruempelung'
+  const estimate = path === 'entruempelung' && !(snapshot?.kind === 'price' && snapshot.totalCents !== null)
   const shown = sent.shownCents === null ? null : estimate ? `ca. ${formatEuroRounded(sent.shownCents)}` : formatEuro(sent.shownCents)
   const updated = shown !== null && snapshot !== null && (price === null || price.main !== shown)
 

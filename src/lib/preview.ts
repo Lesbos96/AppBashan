@@ -15,6 +15,7 @@ import {
   type TransportPrice,
 } from '@pricing'
 import { formatEuro } from './money'
+import type { Shown } from './draft'
 import { type AssemblyDraft, type ClearanceFlow, type Service, type TransportFlow, toAssembly } from './flow'
 
 /** Tarife der aktuellen Version; Zeilen mit Einheit `ref` sind nur Quellenverweise. */
@@ -104,6 +105,13 @@ export function previewClearance(t: Tariffs, f: ClearanceFlow): PreviewOf<Cleara
 /** Vorschau für den Service „Montage". */
 export function previewAssembly(t: Tariffs, d: AssemblyDraft): PreviewOf<PriceResult<'assembly'>> {
   return { state: 'price', price: computeAssembly(t, parseAssembly(toAssembly(d))) }
+}
+
+/** Anzeige der Vorschau im Format von `shown` (wie `quote` sie speichert: Festpreis bei low = high, sonst Spanne). */
+export function shownOf(p: PreviewOf<PriceResult>): Shown {
+  if (p.state === 'offer') return { kind: 'offer', reasons: [...p.offer.reasons] }
+  const { totalCents, lowCents, highCents } = p.price
+  return { kind: 'price', totalCents: lowCents === highCents ? totalCents : null, lowCents, highCents }
 }
 
 export const floorText = (n: number) => (n === 0 ? 'Erdgeschoss' : `${n}. Stock`)

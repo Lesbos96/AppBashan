@@ -84,22 +84,27 @@ test('Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis',
   await expect(sheet.getByText('Zur Orientierung für den Klaviertransport', { exact: false })).toBeVisible()
 })
 
-test('Ohne Einwilligung geht kein Request an die Routenfunktion; es gibt ein persönliches Angebot', async ({ page }) => {
+test('Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt', async ({ page }) => {
   const calls = await mockRoute(page)
   await page.goto('/transport')
-  for (const [which, text] of [
-    ['Abholung', 'Neubaugasse 12, 1070 Wien'],
-    ['Ziel', 'Praterstraße 30, 1020 Wien'],
-  ] as const) {
-    await page.getByRole('button', { name: new RegExp(`^${which}`) }).click()
-    const sheet = page.locator('dialog[open]')
-    await sheet.getByLabel(/Straße, Hausnummer/).fill(text)
-    await sheet.getByRole('button', { name: 'Adresse übernehmen' }).click()
-    await expect(page.locator('dialog[open]')).toHaveCount(0)
-  }
-  await expect(page.getByRole('button', { name: 'Strecke fehlt, Details anzeigen' })).toBeVisible()
-  await expect(page.getByText('Ohne Einwilligung bleibt die Strecke ungeprüft.')).toBeVisible()
+  await page.getByRole('button', { name: /^Abholung/ }).click()
+  const sheet = page.locator('dialog[open]')
+  await sheet.getByLabel(/Straße, Hausnummer/).fill('Neubaugasse 12, 1070 Wien')
+  await expect(sheet.getByRole('button', { name: 'Adresse suchen' })).toBeDisabled()
+  await expect(sheet.getByText('Ohne deine Einwilligung können wir die Adresse nicht prüfen und die Anfrage nicht senden.')).toBeVisible()
   expect(calls).toEqual({ geocode: 0, route: 0 })
+})
+
+test('Treffer ohne Hausnummer sind nicht wählbar', async ({ page }) => {
+  await mockRoute(page)
+  await page.goto('/transport')
+  await page.getByRole('button', { name: /^Abholung/ }).click()
+  const sheet = page.locator('dialog[open]')
+  await sheet.getByRole('switch', { name: /Routenberechnung/ }).click()
+  await sheet.getByLabel(/Straße, Hausnummer/).fill('Kärntner Straße')
+  await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
+  await expect(sheet.getByText('Bitte gib auch die Hausnummer an.')).toBeVisible()
+  await expect(sheet.getByRole('button', { name: /Kärntner Straße, 1010 Wien/ })).toHaveCount(0)
 })
 
 for (const status of [429, 500]) {

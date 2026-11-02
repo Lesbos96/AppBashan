@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
+
 import { Link, Navigate, useNavigate } from 'react-router'
 import { ActionBar, NavBar } from '../../components/Bars'
 import { Button } from '../../components/Button'
 import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
-import { Card, GroupedList } from '../../components/Surfaces'
+import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
-import { type Path, finishDraft, readShown, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
+import { type Path, type Shown, finishDraft, readContact, writeContact, readShown, readTermin, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
 import { takePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
-import { QuoteError, buildBody, errorText, invalidTarget, invalidText, refFor, sendQuote } from '../../lib/quote'
+import { formatEuro } from '../../lib/money'
+import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { queueUploads } from '../../lib/uploads'
@@ -53,7 +55,7 @@ function summaryOf(path: Path): Summary | null {
     case 'clearance': {
       const f = readClearanceFlow()
       const object = objectOf(f)
-      if (!object || !termin.place.trim()) return null
+      if (!object || !termin.place.trim() || !termin.point) return null
       return {
         place: [
           ['Ort', termin.place.trim()],
@@ -69,7 +71,7 @@ function summaryOf(path: Path): Summary | null {
     }
     case 'assembly': {
       const f = readMontageFlow()
-      if (!termin.place.trim()) return null
+      if (!termin.place.trim() || !termin.point) return null
       return {
         place: [
           ['Ort', termin.place.trim()],
@@ -131,20 +133,31 @@ function Strecke({ rows }: { rows: Row[] }) {
 }
 
 export function Zusammenfassung({ path }: { path: Path }) {
-  const [prices, retry] = useLoad(loadPrices)
+  const [prices, retryPrices] = useLoad(loadPrices)
+  const [terms, retryTerms] = useLoad(loadTerms)
+  const retry = () => {
+    retryPrices()
+    retryTerms()
+  }
   return (
     <main>
       <NavBar title="Zusammenfassung" back={{ to: `/${path}/termin`, label: 'Termin' }} />
-      {prices.status === 'loading' && <Loading label="Angaben laden" />}
-      {prices.status === 'error' && <ErrorState text="Die Angaben konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />}
-      {prices.status === 'ready' && <Inhalt path={path} tariffs={toTariffs(prices.data)} />}
+      {(prices.status === 'loading' || terms.status === 'loading') && <Loading label="Angaben laden" />}
+      {(prices.status === 'error' || terms.status === 'error') && <ErrorState text="Die Angaben konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />}
+      {prices.status === 'ready' && terms.status === 'ready' && <Inhalt path={path} tariffs={toTariffs(prices.data)} version={prices.data.version} terms={terms.data} />}
     </main>
   )
 }
 
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'error'; error: QuoteError }
+/** Vom Kunden bestätigte Änderungen nach einem 409; `clientRef` bleibt dabei stabil, weil nichts gespeichert wurde. */
+type Override = { priceVersion?: number; termsHash?: string; shown?: Shown }
 
-function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number> }) {
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+const PHONE = /^[0-9+()/ .-]{5,40}$/
+const digits = (v: string) => (v.match(/[0-9]/g) ?? []).length
+
+function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record<string, number>; version: number; terms: Terms }) {
   const navigate = useNavigate()
   const session = useSession()
   const config = services[path]
@@ -158,6 +171,16 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [wait, setWait] = useState(0)
   const busy = useRef(false)
+  const override = useRef<Override>({})
+  const [saved] = useState(() => readContact(path))
+  const [name, setName] = useState(saved.name)
+  const [phone, setPhone] = useState(saved.phone)
+  const [email, setEmail] = useState(saved.email)
+  const [stairsDoor, setStairsDoor] = useState(saved.stairsDoor)
+  useEffect(() => writeContact(path, { name, phone, email, stairsDoor }), [path, name, phone, email, stairsDoor])
+  const mail = email || session?.user.email || ''
+  const contact = { name: name.trim(), phone: phone.trim(), email: mail.trim(), stairsDoor }
+  const contactOk = contact.name.length > 0 && PHONE.test(contact.phone) && digits(contact.phone) >= 5 && EMAIL.test(contact.email)
 
   useEffect(() => {
     if (wait <= 0) return
@@ -191,18 +214,21 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
         setStatus({ kind: 'changed' })
         return
       }
-      const body = buildBody(path, tariffs)
+      const body = buildBody(path, tariffs, { priceVersion: override.current.priceVersion ?? version, termsHash: override.current.termsHash ?? terms.termsHash, shown: override.current.shown, contact })
       if (!body) {
         void navigate(`/${path}/termin`, { replace: true })
         return
       }
-      const quote = await sendQuote(body, refFor(path, body), live.access_token)
+      // clientRef aus dem Entwurf ohne die bestätigten Angaben: nach einem 409 bleibt sie dieselbe
+      const quote = await sendQuote(body, refFor(path, { ...body, priceVersion: 0, termsHash: '', shown: null }), live.access_token)
       queueUploads(supabase, live.user.id, quote.id, takePhotos(services[path].service))
       finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
       if (error.kind === 'rate_limited') setWait(60)
+      if (error.kind === 'price_changed' && !error.conflict.snapshot) setStatus({ kind: 'error', error: new QuoteError('unavailable') })
+      else
       setStatus({ kind: 'error', error })
     } finally {
       busy.current = false
@@ -211,7 +237,16 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
 
   const sending = status.kind === 'sending'
   const error = status.kind === 'error' ? status.error : null
-  const text = error ? (error.kind === 'invalid_input' ? invalidText(error.field) : errorText[error.kind]) : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
+  const confirmChange = error?.kind === 'price_changed' || error?.kind === 'terms_changed' ? error : null
+  const acceptChange = () => {
+    if (!confirmChange) return
+    const { conflict } = confirmChange
+    if (confirmChange.kind === 'price_changed' && conflict.snapshot && conflict.priceVersion !== undefined) override.current = { ...override.current, priceVersion: conflict.priceVersion, shown: shownFromSnapshot(conflict.snapshot) }
+    if (confirmChange.kind === 'terms_changed' && conflict.terms) override.current = { ...override.current, termsHash: conflict.terms.termsHash }
+    void send(session?.user.id ?? '')
+  }
+  const newSnapshot = confirmChange?.conflict.snapshot
+  const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
 
   return (
     <>
@@ -227,6 +262,19 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
         </Card>
         {config.hasAddresses ? <Strecke rows={summary.place} /> : group('Ort & Zeit', summary.place)}
         {group('Umfang', summary.scope)}
+
+        {config.hasAddresses && <p className="m-0 px-4 text-subhead text-text-secondary">Die Abholung muss in Wien liegen. Abholung außerhalb Wiens ist noch nicht buchbar. Das Ziel kann in ganz Österreich liegen.</p>}
+
+        <section className="flex flex-col gap-2">
+          <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Dein Kontakt</h2>
+          <GroupedList>
+            <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" value={name} onChange={(e) => setName(e.target.value)} />
+            <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" value={mail} onChange={(e) => setEmail(e.target.value)} />
+            <Field label="Stiege / Tür" name="stairs" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
+          </GroupedList>
+          <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
+        </section>
 
         <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
           <input type="checkbox" checked={consent} onChange={(e) => setConsentFor(e.target.checked ? accountId : '')} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
@@ -256,6 +304,36 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
           session === null && <p className="m-0 px-4 text-subhead text-text-secondary">Für den Versand legst du jetzt ein Konto an. Wir schicken dir dazu einen Anmeldelink per E-Mail.</p>
         )}
 
+        {confirmChange && (
+          <div role="alert" className="flex flex-col gap-2 rounded-grouped-list border border-accent/40 bg-surface p-4 shadow-card">
+            {confirmChange.kind === 'price_changed' ? (
+              <>
+                <p className="m-0 text-headline">Der Preis wurde aktualisiert.</p>
+                <p className="m-0 text-body">
+                  {newSnapshot?.kind === 'price' ? (
+                    <>
+                      Neuer Preis: <strong className="font-semibold whitespace-nowrap tabular-nums">{priceLabel(newSnapshot).main}</strong>
+                    </>
+                  ) : (
+                    'Für deine Angaben erstellt ein Partner ein persönliches Angebot.'
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="m-0 text-headline">Die Bedingungen wurden aktualisiert.</p>
+                <p className="m-0 text-body">
+                  Kostenlos stornierbar bis {String(confirmChange.conflict.terms?.['cancel_free_hours'] ?? '')} Stunden vor dem Termin. Anfahrtspauschale:{' '}
+                  <span className="whitespace-nowrap tabular-nums">{formatEuro(Number(confirmChange.conflict.terms?.['call_out_fee_cents'] ?? 0))}</span>.
+                </p>
+              </>
+            )}
+            <Button variant="tinted" onClick={acceptChange}>
+              {confirmChange.kind === 'price_changed' ? 'Neuen Preis übernehmen und senden' : 'Bedingungen bestätigen und senden'}
+            </Button>
+          </div>
+        )}
+
         {text && (
           <div role="alert" className="flex flex-col gap-2 rounded-grouped-list border border-destructive/40 bg-surface p-4 shadow-card">
             <p className="m-0 text-body">{wait > 0 ? `${text} Noch ${wait} s.` : text}</p>
@@ -277,17 +355,15 @@ function Inhalt({ path, tariffs }: { path: Path; tariffs: Record<string, number>
           <Button disabled={!consent} onClick={toLogin}>
             Anmelden und senden
           </Button>
-        ) : (
-          error?.kind === 'invalid_input' ? (
-            <Link to={invalidTarget(path, error.field)} className="press flex h-[54px] w-full items-center justify-center rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button">
+        ) : error?.kind === 'rejected' || error?.kind === 'invalid_input' ? (
+            <Link to={error.kind === 'rejected' ? (config.hasAddresses ? config.back : `/${path}/termin`) : invalidTarget(path, error.field)} className="press flex h-[54px] w-full items-center justify-center rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button">
               Angaben ändern
             </Link>
           ) : (
-            <Button disabled={!consent || sending || wait > 0} aria-busy={sending} className="disabled:opacity-70!" onClick={() => void send(session.user.id)}>
+            <Button disabled={!consent || !contactOk || sending || wait > 0} aria-busy={sending} className="disabled:opacity-70!" onClick={() => void send(session.user.id)}>
               {sending ? 'Wird gesendet …' : wait > 0 ? `Bitte warten (${wait} s)` : error ? 'Erneut senden' : 'Anfrage senden'}
             </Button>
-          )
-        )}
+          )}
       </ActionBar>
     </>
   )

@@ -6,8 +6,9 @@ import { Illustration } from '../../components/Illustration'
 import { Loading } from '../../components/States'
 import { Sheet } from '../../components/Sheet'
 import { GroupedList, SwitchRow } from '../../components/Surfaces'
-import { type Place, type TransportFlow } from '../../lib/flow'
+import { type Place } from '../../lib/flow'
 import { type Candidate, type RouteResult, geocode, routeErrorText } from '../../lib/route'
+import { isPrecise } from '../../../supabase/functions/_shared/route/facts.ts'
 
 const oneDecimal = (n: number) => n.toFixed(1).replace('.', ',')
 
@@ -57,15 +58,14 @@ export function Adressen({ from, to, onOpen }: { from: Place | null; to: Place |
 
 // Adresse suchen und bestätigen --------------------------------------------------------------------------------
 
-function Suche({ title, place, consent, onConsent, onPick }: { title: string; place: Place | null; consent: boolean; onConsent: (v: boolean) => void; onPick: (p: Place) => void }) {
+export function Suche({ title, place, consent, onConsent, onPick }: { title: string; place: Place | null; consent: boolean; onConsent: (v: boolean) => void; onPick: (p: Place) => void }) {
   const [q, setQ] = useState(place?.label ?? '')
   const [state, setState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; candidates: Candidate[]; error?: string }>({ status: 'idle', candidates: [] })
   const ok = q.trim().length >= 3
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (!ok) return
-    if (!consent) return onPick({ label: q.trim(), point: null })
+    if (!ok || !consent) return
     setState({ status: 'loading', candidates: [] })
     try {
       setState({ status: 'done', candidates: await geocode(q) })
@@ -105,10 +105,10 @@ function Suche({ title, place, consent, onConsent, onPick }: { title: string; pl
       <p className="m-0 px-1 text-footnote text-text-secondary">
         {consent
           ? 'Dein Adresstext geht dafür an unseren Routendienst (openrouteservice, Deutschland). Du bestätigst danach die gefundene Adresse.'
-          : 'Ohne Einwilligung bleibt die Strecke ungeprüft. Du bekommst dann ein persönliches Angebot statt eines Richtpreises.'}
+          : 'Ohne deine Einwilligung können wir die Adresse nicht prüfen und die Anfrage nicht senden.'}
       </p>
-      <Button type="submit" disabled={!ok || state.status === 'loading'}>
-        {consent ? 'Adresse suchen' : 'Adresse übernehmen'}
+      <Button type="submit" disabled={!ok || !consent || state.status === 'loading'}>
+        Adresse suchen
       </Button>
       <div aria-live="polite">
         {state.status === 'loading' && <Loading label="Suche" />}
@@ -117,14 +117,16 @@ function Suche({ title, place, consent, onConsent, onPick }: { title: string; pl
             {state.error}
           </p>
         )}
-        {state.status === 'done' && (
+        {state.status === 'done' && (() => {
+          const precise = state.candidates.filter(isPrecise)
+          return (
           <section className="flex flex-col gap-2">
             <h3 className="m-0 px-4 text-section-header font-normal text-text-secondary">
-              {state.candidates.length > 0 ? 'Ist das deine Adresse? Tippe sie an.' : 'Keine Adresse gefunden. Prüfe die Schreibweise.'}
+              {precise.length > 0 ? 'Ist das deine Adresse? Tippe sie an.' : state.candidates.length > 0 ? 'Bitte gib auch die Hausnummer an.' : 'Keine Adresse gefunden. Prüfe die Schreibweise.'}
             </h3>
-            {state.candidates.length > 0 && (
+            {precise.length > 0 && (
               <ul className="m-0 flex list-none flex-col overflow-hidden rounded-grouped-list bg-surface p-0 shadow-card">
-                {state.candidates.map((c) => (
+                {precise.map((c) => (
                   <li key={`${c.lat},${c.lon}`} className="not-first:border-t-[0.5px] not-first:border-separator">
                     <button type="button" onClick={() => onPick({ label: c.label, point: { lat: c.lat, lon: c.lon } })} className="press flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-body">
                       <Icon name="pin" width={20} height={20} className="shrink-0 text-primary" />
@@ -135,7 +137,8 @@ function Suche({ title, place, consent, onConsent, onPick }: { title: string; pl
               </ul>
             )}
           </section>
-        )}
+          )
+        })()}
       </div>
     </form>
   )
@@ -143,13 +146,15 @@ function Suche({ title, place, consent, onConsent, onPick }: { title: string; pl
 
 export function AdresseSheet({
   which,
-  flow,
+  place,
+  consent,
   onClose,
   onConsent,
   onPick,
 }: {
   which: 'from' | 'to' | null
-  flow: TransportFlow
+  place: Place | null
+  consent: boolean
   onClose: () => void
   onConsent: (v: boolean) => void
   onPick: (which: 'from' | 'to', place: Place) => void
@@ -160,8 +165,8 @@ export function AdresseSheet({
       {which && (
         <Suche
           title={title}
-          place={flow[which]}
-          consent={flow.routeConsent}
+          place={place}
+          consent={consent}
           onConsent={onConsent}
           onPick={(p) => {
             onPick(which, p)

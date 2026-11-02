@@ -25,7 +25,7 @@ beforeEach(() => {
 
 const montageDraft = () => {
   session.setItem('movenow.flow.montage', JSON.stringify({ draft: { kind: 'standard', lm: 2, upper: 0, tall: 0 } }))
-  session.setItem('movenow.termin.montage', JSON.stringify({ date: '2026-11-15', window: 'morning', place: 'Neubaugasse 12, 1070 Wien' }))
+  session.setItem('movenow.termin.montage', JSON.stringify({ date: '2026-11-15', window: 'morning', place: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 }, consent: true }))
 }
 
 describe('Übergabe über die Anmeldung', () => {
@@ -95,9 +95,9 @@ describe('Übergabe über die Anmeldung', () => {
   })
 
   it('Der zuletzt angezeigte Vorschaupreis wird gemerkt, ein Angebot löscht ihn, Ungültiges ist null', () => {
-    rememberShown('montage', 77040)
+    rememberShown('montage', 77040, { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
     expect(readShown('montage')).toBe(77040)
-    rememberShown('montage', null)
+    rememberShown('montage', null, { kind: 'offer', reasons: ['special_case'] })
     expect(readShown('montage')).toBeNull()
     session.setItem(shownKey('montage'), 'abc')
     expect(readShown('montage')).toBeNull()
@@ -128,19 +128,20 @@ describe('clientRef', () => {
 
 describe('buildBody', () => {
   const tariffs = { 'min_hours.transport': 2, 'min_hours.move': 3 }
+  const confirmed = { priceVersion: 1, termsHash: 'a'.repeat(64), shown: { kind: 'price' as const, totalCents: 1, lowCents: 1, highCents: 1 }, contact: { name: 'Anna', phone: '+43 660 1234567', email: 'a@b.at', stairsDoor: '' } }
 
   it('Montage: nur Kundenwahl, kein Preis, kein Status, keine Strecke', () => {
     montageDraft()
-    const body = buildBody('montage', tariffs)!
-    expect(Object.keys(body).sort()).toEqual(['from', 'inputs', 'preferredDate', 'service', 'timeWindow'])
-    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien' }, timeWindow: 'morning' })
+    const body = buildBody('montage', tariffs, confirmed)!
+    expect(Object.keys(body).sort()).toEqual(['contact', 'from', 'inputs', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
+    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }, priceVersion: 1, shown: confirmed.shown, contact: { name: 'Anna' }, timeWindow: 'morning' })
   })
 
   it('ohne Termin oder Ort kein Aufruf', () => {
-    expect(buildBody('montage', tariffs)).toBeNull()
+    expect(buildBody('montage', tariffs, confirmed)).toBeNull()
     montageDraft()
-    session.setItem('movenow.termin.montage', JSON.stringify({ date: null, window: 'morning', place: 'x y z' }))
-    expect(buildBody('montage', tariffs)).toBeNull()
+    session.setItem('movenow.termin.montage', JSON.stringify({ date: null, window: 'morning', place: 'x y z', point: null, consent: false }))
+    expect(buildBody('montage', tariffs, confirmed)).toBeNull()
   })
 
   it('Umzug: Koordinaten nur wenn bestätigt, die gespeicherte Route geht nie mit', () => {
@@ -152,8 +153,8 @@ describe('buildBody', () => {
         route: null, hours: null, assembly: false, assemblyLm: 2, boxes: 0, parking: 0, packing: false,
       }),
     )
-    session.setItem('movenow.termin.umzug', JSON.stringify({ date: '2026-11-15', window: 'flexible', place: '' }))
-    const body = buildBody('umzug', tariffs)!
+    session.setItem('movenow.termin.umzug', JSON.stringify({ date: '2026-11-15', window: 'flexible', place: '', point: null, consent: false }))
+    const body = buildBody('umzug', tariffs, confirmed)!
     expect(body).toMatchObject({ service: 'move', from: { label: 'A 1, 1010 Wien', point: { lat: 48.2, lon: 16.37 } }, to: { label: 'B 2, 1020 Wien' }, returnTrip: true, volume: 12 })
     expect((body['to'] as object) && 'point' in (body['to'] as object)).toBe(false)
     expect(body['description']).toBeUndefined()
@@ -179,15 +180,15 @@ describe('Antwort von quote', () => {
   ])('lehnt ab: %s', (_name, raw) => expect(parseSnapshot(raw)).toBeNull())
 
   it('Anzeige: Schätzpreis in ganzen Euro (auch ohne Spanne), Richtpreis mit Cent', () => {
-    const nbsp = String.fromCharCode(160)
-    expect(priceLabel({ ...ok, totalCents: null, lowCents: 95000, highCents: 155000, lines: [] }, true)).toEqual({ main: `950${nbsp}€ bis 1.550${nbsp}€`, range: null })
-    expect(priceLabel({ ...ok, totalCents: 18000, lowCents: 18000, highCents: 18000, lines: [] }, true)).toEqual({ main: `ca. 180${nbsp}€`, range: null })
-    expect(priceLabel({ ...ok, totalCents: null, lowCents: 117410, highCents: 117420, lines: [] }, true)).toEqual({ main: `ca. 1.174${nbsp}€`, range: null })
+    const nbsp = ' '
+    expect(priceLabel({ ...ok, totalCents: null, lowCents: 95000, highCents: 155000, lines: [] })).toEqual({ main: `950${nbsp}€ bis 1.550${nbsp}€`, range: null })
+    expect(priceLabel({ ...ok, totalCents: 18000, lowCents: 18000, highCents: 18000, lines: [] })).toEqual({ main: `180,00${nbsp}€`, range: null }) // Mindestpreis: Festpreis centgenau (R2-N11)
+    expect(priceLabel({ ...ok, totalCents: null, lowCents: 117410, highCents: 117420, lines: [] })).toEqual({ main: `ca. 1.174${nbsp}€`, range: null })
     // Spanne ohne verbindlichen Gesamtpreis ist gültig, wenn low < high und die Zeilensumme dazwischen liegt
     expect(parseSnapshot({ kind: 'price', lowCents: 900, highCents: 1100, lines: [{ key: 'a', cents: 1000 }] })).toMatchObject({ totalCents: null })
     expect(parseSnapshot({ kind: 'price', lowCents: 1000, highCents: 1000, lines: [{ key: 'a', cents: 1000 }] })).toBeNull()
     expect(parseSnapshot({ kind: 'price', lowCents: 900, highCents: 1100, lines: [{ key: 'a', cents: 1200 }] })).toBeNull()
-    expect(priceLabel({ ...ok, totalCents: 68961, lowCents: 68961, highCents: 68961, lines: [] }, false)).toEqual({ main: `689,61${nbsp}€`, range: null })
+    expect(priceLabel({ ...ok, totalCents: 68961, lowCents: 68961, highCents: 68961, lines: [] })).toEqual({ main: `689,61${nbsp}€`, range: null })
   })
 
   it('Übergabe über 20 000 Zeichen wird verworfen', () => {

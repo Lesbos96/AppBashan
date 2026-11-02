@@ -44,7 +44,7 @@ async function load(userId: string): Promise<Item[]> {
       title: titles[r.service],
       line: [shortDayText(r.preferred_date), [first(r.from_address), first(r.to_address)].filter(Boolean).join(' → ')].filter(Boolean).join(' · '),
       chip: states[r.status] ?? { chip: 'review', label: 'In Prüfung', active: true },
-      price: snapshot?.kind === 'price' ? priceLabel(snapshot, r.service === 'clearance').main : null,
+      price: snapshot?.kind === 'price' ? priceLabel(snapshot).main : null,
     }
   })
 }

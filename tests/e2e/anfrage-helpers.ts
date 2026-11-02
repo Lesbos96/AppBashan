@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { fillKuecheBeispiel } from './dienste-helpers'
+import { setTerminAddress } from './konfigurator-helpers'
 
 export const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST, OPTIONS' }
 
@@ -49,15 +50,23 @@ export async function toSummary(page: Page) {
   await fillKuecheBeispiel(page)
   await page.getByRole('button', { name: 'Weiter' }).click()
   await expect(page).toHaveURL(/\/montage\/termin$/)
-  await page.getByLabel('Adresse').fill('Neubaugasse 12, 1070 Wien')
+  await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
   await pickDate(page)
   await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
   await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
+  await fillContact(page)
+}
+
+/** Kontaktfelder der Zusammenfassung (Pflicht vor dem Senden). */
+export async function fillContact(page: Page) {
+  await page.getByLabel('Name').fill('Anna Muster')
+  await page.getByLabel('Telefon').fill('+43 660 1234567')
+  await page.getByLabel('Mailadresse').fill('anna@movenow.test')
 }
 
 /** Nach der gemockten Anmeldung trägt der Client ein Test-JWT; die öffentlichen Tarife lädt der Test daher ohne Authorization (wie anonym). */
 export async function anonymousPrices(page: Page) {
-  await page.route(/\/rest\/v1\/(current_price_version|price_config)/, (r) => {
+  await page.route(/\/rest\/v1\/(current_price_version|price_config|rpc\/booking_terms)/, (r) => {
     const { authorization: _unused, ...headers } = r.request().headers()
     void _unused
     return r.continue({ headers })

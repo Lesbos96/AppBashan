@@ -21,12 +21,36 @@ export const timeWindows = [
 export type TimeWindow = (typeof timeWindows)[number]['value']
 
 /** Wunschtermin und (bei Entrümpelung und Montage) der Ort; bei Transport und Umzug stehen die Adressen im Konfigurator. */
-export type Termin = { date: string | null; window: TimeWindow; place: string }
+export type Termin = { date: string | null; window: TimeWindow; place: string; point: { lat: number; lon: number } | null; consent: boolean }
 
-const initialTermin: Termin = { date: null, window: 'flexible', place: '' }
+const initialTermin: Termin = { date: null, window: 'flexible', place: '', point: null, consent: false }
 export const terminKey = (path: Path) => `movenow.termin.${path}`
 export const attemptKey = (path: Path) => `movenow.attempt.${path}`
 export const shownKey = (path: Path) => `movenow.shown.${path}`
+export const shownFullKey = (path: Path) => `movenow.shownfull.${path}`
+export const contactKey = (path: Path) => `movenow.contact.${path}`
+
+export type ContactDraft = { name: string; phone: string; email: string; stairsDoor: string }
+
+/** Kontaktfelder der Zusammenfassung; sie überleben die Anmeldung und verschwinden mit dem Entwurf. */
+export function readContact(path: Path): ContactDraft {
+  const empty = { name: '', phone: '', email: '', stairsDoor: '' }
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(contactKey(path)) ?? 'null') as Record<string, unknown> | null
+    if (raw && (['name', 'phone', 'email', 'stairsDoor'] as const).every((k) => typeof raw[k] === 'string')) return raw as ContactDraft
+  } catch {
+    // ohne Speicher beginnen die Felder leer
+  }
+  return empty
+}
+
+export function writeContact(path: Path, contact: ContactDraft): void {
+  try {
+    sessionStorage.setItem(contactKey(path), JSON.stringify(contact))
+  } catch {
+    // gesperrt
+  }
+}
 const SENT_KEY = 'movenow.sent'
 const MAX_HANDOVER_CHARS = 20_000
 
@@ -39,7 +63,9 @@ function validTermin(raw: unknown): raw is Termin {
     (r.date === null || (typeof r.date === 'string' && DATE.test(r.date))) &&
     timeWindows.some((w) => w.value === r.window) &&
     typeof r.place === 'string' &&
-    r.place.length <= 200
+    r.place.length <= 200 &&
+    typeof r.consent === 'boolean' &&
+    (r.point === null || (!!r.point && typeof r.point === 'object' && Number.isFinite((r.point as Record<string, unknown>).lat) && Number.isFinite((r.point as Record<string, unknown>).lon)))
   )
 }
 
@@ -77,16 +103,33 @@ export function useTermin(path: Path): [Termin, (patch: Partial<Termin>) => void
 export const viennaToday = (now = new Date()) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Vienna' }).format(now)
 
 /** Alles, was zu einem Entwurf gehört. Fotos folgen mit S8b-3. */
-export const draftKeys = (path: Path) => [services[path].flowKey, terminKey(path), attemptKey(path), shownKey(path)]
+export const draftKeys = (path: Path) => [services[path].flowKey, terminKey(path), attemptKey(path), shownKey(path), shownFullKey(path), contactKey(path)]
 
-/** Gesamtpreis (Cent) der Vorschau, die der Kunde beim Weitergehen zuletzt gesehen hat; ohne Preis (Angebot) wird nichts vermerkt. */
-export function rememberShown(path: Path, totalCents: number | null): void {
+/** Was der Kunde in der Vorschau sah (wie `shown` in `quote`): Festpreis total = low = high, Spanne total null, Angebot mit Gründen. */
+export type Shown = { kind: 'price'; totalCents: number | null; lowCents: number; highCents: number } | { kind: 'offer'; reasons: string[] }
+
+/** Vorschau, die der Kunde beim Weitergehen zuletzt gesehen hat: Gesamtpreis (Cent, für die Bestätigung) und die vollständige Anzeige (für `quote`). */
+export function rememberShown(path: Path, totalCents: number | null, shown: Shown): void {
   try {
+    sessionStorage.setItem(shownFullKey(path), JSON.stringify(shown))
     if (totalCents === null) sessionStorage.removeItem(shownKey(path))
     else sessionStorage.setItem(shownKey(path), String(totalCents))
   } catch {
     // ohne Speicher gibt es keinen Vergleich
   }
+}
+
+export function readShownFull(path: Path): Shown | null {
+  try {
+    const raw: unknown = JSON.parse(sessionStorage.getItem(shownFullKey(path)) ?? 'null')
+    const r = raw as Record<string, unknown> | null
+    const whole = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
+    if (r?.kind === 'offer' && Array.isArray(r.reasons) && r.reasons.length > 0 && r.reasons.every((x) => typeof x === 'string')) return { kind: 'offer', reasons: r.reasons as string[] }
+    if (r?.kind === 'price' && whole(r.lowCents) && whole(r.highCents) && (r.totalCents === null || whole(r.totalCents))) return { kind: 'price', totalCents: r.totalCents as number | null, lowCents: r.lowCents, highCents: r.highCents }
+  } catch {
+    // keine Vorschau vermerkt
+  }
+  return null
 }
 
 export function readShown(path: Path): number | null {
