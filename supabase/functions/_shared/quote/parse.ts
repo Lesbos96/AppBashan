@@ -51,7 +51,7 @@ export type QuoteCall = RequestCall
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u0009\u000b-\u001f\u007f]/ // Zeilenumbruch bleibt erlaubt (Beschreibung)
-const EMAIL = /^[^@s]+@[^@s]+.[^@s]+$/
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const PHONE = /^[0-9+()/ .-]{5,40}$/
 const HASH = /^[0-9a-f]{64}$/
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/

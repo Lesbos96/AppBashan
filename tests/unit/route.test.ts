@@ -77,7 +77,7 @@ describe('Eingaben', () => {
 function makeDeps(over: Partial<HandlerDeps> = {}) {
   const store = new Map<string, ProviderRoute>()
   const route = vi.fn<(points: Point[]) => Promise<ProviderRoute>>(async () => pr())
-  const geocode = vi.fn(async () => [{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT' }])
+  const geocode = vi.fn(async () => [{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT', layer: null, street: null, housenumber: null, locality: null }])
   const logs: unknown[] = []
   const deps: HandlerDeps = {
     provider: { id: 't', geocode, route },
@@ -186,7 +186,7 @@ describe('Handler', () => {
   it('liefert Kandidaten und Routenfakten', async () => {
     const { deps } = makeDeps()
     const g = await handleRoute(post({ mode: 'geocode', q: 'Ring 1' }), deps)
-    expect(await g.json()).toEqual({ candidates: [{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT' }] })
+    expect(await g.json()).toEqual({ candidates: [{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT', layer: null, street: null, housenumber: null, locality: null }] })
     const r = await handleRoute(post({ mode: 'route', from: A, to: B }), deps)
     expect(r.status).toBe(200)
     expect(r.headers.get('cache-control')).toBe('no-store')
@@ -257,7 +257,7 @@ describe('ORS-Adapter (Fixtures im ORS-Format)', () => {
   it('mappt Geocoding auf Kandidaten und schickt den Key nur im Header', async () => {
     const f = vi.fn(res(200, { features: [{ geometry: { coordinates: [16.37, 48.2] }, properties: { label: 'Ring 1, Wien', postalcode: '1010', country_a: 'AUT' } }, { geometry: {}, properties: { label: 'ohne Punkt' } }] }))
     const c = await orsProvider('KEY', f as never).geocode('Ring 1')
-    expect(c).toEqual([{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT' }])
+    expect(c).toEqual([{ label: 'Ring 1, Wien', lat: 48.2, lon: 16.37, postcode: '1010', country: 'AUT', layer: null, street: null, housenumber: null, locality: null }])
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(url.startsWith('https://api.heigit.org/pelias/v1/search?')).toBe(true)
     expect(url).not.toContain('KEY')

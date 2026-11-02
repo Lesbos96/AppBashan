@@ -1,3 +1,4 @@
+// Stand 0018, nach 0019 nicht mehr lauffähig (quote_save_request hat eine neue Signatur); der Nachweis bleibt docs/proof/s9a2/. Aktuell: redproof-s9a3.mjs.
 // Rot-Beweis S9a-2 (nur Dev-Projekt): lockert jede neue Sperre einzeln (committet, über Eigentümer-SQL) und misst die WIRKUNG:
 // Eine Ist-Wert-Probe (Rollback) liefert „Ergebnis | Wert“ (z. B. „ok | accepted“: der Status wurde wirklich gesetzt). Gelockert muss der
 // erwartete Wirkungswert erscheinen, wiederhergestellt der gesperrte Wert (genauer Fehler, Wert unverändert). Zusätzlich muss der zuständige

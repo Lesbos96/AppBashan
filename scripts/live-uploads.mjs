@@ -41,11 +41,12 @@ async function newRequest(user) {
   // einziger Weg: dieselbe SQL-Funktion wie quote (direkte Inserts gibt es nicht mehr)
   const { version } = (await service.from('current_price_version').select('version').single()).data
   const day = new Date(Date.now() + 14 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
-  const snapshot = { kind: 'price', totalCents: 100, lowCents: 100, highCents: 100, lines: [{ key: 'a', cents: 100 }] }
+  const snapshot = { kind: 'price', totalCents: 100, lowCents: 100, highCents: 100, lines: [{ key: 'a', cents: 100 }], terms: { cancel_free_hours: 48, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) } }
   const { data, error } = await service.rpc('quote_save_request', {
     p_customer: user.id, p_client_ref: randomUUID(), p_service: 'move', p_inputs: {}, p_snapshot: snapshot, p_price_version: version, p_total: 100, p_low: 100, p_high: 100,
-    p_from_address: null, p_from_postcode: null, p_from_lon: null, p_from_lat: null, p_to_address: null, p_to_postcode: null, p_to_lon: null, p_to_lat: null,
-    p_route: null, p_region: null, p_preferred_date: day, p_time_window: null, p_description: null, p_volume: null,
+    p_from_address: null, p_from_lon: null, p_from_lat: null, p_to_address: null, p_to_lon: null, p_to_lat: null,
+    p_route: null, p_region: null, p_district: 1, p_preferred_date: day, p_time_window: null, p_description: null, p_volume: null,
+    p_contact: { name: 'Test', phone: '+43 660 1234567', email: 'test@movenow.test' }, p_confirmed: {},
   })
   if (error) throw error
   requests.push(data[0].id)

@@ -11,7 +11,7 @@ import {
 import { describe, expect, it } from 'vitest'
 import { handleQuote, type OfferRow, type QuoteDeps, type QuoteResponse, type SaveBooking, type SaveRequest } from '../../supabase/functions/_shared/quote/handler.ts'
 import { buildTariffs } from '../../supabase/functions/_shared/quote/tariffs.ts'
-import { HttpError, type GeoFacts, type ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
+import { HttpError, type Candidate, type GeoFacts, type ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
 import { ProviderError } from '../../supabase/functions/_shared/route/provider.ts'
 import {
   CARGO_VAN,
@@ -29,6 +29,8 @@ import {
   rentalCall,
   rentalInput,
   seedRows,
+  settle,
+  TERMS,
   VIENNA_A,
   GRAZ,
 } from '../support/quote.ts'
@@ -62,6 +64,7 @@ function setup(over: Partial<QuoteDeps> = {}, geo: GeoFacts = AT_GRAZ, route: Pr
   const existing = new Map<string, QuoteResponse>()
   const provider = fixedProvider(route)
   const cache = new Map<string, ProviderRoute>()
+  const geoCache = new Map<string, Candidate[]>()
   const tokens: string[][] = []
   const deps: QuoteDeps = {
     allowedOrigins: [],
@@ -71,7 +74,15 @@ function setup(over: Partial<QuoteDeps> = {}, geo: GeoFacts = AT_GRAZ, route: Pr
       return true
     },
     getUserId: async (jwt) => (jwt === 'aaa.bbb.ccc' ? 'user-a' : null),
+    currentVersion: async () => 1,
     loadPricing: async () => ({ version: 1, rows: seedRows }),
+    loadHold: async (v) => (v === 1 ? { started: true, isCurrent: true, replacedAt: null, holdMinutes: 30 } : null),
+    loadTerms: async () => ({ ...TERMS }),
+    geocodeCache: { get: async (k) => geoCache.get(k) ?? null, set: async (k, v) => void geoCache.set(k, v) },
+    district: async (lon, lat) => {
+      const inVienna = lat > 48.12 && lat < 48.32 && lon > 16.18 && lon < 16.58
+      return { inVienna, inAustria: lat > 46.3 && lat < 49.1 && lon > 9.5 && lon < 17.2, district: inVienna ? 1 : null }
+    },
     loadOffer: async (id) => (id === CARGO_VAN ? cargoVan : null),
     findExisting: async (_user, ref) => existing.get(ref) ?? null,
     saveRequest: async (a) => {
@@ -94,11 +105,14 @@ function setup(over: Partial<QuoteDeps> = {}, geo: GeoFacts = AT_GRAZ, route: Pr
     log: () => {},
     ...over,
   }
-  const run = async (body: unknown, jwt: string | null = 'aaa.bbb.ccc') => {
+  const send = async (body: unknown, jwt: string | null = 'aaa.bbb.ccc') => {
     const res = await handleQuote(post(body, jwt), deps)
     return { status: res.status, body: (await res.json()) as Record<string, any> } // eslint-disable-line @typescript-eslint/no-explicit-any -- Antwort-JSON
   }
-  return { deps, run, requests, bookings, existing, provider, tokens }
+  /** Wie die App: Preisabfrage und Bestätigung (siehe `settle`). */
+  const run = (body: unknown, jwt: string | null = 'aaa.bbb.ccc') =>
+    body && typeof body === 'object' && !Array.isArray(body) ? settle((b) => send(b, jwt), body as Record<string, unknown>, { priceVersion: 1, termsHash: TERMS.termsHash }) : send(body, jwt)
+  return { deps, run, send, requests, bookings, existing, provider, tokens }
 }
 
 /** Alle Schlüssel eines JSON-Werts, auch verschachtelt. */
@@ -139,7 +153,7 @@ describe('Pflichtkriterium: Strecke und Preis rechnet nur der Server', () => {
     expect(saved.lowCents).toBe(saved.totalCents)
     expect(saved.highCents).toBe(saved.totalCents)
     expect(saved.customerId).toBe('user-a')
-    expect(JSON.stringify(saved)).not.toMatch(/user-b|confirmed|"totalKm":1[,}]/)
+    expect(JSON.stringify(saved)).not.toMatch(/user-b|"status"|"totalKm":1[,}]/)
   })
 
   it('Wien → Wien: der Server erkennt die Region selbst, auch wenn der Client „international“ behauptet', async () => {
@@ -159,7 +173,7 @@ describe('Pflichtkriterium: nur geprüfte Felder werden gespeichert', () => {
       moveCall({
         [evil]: 1,
         inputs: { ...moveInputs, [evil]: 1, assembly: { kind: 'standard', lm: 3, [evil]: 1 } },
-        from: { ...place('Ring 1', VIENNA_A), [evil]: 1 },
+        from: { ...place('Ring 1, Wien', VIENNA_A), [evil]: 1 },
         description: 'Zwei Sofas',
         volume: 12,
       }),
@@ -171,7 +185,7 @@ describe('Pflichtkriterium: nur geprüfte Felder werden gespeichert', () => {
     // inputs sind exakt das Ergebnis von parseTransportInput
     expect(saved.inputs).toEqual(parseTransportInput({ ...moveInputs, service: 'move' }))
     // Snapshot: nur diese Felder
-    expect(Object.keys(saved.snapshot).sort()).toEqual(['billedHours', 'highCents', 'hourlyRateCents', 'kind', 'lines', 'lowCents', 'totalCents'])
+    expect(Object.keys(saved.snapshot).sort()).toEqual(['billedHours', 'highCents', 'hourlyRateCents', 'kind', 'lines', 'lowCents', 'terms', 'totalCents'])
     expect(saved.description).toBe('Zwei Sofas')
     expect(saved.volumeM3).toBe(12)
   })
@@ -185,7 +199,7 @@ describe('Pflichtkriterium: nur geprüfte Felder werden gespeichert', () => {
     expect((await t.run(moveCall({ timeWindow: 'night' }))).status).toBe(200) // für Transport ohne Wirkung
     expect(t.requests.at(-1)!.timeWindow).toBeNull()
     expect((await t.run(clearanceCall({ timeWindow: 'night' }))).status).toBe(400)
-    const c = await t.run(clearanceCall({ timeWindow: 'morning', preferredDate: '2026-11-20', description: 'Keller', volume: 50, to: place('Graz', GRAZ) }))
+    const c = await t.run(clearanceCall({ timeWindow: 'morning', preferredDate: '2026-11-20', description: 'Keller', volume: 50, to: place('Hauptplatz 1, Graz', GRAZ) }))
     expect(c.status).toBe(200)
     expect(t.requests.at(-1)).toMatchObject({ timeWindow: 'morning', preferredDate: '2026-11-20', description: 'Keller', volumeM3: null, to: null, route: null })
     expect(t.provider.calls).toBe(1) // nur der Umzug von oben mit gültiger Strecke; Entrümpelung ruft `route` nie
@@ -382,23 +396,28 @@ describe('Status und Angebote', () => {
     expect(t.requests[0]).toMatchObject({ totalCents: null, lowCents: null, highCents: null })
   })
 
-  it('Ohne Koordinaten: Angebot route_missing, kein Aufruf des Anbieters', async () => {
+  it('Ohne Koordinaten: 422 address_point_required, kein Aufruf des Anbieters', async () => {
     const t = setup()
-    const res = await t.run(moveCall({ from: place('Irgendwo', null), to: null }))
-    expect(res.body.snapshot).toMatchObject({ kind: 'offer', reasons: ['route_missing'] })
-    expect(t.provider.calls).toBe(0)
+    expect(await t.run(moveCall({ from: place('Stephansplatz 1, Wien', null) }))).toMatchObject({ status: 422, body: { error: 'address_point_required' } })
+    expect(t.provider.calls + t.provider.geocodes).toBe(0)
+    expect(t.requests).toHaveLength(0)
   })
 
-  it.each([
-    ['Anbieter nicht erreichbar', { route: new ProviderError('unavailable') }, {}],
-    ['keine Route', { route: new ProviderError('no_route') }, {}],
-    ['Zähler erschöpft', {}, { takeTokens: async (c: { bucket: string }[]) => !c.some((x) => x.bucket.startsWith('route:')) }],
-  ])('%s: Angebot route_missing statt Ablehnung', async (_, { route }: { route?: Error }, over) => {
-    const t = setup(over, AT_GRAZ, route)
+  it('keine Route zwischen den Punkten: Angebot route_missing statt Ablehnung', async () => {
+    const t = setup({}, AT_GRAZ, new ProviderError('no_route'))
     const res = await t.run(moveCall())
     expect(res.status).toBe(200)
     expect(res.body.snapshot).toMatchObject({ kind: 'offer', reasons: ['route_missing'] })
     expect(t.requests[0]).toMatchObject({ totalCents: null, route: null })
+  })
+
+  it.each([
+    ['Anbieter nicht erreichbar', { route: new ProviderError('unavailable') }, {}, 503, 'provider_unavailable'],
+    ['Zähler erschöpft', {}, { takeTokens: async (c: { bucket: string }[]) => !c.some((x) => x.bucket.startsWith('route:')) }, 429, 'rate_limited'],
+  ])('%s: Abbruch ohne Speichern (kein Angebot ohne Preisgrundlage)', async (_, { route }: { route?: Error }, over, status, error) => {
+    const t = setup(over, AT_GRAZ, route)
+    expect(await t.run(moveCall())).toMatchObject({ status, body: { error } })
+    expect(t.requests).toHaveLength(0)
   })
 
   it('Ausfall des Limiters beim Anbieter-Aufruf bricht ab (503), nichts wird gespeichert', async () => {
@@ -504,6 +523,11 @@ describe('Zugang, Limits, Idempotenz, Bearbeiten', () => {
 
   it.each([
     ['too_late', 422],
+    ['district_required', 422],
+    ['contact_required', 422],
+    ['preferred_date_required', 400],
+    ['terms_missing', 500],
+    ['confirmed_required', 500],
     ['setting_missing', 500],
   ])('Schreib-Fehler %s → %i', async (message, status) => {
     const t = setup({ saveRequest: async () => { throw Object.assign(new Error(message), { code: 'P0001' }) } })
@@ -522,6 +546,6 @@ describe('Zugang, Limits, Idempotenz, Bearbeiten', () => {
     const t = setup({ log: (e) => logs.push(e) }, IN_VIENNA)
     await t.run(moveCall())
     expect(JSON.stringify(logs)).not.toMatch(/user-a|Stephansplatz|48\.2/)
-    expect(logs).toHaveLength(1)
+    expect(logs).toHaveLength(2) // Preisabfrage (409) und Bestätigung (200)
   })
 })

@@ -3,6 +3,7 @@
 // Der Rot-Beweis zu diesen Sperren steht in scripts/redproof-s9a2.mjs.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { anon, DENIED, deleteUsers, makeRequest, makeUser, must, service, type TestUser } from '../support/db.ts'
+import { TERMS } from '../support/quote.ts'
 import { asUser, ownerGrantRole, ownerSql, probes } from '../support/owner.ts'
 
 let a: TestUser
@@ -76,7 +77,7 @@ describe('Status nur über Funktionen', () => {
 
   it('INSERT: nur requested/awaiting_offer; eine Anfrage ohne Revision wird beim Commit verworfen', async () => {
     const row = (status: string) => ({
-      customer_id: a.id, client_ref: crypto.randomUUID(), service: 'move' as const, status: status as 'requested',
+      customer_id: a.id, client_ref: crypto.randomUUID(), service: 'move' as const, status: status as 'requested', district: 1,
       termin_at: new Date(Date.now() + 14 * 86_400_000).toISOString(), accept_deadline: new Date(Date.now() + 86_400_000).toISOString(),
     })
     expect((await service.from('service_requests').insert(row('accepted'))).error).toMatchObject({ code: 'P0001', message: 'invalid_transition' })
@@ -102,7 +103,7 @@ describe('Status nur über Funktionen', () => {
   })
 
   it('withdraw aus awaiting_offer ok; die Marker der Funktion bleiben nicht in der Sitzung stehen', async () => {
-    const id = await makeRequest(a.id, { p_total: null, p_low: null, p_high: null, p_snapshot: { kind: 'offer', reasons: ['special_case'] } })
+    const id = await makeRequest(a.id, { p_total: null, p_low: null, p_high: null, p_snapshot: { kind: 'offer', reasons: ['special_case'], terms: TERMS } })
     expect(must(await service.from('service_requests').select('status').eq('id', id).single()).status).toBe('awaiting_offer')
     expect(must(await a.db.rpc('withdraw', { p_request: id }))).toBe('withdrawn')
     const r = probes('', [
@@ -173,7 +174,7 @@ describe('Revisionen unveränderlich', () => {
       return ins(Object.keys(v).join(', '), Object.values(v).join(', '))
     }
     const fresh = (id: string, status: string) =>
-      `insert into public.service_requests (id, customer_id, client_ref, service, status, termin_at, accept_deadline) values ('${id}', '${a.id}', gen_random_uuid(), 'move', '${status}', now() + interval '14 days', now() + interval '1 day');`
+      `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline) values ('${id}', '${a.id}', gen_random_uuid(), 'move', '${status}', 1, now() + interval '14 days', now() + interval '1 day');`
     const N1 = '11111111-1111-4111-8111-111111111111'
     const N2 = '22222222-2222-4222-8222-222222222222'
     const r = probes(`${fresh(N1, 'requested')} ${fresh(N2, 'awaiting_offer')} insert into public.price_versions (version, effective_on) values (99990, '2999-01-01')`, [
@@ -213,7 +214,7 @@ describe('Revisionen unveränderlich', () => {
       { name: 'Zeiger gleich (kein Fehler)', sql: `update public.service_requests set current_revision = '${revA}' where id = '${reqA}'`, as: 'service_role' },
       { name: 'termin_at', sql: `update public.service_requests set termin_at = termin_at + interval '1 day' where id = '${reqA}'` },
       { name: 'accept_deadline', sql: `update public.service_requests set accept_deadline = accept_deadline + interval '1 day' where id = '${reqA}'` },
-      { name: 'district', sql: `update public.service_requests set district = 1 where id = '${reqA}'` },
+      { name: 'district', sql: `update public.service_requests set district = 2 where id = '${reqA}'` },
       { name: 'Ist-Zeiger', sql: `=(select current_revision from public.service_requests where id = '${reqA}')` },
     ])
     expect(r['Zeiger auf fremde Revision (service_role)']).toBe('P0001: invalid_revision_pointer')
@@ -243,7 +244,6 @@ describe('Revisionen unveränderlich', () => {
     const victim = await makeUser('status-victim')
     const id = await makeRequest(victim.id)
     must(await victim.db.rpc('withdraw', { p_request: id }))
-    ownerSql(`insert into public.request_contacts (request_id, name, phone, email) values ('${id}', 'Test', '0660', 'x@y.test')`)
     const count = () => ownerSql(`select (select count(*) from public.service_requests where id = '${id}')::int a, (select count(*) from public.price_revisions where request_id = '${id}')::int b, (select count(*) from public.status_events where request_id = '${id}')::int c, (select count(*) from public.request_contacts where request_id = '${id}')::int d`)[0]
     expect(count()).toEqual({ a: 1, b: 1, c: 1, d: 1 })
     const { error } = await service.auth.admin.deleteUser(victim.id)
@@ -285,7 +285,7 @@ describe('status_events: nur anfügen, nur admin (aal2) liest', () => {
 
 describe('Lesen: Revisionen und Kontakte', () => {
   beforeAll(() => {
-    ownerSql(`insert into public.request_contacts (request_id, name, phone, email, stairs_door) values ('${reqA}', 'Anna', '0660 1', 'a@y.test', 'Stiege 2, Tür 5'), ('${reqB}', 'Bernd', '0660 2', 'b@y.test', null)`)
+    ownerSql(`update public.request_contacts set name = 'Anna', stairs_door = 'Stiege 2, Tür 5' where request_id = '${reqA}'; update public.request_contacts set name = 'Bernd' where request_id = '${reqB}'`)
   })
 
   it('Kunde liest nur eigene Revisionen und Kontakte, fremde 0 Zeilen (Positivkontrolle eigene), admin und Partner nichts', async () => {
@@ -308,9 +308,8 @@ describe('Lesen: Revisionen und Kontakte', () => {
     expect((await a.db.from('price_revisions').insert({ request_id: reqA, n: 1, source: 'submit', inputs: {}, snapshot: {}, price_version: 1, content_hash: 'x' })).error?.code).toBe(DENIED)
     expect((await service.from('request_contacts').update({ name: 'neu' }).eq('request_id', reqA)).error?.code).toBe(DENIED)
     expect((await service.from('request_contacts').delete().eq('request_id', reqA)).error?.code).toBe(DENIED)
-    // Positivkontrolle: service_role darf einfügen (die zweite Anfrage von b hat noch keine Zeile, reqB schon: Primärschlüssel 23505)
+    // Positivkontrolle: service_role darf einfügen; quote_save_request legt den Kontakt schon an, daher scheitert erst der Primärschlüssel (23505), nicht das Recht (42501)
     const id = await makeRequest(a.id)
-    expect((await service.from('request_contacts').insert({ request_id: id, name: 'Neu', phone: '0660', email: 'n@y.test' })).error).toBeNull()
-    expect((await service.from('request_contacts').insert({ request_id: id, name: 'Doppelt', phone: '0660', email: 'n@y.test' })).error?.code).toBe('23505')
+    expect((await service.from('request_contacts').insert({ request_id: id, name: 'Doppelt', phone: '0660 12345', email: 'n@y.test' })).error?.code).toBe('23505')
   })
 })

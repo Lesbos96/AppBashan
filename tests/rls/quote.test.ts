@@ -7,7 +7,7 @@ import { handleQuote, type QuoteDeps } from '../../supabase/functions/_shared/qu
 import type { Point, ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
 import type { RouteProvider } from '../../supabase/functions/_shared/route/provider.ts'
 import { anon, DENIED, deleteUsers, makeUser, must, pause, run, service, type TestUser } from '../support/db.ts'
-import { assemblyCall, CARGO_VAN, clearanceCall, clearanceInputs, clientRef, GRAZ, hmac, moveCall, moveInputs, place, post, rentalCall, rentalInput, termin, VIENNA_A, VIENNA_B } from '../support/quote.ts'
+import { assemblyCall, CARGO_VAN, CONTACT, clearanceCall, clearanceInputs, clientRef, geocodeFake, GRAZ, hmac, moveCall, moveInputs, place, post, rentalCall, rentalInput, settle, TERMS, termin, VIENNA_A, VIENNA_B } from '../support/quote.ts'
 
 // Grobe Linien (lon, lat) wie in route.test.ts
 const WIEN_WIEN: ProviderRoute = { legMeters: [7500], durationSeconds: 1200, line: [[16.3731, 48.2086], [16.35, 48.2], [16.3122, 48.1845]] }
@@ -18,12 +18,13 @@ const WIEN_GRAZ: ProviderRoute = {
 }
 const provider: RouteProvider = {
   id: `test-${run}`,
-  geocode: () => Promise.reject(new Error('nicht benutzt')),
+  geocode: async (q: string) => geocodeFake(q),
   route: async (points: Point[]) => (points.every((p) => p.lat > 48) ? WIEN_WIEN : WIEN_GRAZ),
 }
 
 const db = quoteDb(service)
 const cacheKeys: string[] = []
+const geoKeys: string[] = []
 let limited = false
 const deps: QuoteDeps = {
   ...db,
@@ -33,6 +34,13 @@ const deps: QuoteDeps = {
   log: () => {},
   // Zähler unter Testpräfix; ohne `limited` hoch genug, damit die vielen Aufrufe das Nutzerlimit nicht auslösen
   takeTokens: (checks) => db.takeTokens(checks.map((c) => ({ ...c, bucket: `test-${run}:${c.bucket}`, max: limited ? c.max : 100_000 }))),
+  geocodeCache: {
+    get: db.geocodeCache.get,
+    set: async (key, value, ttl) => {
+      geoKeys.push(key)
+      await db.geocodeCache.set(key, value, ttl)
+    },
+  },
   route: {
     ...db.route,
     provider,
@@ -47,10 +55,13 @@ const deps: QuoteDeps = {
   },
 }
 
-const call = async (user: TestUser | null, body: unknown) => {
+const send = (user: TestUser | null) => async (body: unknown) => {
   const res = await handleQuote(post(body, user?.jwt ?? null), deps)
   return { status: res.status, body: (await res.json()) as Record<string, any> } // eslint-disable-line @typescript-eslint/no-explicit-any -- Antwort-JSON
 }
+let ctx: { priceVersion: number; termsHash: string }
+/** Wie die App: Preisabfrage und Bestätigung (siehe `settle`); */
+const call = (user: TestUser | null, body: unknown) => (body && typeof body === 'object' && !Array.isArray(body) ? settle(send(user), body as Record<string, unknown>, ctx) : send(user)(body))
 
 const dayAhead = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
 const requestRow = async (id: string) => must(await service.from('service_requests').select('*').eq('id', id).single())
@@ -69,6 +80,7 @@ let landlord: TestUser
 let landlordOffer: string
 
 beforeAll(async () => {
+  ctx = { priceVersion: await db.currentVersion(), termsHash: String((await db.loadTerms())['termsHash']) }
   a = await makeUser('quote-a')
   b = await makeUser('quote-b')
   landlord = await makeUser('quote-vermieter')
@@ -91,6 +103,7 @@ afterAll(async () => {
   await service.from('rental_offers').delete().eq('id', landlordOffer)
   await service.from('route_rate_limits').delete().like('bucket', `test-${run}:%`)
   for (const key of cacheKeys) await service.from('route_cache').delete().eq('key', key)
+  for (const key of geoKeys) await service.from('geocode_cache').delete().eq('key', key)
   await deleteUsers()
 })
 
@@ -139,17 +152,17 @@ describe('Anfrage anlegen (echte DB)', () => {
     expect(await count()).toBe(before)
   })
 
-  it('Punkte werden als (Länge, Breite) gespeichert', async () => {
-    const res = await call(a, moveCall({ from: place('Start', VIENNA_A, '1010'), to: place('Ziel', VIENNA_B, '1120') }))
+  it('Punkte werden als (Länge, Breite) gespeichert, Adresse und Bezirk kommen vom geprüften Kandidaten', async () => {
+    const res = await call(a, moveCall())
     const row = await requestRow(res.body.id)
-    expect(row.from_postcode).toBe('1010')
+    expect(row).toMatchObject({ from_address: 'Stephansplatz 1, 1010 Wien', to_address: 'Meidlinger Hauptstraße 1, 1120 Wien', district: 1 })
     expect(lonLat(row.from_point as unknown as string)).toEqual([VIENNA_A.lon, VIENNA_A.lat])
     expect(lonLat(row.to_point as unknown as string)).toEqual([VIENNA_B.lon, VIENNA_B.lat])
     expect(row.region).toBe('vienna') // Wien-Punkte landen im Wiener Polygon, nicht vertauscht
   })
 
   it('Wien → Graz: Region, Kilometer und Preis kommen aus Strecke und PostGIS', async () => {
-    const res = await call(a, moveCall({ to: place('Graz', GRAZ, '8010') }))
+    const res = await call(a, moveCall({ to: place('Hauptplatz 1, Graz', GRAZ) }))
     expect(res.status).toBe(200)
     const row = await requestRow(res.body.id)
     expect(row.region).toBe('austria')
@@ -160,7 +173,7 @@ describe('Anfrage anlegen (echte DB)', () => {
 
   it('Negativtest: quote schreibt keine fee_splits-Zeile (Anfrage und Mietanfrage), die Antwort enthält keine Gebühr', async () => {
     const res = await call(a, moveCall())
-    expect(JSON.stringify(res.body)).not.toMatch(/fee|payout|platform/i)
+    expect(JSON.stringify(res.body).replaceAll('call_out_fee_cents', '')).not.toMatch(/fee|payout|platform/i) // Anfahrtspauschale ist eine Bedingung, keine Plattformgebühr
     expect(await splitCount('service_request_id', res.body.id)).toBe(0)
     const rent = await call(a, rentalCall({ inputs: { ...rentalInput, pickupAt: `${dayAhead(10)}T09:00`, returnAt: `${dayAhead(12)}T09:00` } }))
     expect(rent.status).toBe(200)
@@ -252,10 +265,10 @@ describe('Rechte (Verweigerung exakt, Positivkontrolle)', () => {
   const ghost = '99999999-9999-4999-8999-999999999999'
   const requestArgs = (): never =>
     ({
-      p_customer: ghost, p_client_ref: clientRef(), p_service: 'assembly', p_inputs: {}, p_snapshot: {}, p_price_version: 1,
-      p_total: null, p_low: null, p_high: null, p_from_address: null, p_from_postcode: null, p_from_lon: null, p_from_lat: null,
-      p_to_address: null, p_to_postcode: null, p_to_lon: null, p_to_lat: null, p_route: null, p_region: null, p_preferred_date: dayAhead(14),
-      p_time_window: null, p_description: null, p_volume: null,
+      p_customer: ghost, p_client_ref: clientRef(), p_service: 'assembly', p_inputs: {}, p_snapshot: { terms: TERMS }, p_price_version: 1,
+      p_total: null, p_low: null, p_high: null, p_from_address: null, p_from_lon: null, p_from_lat: null,
+      p_to_address: null, p_to_lon: null, p_to_lat: null, p_route: null, p_region: null, p_district: 1, p_preferred_date: dayAhead(14),
+      p_time_window: null, p_description: null, p_volume: null, p_contact: CONTACT, p_confirmed: {},
     }) as never
   const bookingArgs = (): never =>
     ({

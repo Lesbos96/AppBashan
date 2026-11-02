@@ -147,7 +147,17 @@ class Conflict extends Error {
   }
 }
 
-const normalize = (label: string) => label.trim().toLowerCase().replace(/s+/g, ' ')
+/** Codes der Schreib-Funktion (P0001), die der Kunde bzw. die App versteht; `terms_missing`/`confirmed_required` sind Fehler des Servers selbst. */
+const WRITE_ERRORS: Record<string, number> = {
+  too_late: 422,
+  district_required: 422,
+  contact_required: 422,
+  preferred_date_required: 400,
+  terms_missing: 500,
+  confirmed_required: 500,
+}
+
+const normalize =(label: string) => label.trim().toLowerCase().replace(/\s+/g, ' ')
 
 /** Geocodiert das Label serverseitig (Cache, eigenes Kontingent) und liefert den Kandidaten, der dem Client-Punkt entspricht. */
 async function verifyAddress(place: Place | null, customerId: string, deps: QuoteDeps): Promise<Candidate> {
@@ -236,8 +246,8 @@ export async function handleQuote(req: Request, deps: QuoteDeps): Promise<Respon
     if (e instanceof TariffError) return finish(500, { error: 'tariff_incomplete' }, 'tariff_incomplete')
     // Fehler der Schreib-Funktion: P0001 mit dem Code als Meldung (too_late: Termin zu nah, setting_missing: Einstellung fehlt).
     const { code: pg, message } = (e ?? {}) as { code?: unknown; message?: unknown }
-    if (pg === 'P0001' && message === 'too_late') return finish(422, { error: 'too_late' }, 'too_late')
-    if (pg === 'P0001' && message === 'district_required') return finish(422, { error: 'district_required' }, 'district_required')
+    const mapped = pg === 'P0001' && typeof message === 'string' ? WRITE_ERRORS[message] : undefined
+    if (mapped && typeof message === 'string') return finish(mapped, { error: message }, message)
     if ((pg === 'P0001' && message === 'setting_missing') || (e instanceof Error && e.message === 'setting_missing')) return finish(500, { error: 'setting_missing' }, 'setting_missing')
     const cause = typeof pg === 'string' && /^[0-9A-Z]{5}$/.test(pg) ? pg : e instanceof Error ? e.name : 'unknown'
     return finish(500, { error: 'internal' }, `internal:${cause}`)
