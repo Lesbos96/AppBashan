@@ -1,0 +1,313 @@
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/uploads.test.ts (13 tests | 13 failed) 19ms
+   ❯ uploadAll: ein Foto (7)
+     × Erfolg: Staging-Pfad {user}/{clientRef}/{id}.jpg, ohne Upsert, keine Zeile in der Datenbank 9ms
+     × zu groß: kein Aufruf an den Server 2ms
+     × Datei schon da (409) 1ms
+     × Datei zu groß (413) 0ms
+     × Kontingent oder Policy (403) 0ms
+     × Netz 0ms
+     × anderer Fehler 1ms
+   ❯ uploadAll (1)
+     × lädt nacheinander hoch und meldet den Fortschritt; der erste Fehler bricht ab 0ms
+   ❯ Staging-Stand (M-2) (5)
+     × Ref-Wechsel im selben Konto: erst die Dateien der alten Ref entfernen, dann hochladen 1ms
+     × gleiche Ref: nichts entfernt, nichts doppelt 0ms
+     × Kontowechsel: alte Dateien nicht mit der neuen Sitzung löschen 0ms
+     × nach dem Absenden (forgetStaging): der nächste Entwurf entfernt nichts 0ms
+     × discardStaging entfernt den aktuellen Stand; danach wird dasselbe Foto neu hochgeladen 0ms
+ ❯ |unit| tests/unit/draft.test.ts (44 tests | 1 failed) 90ms
+   ❯ clientRef (4)
+     × hängt am Fotosatz: gleiche IDs in anderer Reihenfolge = gleiche Ref, ein Foto weniger = neue Ref, Bestätigtes zählt nicht 6ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/draft.test.ts > clientRef > hängt am Fotosatz: gleiche IDs in anderer Reihenfolge = gleiche Ref, ein Foto weniger = neue Ref, Bestätigtes zählt nicht
+TypeError: refBody is not a function
+ ❯ tests/unit/draft.test.ts:122:39
+    120|     const P2 = 'a0b1c2d3-0000-4000-8000-000000000002'
+    121|     const body = { service: 'clearance', preferredDate: '2026-11-15' }
+    122|     const a = refFor('entruempelung', refBody(body, [P1, P2]))
+       |                                       ^
+    123|     expect(refFor('entruempelung', refBody(body, [P2, P1]))).toBe(a)
+    124|     expect(refFor('entruempelung', refBody({ ...body, priceVersion: 7,…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > Erfolg: Staging-Pfad {user}/{clientRef}/{id}.jpg, ohne Upsert, keine Zeile in der Datenbank
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > zu groß: kein Aufruf an den Server
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > Datei schon da (409)
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > Datei zu groß (413)
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > Kontingent oder Policy (403)
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > Netz
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll: ein Foto > anderer Fehler
+ FAIL  |unit| tests/unit/uploads.test.ts > uploadAll > lädt nacheinander hoch und meldet den Fortschritt; der erste Fehler bricht ab
+ FAIL  |unit| tests/unit/uploads.test.ts > Staging-Stand (M-2) > Ref-Wechsel im selben Konto: erst die Dateien der alten Ref entfernen, dann hochladen
+ FAIL  |unit| tests/unit/uploads.test.ts > Staging-Stand (M-2) > gleiche Ref: nichts entfernt, nichts doppelt
+ FAIL  |unit| tests/unit/uploads.test.ts > Staging-Stand (M-2) > Kontowechsel: alte Dateien nicht mit der neuen Sitzung löschen
+ FAIL  |unit| tests/unit/uploads.test.ts > Staging-Stand (M-2) > nach dem Absenden (forgetStaging): der nächste Entwurf entfernt nichts
+ FAIL  |unit| tests/unit/uploads.test.ts > Staging-Stand (M-2) > discardStaging entfernt den aktuellen Stand; danach wird dasselbe Foto neu hochgeladen
+TypeError: forgetStaging is not a function
+ ❯ tests/unit/uploads.test.ts:29:18
+     27| }
+     28|
+     29| beforeEach(() => forgetStaging())
+       |                  ^
+     30|
+     31| describe('uploadAll: ein Foto', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  14 failed | 43 passed (57)
+   Start at  18:29:24
+   Duration  740ms (transform 47%, import 36%, tests 15%, worker 2%)
+
+EXIT=1
+
+Running 15 tests using 1 worker
+
+  ok  1 [e2e] › tests\e2e\fotos.spec.ts:14:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber (11.9s)
+  ok  2 [e2e] › tests\e2e\fotos.spec.ts:57:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen (7.8s)
+  ok  3 [e2e] › tests\e2e\fotos.spec.ts:65:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging (10.7s)
+  ok  4 [e2e] › tests\e2e\fotos.spec.ts:80:1 › Fortschritt: x von 2 hochgeladen, dann gesendet (10.1s)
+  ok  5 [e2e] › tests\e2e\fotos.spec.ts:88:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet (9.5s)
+  ok  6 [e2e] › tests\e2e\fotos.spec.ts:101:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild (7.9s)
+  ok  7 [e2e] › tests\e2e\fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › offline (10.8s)
+  ok  8 [e2e] › tests\e2e\fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy) (7.4s)
+  ok  9 [e2e] › tests\e2e\fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 413 (zu groß) (9.1s)
+  x  10 [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing (10.3s)
+  x  11 [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired (10.9s)
+  x  12 [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt (1.0m)
+  ok 13 [e2e] › tests\e2e\fotos.spec.ts:182:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben (9.4s)
+  ok 14 [e2e] › tests\e2e\fotos.spec.ts:189:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt (1.9s)
+  ok 15 [e2e] › tests\e2e\fotos.spec.ts:199:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert (2.1s)
+
+
+  1) [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "cb38deb6-8a63-4ebd-b896-6e1c3883d3d5"
+
+      147 |       await sendButton(page).click()
+      148 |       await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+    > 149 |       expect(quoteCalls[1]!.body.clientRef).not.toBe(quoteCalls[0]!.body.clientRef) // neue IDs = neue Ref (M-1); gespeichert wurde nichts
+          |                                                 ^
+      150 |       const second = ids(quoteCalls[1]!.body)
+      151 |       expect(second).toHaveLength(2)
+      152 |       expect(second.filter((id) => first.includes(id))).toEqual([]) // neue Dateinamen
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:149:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "3c45b889-0519-4b43-a798-3dc966288ecd"
+
+      147 |       await sendButton(page).click()
+      148 |       await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+    > 149 |       expect(quoteCalls[1]!.body.clientRef).not.toBe(quoteCalls[0]!.body.clientRef) // neue IDs = neue Ref (M-1); gespeichert wurde nichts
+          |                                                 ^
+      150 |       const second = ids(quoteCalls[1]!.body)
+      151 |       expect(second).toHaveLength(2)
+      152 |       expect(second.filter((id) => first.includes(id))).toEqual([]) // neue Dateinamen
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:149:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('link', { name: 'Ändern' })
+
+
+      164 |   await page.goBack() // Termin
+      165 |   await page.goBack() // Ergebnis
+    > 166 |   await page.getByRole('link', { name: 'Ändern' }).click()
+          |                                                    ^
+      167 |   await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
+      168 |   await expect(page.getByText('1 von 8')).toBeVisible()
+      169 |   await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:166:52
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing 
+    [e2e] › tests\e2e\fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired 
+    [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+  12 passed (3.2m)
+EXIT=1
+=== Nachlauf: Locator korrigiert (Zurück-Link statt Ändern) ===
+
+Running 1 test using 1 worker
+
+  x  1 [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt (1.0m)
+
+
+  1) [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('link', { name: 'Zurück' })
+
+
+      164 |   await page.goBack() // Termin
+      165 |   await page.goBack() // Ergebnis
+    > 166 |   await page.getByRole('link', { name: 'Zurück' }).click() // zurück in den Wizard, letzter Schritt = Fotos
+          |                                                    ^
+      167 |   await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
+      168 |   await expect(page.getByText('1 von 8')).toBeVisible()
+      169 |   await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:166:52
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+EXIT=1
+=== Nachlauf 2: Navigation Termin → Ergebnis → Wizard ===
+
+Running 1 test using 1 worker
+
+  x  1 [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt (17.1s)
+
+
+  1) [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Wann passt es?' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Wann passt es?' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Wann passt es?' })
+
+
+      163 |   const [id1, id2] = ids(first)
+      164 |   await page.goBack() // Termin
+    > 165 |   await expect(page.getByRole('heading', { name: 'Wann passt es?' })).toBeVisible()
+          |                                                                       ^
+      166 |   await page.getByRole('link', { name: 'Entrümpelung' }).click() // Ergebnis
+      167 |   await page.getByRole('link', { name: 'Zurück' }).click() // zurück in den Wizard, letzter Schritt = Fotos
+      168 |   await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:165:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+EXIT=1
+=== Nachlauf 3: Navigation über App-Links (Termin, Entrümpelung, Zurück) ===
+
+Running 1 test using 1 worker
+
+  x  1 [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt (17.1s)
+
+
+  1) [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "a0999aeb-3253-4764-9178-da0bc9731b8a"
+
+      176 |   await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+      177 |   const second = quoteCalls[1]!.body
+    > 178 |   expect(second.clientRef).not.toBe(first.clientRef)
+          |                                ^
+      179 |   expect(ids(second)).toEqual([id2]) // genau das angezeigte Foto
+      180 |   expect(calls.uploads.at(-1)!.path).toBe(`u-1/${second.clientRef}/${id2}.jpg`)
+      181 |   expect(calls.removedFiles).toEqual([[`u-1/${first.clientRef}/${id1}.jpg`, `u-1/${first.clientRef}/${id2}.jpg`]])
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\fotos.spec.ts:178:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [e2e] › tests\e2e\fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+EXIT=1

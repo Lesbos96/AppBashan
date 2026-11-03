@@ -1,0 +1,46 @@
+PASS A lädt zwei Fotos ins Staging {user}/{clientRef}/{id}.jpg
+PASS A liest per signierter URL
+PASS öffentlicher Link funktioniert nicht: 400
+PASS Dateiname, der keine UUID ist: verweigert: new row violates row-level security policy
+PASS A kann nicht in B's Ordner hochladen: new row violates row-level security policy
+PASS B kann A's Datei nicht lesen: Object not found
+PASS B kann A's Datei nicht überschreiben: new row violates row-level security policy
+PASS B kann A's Datei nicht löschen: Datei unverändert
+PASS A selbst kann die Datei nicht überschreiben (kein UPDATE): new row violates row-level security policy
+PASS anon liest nichts: Object not found
+PASS anon lädt nichts hoch: new row violates row-level security policy
+PASS A kann keine Zeile in request_photos anlegen: permission denied for table request_photos
+PASS anon sieht keine Zeilen
+PASS Server lehnt image/png ab: mime type image/png is not supported
+PASS Server lehnt image/webp ab: mime type image/webp is not supported
+PASS Server lehnt image/heic ab: mime type image/heic is not supported
+PASS Server lehnt 11 MB ab: The object exceeded the maximum allowed size
+PASS Testbild hat vor der Aufbereitung Standortdaten
+PASS gespeicherte Datei enthält weder GPS noch Exif: 782 Bytes
+PASS route liefert eine Adresse für den Test
+PASS quote mit photoIds: 200 und Anfrage angelegt: 200
+PASS genau die genannte Datei ist als request_photos übernommen: ["09a3c4ba-33a9-4492-b52e-3501f4cbe16f.jpg"]
+PASS quote mit nie hochgeladener ID: 422 photo_missing: 422 photo_missing
+PASS nach photo_missing gibt es keine Anfrage
+PASS A kann die übernommene Datei nicht löschen: Datei unverändert
+PASS A kann die übernommene Datei nicht ersetzen: new row violates row-level security policy
+PASS A kann nach dem Absenden nichts mehr in den Ordner hochladen: new row violates row-level security policy
+PASS auch service_role kann die Zeile nicht umhängen: permission denied for table request_photos
+PASS auch service_role kann die Zeile nicht löschen: permission denied for table request_photos
+PASS die Zeile ist unverändert da
+PASS Datei des gelöschten Kontos liegt bis zum Aufräumen noch da
+A new version of Supabase CLI is available: v3.0.0 (currently installed v2.122.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+PASS Waisenliste enthält nicht übernommene Staging-Dateien und die Datei des gelöschten Kontos
+PASS die übernommene Datei steht nicht in der Waisenliste, auch nicht nach 30 Stunden
+PASS frisches Staging-Foto steht nicht in der Waisenliste
+PASS CLEANUP_SECRET gesetzt (sonst ist die Löschung nicht belegbar: npm run setup:photo-cleanup)
+PASS Function ohne und mit falschem Secret: 401: [401,401]
+PASS GET: 405
+PASS nach den 401 liegt die Datei noch da
+PASS Function mit Secret: 200 und Waisen entfernt: {"removed":3}
+PASS nicht übernommene und verwaiste Dateien sind weg
+PASS Negativkontrolle: die übernommene (30 h alt) und die frische Datei sind geblieben
+Aufgeräumt: Nutzer 2
+ALLES BESTANDEN
+EXIT=0

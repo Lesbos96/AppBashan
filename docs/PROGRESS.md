@@ -3,7 +3,11 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
-## 2026-11-03 · S9a-4c · Nachabnahme S9a-4b (in Arbeit)
+## 2026-11-03 · S9a-4c · Nachabnahme S9a-4b, Rechte-Funde · abgeschlossen
+- Migration 0022: `become_rental_provider()` gelöscht (H-1: Selbst-Upgrade machte den Gebührensatz für jeden Kunden lesbar), Staging-Zählung als Indexbereich (EXPLAIN belegt). Rot-Beweise vor dem Fix in `docs/proof/s9a4c/`; RLS-Test „kein Selbst-Upgrade“ und DEFINER-Allowlist.
+- M-1 (Ref hängt am Fotosatz, `refBody`), M-2 (Staging-Stand je Konto und Ref), N-4 (Mount-Ref); Redproofs `s9a3`/`s9a4` isoliert umgebaut (M-3: n zu n+1 statt Schicht), Art „Verfügbarkeit“ getrennt gezählt.
+- Läufe: check 368, test:rls 176, test:e2e 102, live-uploads 41 PASS, Redproof s9a3 32 OK, s9a4 57 OK, je EXIT=0. Berater-Abnahme: hoch 0, mittel 0, 8 niedrige (A4c-N1 bis N8) in OPEN_ISSUES; N-12 (Doppelanfrage nach verlorener Antwort) ist Livegang-Blocker (`GOLIVE.md` Punkt 23).
+- Weiter bei: S9a-5 laut ROADMAP (Beks startet die nächste Session).
 - `tmp/proof/s9a4c-rot-app.log`: Unit (Z. 1–69) und E2E (Z. 70–185) stammen aus einem parallelen Lauf, den der `test-runner` gestartet hat (nicht die Hauptsession, nicht `advisor-report`); beide schrieben in dieselbe Datei, jeder Lauf hat sein eigenes `EXIT=`. Danach drei Nachläufe des E2E-Tests „Verlorene Antwort“ (Z. 186 ff.): die ersten beiden scheiterten an Locatoren (Navigation), der dritte (Z. 313) an `fotos.spec.ts:178`, der M-1-Assertion. Künftig je Lauf eine eigene Logdatei.
 - `db:push` von 0022 lief vor der Ergänzung „Rollenzählung mit `current_user`“; der Nachtrag steht in `s9a4c-roles.log` (postgres, 0 Nutzer, 0 Profile, 0 `rental_provider`).
 

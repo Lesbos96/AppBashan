@@ -1,0 +1,975 @@
+diff --git a/.claude/settings.json b/.claude/settings.json
+index 2930771..5446944 100644
+--- a/.claude/settings.json
++++ b/.claude/settings.json
+@@ -2,6 +2,7 @@
+   "model": "sonnet",
+   "effortLevel": "medium",
+   "permissions": {
++    "defaultMode": "default",
+     "deny": [
+       "Read(./.env)",
+       "Read(./.env.local)",
+@@ -14,7 +15,50 @@
+       "Edit(./.env.*.local)",
+       "Edit(./.env.production)",
+       "Edit(./.env.development)",
+-      "Edit(./supabase/functions/.env)"
++      "Edit(./supabase/functions/.env)",
++      "Write(./.env)",
++      "Write(./.env.local)",
++      "Write(./.env.*.local)",
++      "Write(./.env.production)",
++      "Write(./.env.development)",
++      "Write(./supabase/functions/.env)",
++      "Bash(sed:*)",
++      "Bash(node -e:*)",
++      "Bash(node --eval:*)",
++      "Bash(git stash:*)",
++      "Bash(git add -A:*)",
++      "Bash(git add .:*)",
++      "Bash(git checkout --:*)",
++      "Bash(git reset:*)",
++      "Bash(git restore:*)",
++      "Bash(git clean:*)",
++      "Bash(npx supabase config push:*)",
++      "Bash(supabase config push:*)",
++      "Bash(git push --force:*)",
++      "Bash(git push -f:*)"
++    ],
++    "ask": [
++      "Bash(npm run db:push:*)",
++      "Bash(npx supabase db:*)",
++      "Bash(supabase db:*)",
++      "Bash(npx supabase functions deploy:*)",
++      "Bash(supabase functions deploy:*)",
++      "Bash(git push:*)",
++      "Bash(git commit:*)",
++      "Bash(git merge:*)",
++      "Bash(rm:*)",
++      "Bash(npx dotenv:*)",
++      "Bash(dotenv:*)",
++      "Bash(npx supabase migration repair:*)",
++      "Bash(supabase migration repair:*)",
++      "Bash(npx supabase secrets:*)",
++      "Bash(supabase secrets:*)",
++      "Bash(npx supabase link:*)",
++      "Bash(supabase link:*)",
++      "PowerShell(Set-Content:*)",
++      "PowerShell(Add-Content:*)",
++      "PowerShell(Out-File:*)",
++      "PowerShell(Remove-Item:*)"
+     ]
+   }
+ }
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index e580128..1a66f68 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -3,7 +3,7 @@
+ Stand S1 (2026-10-29). Verbindlich für S2–S10. Schema: `supabase/migrations/` (0001 Fundament, 0002 Härtung), Typen: `supabase/functions/_shared/database.types.ts` (`npm run db:types`).
+ 
+ ## Rollen
+-`profiles.role` (Enum `user_role`): **customer** (Standard, per Trigger beim Anlegen des Auth-Nutzers), **rental_provider** (nur über RPC `become_rental_provider()` aus Profil → „Für Vermieter"; wandelt nur `customer` um), **admin** (nur per SQL im Supabase-Dashboard), **partner** (nur im Enum, Portal ist „Später"). Rechte auf eigene Daten hängen am Eigentum (`customer_id = auth.uid()`), nicht an der Rolle: Wer Vermieter wird, behält seine Anfragen.
++`profiles.role` (Enum `user_role`): **customer** (Standard, per Trigger beim Anlegen des Auth-Nutzers), **rental_provider** (nur über `admin_grant_role` durch den Datenbank-Eigentümer, mit Journal; kein Selbst-Upgrade, `become_rental_provider()` entfällt seit Migration 0022), **admin** (nur per SQL im Supabase-Dashboard), **partner** (nur im Enum, Portal ist „Später"). Rechte auf eigene Daten hängen am Eigentum (`customer_id = auth.uid()`), nicht an der Rolle: Wer Vermieter wird, behält seine Anfragen.
+ 
+ ## Datenmodell
+ Alle Beträge Integer-Cent. Enums: `service_type` (transport, move, clearance, assembly), `request_status` (s. u.), `region` (vienna, austria, international), `offer_status` (pending, approved, archived).
+diff --git a/docs/GOLIVE.md b/docs/GOLIVE.md
+index 4d73f04..80d437d 100644
+--- a/docs/GOLIVE.md
++++ b/docs/GOLIVE.md
+@@ -2,7 +2,7 @@
+ 
+ Quelle: `docs/OPEN_ISSUES.md` und `docs/ROADMAP.md` (S5b, S8a, S8b-1, S10). Ein Punkt gilt erst als erledigt, wenn sein Prüfweg gelaufen ist. Wer: **Beks** (Konten, Verträge, Dashboard, Schlüssel) oder **CC** (Claude Code: Befehle, Dateien, Prüfläufe). Schlüsselwerte nie in Chat, Logs oder Commits; Befehle laufen über `dotenv-cli`.
+ 
+-**Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt `--include-seed` (Demo-Angebote). Gegen Produktion deshalb nur mit einer eigenen Env-Datei und ohne `--include-seed` aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
++**Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt kein `--include-seed` mehr; Demo-Daten spielt nur `npm run db:seed:dev` ein, und das bricht ab, wenn die Ref nicht die Dev-Ref ist. Gegen Produktion deshalb nur mit einer eigenen Env-Datei aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
+ 
+ Dev-Projekt-Ref: `vcpbbzdyltvffvzjrzdi` (Name: „bekhanidrisov74-hub's Project“, laut `supabase/.temp/linked-project.json`). Jede Ref, die davon abweicht, ist nicht Dev.
+ 
+@@ -51,6 +51,7 @@ Reihenfolge: Abschnitt 1 bis 5.
+ | 20 | **Capacitor und `safeNext`:** iOS lädt von `capacitor://localhost`; `new URL(...).origin` ist dort vermutlich `"null"`, jeder Rücksprung fiele still auf `/`. Auf dem Gerät prüfen, den Vergleich bei Bedarf auf `host`/`protocol` umstellen und `tests/unit/auth.test.ts` erweitern | CC (Code), Beks (Gerät) | Anmelden aus einer geschützten Seite im iOS-Build führt auf die Zielseite zurück; eine fremde Origin als `next` bleibt abgelehnt |
+ | 21 | App als statischen Build beim festgelegten Hosting-Anbieter ausliefern; Produktions-Env nur mit URL und Publishable Key | Beks (Anbieter), CC (Build) | `npm run build` grün; `dist/` ohne Secrets; App-Origin entspricht Punkt 10 und 16 |
+ | 22 | Security- und Performance-Advisor ohne Warnungen, Rate-Limits auf allen Edge Functions (S10) | CC | Advisor-Bericht im Dashboard bzw. per MCP ohne Warnungen |
++| 23 | **Blocker, Doppelanfrage nach verlorener Antwort (N-12):** Ändert der Kunde nach einer verlorenen Antwort den Fotosatz, entsteht mit neuer `clientRef` eine zweite verbindliche Anfrage, die erste behält das entfernte Foto und ist für Partner vor der Annahme sichtbar. Vor dem Senden mit neuer Ref prüft die App, ob zur vorherigen, unbestätigten Ref schon eine Anfrage existiert (`service_requests.client_ref`, eigene Zeilen), und weist dann auf sie hin, statt zu senden; Alternative: serverseitiger Abgleich des Fotosatzes im idempotenten Zweig von `quote_save_request` | CC | E2E „verlorene Antwort, Foto entfernt“ sendet nicht, sondern zeigt die vorhandene Anfrage; RLS-/Handler-Test zum Abgleich |
+ 
+ Weitere Abnahme-Punkte (Lighthouse, Preis-Stichproben über 10 Szenarien, `shots:all`, README, Apple-Anmeldung) stehen in ROADMAP S10 und OPEN_ISSUES; Apple bleibt bis dahin ausgeblendet.
+ 
+diff --git a/docs/OPEN_ISSUES.md b/docs/OPEN_ISSUES.md
+index 4166629..e7a3272 100644
+--- a/docs/OPEN_ISSUES.md
++++ b/docs/OPEN_ISSUES.md
+@@ -71,7 +71,7 @@ Quelle: `tmp/proof/s9a-plan-abnahme-runde2.md`. Die zuständige Session arbeitet
+ | R2-N10 | niedrig | S9a-2 | RLS-Tabelle enger als Matrix 6 (admin auf `price_revisions`, Kunde auf `status_events`): als bewusste Abweichung bis S9i vermerken |
+ | R2-N11 | niedrig | S9a-3 | Festpreis bei `low = high` centgenau statt „ca.“ anzeigen, `shownTotalCents` = `total`, E2E-Fall Mindestpreis |
+ | R2-N12 | niedrig | Testkonvention ohne Migration (Stand S9a-4b: Tests und Rot-Beweise räumen ihre Konten, Anfragen und Dateien selbst; Fixture-Zeilen in `request_photos` verschwinden mit dem Konto) | Append-only-Tabellen sammeln Testzeilen: Ausnahme benennen, Testzeilen mit Lauf-Kennung markieren |
+-| R2-N13 | niedrig | S9a-3 / S9a-4 | **Teilweise (S9a-3):** Quelltext-Mutation der fünf `quote`-Sperren (lockern, deployen, Test rot, `git checkout`, neu deployen, Test grün, Datei gleich Git-Stand) in `docs/proof/s9a3/s9a3-rotbeweis.md`. Die Tests rufen den Handler im Prozess aus dem Quelltext auf (`tests/support/quote-rls.ts`), nicht die deployte Function: der Beweis gilt für den Code, nicht für den Deploy. **Offen (S9a-4):** Live-Probe gegen `${URL}/functions/v1/quote` mit Testnutzer-JWT, gelockert vs. nach Redeploy (Abnahme M-1) **Stand S9a-4b: weiter teilweise, Teilschritt „vor Livegang“.** Neu belegt (`redproof-s9a4.mjs`, Beobachtungen, keine Sperren): Rohaufruf der deployten Function mit falschem `termsHash` → 409 `terms_changed` und 0 Anfragen, mit falschem `shown` → 409 `price_changed` und 0 Anfragen. Das Lockern und Redeployen ohne Quelltext-Mutation im Repo ist nicht umgesetzt: es ginge nur über eine Kopie von `supabase/` in einem Arbeitsverzeichnis außerhalb des Repos (`supabase functions deploy --workdir`, mit eigenem Projekt-Link und `config.toml`), die die Dev-Function mit einer gelockerten Fassung überschreibt; der Quelltext-Beweis aus S9a-3 (`docs/proof/s9a3/`) bleibt der Nachweis für den Code. **Stand S9a-4a: weiter teilweise.** Die Live-Probe in `redproof-s9a4.mjs` belegt nur, dass die deployte Function die neue Fassung ist (Parser, Foto-Fehler, Übernahme); gelockert-vs-Redeploy für `shown`/`termsHash` fehlt noch (S9a-4b: Rohaufruf mit falschem `shown` → 409 und 0 Zeilen, falscher `termsHash` → 409 und 0 Zeilen, als „Beobachtung“ ausgewiesen) |
++| R2-N13 | niedrig | S9a-3 / S9a-4 | **Teilweise (S9a-3):** Quelltext-Mutation der fünf `quote`-Sperren (lockern, deployen, Test rot, `git checkout`, neu deployen, Test grün, Datei gleich Git-Stand) in `docs/proof/s9a3/s9a3-rotbeweis.md`. Die Tests rufen den Handler im Prozess aus dem Quelltext auf (`tests/support/quote-rls.ts`), nicht die deployte Function: der Beweis gilt für den Code, nicht für den Deploy. **Offen (S9a-4):** Live-Probe gegen `${URL}/functions/v1/quote` mit Testnutzer-JWT, gelockert vs. nach Redeploy (Abnahme M-1) **Stand S9a-4b: weiter teilweise, Teilschritt „vor Livegang“.** Neu belegt (`redproof-s9a4.mjs`, Beobachtungen, keine Sperren): Rohaufruf der deployten Function mit falschem `termsHash` → 409 `terms_changed` und 0 Anfragen, mit falschem `shown` → 409 `price_changed` und 0 Anfragen. Das Lockern und Redeployen ohne Quelltext-Mutation im Repo ist nicht umgesetzt: es ginge nur über eine Kopie von `supabase/` in einem Arbeitsverzeichnis außerhalb des Repos (`supabase functions deploy --workdir`, mit eigenem Projekt-Link und `config.toml`), die die Dev-Function mit einer gelockerten Fassung überschreibt; der Quelltext-Beweis aus S9a-3 (`docs/proof/s9a3/`) bleibt der Nachweis für den Code. **Stand S9a-4a (überholt durch S9a-4b oben, der Rohaufruf ist belegt):** Die Live-Probe in `redproof-s9a4.mjs` belegt nur, dass die deployte Function die neue Fassung ist (Parser, Foto-Fehler, Übernahme); gelockert-vs-Redeploy für `shown`/`termsHash` fehlt noch (S9a-4b: Rohaufruf mit falschem `shown` → 409 und 0 Zeilen, falscher `termsHash` → 409 und 0 Zeilen, als „Beobachtung“ ausgewiesen) |
+ 
+ ## S9a-1 · Nachprüfung (Berater `docs/proof/s9a1/s9a1-nachpruefung.md`, 0 hoch)
+ - **M2 (Frist: vor Livegang, 17 alte Rot-Beweise auf Ist-Wert umstellen):** 17 der 23 Rot-Beweise prüfen nur Schritt oder Soll, nicht den Ist-Wert. Sechs zeigen keine Wirkung, weil eine zweite Schicht greift (audit_log-Grants, TRUNCATE price_config, Schreib-Grants auf platform_settings/price_config, publish_version für authenticated, guard_price_version entfernt). Die „23 von 23“ in PROGRESS heißen: Sperre erkannt, nicht immer Wirkung. Erwartungen auf „Schritt: expected Ist“ umstellen und „Schicht“-Einträge getrennt ausweisen, in S9a-2 mit `expect.soft` in der Admin-Funktions-Schleife.
+@@ -130,7 +130,7 @@ Quelle: `tmp/proof/s9a-plan-abnahme-runde2.md`. Die zuständige Session arbeitet
+ - **Teilweise:** Z5 / R2-N13 (siehe Zeile R2-N13: Beobachtung ja, Lockern-und-Redeploy nein, Teilschritt „vor Livegang“).
+ - **Weiche Grenzen (A-N10, Berater N-7):** Das Kontingent von 40 ist weich (parallele Uploads, neue Konten haben je ein eigenes). Übernommene Fotos begrenzt nur das Nutzerlimit von `quote` und höchstens 8 je Anfrage. Teilschritt „vor Livegang“, zusammen mit dem Captcha-Punkt. `EXPLAIN` der Zählung (Berater N-5, LIKE mit nicht konstantem Präfix) steht aus.
+ - **Offen, S9a-4c oder eigene Nachprüfung (nicht in Z1–Z6, vor S10):** A-N2 / A2-N3 Rot-Beweis der Kartensperre bei `price_changed` (mit A-M1 aus S9a-3b), A-N4 Negativbeweis des Exit-2-Pfads bei sauberem Baum (Nachholen nach dem Commit von 4b), A-N5 Tests und Rot-Beweise für den Wertecheck `platform_settings_staging`, `photo_staging_interval()` in `photo_cleanup`, NULL-`created_at` und die Karenzzone 24–25 h, A-N9 Label „Kombination“ im Eintrag Storage-DELETE, A-N3 Rest (`S9_KONZEPT.md:407/442/459`, `S9a_PLAN.md:33/146/150`), Plan-M-1 (`Gesendet.tsx`-Hinweis „Vorher angezeigt“ bei Spannen), `Confirmed.shown` streichen, N-2 Preisversion nach 409, M-4 (`price_version_hold`, Hausnummer-Ebene), N-4/N-5 aus S9a-3 (weitere Sperren aus 0019 ohne Lockerungsbeweis, Grenzpunkt 1/7). Die Select-Policy `request_photos_objects_select` qualifiziert `name` noch nicht (kein Fund: bindet an `objects.name`).
+-- **Abnahme S9a-4b (`docs/proof/s9a4b/s9a4b-abnahme.md`, hoch 0), offen, Teilschritt S9a-4c (vor Livegang, Code-Änderung nach der Abnahme hätte eine zweite Runde gebraucht):**
++- **Abnahme S9a-4b (`docs/proof/s9a4b/s9a4b-abnahme.md`, hoch 0), erledigt in S9a-4c Teil 1 (siehe unten; offen bleiben N-5, N-11, N-12 und die Punkte dort); Beschreibung der Funde:**
+   - **M-1 (mittel):** Die `clientRef` hängt nicht von den Fotos ab (`refFor` hasht den Körper ohne `photoIds`, die idempotente Rückgabe von `quote_save_request` ignoriert `p_photo_ids`). Nach einer verlorenen Antwort (Anfrage gespeichert, App zeigt „offline“) und geänderten Fotos liefert ein erneutes Senden die alte Anfrage mit dem alten Fotosatz („angezeigt = gesendet“ gilt dann nicht); ein hinzugefügtes Foto scheitert mit 403 `denied`. Fix: sortierte Foto-IDs in den Körper von `refFor`, Offline-Text auf „Die Fotos sind noch nicht hochgeladen.“, E2E (Abbruch, Foto entfernen, erneut senden → neue `clientRef`, `photoIds` = angezeigte Fotos); später serverseitiger Abgleich des Fotosatzes im idempotenten Zweig.
+   - **M-2 (mittel):** Staging-Dateien räumt die App nur nach `photo_missing`/`photo_expired` weg. Nach jedem anderen Fehlschlag mit anschließend geänderten Angaben (neue `clientRef`) liegen die alten bis `photo_staging_hours` plus 1 h im Kontingent; fünf Runden mit 8 Fotos sperren das Konto etwa 25 Stunden. Fix: in `uploads.ts` den letzten Staging-Stand merken und bei anderer Ref/anderem Konto vorher `discardStaging`; Unit-Test.
+   - **Niedrig:** N-1 Eintrag „übernommene Dateien zählen mit“ als eigene Art „Verfügbarkeit“ zählen (der Bericht zählt ihn unter den 29 Sperren; richtig: 28 Sperren, 1 Verfügbarkeit); N-2 Lockerungsausdrücke der Storage-INSERT-Einträge um `(select private.staging_photo_count()) < 40` ergänzen oder die Zählung von A in der Probe ausgeben; N-3 Label „Schicht: RLS auf platform_settings“ in `redproof-s9a3.mjs:238` und `redproof-s9a4.mjs:487` auf „kein EXECUTE auf photo_staging_interval“; N-4 `clearPhotos` auch, wenn die Seite beim Erfolg schon verlassen ist (Mount-Ref); N-5 Partnerzugriff auf Fotos nur über `request_photos`-Zeilen, nie über Ordnerlisten (S9b), entfernte Staging-Fotos liegen im Ordner der Anfrage bis zum Aufräumen; N-6 Snapshot des Redproofs um `proowner::regrole`, `prosecdef`, `proconfig` erweitern; N-7 (Darstellung R2-N13: 4a-Block ist überholt).
+@@ -213,5 +213,13 @@ Quelle: `tmp/proof/s9a-plan-abnahme-runde2.md`. Die zuständige Session arbeitet
+ - **S8b-Abschluss · Offen niedrig (2026-11-01):** Zusammenfassung Umzug bricht „4,8 km · innerhalb Wiens“ bei 390/430 px nach „innerhalb“ um (kein Betrag). Die mittleren Mängel aus `s8b3-shots-b.md` (Leiste 1280, Einwilligung 1280, Karton Dark) und die niedrigen Spinner-/Badge-Punkte sind behoben (`tmp/proof/s8b-abschluss-shots.md`); die Zeilen „Nicht behoben“ in S8b-3 oben gelten dafür nicht mehr. Fehlender Vault im RLS-Test: klare Meldung, kein stilles Überspringen.
+ - **S9a-3 · Bezirksgrenzen, Quelle und Lizenz (2026-11-02, für Impressum/Info):** Der Bezirk der Abholadresse folgt nur aus den Wiener Bezirksgrenzen (serverseitig, Punkt im Polygon, `quote_district`); ein Rückfallfeld "Wiener PLZ" gibt es nicht (Entscheidung Beks). Quelle: Stadt Wien – data.wien.gv.at, Bezirksgrenzen (BEZIRKSGRENZEOGD), Lizenz CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.de), Namensnennung "Datenquelle: Stadt Wien – data.wien.gv.at" ins Impressum/Info vor dem Launch. `route_missing`/`no_route` führt ins Angebotsverfahren; Ausfall und Limit des Anbieters (503/429) sind nie buchbar (Entscheidung Beks).
+ 
++- **S9a-4c Teil 0 (2026-11-03, Nachprüfung S9a-4b, nur lesend auf Dev):** (1) `become_rental_provider()` ist für `authenticated` ausführbar (SECURITY DEFINER, `search_path` leer): in Phase 1 prüfen, ob das Recht nötig ist, sonst entziehen (Phase 2 / S9b baut Rollen- und Partnermodell um). (2) `booking_terms()` ist für `anon` ausführbar: bestätigen, dass nur öffentliche Bedingungen geliefert werden. (3) `redproof-s9a3.mjs` :225 (Geocode-Cache: Zeilen aus Kundensicht, gesperrt `<null>` statt 0) und :238 (`quote_save_request`: gelockert bricht jetzt schon `photo_staging_interval` ab, 42501 aus 0020 Zeile 27–28) messen dort eine Schicht, keinen Wirkungsbeweis für die eigentliche Sperre; ob `quote_save_request` nicht SECURITY DEFINER ist (sonst trägt die Begründung nicht), ist nicht an der Definition geprüft. (4) `npx vitest list` liefert 332 Zeilen, `npm run check` meldet 364 Tests: Differenz ungeklärt (365 → 364 selbst erklärt: `uploads.test.ts` hat 10 statt 11 Tests). (5) `db:push` setzt kein `--include-seed` mehr, Seed nur über `npm run db:seed:dev` (Dev-Guard).
++- **S9a-4c Teil 1 (2026-11-03, Berater `docs/proof/s9a4c/s9a4c-plan.md`):** Erledigt: **H-1** (hoch, neu: `become_rental_provider()` ließ jedes Konto zum `rental_provider` werden, der danach `fee_rate`/`fee_vat_rate` las; Migration 0022 löscht die Funktion, Vermieter-Rolle nur über `admin_grant_role`; Rot-Test und Rot-Beweis), N-9 (RLS-Test mit Allowlist aller SECURITY-DEFINER-Funktionen), M-1 (Ref hängt an den sortierten Foto-IDs, `refBody`), M-2 (Staging-Stand je Konto und Ref, `uploads.ts`), N-4 (Mount-Ref), M-3 (isolierte Rot-Beweise für `quote_save_request`, `photo_staging_interval`, `geocode_cache`), N-1 (Art „Verfügbarkeit“ getrennt gezählt), N-2, N-3, N-6, N-7, N-8 (EXPLAIN `tmp/proof/s9a4c-explain.log`: Pattern-Form Seq Scan, Bereichsform Index Cond auf `name`; 0022 Abschnitt 2), Teil-0-Punkte (1), (2) (`booking_terms()` für anon zulässig: feste Schlüsselliste, kein `fee_*`, Test `settings.test.ts:249`), (3), A-N4 (Exit-2-Pfad im Redproof bei sauberem Baum). Teil-0-Punkt (4) (332 zu 364 Tests) bleibt ungeklärt.
++  - **Offen N-5:** Partnerzugriff auf Fotos nur über `request_photos`-Zeilen, nie über Ordnerlisten (S9b); M-1/M-2 räumen entfernte Staging-Fotos weitgehend weg.
++  - **Offen N-10 (S9b):** `platform_settings_select` kennt die Rolle `partner` nicht; CLAUDE.md verlangt Lesen für alle Partner-Konten unabhängig vom Status. Mit dem Partnermodell umstellen, RLS-Test „Partner in jedem Status liest, Kunde nicht“.
++  - **Offen N-11 (niedrig):** Das Aufräumen nach Ref-Wechsel (M-2) kann mit einer noch laufenden Übernahme einer verlorenen Antwort kollidieren (Zeile ohne Datei); bekannte Restgrenze wie `:122`, S9d behandelt eine fehlende Datei als `failed`.
++  - **Offen N-12 (Livegang-Blocker, `docs/GOLIVE.md` Punkt 23):** Nach verlorener Antwort und geändertem Fotosatz entsteht mit neuer Ref eine zweite Anfrage; die erste behält das entfernte Foto.
++  - **Offen N-9 (optional):** Allowlist auf SECURITY-INVOKER-Funktionen erweitern.
++
+ ## Rechtsfragen (S9-Konzept Abschnitt 11)
+ - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).
+diff --git a/docs/PROGRESS.md b/docs/PROGRESS.md
+index f1ab6c5..3e2a08c 100644
+--- a/docs/PROGRESS.md
++++ b/docs/PROGRESS.md
+@@ -3,6 +3,10 @@
+ Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
+ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
+ 
++## 2026-11-03 · S9a-4c · Nachabnahme S9a-4b (in Arbeit)
++- `tmp/proof/s9a4c-rot-app.log`: Unit (Z. 1–69) und E2E (Z. 70–185) stammen aus einem parallelen Lauf, den der `test-runner` gestartet hat (nicht die Hauptsession, nicht `advisor-report`); beide schrieben in dieselbe Datei, jeder Lauf hat sein eigenes `EXIT=`. Danach drei Nachläufe des E2E-Tests „Verlorene Antwort“ (Z. 186 ff.): die ersten beiden scheiterten an Locatoren (Navigation), der dritte (Z. 313) an `fotos.spec.ts:178`, der M-1-Assertion. Künftig je Lauf eine eigene Logdatei.
++- `db:push` von 0022 lief vor der Ergänzung „Rollenzählung mit `current_user`“; der Nachtrag steht in `s9a4c-roles.log` (postgres, 0 Nutzer, 0 Profile, 0 `rental_provider`).
++
+ ## 2026-10-31 · S8b-2 · Anfragen senden und Aufträge (abgeschlossen, Rest von S8b offen)
+ - Termin (`/:service/termin`), Zusammenfassung mit „Anfrage als x@y senden“ und „Anderes Konto“, Bestätigung, Aufträge-Liste (nur eigene Anfragen, Filter `customer_id`, feste Spalten). `clientRef` je Inhalt, Entwurf wandert über die Anmeldung (15 min, localStorage), keine automatischen Wiederholungen. Code: `src/lib/{draft,quote}.ts`, `src/screens/anfrage/`.
+ - Server: Mietzeit nur als Wiener Ortszeit, ISO mit Z/Offset gibt 400 (`pickupAt:`/`returnAt:`); neu `formatEuroRounded`. `quote` im Dev-Projekt deployt. Berater: Plan `tmp/proof/s8b2-berater-plan.md`.
+diff --git a/docs/S9_KONZEPT.md b/docs/S9_KONZEPT.md
+index 260bf8d..85c5f96 100644
+--- a/docs/S9_KONZEPT.md
++++ b/docs/S9_KONZEPT.md
+@@ -156,7 +156,7 @@ Alle Aussagen unten sind aus den Dateien belegt (Erhebung per Lesezugriff, Stich
+ | U6 | `fee_splits`: eine Zeile je Anfrage, Upsert, Kaskadenlöschung, `payee` null bei Kontolöschung [B27] | M01:196-212, M10:97-100, `docs/OPEN_ISSUES.md:7` | Journal R11 |
+ | U7 | Gebühr entsteht beim Absenden ohne Empfänger [B26] | H:259 | R10 |
+ | U8 | Gebührensatz ohne Gültigkeitsdatum [B29] | M10:21-24 | R12 |
+-| U9 | `become_rental_provider` macht sofort zum Vermieter; ein Kunde könnte sich so Zugriff auf den Gebührensatz verschaffen [B13, B36] | M01:60-69, M01:290-299 | R8; die Funktion entfällt in S9b |
++| U9 | `become_rental_provider` macht sofort zum Vermieter; ein Kunde könnte sich so Zugriff auf den Gebührensatz verschaffen [B13, B36] | M01:60-69, M01:290-299 | R8; die Funktion entfällt seit S9a-4c (Migration 0022) |
+ | U10 | Ein Login je Firma (`partners.id = profiles.id`) [B15] | `docs/ARCHITECTURE.md:25` | `partner_members` |
+ | U11 | Bucket prüft nur den Header; kein Partner-Bereich [B14] | `docs/OPEN_ISSUES.md:103` | Abschnitt 7 |
+ | U12 | Konto löschen kaskadiert auf bestätigte Aufträge (Kaskade M01:107, 174); der Fremdschlüssel M01:173 ohne Kaskade blockiert dagegen das Löschen eines Vermieters mit Buchungen (`docs/OPEN_ISSUES.md:7`) [B35, B38] | M01:107, 174; M01:146, 173 | R11, S9h |
+diff --git a/package.json b/package.json
+index d016184..11f0f64 100644
+--- a/package.json
++++ b/package.json
+@@ -57,7 +57,8 @@
+     "geo:districts": "dotenv -e .env.local -- node scripts/import-districts.mjs",
+     "db:link": "dotenv -e .env.local -- node scripts/db-link.mjs",
+     "setup:photo-cleanup": "dotenv -e .env.local -- node scripts/setup-photo-cleanup.mjs",
+-    "db:push": "dotenv -e .env.local -- supabase db push --linked --include-seed --yes",
++    "db:push": "dotenv -e .env.local -- supabase db push --linked --yes",
++    "db:seed:dev": "dotenv -e .env.local -- node scripts/db-seed-dev.mjs",
+     "db:types": "dotenv -e .env.local -- supabase gen types typescript --linked --schema public > supabase/functions/_shared/database.types.ts",
+     "check:deno": "deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts"
+   }
+diff --git a/scripts/db-seed-dev.mjs b/scripts/db-seed-dev.mjs
+new file mode 100644
+index 0000000..8aaad55
+--- /dev/null
++++ b/scripts/db-seed-dev.mjs
+@@ -0,0 +1,7 @@
++import './dev-guard.mjs'
++// Spielt supabase/seed.sql (Demo-Angebote, idempotent) in das Dev-Projekt ein. Läuft per dotenv-cli (npm run db:seed:dev); db:push setzt kein --include-seed mehr.
++import { execFileSync } from 'node:child_process'
++
++execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'db', 'query', '--linked', '-f', 'supabase/seed.sql'], {
++  stdio: 'inherit',
++})
+diff --git a/scripts/redproof-s9a3.mjs b/scripts/redproof-s9a3.mjs
+index 5a9efec..e5ec8d9 100644
+--- a/scripts/redproof-s9a3.mjs
++++ b/scripts/redproof-s9a3.mjs
+@@ -221,12 +221,18 @@ const run = async () => {
+     probe: () => probe({ stmt: 'perform 1 from public.geo_districts', value: `(select count(*) from public.geo_districts)`, role: 'authenticated', claims: custClaims }),
+     loose: 'ok | 23', locked: '42501: permission denied for table geo_districts | 23',
+   })
++  // Isoliert (M-3, Berater S9a-4c): innere Schichten nur in der Probe-Transaktion offen (Rollback), umgeschaltet wird allein die Zielsperre.
++  // geocode_cache: eigene Testzeile, Lese-Policy nur in der Probe; Wert = Zeilen der Testzeile aus Kundensicht (Startwert 0, bleibt bei Fehler 0).
++  const gcKey = `redproof:${randomUUID()}`
+   add({
+-    ...grantToggle('geocode_cache: SELECT für authenticated (Schicht: RLS ohne Policy)', 'grant select on public.geocode_cache to authenticated', 'revoke select on public.geocode_cache from authenticated'),
+-    kind: 'Schicht', tests: 'geocode_cache und geo_districts', testFile: 'tests/rls/quote-hardening.test.ts',
+-    // Zeilen, die der Kunde sieht (nicht die der Tabelle: der Cache füllt sich mit jedem Geocode-Aufruf der Tests)
+-    probe: () => probe({ stmt: `perform set_config('app.probe_val', (select count(*) from public.geocode_cache)::text, true)`, value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: custClaims }),
+-    loose: 'ok | 0', locked: '42501: permission denied for table geocode_cache | <null>',
++    ...grantToggle('geocode_cache: SELECT für authenticated (isoliert: Lese-Policy nur in der Probe)', 'grant select on public.geocode_cache to authenticated', 'revoke select on public.geocode_cache from authenticated'),
++    tests: 'geocode_cache und geo_districts', testFile: 'tests/rls/quote-hardening.test.ts',
++    probe: () => probe({
++      setup: `insert into public.geocode_cache (key, value, expires_at) values (${q1(gcKey)}, '[]', now() + interval '1 hour'); create policy redproof_gc on public.geocode_cache for select to authenticated using (true); select set_config('app.probe_val', '0', true)`,
++      stmt: `perform set_config('app.probe_val', (select count(*) from public.geocode_cache where key = ${q1(gcKey)})::text, true)`,
++      value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: custClaims,
++    }),
++    loose: 'ok | 1', locked: '42501: permission denied for table geocode_cache | 0',
+   })
+   add({
+     ...grantToggle('quote_district: EXECUTE für authenticated (Schicht: kein Recht auf geo_boundaries)', 'grant execute on function public.quote_district(double precision, double precision) to authenticated', 'revoke execute on function public.quote_district(double precision, double precision) from authenticated'),
+@@ -234,12 +240,31 @@ const run = async () => {
+     probe: () => probe({ stmt: 'perform * from public.quote_district(16.3731, 48.2086)', value: `(select district from public.quote_district(16.3731, 48.2086))`, role: 'authenticated', claims: custClaims }),
+     loose: '42501: permission denied for table geo_boundaries | 1', locked: '42501: permission denied for function quote_district | 1',
+   })
++  // quote_save_request ist SECURITY INVOKER (0020): ohne diese Öffnung hielte immer die nächste Schicht.
++  const STAGING = 'public.photo_staging_interval()'
++  const INNER = [
++    'create policy redproof_ps on public.platform_settings for select to authenticated using (true)',
++    'grant insert on public.service_requests, public.price_revisions, public.request_contacts, public.audit_log to authenticated',
++    'grant update (current_revision) on public.service_requests to authenticated',
++    'create policy redproof_sr_i on public.service_requests for insert to authenticated with check (true)',
++    'create policy redproof_sr_u on public.service_requests for update to authenticated using (true) with check (true)',
++    'create policy redproof_pr_i on public.price_revisions for insert to authenticated with check (true)',
++    'create policy redproof_rc_i on public.request_contacts for insert to authenticated with check (true)',
++    'create policy redproof_al_i on public.audit_log for insert to authenticated with check (true)',
++  ].join('; ')
++  // Wert = Anfragen des Kunden: gelockert legt die Funktion eine an (2), gesperrt bleibt es bei 1 mit dem 42501 der Zielsperre.
++  const saveProbe = (open) => () => probe({ setup: `${INNER}; grant execute on function ${open} to authenticated`, stmt: `perform ${callSql()}`, value: reqCount, role: 'authenticated', claims: custClaims })
++  add({
++    ...grantToggle('quote_save_request: EXECUTE für authenticated (isoliert: innere Schichten und photo_staging_interval nur in der Probe offen)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
++    tests: 'Schreib-Funktionen: anon und authenticated erhalten 42501', testFile: 'tests/rls/quote.test.ts',
++    probe: saveProbe(STAGING),
++    loose: 'ok | 2', locked: '42501: permission denied for function quote_save_request | 1',
++  })
+   add({
+-    ...grantToggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
+-    kind: 'Schicht', tests: 'Schreib-Funktionen: anon und authenticated erhalten 42501', testFile: 'tests/rls/quote.test.ts',
+-    probe: () => probe({ stmt: `perform ${callSql()}`, value: reqCount, role: 'authenticated', claims: custClaims }),
+-    // seit 0020 ruft quote_save_request zuerst photo_staging_interval() auf: dessen fehlendes EXECUTE ist die Schicht dahinter
+-    loose: '42501: permission denied for function photo_staging_interval | 1', locked: '42501: permission denied for function quote_save_request | 1',
++    ...grantToggle('photo_staging_interval: EXECUTE für authenticated (isoliert: innere Schichten und quote_save_request nur in der Probe offen)', `grant execute on function ${STAGING} to authenticated`, `revoke execute on function ${STAGING} from authenticated`),
++    tests: null,
++    probe: saveProbe(SAVE),
++    loose: 'ok | 2', locked: '42501: permission denied for function photo_staging_interval | 1',
+   })
+   // 4b. Nachzug S9a-1 (A1-N2, A1-N3): Sperren aus 0015/0016 mit Ist-Wert; Version 9990 wird nie angelegt -----------------------------------
+   const publishAuthed = 'public.publish_version(uuid, int)'
+diff --git a/scripts/redproof-s9a4.mjs b/scripts/redproof-s9a4.mjs
+index cd8136e..2d7301f 100644
+--- a/scripts/redproof-s9a4.mjs
++++ b/scripts/redproof-s9a4.mjs
+@@ -34,9 +34,9 @@ const SNAPSHOT = `
+   union all
+   select 'trigger', tgrelid::regclass || ' ' || tgenabled::text || ' ' || pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS}
+   union all
+-  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+-    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count'))
+-       or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting'))
++  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') || ' ' || p.proowner::regrole::text || ' ' || p.prosecdef::text || ' ' || coalesce(p.proconfig::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
++    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count', 'my_role', 'is_admin'))
++       or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting', 'become_rental_provider', 'admin_grant_role'))
+   union all
+   select 'coldefault', table_name || '.' || column_name || ' ' || coalesce(column_default, '<kein Default>') from information_schema.columns where table_schema = 'public' and table_name = 'request_photos'
+   union all
+@@ -353,13 +353,14 @@ const run = async () => {
+   const noReq = `not exists (select 1 from public.service_requests r where r.customer_id = (select auth.uid()) and r.client_ref::text = (storage.foldername(name))[2])`
+   const form = `name ~ ${RX}`
+   const noRow = `not exists (select 1 from public.request_photos p where p.storage_path = objects.name)`
++  const cnt = `(select private.staging_photo_count()) < 40` // Mengengrenze (0021): bleibt bei allen Lockerungen außer der eigenen erhalten, damit sie allein die Zielbedingung messen (N-2)
+   const insProbe = (name) => () => probe({ stmt: putAs(name), value: objCount(name), role: 'authenticated', claims: claims(A) })
+   const foreignName = `${B.id}/${refPl}/${id()}.jpg`
+   const lateName = `${A.id}/${ref1}/${id()}.jpg`
+   const oddName = `${A.id}/${refPl}/foto.jpg`
+-  add({ ...policyLoosen('Storage-INSERT: Fremdordner-Bedingung entfernt (Datei in Ordner eines anderen)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${noReq} and ${noRow}`), tests: 'fremder Ordner', probe: insProbe(foreignName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+-  add({ ...policyLoosen('Storage-INSERT: Bedingung „keine Anfrage zu client_ref“ entfernt (Hinzufügen nach dem Absenden)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noRow}`), tests: 'in den Ordner', probe: insProbe(lateName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+-  add({ ...policyLoosen('Storage-INSERT: Pfadform nicht mehr geprüft', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${own} and ${noReq} and ${noRow}`), tests: 'falsche Pfadform', probe: insProbe(oddName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
++  add({ ...policyLoosen('Storage-INSERT: Fremdordner-Bedingung entfernt (Datei in Ordner eines anderen)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${noReq} and ${noRow} and ${cnt}`), tests: 'fremder Ordner', probe: insProbe(foreignName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
++  add({ ...policyLoosen('Storage-INSERT: Bedingung „keine Anfrage zu client_ref“ entfernt (Hinzufügen nach dem Absenden)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noRow} and ${cnt}`), tests: 'in den Ordner', probe: insProbe(lateName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
++  add({ ...policyLoosen('Storage-INSERT: Pfadform nicht mehr geprüft', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${own} and ${noReq} and ${noRow} and ${cnt}`), tests: 'falsche Pfadform', probe: insProbe(oddName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+   // 7. Storage-Policies: Löschen und Ersetzen über die Storage-API (Direkt-DELETE auf storage.objects sperrt Supabase selbst) -------------------
+   const removeProbe = (owner, victim) => async () => {
+     const name = victim()
+@@ -413,7 +414,7 @@ const run = async () => {
+     return `${r.error ? r.error.statusCode : 'ok'} | ${there ? 1 : 0}`
+   }
+   add({ ...policyLoosen('Storage-DELETE: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: hier hält allein die Zeile)', 'request_photos_objects_delete', 'storage.objects', 'using', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyDelete, loose: 'entfernt 1 | Datei weg', locked: 'entfernt 0 | Datei da' })
+-  add({ ...policyLoosen('Storage-INSERT: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: Name einer übernommenen Datei)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyInsert, loose: 'ok | 1', locked: '403 | 0' })
++  add({ ...policyLoosen('Storage-INSERT: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: Name einer übernommenen Datei)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq} and ${cnt}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyInsert, loose: 'ok | 1', locked: '403 | 0' })
+ 
+   // 7c. Migration 0021: Kontingent (40 eigene, nicht übernommene Dateien), kein Default, NULL-Pfad. C hat 40 Dateien, E 39 plus eine übernommene (Alt-Zeile).
+   const forty = async (u, n) => {
+@@ -435,7 +436,7 @@ const run = async () => {
+     return `${r.error ? r.error.statusCode : 'ok'} | ${n}`
+   }
+   add({ ...policyLoosen('Storage-INSERT: Mengengrenze (40) entfernt (41. Datei eines Kontos)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq} and ${noRow}`), tests: 'bis zur Grenze erlaubt', probe: overLimit(C), loose: 'ok | 41', locked: '403 | 40' })
+-  add({ ...patchFn('staging_photo_count: übernommene Dateien zählen mit (Aussperr-Schutz: 40 Dateien, davon eine übernommen)', 'private.staging_photo_count()', 'and not exists (select 1 from public.request_photos p where p.storage_path = o.name)', ''), tests: 'bis zur Grenze erlaubt', probe: overLimit(E), loose: '403 | 40', locked: 'ok | 41' })
++  add({ ...patchFn('staging_photo_count: übernommene Dateien zählen mit (Aussperr-Schutz: 40 Dateien, davon eine übernommen)', 'private.staging_photo_count()', 'and not exists (select 1 from public.request_photos p where p.storage_path = o.name)', ''), kind: 'Verfügbarkeit', tests: 'bis zur Grenze erlaubt', probe: overLimit(E), loose: '403 | 40', locked: 'ok | 41' })
+   const notNull = 'null value in column "storage_path" of relation "request_photos" violates not-null constraint'
+   const noPath = `insert into public.request_photos (request_id) values ('${R2}')`
+   add({
+@@ -471,23 +472,82 @@ const run = async () => {
+     probe: () => probe({ setup: `update storage.objects set created_at = now() - interval '24 hours 30 minutes' where bucket_id = '${BUCKET}' and name = '${path(A, refS, S1)}'`, stmt: 'perform 1', value: orphans([path(A, refS, S1)]), role: 'service_role' }),
+     loose: 'ok | 1', locked: 'ok | 0',
+   })
+-  for (const [label, sig, extra] of [
+-    ['photo_orphans: EXECUTE für authenticated (Schicht: kein Recht auf photo_staging_interval)', 'public.photo_orphans()', 'perform * from public.photo_orphans()'],
+-    ['photo_staging_interval: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', INTERVAL, 'perform public.photo_staging_interval()'],
+-  ]) {
+-    add({
+-      ...toggle(label, `grant execute on function ${sig} to authenticated`, `revoke execute on function ${sig} from authenticated`, 'Schicht'),
+-      tests: null,
+-      probe: () => probe({ stmt: extra, value: '1', role: 'authenticated', claims: claims(A) }),
+-      loose: sig === INTERVAL ? 'P0001: setting_missing | 1' : '42501: permission denied for function photo_staging_interval | 1',
+-      locked: `42501: permission denied for function ${sig.includes('orphans') ? 'photo_orphans' : 'photo_staging_interval'} | 1`,
+-    })
+-  }
+   add({
+-    ...toggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`, 'Schicht'),
++    ...toggle('photo_orphans: EXECUTE für authenticated (Schicht: kein Recht auf photo_staging_interval)', `grant execute on function public.photo_orphans() to authenticated`, `revoke execute on function public.photo_orphans() from authenticated`, 'Schicht'),
+     tests: null,
+-    probe: () => probe({ stmt: `perform ${callSql({ p_client_ref: randomUUID() })}`, value: `(select count(*) from public.service_requests where customer_id = '${A.id}')`, role: 'authenticated', claims: claims(A) }),
+-    loose: '42501: permission denied for function photo_staging_interval | 3', locked: '42501: permission denied for function quote_save_request | 3',
++    probe: () => probe({ stmt: 'perform * from public.photo_orphans()', value: '1', role: 'authenticated', claims: claims(A) }),
++    loose: '42501: permission denied for function photo_staging_interval | 1', locked: '42501: permission denied for function photo_orphans | 1',
++  })
++  // Isoliert (M-3, Berater S9a-4c): quote_save_request ist SECURITY INVOKER (0020); die inneren Schichten (RLS auf platform_settings, fehlende
++  // Schreibrechte auf vier Tabellen) sind nur in der Probe-Transaktion offen (Rollback), umgeschaltet wird allein die Zielsperre.
++  // Wert = Anfragen des Kunden A: gelockert legt die Funktion eine Anfrage an (n+1), gesperrt bleibt es bei n mit dem 42501 der Zielsperre.
++  const reqCount = `(select count(*) from public.service_requests where customer_id = '${A.id}')`
++  const INNER = [
++    'create policy redproof_ps on public.platform_settings for select to authenticated using (true)',
++    'grant insert on public.service_requests, public.price_revisions, public.request_contacts, public.audit_log to authenticated',
++    'grant update (current_revision) on public.service_requests to authenticated',
++    'create policy redproof_sr_i on public.service_requests for insert to authenticated with check (true)',
++    'create policy redproof_sr_u on public.service_requests for update to authenticated using (true) with check (true)',
++    'create policy redproof_pr_i on public.price_revisions for insert to authenticated with check (true)',
++    'create policy redproof_rc_i on public.request_contacts for insert to authenticated with check (true)',
++    'create policy redproof_al_i on public.audit_log for insert to authenticated with check (true)',
++  ].join('; ')
++  const saveProbe = (open) => () => probe({ setup: `${INNER}; grant execute on function ${open} to authenticated`, stmt: `perform ${callSql({ p_client_ref: randomUUID() })}`, value: reqCount, role: 'authenticated', claims: claims(A) })
++  add({
++    ...toggle('quote_save_request: EXECUTE für authenticated (isoliert: innere Schichten und photo_staging_interval nur in der Probe offen)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
++    tests: null,
++    probe: saveProbe(INTERVAL),
++    loose: 'ok | 4', locked: '42501: permission denied for function quote_save_request | 3',
++  })
++  add({
++    ...toggle('photo_staging_interval: EXECUTE für authenticated (isoliert: innere Schichten und quote_save_request nur in der Probe offen)', `grant execute on function ${INTERVAL} to authenticated`, `revoke execute on function ${INTERVAL} from authenticated`),
++    tests: null,
++    probe: saveProbe(SAVE),
++    loose: 'ok | 4', locked: '42501: permission denied for function photo_staging_interval | 3',
++  })
++  // 0022: Selbst-Upgrade. Gelockert = Funktion und Recht aus 0001/0016 wieder da; Wert = Gebührenschlüssel aus Kundensicht (Startwert 0).
++  const anonDb = mkClient(PUB)
++  let brpOn = false
++  const rpcReady = async () => {
++    // PostgREST lädt das Schema nach DDL neu; erst dann sieht der zuständige Test den Zustand
++    for (let i = 0; i < 20; i++) {
++      const missing = (await anonDb.rpc('become_rental_provider')).error?.code === 'PGRST202'
++      if (missing !== brpOn) return
++      await new Promise((r) => setTimeout(r, 500))
++    }
++    throw new Error('PostgREST-Schema nicht nachgeladen')
++  }
++  const BRP = `create function public.become_rental_provider() returns public.user_role
++language plpgsql security definer set search_path = ''
++as $f$
++declare
++  uid uuid := (select auth.uid());
++  r public.user_role;
++begin
++  perform set_config('app.mv_role_grant', uid::text || ':rental_provider', true);
++  update public.profiles set role = 'rental_provider' where id = uid and role = 'customer';
++  perform set_config('app.mv_role_grant', '', true);
++  select role into r from public.profiles where id = uid;
++  return r;
++end
++$f$;
++revoke all on function public.become_rental_provider() from public, anon;
++grant execute on function public.become_rental_provider() to authenticated;
++notify pgrst, 'reload schema'`
++  add({
++    label: 'become_rental_provider entfernt (0022): Kunde stuft sich selbst hoch und liest den Gebührensatz', kind: 'Sperre', save: () => null,
++    apply: () => { sql(BRP); brpOn = true },
++    restore: () => { sql(`drop function public.become_rental_provider(); notify pgrst, 'reload schema'`); brpOn = false },
++    tests: 'kein Selbst-Upgrade', testFile: 'tests/rls/rls.test.ts',
++    probe: async () => {
++      await rpcReady()
++      return probe({
++        setup: `select set_config('app.probe_val', '0', true)`,
++        stmt: `perform public.become_rental_provider(); perform set_config('app.probe_val', (select count(distinct key) from public.platform_settings where key in ('fee_rate', 'fee_vat_rate'))::text, true)`,
++        value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: claims(A),
++      })
++    },
++    loose: 'ok | 2', locked: '42883: function public.become_rental_provider() does not exist | 0',
+   })
+ 
+   // --- Läufe --------------------------------------------------------------------------------------------------------------------------------
+@@ -652,7 +712,7 @@ for (const r of results) {
+   report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
+ }
+ report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
+-report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
++report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, ${count('SQL', 'Verfügbarkeit')} Verfügbarkeit, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
+ writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
+ const allGood = results.every((r) => r.good) && same
+ console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')
+diff --git a/src/lib/quote.ts b/src/lib/quote.ts
+index a3b574f..0055986 100644
+--- a/src/lib/quote.ts
++++ b/src/lib/quote.ts
+@@ -47,6 +47,15 @@ export function buildBody(path: Path, tariffs: Tariffs, confirmed: Confirmed): B
+   }
+ }
+ 
++/**
++ * Inhalt, aus dem die `clientRef` entsteht: der Entwurf ohne die bestätigten Angaben (nach einem 409 bleibt die Ref) und der Fotosatz
++ * (sortierte IDs). Ein anderer Fotosatz ist ein neuer Versuch: die gespeicherte Anfrage einer Ref hat genau diese Fotos (`quote_save_request`
++ * übernimmt `p_photo_ids` ganz oder gar nicht, der idempotente Zweig liefert die vorhandene Anfrage).
++ */
++export function refBody(body: Body, photoIds: readonly string[]): Body {
++  return { ...body, priceVersion: 0, termsHash: '', shown: null, photoIds: [...photoIds].sort() }
++}
++
+ /**
+  * `clientRef` je Entwurf: gleicher Inhalt (Doppeltipp, erneuter Versuch) behält die Ref, geänderter Inhalt bekommt eine neue.
+  * Sonst lieferte der Server bei geänderten Eingaben die alte gespeicherte Antwort.
+diff --git a/src/lib/uploads.ts b/src/lib/uploads.ts
+index 2e3cda3..cf3b0f3 100644
+--- a/src/lib/uploads.ts
++++ b/src/lib/uploads.ts
+@@ -11,7 +11,7 @@ const SIGNED_SECONDS = 10 * 60
+ export type UploadFailure = 'offline' | 'too_big' | 'denied' | 'failed'
+ 
+ export const failureText: Record<UploadFailure, string> = {
+-  offline: 'Keine Verbindung. Die Fotos sind noch nicht hochgeladen, die Anfrage ist nicht gesendet.',
++  offline: 'Keine Verbindung. Die Fotos sind noch nicht hochgeladen.',
+   too_big: 'Ein Foto ist zu groß. Geh zurück, wähle ein kleineres Foto und sende die Anfrage erneut.',
+   denied: 'Die Fotos lassen sich gerade nicht hochladen. Versuche es später noch einmal.',
+   failed: 'Die Fotos konnten nicht hochgeladen werden. Versuche es gleich noch einmal.',
+@@ -29,22 +29,41 @@ const isOffline = (error: { message?: string; code?: string }) => navigator.onLi
+ /** Staging-Pfad `{user}/{clientRef}/{id}.jpg`: die Datenbank prüft ihn in den Storage-Policies und beim Übernehmen durch `quote`. */
+ const stagingPath = (userId: string, clientRef: string, photo: Photo) => `${userId}/${clientRef}/${photo.id}.jpg`
+ 
+-// Pfade, die in dieser Sitzung schon liegen: ein erneutes Senden (z. B. nach einem 409) lädt nichts doppelt hoch.
+-const uploaded = new Set<string>()
++/**
++ * Staging-Stand dieser Sitzung: Konto, Ref und die Pfade, die dort liegen. Dieselbe Ref lädt nichts doppelt hoch (z. B. nach einem 409).
++ * Wechselt die Ref (geänderte Angaben oder Fotos), werden vorher die alten Dateien entfernt; sonst zählen sie bis zum Aufräumen gegen das Kontingent (0021).
++ */
++type Staged = { userId: string; clientRef: string; paths: Set<string> }
++let staged: Staged | null = null
++
++/** Löschen erlaubt die Delete-Policy (0021) nur im eigenen Ordner ohne Anfrage zur Ref: übernommene Fotos bleiben. Fehler sind egal, den Rest räumt photo_cleanup auf. */
++async function removePaths(db: Db, paths: string[]): Promise<void> {
++  if (paths.length === 0) return
++  try {
++    await db.storage.from(BUCKET).remove(paths)
++  } catch {
++    // siehe oben
++  }
++}
++
++async function stagingFor(db: Db, userId: string, clientRef: string): Promise<Staged> {
++  if (staged && staged.userId === userId && staged.clientRef === clientRef) return staged
++  const old = staged
++  staged = { userId, clientRef, paths: new Set() }
++  // Anderes Konto: dessen Ordner ist für diese Sitzung gesperrt; „Anderes Konto“ räumt vorher mit `discardStaging` auf.
++  if (old && old.userId === userId) await removePaths(db, [...old.paths])
++  return staged
++}
+ 
+ /** Ein Foto ins Staging, ohne Upsert (es gibt keine Update-Policy). „Gibt es schon“ zählt als Erfolg: dieselbe ID ist dieselbe Datei. */
+-export async function uploadPhoto(db: Db, userId: string, clientRef: string, photo: Photo): Promise<UploadFailure | null> {
++async function uploadPhoto(db: Db, s: Staged, photo: Photo): Promise<UploadFailure | null> {
+   if (photo.blob.size > MAX_BYTES) return 'too_big'
+-  const path = stagingPath(userId, clientRef, photo)
+-  if (uploaded.has(path)) return null
++  const path = stagingPath(s.userId, s.clientRef, photo)
++  if (s.paths.has(path)) return null
+   const upload = await db.storage.from(BUCKET).upload(path, photo.blob, { contentType: 'image/jpeg', upsert: false })
+-  if (!upload.error) {
+-    uploaded.add(path)
+-    return null
+-  }
+-  const status = (upload.error as { statusCode?: string }).statusCode
+-  if (status === '409' || /already exists/i.test(upload.error.message)) {
+-    uploaded.add(path)
++  const status = upload.error ? (upload.error as { statusCode?: string }).statusCode : undefined
++  if (!upload.error || status === '409' || /already exists/i.test(upload.error.message)) {
++    s.paths.add(path)
+     return null
+   }
+   if (status === '413') return 'too_big'
+@@ -54,20 +73,26 @@ export async function uploadPhoto(db: Db, userId: string, clientRef: string, pho
+ 
+ /** Alle Fotos nacheinander; der erste Fehler bricht ab, `onDone` meldet die Zahl der Fotos, die liegen. */
+ export async function uploadAll(db: Db, userId: string, clientRef: string, photos: readonly Photo[], onDone: (n: number) => void): Promise<UploadFailure | null> {
++  const s = await stagingFor(db, userId, clientRef)
+   let done = 0
+   for (const photo of photos) {
+-    const failure = await uploadPhoto(db, userId, clientRef, photo)
++    const failure = await uploadPhoto(db, s, photo)
+     if (failure) return failure
+     onDone(++done)
+   }
+   return null
+ }
+ 
+-/** Räumt die Staging-Dateien weg, die der Server nicht mehr annimmt (Löschen ist vor dem Absenden erlaubt). Ein Fehler hier ist egal: den Rest räumt der Server auf. */
+-export async function discardStaging(db: Db, userId: string, clientRef: string, photos: readonly Photo[]): Promise<void> {
+-  const paths = photos.map((p) => stagingPath(userId, clientRef, p))
+-  paths.forEach((p) => uploaded.delete(p))
+-  if (paths.length > 0) await db.storage.from(BUCKET).remove(paths)
++/** Entfernt die Dateien des aktuellen Stands: nach `photo_missing`/`photo_expired` und vor „Anderes Konto“ (noch mit der alten Sitzung). */
++export async function discardStaging(db: Db): Promise<void> {
++  const old = staged
++  staged = null
++  if (old) await removePaths(db, [...old.paths])
++}
++
++/** Nach dem Absenden: die Dateien gehören zur Anfrage, der nächste Entwurf beginnt ohne Stand. */
++export function forgetStaging(): void {
++  staged = null
+ }
+ 
+ /** Signierte Links (10 Minuten) zu den Fotos einer eigenen Anfrage; nie öffentliche Links. */
+diff --git a/src/screens/anfrage/Zusammenfassung.tsx b/src/screens/anfrage/Zusammenfassung.tsx
+index 88e01ed..aa29839 100644
+--- a/src/screens/anfrage/Zusammenfassung.tsx
++++ b/src/screens/anfrage/Zusammenfassung.tsx
+@@ -13,10 +13,10 @@ import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/phot
+ import { loadPrices, useLoad } from '../../lib/prices'
+ import { floorText, lmText, toTariffs } from '../../lib/preview'
+ import { formatEuro } from '../../lib/money'
+-import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
++import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
+ import { useSession } from '../../lib/session'
+ import { supabase } from '../../lib/supabase'
+-import { type UploadFailure, discardStaging, failureText, photoRejectedText, uploadAll } from '../../lib/uploads'
++import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
+ import { objectOf } from '../entruempelung/options'
+ import { dayText } from './format'
+ 
+@@ -181,12 +181,14 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
+   const [uploaded, setUploaded] = useState(0)
+   const busy = useRef(false)
+   const sentRef = useRef(false)
+-  useEffect(
+-    () => () => {
++  const mounted = useRef(true)
++  useEffect(() => {
++    mounted.current = true
++    return () => {
++      mounted.current = false
+       if (sentRef.current) clearPhotos(photoKey)
+-    },
+-    [photoKey],
+-  )
++    }
++  }, [photoKey])
+   const [accepted, setAccepted] = useState<Accepted>({})
+   const [saved] = useState(() => readContact(path))
+   const [name, setName] = useState(saved.name)
+@@ -217,6 +219,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
+   /** Für „Anderes Konto“ und nach einem 401: ohne Abmelden leitet die Anmeldung bei bestehender Sitzung sofort zurück. */
+   const otherAccount = async () => {
+     stashDraft(path)
++    // noch mit der alten Sitzung: deren Staging-Dateien zählen sonst bis zum Aufräumen gegen ihr Kontingent
++    await discardStaging(supabase)
+     await leaveAccount()
+     void navigate(`/anmelden?next=${encodeURIComponent(`/${path}/zusammenfassung`)}`)
+   }
+@@ -227,7 +231,6 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
+     busy.current = true
+     setStatus({ kind: 'sending' })
+     setUploaded(0)
+-    let staged: { userId: string; clientRef: string; photos: ReturnType<typeof getPhotos> } | null = null
+     try {
+       const { data } = await supabase.auth.getSession()
+       const live = data.session
+@@ -242,27 +245,30 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
+         void navigate(`/${path}/termin`, { replace: true })
+         return
+       }
+-      // clientRef aus dem Entwurf ohne die bestätigten Angaben: nach einem 409 bleibt sie dieselbe
+-      const clientRef = refFor(path, { ...body, priceVersion: 0, termsHash: '', shown: null })
+-      // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
+       const toSend = getPhotos(photoKey)
+-      staged = { userId: live.user.id, clientRef, photos: toSend }
++      const photoIds = toSend.map((p) => p.id)
++      // clientRef: Entwurf ohne die bestätigten Angaben (nach einem 409 bleibt sie) und mit dem Fotosatz (anderer Satz = neuer Versuch)
++      const clientRef = refFor(path, refBody(body, photoIds))
++      // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; ein Ref-Wechsel entfernt vorher die Dateien der alten Ref (uploads.ts).
++      // `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
+       const failure = await uploadAll(supabase, live.user.id, clientRef, toSend, setUploaded)
+       if (failure) {
+         setStatus({ kind: 'photos', failure })
+         return
+       }
+-      const quote = await sendQuote({ ...body, photoIds: toSend.map((p) => p.id) }, clientRef, live.access_token)
+-      sentRef.current = true // geleert wird erst beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
++      const quote = await sendQuote({ ...body, photoIds }, clientRef, live.access_token)
++      forgetStaging()
++      sentRef.current = true // geleert wird beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
++      if (!mounted.current) clearPhotos(photoKey) // Seite während des Sendens verlassen: der Cleanup lief schon
+       finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
+       void navigate(`/${path}/gesendet`, { replace: true })
+     } catch (e) {
+       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
+       if (error.kind === 'rate_limited') setWait(60)
+       // Der Server nimmt die Staging-Dateien nicht an: alte Dateien wegräumen, beim erneuten Senden neue Namen
+-      if (error.kind === 'rejected' && staged && reuploadCodes.includes(error.code ?? '')) {
+-        await discardStaging(supabase, staged.userId, staged.clientRef, staged.photos).catch(() => undefined)
+-        renewPhotoIds(photoKey)
++      if (error.kind === 'rejected' && reuploadCodes.includes(error.code ?? '')) {
++        await discardStaging(supabase)
++        renewPhotoIds(photoKey) // neue IDs = neue clientRef; gespeichert wurde nichts
+       }
+       // Ein 409 ohne alles, was der Kunde bestätigen müsste, ist nicht bestätigbar: wie nicht verfügbar behandeln (sonst Schleife aus 409)
+       const incomplete = (error.kind === 'price_changed' && (!error.conflict.snapshot || error.conflict.priceVersion === undefined)) || (error.kind === 'terms_changed' && !error.conflict.terms)
+diff --git a/supabase/functions/_shared/database.types.ts b/supabase/functions/_shared/database.types.ts
+index d65c143..018bc82 100644
+--- a/supabase/functions/_shared/database.types.ts
++++ b/supabase/functions/_shared/database.types.ts
+@@ -843,10 +843,6 @@ export type Database = {
+         }
+         Returns: undefined
+       }
+-      become_rental_provider: {
+-        Args: never
+-        Returns: Database["public"]["Enums"]["user_role"]
+-      }
+       booking_terms: { Args: never; Returns: Json }
+       photo_cleanup: { Args: never; Returns: undefined }
+       photo_orphans: {
+diff --git a/supabase/migrations/20261103120000_0022_no_self_upgrade.sql b/supabase/migrations/20261103120000_0022_no_self_upgrade.sql
+new file mode 100644
+index 0000000..cf4f94c
+--- /dev/null
++++ b/supabase/migrations/20261103120000_0022_no_self_upgrade.sql
+@@ -0,0 +1,20 @@
++-- 0022 Kein Selbst-Upgrade zur Vermieter-Rolle in Phase 1 (S9a-4c, Berater H-1; S9_KONZEPT 3: „ohne Selbst-Hochstufung“),
++-- Staging-Zählung über einen Indexbereich (Berater N-8, EXPLAIN in tmp/proof/s9a4c-explain.log).
++
++-- 1. become_rental_provider entfällt: jedes Konto konnte sich damit zum rental_provider machen und über platform_settings_select
++--    den Gebührensatz lesen. Die Vermieter-Rolle setzt nur noch der Datenbank-Eigentümer (admin_grant_role, mit Journal).
++--    Phase 2 / S9b führt Vermieter als Partner der Kategorie rental ein.
++drop function public.become_rental_provider();
++
++-- 2. Zählung der eigenen, nicht übernommenen Staging-Dateien: Bereich [uid/, uid0) in C-Kollation statt Pattern-Vergleich
++--    ('0' folgt auf '/'); der Präfix ist erst zur Laufzeit bekannt, der Pattern-Vergleich lief als Seq Scan, der Bereich nutzt den Index
++--    (bucket_id, name). create or replace behält Eigentümer und Rechte (nur authenticated).
++create or replace function private.staging_photo_count() returns bigint
++language sql stable security definer set search_path = ''
++as $$
++  select count(*) from storage.objects o
++  where o.bucket_id = 'request-photos'
++    and o.name >= ((select auth.uid())::text || '/') collate "C"
++    and o.name < ((select auth.uid())::text || '0') collate "C"
++    and not exists (select 1 from public.request_photos p where p.storage_path = o.name)
++$$;
+diff --git a/tests/e2e/fotos.spec.ts b/tests/e2e/fotos.spec.ts
+index 0a6de5f..76a7ddf 100644
+--- a/tests/e2e/fotos.spec.ts
++++ b/tests/e2e/fotos.spec.ts
+@@ -146,7 +146,7 @@ test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Date
+       await expect.poll(() => calls.removedFiles).toEqual([first.map((id) => `u-1/${quoteCalls[0]!.body.clientRef}/${id}.jpg`)])
+       await sendButton(page).click()
+       await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+-      expect(quoteCalls[1]!.body.clientRef).toBe(quoteCalls[0]!.body.clientRef) // dieselbe Anfrage
++      expect(quoteCalls[1]!.body.clientRef).not.toBe(quoteCalls[0]!.body.clientRef) // neue IDs = neue Ref (M-1); gespeichert wurde nichts
+       const second = ids(quoteCalls[1]!.body)
+       expect(second).toHaveLength(2)
+       expect(second.filter((id) => first.includes(id))).toEqual([]) // neue Dateinamen
+@@ -155,6 +155,32 @@ test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Date
+   }
+ })
+ 
++test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt', async ({ page }) => {
++  const calls = await mockPhotos(page)
++  const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
++  await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
++  const first = quoteCalls[0]!.body
++  const [id1, id2] = ids(first)
++  await page.getByRole('link', { name: 'Termin' }).click() // über die App zurück: ein Neuladen oder goBack verwürfe bzw. verfehlte die Fotos im Speicher
++  await expect(page.getByRole('heading', { name: 'Wann passt es?' })).toBeVisible()
++  await page.getByRole('link', { name: 'Entrümpelung' }).click() // Ergebnis
++  await page.getByRole('link', { name: 'Zurück' }).click() // zurück in den Wizard, letzter Schritt = Fotos
++  await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
++  await expect(page.getByText('1 von 8')).toBeVisible()
++  await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
++  await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
++  await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
++  await page.getByRole('checkbox').check()
++  await expect(page.getByRole('img', { name: /^Foto / })).toHaveCount(1)
++  await sendButton(page).click()
++  await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
++  const second = quoteCalls[1]!.body
++  expect(second.clientRef).not.toBe(first.clientRef)
++  expect(ids(second)).toEqual([id2]) // genau das angezeigte Foto
++  expect(calls.uploads.at(-1)!.path).toBe(`u-1/${second.clientRef}/${id2}.jpg`)
++  expect(calls.removedFiles).toEqual([[`u-1/${first.clientRef}/${id1}.jpg`, `u-1/${first.clientRef}/${id2}.jpg`]])
++})
++
+ test('422 too_many_photos: eigener Text, Weg zurück zu den Angaben', async ({ page }) => {
+   await mockPhotos(page)
+   await sendWithPhotos(page, { reply: () => rejected('too_many_photos'), sent: false })
+diff --git a/tests/rls/quote.test.ts b/tests/rls/quote.test.ts
+index f2f1b60..c37dbca 100644
+--- a/tests/rls/quote.test.ts
++++ b/tests/rls/quote.test.ts
+@@ -6,6 +6,7 @@ import { quoteDb } from '../../supabase/functions/_shared/quote/db.ts'
+ import { handleQuote, type QuoteDeps } from '../../supabase/functions/_shared/quote/handler.ts'
+ import type { Point, ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
+ import type { RouteProvider } from '../../supabase/functions/_shared/route/provider.ts'
++import { ownerGrantRole } from '../support/owner.ts'
+ import { anon, DENIED, deleteUsers, makeUser, must, pause, run, service, type TestUser } from '../support/db.ts'
+ import { assemblyCall, CARGO_VAN, CONTACT, clearanceCall, clearanceInputs, clientRef, geocodeFake, GRAZ, hmac, moveCall, moveInputs, place, post, rentalCall, rentalInput, settle, TERMS, termin, VIENNA_A, VIENNA_B } from '../support/quote.ts'
+ 
+@@ -84,7 +85,7 @@ beforeAll(async () => {
+   a = await makeUser('quote-a')
+   b = await makeUser('quote-b')
+   landlord = await makeUser('quote-vermieter')
+-  must(await landlord.db.rpc('become_rental_provider'))
++  ownerGrantRole(landlord.id, 'rental_provider')
+   const offer = must(
+     await landlord.db
+       .from('rental_offers')
+diff --git a/tests/rls/rls.test.ts b/tests/rls/rls.test.ts
+index fa6640c..51afe6e 100644
+--- a/tests/rls/rls.test.ts
++++ b/tests/rls/rls.test.ts
+@@ -97,9 +97,9 @@ beforeAll(async () => {
+   otherProvider = await makeUser('vermieter-2')
+   admin = await makeUser('admin')
+ 
+-  // Vermieter-Rolle über den vorgesehenen Weg, admin nur über Eigentümer-SQL (admin_grant_role).
+-  expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+-  expect(must(await otherProvider.db.rpc('become_rental_provider'))).toBe('rental_provider')
++  // Rollen nur über Eigentümer-SQL (admin_grant_role, mit Journal); ein Selbst-Upgrade gibt es seit 0022 nicht mehr.
++  ownerGrantRole(provider.id, 'rental_provider')
++  ownerGrantRole(otherProvider.id, 'rental_provider')
+   ownerGrantRole(admin.id, 'admin')
+ 
+   requestA = await makeRequest(a.id)
+@@ -172,9 +172,8 @@ describe('anon', () => {
+     },
+   )
+ 
+-  it('lädt keine Fotos und wird nicht Vermieter', async () => {
++  it('lädt keine Fotos', async () => {
+     expect((await anon.storage.from('request-photos').download(photoPathB)).error).not.toBeNull()
+-    expect((await anon.rpc('become_rental_provider')).error).not.toBeNull()
+   })
+ })
+ 
+@@ -441,8 +440,32 @@ describe('Rollen', () => {
+     ])
+   })
+ 
+-  it('der Vermieter-Weg macht nie admin und stuft admin nicht herab', async () => {
+-    expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+-    expect(must(await admin.db.rpc('become_rental_provider'))).toBe('admin')
++  it('kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen Gebührensatz', async () => {
++    // Die RPC gibt es seit 0022 nicht mehr; der Name steht deshalb nicht in den generierten Typen.
++    expect((await a.db.rpc('become_rental_provider' as never)).error).not.toBeNull()
++    expect(must(await service.from('profiles').select('role').eq('id', a.id).single()).role).toBe('customer')
++    expect(must(await a.db.from('platform_settings').select('key'))).toEqual([])
++  })
++
++  it('SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste', () => {
++    const rows = ownerSql(`select p.oid::regprocedure::text as fn, pg_get_userbyid(p.proowner) as owner,
++        coalesce(array_to_string(p.proconfig, ','), '') as cfg,
++        has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as auth
++      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
++      where n.nspname in ('public', 'private') and p.prosecdef order by 1`)
++    for (const r of rows) {
++      expect.soft(r.owner, String(r.fn)).toBe('postgres')
++      expect.soft(r.cfg, String(r.fn)).toBe('search_path=""')
++    }
++    const open = rows
++      .filter((r) => r.anon === true || r.auth === true)
++      .map((r) => `${r.fn}:${[r.anon === true && 'anon', r.auth === true && 'authenticated'].filter(Boolean).join('+')}`)
++    expect(open).toEqual([
++      'booking_terms():anon+authenticated',
++      'private.is_admin():authenticated',
++      'private.my_role():authenticated',
++      'private.staging_photo_count():authenticated',
++      'withdraw(uuid):authenticated',
++    ])
+   })
+ })
+diff --git a/tests/rls/settings.test.ts b/tests/rls/settings.test.ts
+index 064cab5..3e59b7a 100644
+--- a/tests/rls/settings.test.ts
++++ b/tests/rls/settings.test.ts
+@@ -345,10 +345,4 @@ describe('audit_log, Rollen, aal2-Admin', () => {
+       grant_effect_ok: 'ok',
+     })
+   })
+-
+-  it('become_rental_provider bleibt der Weg zur Vermieter-Rolle (Marker im eigenen Konto)', async () => {
+-    expect(must(await cust.db.rpc('become_rental_provider'))).toBe('rental_provider')
+-    expect(must(await service.from('profiles').select('role').eq('id', cust.id).single()).role).toBe('rental_provider')
+-    expect(must(await adm.db.rpc('become_rental_provider'))).toBe('admin')
+-  })
+ })
+diff --git a/tests/unit/draft.test.ts b/tests/unit/draft.test.ts
+index f531f05..15e3716 100644
+--- a/tests/unit/draft.test.ts
++++ b/tests/unit/draft.test.ts
+@@ -5,7 +5,7 @@ const invoke = vi.fn()
+ vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
+ 
+ const { attemptKey, draftKeys, purgeHandover, readSent, readShown, rememberShown, shownKey, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
+-const { QuoteError, buildBody, parseSnapshot, priceLabel, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
++const { QuoteError, buildBody, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
+ 
+ const store = () => {
+   const map = new Map<string, string>()
+@@ -115,6 +115,16 @@ describe('clientRef', () => {
+     expect(refFor('montage', { service: 'assembly', preferredDate: '2026-11-16' })).toBe(b)
+   })
+ 
++  it('hängt am Fotosatz: gleiche IDs in anderer Reihenfolge = gleiche Ref, ein Foto weniger = neue Ref, Bestätigtes zählt nicht', () => {
++    const P1 = 'a0b1c2d3-0000-4000-8000-000000000001'
++    const P2 = 'a0b1c2d3-0000-4000-8000-000000000002'
++    const body = { service: 'clearance', preferredDate: '2026-11-15' }
++    const a = refFor('entruempelung', refBody(body, [P1, P2]))
++    expect(refFor('entruempelung', refBody(body, [P2, P1]))).toBe(a)
++    expect(refFor('entruempelung', refBody({ ...body, priceVersion: 7, termsHash: 'x', shown: { kind: 'offer' } }, [P1, P2]))).toBe(a)
++    expect(refFor('entruempelung', refBody(body, [P2]))).not.toBe(a)
++  })
++
+   it('ersetzt eine gespeicherte Ref, die keine UUID ist', () => {
+     const body = { a: 1 }
+     sessionStorage.setItem(attemptKey('montage'), JSON.stringify({ ref: 'kaputt', body: JSON.stringify(body) }))
+diff --git a/tests/unit/uploads.test.ts b/tests/unit/uploads.test.ts
+index d417dd9..b71b903 100644
+--- a/tests/unit/uploads.test.ts
++++ b/tests/unit/uploads.test.ts
+@@ -1,39 +1,45 @@
+-import { describe, expect, it } from 'vitest'
++import { beforeEach, describe, expect, it } from 'vitest'
+ import type { Photo } from '../../src/lib/photos'
+-import { discardStaging, uploadAll, uploadPhoto } from '../../src/lib/uploads'
++import { discardStaging, forgetStaging, uploadAll } from '../../src/lib/uploads'
+ 
+ type Err = { message: string; statusCode?: string }
+ const photo = (id: string, size = 4): Photo => ({ id, blob: new Blob([new Uint8Array(size)]), url: 'blob:x' })
+ const P1 = 'a0b1c2d3-0000-4000-8000-000000000001'
+ const P2 = 'a0b1c2d3-0000-4000-8000-000000000002'
++const none = () => undefined
+ 
+-/** Minimaler Ersatz für den Client: `upload` liefert die vorgegebenen Fehler der Reihe nach, `remove` zeichnet die Pfade auf. */
++/** Minimaler Ersatz für den Client: `upload` liefert die vorgegebenen Fehler der Reihe nach, `remove` zeichnet die Pfade auf, `log` hält die Reihenfolge. */
+ function fakeDb(...errors: (Err | null)[]) {
+-  const calls = { upload: [] as { path: string; upsert: unknown }[], remove: [] as string[][] }
++  const calls = { upload: [] as { path: string; upsert: unknown }[], remove: [] as string[][], log: [] as string[] }
+   const db = {
+     storage: {
+       from: () => ({
+         upload: async (path: string, _blob: Blob, options: { upsert: boolean }) => {
+           calls.upload.push({ path, upsert: options.upsert })
++          calls.log.push(`upload:${path}`)
+           return { error: errors[calls.upload.length - 1] ?? null }
+         },
+-        remove: async (paths: string[]) => (calls.remove.push(paths), { error: null }),
++        remove: async (paths: string[]) => (calls.remove.push(paths), calls.log.push(`remove:${paths.join(',')}`), { error: null }),
+       }),
+     },
+   }
+   return { db: db as never, calls }
+ }
+ 
+-describe('uploadPhoto', () => {
++beforeEach(() => forgetStaging())
++
++describe('uploadAll: ein Foto', () => {
++  const one = (db: never, ref: string, p: Photo) => uploadAll(db, 'u', ref, [p], none)
++
+   it('Erfolg: Staging-Pfad {user}/{clientRef}/{id}.jpg, ohne Upsert, keine Zeile in der Datenbank', async () => {
+     const { db, calls } = fakeDb()
+-    expect(await uploadPhoto(db, 'u', 'ref-ok', photo(P1))).toBeNull()
++    expect(await one(db, 'ref-ok', photo(P1))).toBeNull()
+     expect(calls.upload).toEqual([{ path: `u/ref-ok/${P1}.jpg`, upsert: false }])
+   })
+ 
+   it('zu groß: kein Aufruf an den Server', async () => {
+     const { db, calls } = fakeDb()
+-    expect(await uploadPhoto(db, 'u', 'ref-big', photo(P1, 10 * 1024 * 1024 + 1))).toBe('too_big')
++    expect(await one(db, 'ref-big', photo(P1, 10 * 1024 * 1024 + 1))).toBe('too_big')
+     expect(calls.upload).toEqual([])
+   })
+ 
+@@ -45,14 +51,7 @@ describe('uploadPhoto', () => {
+     ['anderer Fehler', { statusCode: '500', message: 'boom' }, 'failed'],
+   ])('%s', async (name, error, expected) => {
+     const { db } = fakeDb(error)
+-    expect(await uploadPhoto(db, 'u', `ref-${name}`, photo(P1))).toBe(expected)
+-  })
+-
+-  it('ein Foto, das liegt, wird beim erneuten Senden nicht noch einmal hochgeladen', async () => {
+-    const { db, calls } = fakeDb()
+-    await uploadPhoto(db, 'u', 'ref-twice', photo(P1))
+-    await uploadPhoto(db, 'u', 'ref-twice', photo(P1))
+-    expect(calls.upload).toHaveLength(1)
++    expect(await one(db, `ref-${name}`, photo(P1))).toBe(expected)
+   })
+ })
+ 
+@@ -64,18 +63,48 @@ describe('uploadAll', () => {
+     expect(seen).toEqual([1, 2])
+ 
+     const failing = fakeDb({ statusCode: '500', message: 'boom' })
+-    expect(await uploadAll(failing.db, 'u', 'ref-fail', [photo(P1), photo(P2)], () => undefined)).toBe('failed')
++    expect(await uploadAll(failing.db, 'u', 'ref-fail', [photo(P1), photo(P2)], none)).toBe('failed')
+     expect(failing.calls.upload).toHaveLength(1)
+   })
+ })
+ 
+-describe('discardStaging', () => {
+-  it('löscht die Staging-Dateien; danach wird dasselbe Foto wieder hochgeladen', async () => {
++describe('Staging-Stand (M-2)', () => {
++  it('Ref-Wechsel im selben Konto: erst die Dateien der alten Ref entfernen, dann hochladen', async () => {
++    const { db, calls } = fakeDb()
++    await uploadAll(db, 'u', 'ref-1', [photo(P1), photo(P2)], none)
++    await uploadAll(db, 'u', 'ref-2', [photo(P2)], none)
++    expect(calls.log).toEqual([`upload:u/ref-1/${P1}.jpg`, `upload:u/ref-1/${P2}.jpg`, `remove:u/ref-1/${P1}.jpg,u/ref-1/${P2}.jpg`, `upload:u/ref-2/${P2}.jpg`])
++  })
++
++  it('gleiche Ref: nichts entfernt, nichts doppelt', async () => {
++    const { db, calls } = fakeDb()
++    await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)
++    await uploadAll(db, 'u', 'ref-1', [photo(P1), photo(P2)], none)
++    expect(calls.log).toEqual([`upload:u/ref-1/${P1}.jpg`, `upload:u/ref-1/${P2}.jpg`])
++  })
++
++  it('Kontowechsel: alte Dateien nicht mit der neuen Sitzung löschen', async () => {
++    const { db, calls } = fakeDb()
++    await uploadAll(db, 'u1', 'ref-1', [photo(P1)], none)
++    await uploadAll(db, 'u2', 'ref-1', [photo(P1)], none)
++    expect(calls.remove).toEqual([])
++    expect(calls.upload.map((c) => c.path)).toEqual([`u1/ref-1/${P1}.jpg`, `u2/ref-1/${P1}.jpg`])
++  })
++
++  it('nach dem Absenden (forgetStaging): der nächste Entwurf entfernt nichts', async () => {
++    const { db, calls } = fakeDb()
++    await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)
++    forgetStaging()
++    await uploadAll(db, 'u', 'ref-2', [photo(P2)], none)
++    expect(calls.remove).toEqual([])
++  })
++
++  it('discardStaging entfernt den aktuellen Stand; danach wird dasselbe Foto neu hochgeladen', async () => {
+     const { db, calls } = fakeDb()
+-    await uploadPhoto(db, 'u', 'ref-discard', photo(P1))
+-    await discardStaging(db, 'u', 'ref-discard', [photo(P1)])
+-    expect(calls.remove).toEqual([[`u/ref-discard/${P1}.jpg`]])
+-    await uploadPhoto(db, 'u', 'ref-discard', photo(P1))
++    await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)
++    await discardStaging(db)
++    expect(calls.remove).toEqual([[`u/ref-1/${P1}.jpg`]])
++    await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)
+     expect(calls.upload).toHaveLength(2)
+   })
+ })

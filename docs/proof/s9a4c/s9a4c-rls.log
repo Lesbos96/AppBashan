@@ -1,0 +1,186 @@
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/rls.test.ts (40 tests) 35786ms
+   ✓ Kunden sehen nur Eigenes (6)
+     ✓ Foto-Einträge und Dateien 920ms
+     ✓ kein Upload und kein Foto-Eintrag in fremde Anfragen 391ms
+     ✓ fremde Fotos lassen sich nicht löschen 716ms
+   ✓ Kunden setzen nur „zurückgezogen" (6)
+     ✓ eigene Anfrage zurückziehen, danach nicht wieder öffnen 309ms
+     ✓ keine Fotos zu einer zurückgezogenen Anfrage 325ms
+     ✓ Mietanfrage: nur zurückziehen 325ms
+   ✓ Vermieter und Fahrzeuge (4)
+     ✓ ändert nur eigene Fahrzeuge 508ms
+   ✓ Gebühren (5)
+     ✓ Kunden und anon lesen weder fee_splits noch platform_settings 491ms
+     ✓ admin liest Aufteilungen nur mit aal2 3308ms
+   ✓ price_config (5)
+     ✓ Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501) 1002ms
+     ✓ nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert 696ms
+     ✓ DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt 515ms
+   ✓ Rollen (4)
+     ✓ SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste 2243ms
+ ✓ |rls| tests/rls/uploads.test.ts (29 tests) 137907ms
+   ✓ Staging hochladen (storage.objects) (6)
+     ✓ erlaubt: der Eigentümer lädt in den eigenen Ordner ohne Anfrage, liest per signiertem Link; der Bucket ist privat 1159ms
+     ✓ verweigert: fremder Ordner (b lädt in den Ordner von a), anon 517ms
+     ✓ verweigert: falsche Pfadform (Großbuchstaben, andere Endung, ohne client_ref-Ordner, kein UUID, Pfadtrick) 913ms
+     ✓ verweigert: fremder Nutzer liest, überschreibt, löscht, verschiebt nicht; anon bekommt nichts; die Datei bleibt unverändert 2552ms
+     ✓ erlaubt: der Eigentümer löscht sein Staging-Foto; verweigert: Überschreiben der eigenen Datei (kein UPDATE-Recht) 822ms
+     ✓ zu groß: der Bucket lehnt ab (413); falscher Typ: PNG, WebP, HEIC, Text (415) 2428ms
+   ✓ Übernahme beim Absenden (quote_save_request) (9)
+     ✓ erlaubt: eigene, frische Fotos werden atomar als request_photos übernommen; nur der Eigentümer liest sie 1029ms
+     ✓ doppelte IDs ergeben ein Foto; ohne Fotos geht es auch (Gegenfall) 871ms
+     ✓ verweigert: fremde Foto-ID (Datei von b) → photo_missing, keine Anfrage, keine Zeile 930ms
+     ✓ verweigert: Foto aus einem anderen eigenen Ordner und nie hochgeladene ID → photo_missing 802ms
+     ✓ verweigert: abgelaufenes Staging-Foto → photo_expired, nichts gespeichert; Gegenfall kurz vor Ablauf wird übernommen 14248ms
+     ✓ Grenze: 8 Fotos gehen, 9 → too_many_photos ohne Anfrage 2764ms
+     ✓ Wiederholung derselben client_ref liefert die vorhandene Anfrage und fügt keine Fotos hinzu 824ms
+     ✓ Handler: photoIds werden übernommen (200), fremde ID → 422 photo_missing, 9 → 422 too_many_photos, kein Array → 400, nichts gespeichert 11835ms
+     ✓ photo_staging_hours fehlt: Absenden (SQL) und Waisenliste scheitern mit setting_missing; mit Wert läuft beides (Positivkontrolle) 14113ms
+   ✓ Nach dem Absenden (7)
+     ✓ verweigert: Löschen einer nicht genannten Datei im Ordner mit Anfrage (nur die Anfrage-Bedingung schützt sie, keine Zeile) 356ms
+     ✓ verweigert: Löschen, Ersetzen und Verschieben der übernommenen Datei; sie bleibt unverändert 907ms
+     ✓ verweigert (request_photos): Kunde und anon fügen weder ein noch ändern oder löschen sie (42501) 570ms
+     ✓ verweigert für service_role: Umhängen auf eine andere Anfrage, Ersetzen, Löschen (Rechte entzogen, 42501); Einfügen am Funktionspfad vorbei (Trigger) 593ms
+     ✓ Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen), DELETE und TRUNCATE → photo_immutable; INSERT ohne Marker → photo_insert_forbidden 6208ms
+     ✓ Kaskade: Löschen der Anfrage entfernt die Zeilen (Positivkontrolle der DELETE-Ausnahme) 1869ms
+   ✓ Waisenliste (2)
+     ✓ Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar (verweigert für anon und Kunden) 682ms
+     ✓ Waisen-Liste: nur abgelaufene Dateien ohne Zeile (frisch und übernommen bleiben draußen) 20074ms
+   ✓ Aufräumen (1)
+     ✓ Aufräumen löscht abgelaufene, nicht übernommene Dateien (Objekt), übernommene und frische bleiben 14839ms
+   ✓ Staging-Kontingent und Pfad (0021) (4)
+     ✓ bis zur Grenze erlaubt, die 41. Datei verweigert (403); Löschen und Übernehmen geben Platz frei 23189ms
+     ✓ Insert in request_photos ohne storage_path: Trigger lehnt ab (photo_insert_forbidden), mit Marker ebenso 1484ms
+     ✓ kein Default mehr: die Spalte hat keinen Standardwert 1149ms
+     ✓ Zeilen-Bedingung (Alt-Pfad {uid}/{request_id}/…): Kunde löscht kein übernommenes Objekt und lädt nicht unter dessen Namen hoch 4472ms
+ ✓ |rls| tests/rls/status.test.ts (16 tests) 100408ms
+   ✓ Status nur über Funktionen (7)
+     ✓ direktes Status-UPDATE: customer, partner, admin (aal1 und aal2), service_role und anon verweigert, Status unverändert 1669ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker sind getrennte Prüfungen 1353ms
+     ✓ INSERT: nur requested/awaiting_offer; eine Anfrage ohne Revision wird beim Commit verworfen 456ms
+     ✓ withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal invalid_transition, fremd not_found, anon 42501 7467ms
+     ✓ withdraw aus awaiting_offer ok; die Marker der Funktion bleiben nicht in der Sitzung stehen 6600ms
+     ✓ Miete: nur requested → withdrawn, auch für den Eigentümer; ungültige Paare invalid_transition 6545ms
+   ✓ Revisionen unveränderlich (5)
+     ✓ UPDATE, DELETE, TRUNCATE: auch der Eigentümer scheitert an revision_immutable; service_role hat kein Recht 6245ms
+     ✓ INSERT: nur Revision 1 beim Absenden, Status passend zum Preis, Snapshot passend zu den Beträgen, Version veröffentlicht 6069ms
+     ✓ Zeiger: einmalig, nur auf Revision 1 derselben Anfrage; Frist, Termin und Bezirk unveränderlich 6594ms
+     ✓ service_role ändert nur den Zeiger: Adresse, Kunde, Strecke verweigert; Löschen verweigert (auch Eigentümer, nur Kaskade) 7080ms
+     ✓ Kontolöschung räumt Anfrage, Revision, Ereignisse und Kontakte per Kaskade (Positivkontrolle) 14253ms
+   ✓ status_events: nur anfügen, nur admin (aal2) liest (2)
+     ✓ UPDATE, DELETE, TRUNCATE: append_only; service_role und Kunde schreiben nicht 7055ms
+     ✓ Lesen: Kunde und Partner nie, admin nur mit aal2 (Positivkontrolle) 6173ms
+   ✓ Lesen: Revisionen und Kontakte (2)
+     ✓ Kunde liest nur eigene Revisionen und Kontakte, fremde 0 Zeilen (Positivkontrolle eigene), admin und Partner nichts 10851ms
+     ✓ Kontakte und Revisionen: Kunde schreibt nicht; service_role fügt Kontakte nur ein (kein UPDATE/DELETE) 1081ms
+ ✓ |rls| tests/rls/quote-hardening.test.ts (44 tests) 74609ms
+   ✓ Haltefenster und Preisabgleich (8)
+     ✓ abgelaufenes Haltefenster: 409 price_changed mit neuer Version und neuem Snapshot, nichts gespeichert 3351ms
+     ✓ innerhalb von 30 Minuten: gespeichert mit der gezeigten Version 3213ms
+     ✓ künftige oder nie gültige Version: nie haltbar → 409 price_changed 5642ms
+     ✓ ersetzte Version ohne Einstellung price_hold_minutes: 500 setting_missing, nichts gespeichert 537ms
+     ✓ gleiche Version, anderer Betrag (z. B. Strecke): 409 price_changed mit dem berechneten Preis, keine Zeile 1998ms
+     ✓ Festpreis als Spanne gezeigt (total null) und Angebot statt Preis gezeigt: ebenfalls 409 2429ms
+     ✓ Positivkontrolle: exakt der gezeigte Betrag wird gespeichert 2487ms
+     ✓ Miete: gezeigter Betrag weicht ab → 409 price_changed, keine Mietanfrage (M-3) 1567ms
+   ✓ Bedingungen und Pflichtfelder (9)
+     ✓ falscher termsHash: 409 terms_changed mit den aktuellen Bedingungen, keine Zeile 513ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact: 400, keine Zeile 339ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.email: 400, keine Zeile 356ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.phone: 400, keine Zeile 357ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.name: 400, keine Zeile 343ms
+     ✓ fehlendes oder ungültiges Pflichtfeld shown: 400, keine Zeile 310ms
+     ✓ fehlendes oder ungültiges Pflichtfeld termsHash: 400, keine Zeile 366ms
+     ✓ fehlendes oder ungültiges Pflichtfeld priceVersion: 400, keine Zeile 338ms
+     ✓ fehlendes oder ungültiges Pflichtfeld preferredDate: 400, keine Zeile 359ms
+   ✓ Adressprüfung und Bezirk (6)
+     ✓ Abholung außerhalb Wiens: 422 pickup_outside_vienna, keine Zeile 1104ms
+     ✓ manipulierte Koordinaten oder Client-postcode ändern das nicht (Graz mit Wiener Punkt, Wien mit Grazer Punkt, falsche PLZ) 3291ms
+     ✓ Punkt ohne Hausnummer (Straße): 422 address_imprecise; unbekannte Adresse: address_mismatch; ohne Punkt: address_point_required 4661ms
+     ✓ Ziel im Ausland: 422 offer_not_bookable; Ziel im Inland außerhalb Wiens ist buchbar 4700ms
+     ✓ Entrümpelung und Montage nutzen dieselbe Prüfung; gespeichert wird das kanonische Label 3121ms
+     ✓ Geocode-Cache: zweiter Aufruf mit demselben Label fragt den Anbieter nicht erneut 3530ms
+   ✓ Ausfälle und Limits: Abbruch ohne Zeile (4)
+     ✓ Geocoder fällt aus: 503 provider_unavailable 1018ms
+     ✓ Routing fällt aus: 503 provider_unavailable; keine Route: Angebot route_missing 4596ms
+     ✓ Geocode-Kontingent erschöpft: 429 rate_limited; Zähler fällt aus: 503 limiter_unavailable 1352ms
+     ✓ Routen-Kontingent erschöpft: 429 rate_limited 1409ms
+   ✓ Journal, Revision und Kontakt (2)
+     ✓ price_confirmed im Journal mit Betrag, Bedingungen-Hash, Version und Inhalts-Hash; Revision 1 trägt die Bedingungen; Kontakt gespeichert 3371ms
+     ✓ der Kunde liest die Antwort ohne Gebühr; fremde Kontakte sieht er nicht 4358ms
+   ✓ quote_save_request: eigene Prüfungen (10)
+     ✓ Kontaktformat zusätzlich in der Datenbank (Constraint): 23514 401ms
+   ✓ Rechte nach 0019 (4)
+     ✓ geocode_cache und geo_districts: anon und authenticated 42501, service_role liest (23 Bezirke) 725ms
+     ✓ price_version_hold und quote_district: anon und authenticated 42501, service_role darf 544ms
+     ✓ rental_bookings: service_role darf einfügen, aber weder ändern noch löschen (42501) 1625ms
+   ✓ Rohaufruf ohne Absender-Hilfe (1)
+     ✓ Wiederholung derselben clientRef nach 409 legt genau eine Zeile an 2620ms
+ ✓ |rls| tests/rls/quote.test.ts (17 tests) 55053ms
+   ✓ Anfrage anlegen (echte DB) (10)
+     ✓ manipulierter Client-Preis und Client-Strecke werden ignoriert; Anfrage gehört dem Token-Nutzer 3450ms
+     ✓ Frist und Termin rechnet die Datenbank: Annahmefrist 24 h bei weit entferntem Termin, Termin 00:00 Wiener Zeit 4659ms
+     ✓ Termin näher als accept_min_hours: 422 too_late, nichts gespeichert 2708ms
+     ✓ Punkte werden als (Länge, Breite) gespeichert, Adresse und Bezirk kommen vom geprüften Kandidaten 2593ms
+     ✓ Wien → Graz: Region, Kilometer und Preis kommen aus Strecke und PostGIS 3254ms
+     ✓ Negativtest: quote schreibt keine fee_splits-Zeile (Anfrage und Mietanfrage), die Antwort enthält keine Gebühr 4331ms
+     ✓ Sonderfall: awaiting_offer, kein Preis, Revision ohne Beträge 2156ms
+     ✓ Entrümpelung (Spanne): awaiting_offer, Revision mit low/high ohne total; Montage mit README-Betrag 3740ms
+     ✓ Idempotenz: dieselbe clientRef ergibt genau eine Anfrage, auch bei paralleler Absendung 4268ms
+     ✓ ohne Token 401, mit fremdem Format 400 ohne Schreiben; Bearbeiten mit requestId gibt es nicht 731ms
+   ✓ Mietanfrage (echte DB) (3)
+     ✓ Cargo Van: 276,00 €, Kaution 500,00 € separat, Zeiten als Zeitpunkte (Wiener Zeit), keine Gebührenzeile 1519ms
+     ✓ Angebot eines Vermieters: keine Gebührenzeile, die Antwort nennt den Vermieter nicht 1575ms
+     ✓ nicht freigegebenes Angebot: 404; Idempotenz: dieselbe clientRef = eine Mietanfrage 2580ms
+   ✓ Rechte (Verweigerung exakt, Positivkontrolle) (3)
+     ✓ Schreib-Funktionen: anon und authenticated erhalten 42501, service_role darf 480ms
+     ✓ Kunde schreibt weder Spalten noch Anfragen; Zurückziehen nur über withdraw (Positivkontrolle) 2372ms
+   ✓ Nutzerlimit (echte Zähler) (1)
+     ✓ ab dem 7. Aufruf in einer Minute 429 2831ms
+ ✓ |rls| tests/rls/settings.test.ts (11 tests) 35396ms
+   ✓ veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen service_role) (2)
+     ✓ Änderungen jeder Art werden verweigert, die unveröffentlichte Version bleibt änderbar 6339ms
+     ✓ über die API: authenticated und admin (aal1) verweigert (42501), service_role bekommt version_published 1715ms
+   ✓ Admin-Funktionen: nur service_role bzw. Eigentümer, nur für Rolle admin (5)
+     ✓ anon ruft keine Admin-Funktion auf (42501) 653ms
+     ✓ customer ruft keine Admin-Funktion auf (42501) 624ms
+     ✓ admin ruft keine Admin-Funktion auf (42501) 494ms
+     ✓ admin_grant_role ist auch für service_role gesperrt; die anderen erreicht service_role (Gegenfall) 509ms
+   ✓ Gebührensätze und Einstellungen (3)
+     ✓ Vorlauf, Unveränderlichkeit, Wertebereich 6771ms
+     ✓ Schreiben über die API: admin (aal1) und Kunde verweigert (42501), keine Schreib-Grants 615ms
+     ✓ booking_terms: fünf Werte und termsHash, kein fee_*, für anon und Kunden 6562ms
+   ✓ audit_log, Rollen, aal2-Admin (1)
+     ✓ audit_log nur anfügen; Lesen nur admin mit aal2; profiles.role nur mit Marker 6437ms
+ ✓ |rls| tests/rls/route.test.ts (15 tests) 7452ms
+   ✓ Zugriff nur für service_role (3)
+     ✓ anon: Tabellen und Funktionen mit 42501 verweigert 714ms
+     ✓ authenticated: Tabellen und Funktionen mit 42501 verweigert 711ms
+     ✓ service_role darf dieselben Aufrufe 1464ms
+   ✓ Löschung (route_cleanup, stündlicher Job) (1)
+     ✓ entfernt abgelaufene Cache-Zeilen und alte Zähler, lässt frische stehen 641ms
+   ✓ Grenzen (2)
+     ✓ fehlende Grenze bricht ab, statt „Wien" zu liefern 689ms
+   ✓ Zähler (4)
+     ✓ zählt parallele Aufrufe exakt 322ms
+     ✓ ein überschrittener Zähler lehnt ab und lässt die folgenden (globalen) unberührt 399ms
+ ✓ |rls| tests/rls/auth.test.ts (4 tests) 3026ms
+   ✓ Magic-Link-Mail: Code und Link (4)
+     ✓ der Code meldet an; das Profil entsteht erst jetzt, als Kunde 970ms
+     ✓ der Link (token_hash) meldet in jedem Browser an 708ms
+     ✓ falscher oder schon benutzter Code wird abgelehnt 871ms
+
+ Test Files  8 passed (8)
+      Tests  176 passed (176)
+   Start at  19:10:16
+   Duration  454.55s (tests 99%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=0

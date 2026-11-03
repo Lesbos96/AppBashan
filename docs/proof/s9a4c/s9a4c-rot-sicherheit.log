@@ -1,0 +1,104 @@
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/rls.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/rls.test.ts (40 tests | 2 failed) 41704ms
+   ✓ anon (8)
+     ✓ liest öffentliche Tarife und freigegebene Angebote 165ms
+     ✓ liest nichts aus profiles 108ms
+     ✓ liest nichts aus service_requests 78ms
+     ✓ liest nichts aus request_photos 86ms
+     ✓ liest nichts aus rental_bookings 109ms
+     ✓ liest nichts aus fee_splits 72ms
+     ✓ liest nichts aus platform_settings 65ms
+     ✓ lädt keine Fotos und wird nicht Vermieter 234ms
+   ✓ Kunden sehen nur Eigenes (6)
+     ✓ Anfragen 93ms
+     ✓ Foto-Einträge und Dateien 1149ms
+     ✓ kein Upload und kein Foto-Eintrag in fremde Anfragen 467ms
+     ✓ fremde Fotos lassen sich nicht löschen 653ms
+     ✓ Mietanfragen 88ms
+     ✓ fremde Profile: nicht lesen, nicht ändern 258ms
+   ✓ Kunden setzen nur „zurückgezogen" (6)
+     ✓ legen Anfragen nicht selbst an (nur über quote) 154ms
+     ✓ kein anderer Status, keine Preisfelder 307ms
+     ✓ fremde Anfrage bleibt unverändert 156ms
+     ✓ eigene Anfrage zurückziehen, danach nicht wieder öffnen 329ms
+     ✓ keine Fotos zu einer zurückgezogenen Anfrage 268ms
+     ✓ Mietanfrage: nur zurückziehen 265ms
+   ✓ Vermieter und Fahrzeuge (4)
+     ✓ Kunden legen keine Fahrzeuge an 68ms
+     ✓ neues Fahrzeug ist pending, Status und Demo-Flag nicht setzbar 343ms
+     ✓ ändert nur eigene Fahrzeuge 416ms
+     ✓ fremde unfreigegebene Fahrzeuge bleiben unsichtbar 216ms
+   ✓ Gebühren (5)
+     ✓ Kunden und anon lesen weder fee_splits noch platform_settings 435ms
+     ✓ Vermieter liest nur eigene Aufteilung und den Satz 248ms
+     ✓ Vermieter ändert den Satz nicht 246ms
+     ✓ admin liest Aufteilungen nur mit aal2 8330ms
+     ✓ niemand außer dem Server schreibt Aufteilungen 221ms
+   ✓ price_config (5)
+     ✓ Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501) 1186ms
+     ✓ nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert 770ms
+     ✓ DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt 595ms
+     ✓ Seed: Spanne rate_low ≤ rate ≤ rate_high in der gültigen Version 191ms
+     ✓ Seed: öffentliche Texte ohne Prototyp-Hinweis 186ms
+   ✓ current_price_version (2)
+     ✓ liefert für anon und Kunden die höchste bereits gültige Version, keine künftige 245ms
+     ✓ macht platform_settings und fee_splits nicht lesbar 168ms
+   ❯ Rollen (4)
+     ✓ niemand setzt die eigene Rolle 291ms
+     ✓ Name und Telefon sind änderbar 70ms
+     × kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen Gebührensatz 94ms
+     × SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste 6622ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/rls.test.ts > Rollen > kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen Gebührensatz
+AssertionError: expected null not to be null
+ ❯ tests/rls/rls.test.ts:446:75
+    444|   it('kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen…
+    445|     // Die RPC gibt es seit 0022 nicht mehr; der Name steht deshalb ni…
+    446|     expect((await a.db.rpc('become_rental_provider' as never)).error).…
+       |                                                                           ^
+    447|     expect(must(await service.from('profiles').select('role').eq('id',…
+    448|     expect(must(await a.db.from('platform_settings').select('key'))).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |rls| tests/rls/rls.test.ts > Rollen > SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  [
++   "become_rental_provider():authenticated",
+    "booking_terms():anon+authenticated",
+    "private.is_admin():authenticated",
+    "private.my_role():authenticated",
+    "private.staging_photo_count():authenticated",
+    "withdraw(uuid):authenticated",
+
+ ❯ tests/rls/rls.test.ts:464:18
+    462|       .filter((r) => r.anon === true || r.auth === true)
+    463|       .map((r) => `${r.fn}:${[r.anon === true && 'anon', r.auth === tr…
+    464|     expect(open).toEqual([
+       |                  ^
+    465|       'booking_terms():anon+authenticated',
+    466|       'private.is_admin():authenticated',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 38 passed (40)
+   Start at  18:14:59
+   Duration  42.20s (tests 99%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=1
