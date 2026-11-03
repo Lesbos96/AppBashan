@@ -2,7 +2,7 @@
 
 Quelle: `docs/OPEN_ISSUES.md` und `docs/ROADMAP.md` (S5b, S8a, S8b-1, S10). Ein Punkt gilt erst als erledigt, wenn sein Prüfweg gelaufen ist. Wer: **Beks** (Konten, Verträge, Dashboard, Schlüssel) oder **CC** (Claude Code: Befehle, Dateien, Prüfläufe). Schlüsselwerte nie in Chat, Logs oder Commits; Befehle laufen über `dotenv-cli`.
 
-**Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt `--include-seed` (Demo-Angebote). Gegen Produktion deshalb nur mit einer eigenen Env-Datei und ohne `--include-seed` aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
+**Wichtig für alle Befehle gegen Produktion:** `npm run db:push` und `npm run geo:import` lesen fest `.env.local` (Dev-Projekt), und `db:push` setzt kein `--include-seed` mehr; Demo-Daten spielt nur `npm run db:seed:dev` ein, und das bricht ab, wenn die Ref nicht die Dev-Ref ist. Gegen Produktion deshalb nur mit einer eigenen Env-Datei aufrufen (Befehle unten), und vorher prüfen, auf welches Projekt `supabase link` zeigt.
 
 Dev-Projekt-Ref: `vcpbbzdyltvffvzjrzdi` (Name: „bekhanidrisov74-hub's Project“, laut `supabase/.temp/linked-project.json`). Jede Ref, die davon abweicht, ist nicht Dev.
 

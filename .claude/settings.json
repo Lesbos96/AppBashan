@@ -2,6 +2,7 @@
   "model": "sonnet",
   "effortLevel": "medium",
   "permissions": {
+    "defaultMode": "default",
     "deny": [
       "Read(./.env)",
       "Read(./.env.local)",
@@ -14,7 +15,44 @@
       "Edit(./.env.*.local)",
       "Edit(./.env.production)",
       "Edit(./.env.development)",
-      "Edit(./supabase/functions/.env)"
+      "Edit(./supabase/functions/.env)",
+      "Bash(sed:*)",
+      "Bash(node -e:*)",
+      "Bash(node --eval:*)",
+      "Bash(git stash:*)",
+      "Bash(git add -A:*)",
+      "Bash(git add .:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git clean:*)",
+      "Bash(npx supabase config push:*)",
+      "Bash(supabase config push:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ],
+    "ask": [
+      "Bash(npm run db:push:*)",
+      "Bash(npx supabase db:*)",
+      "Bash(supabase db:*)",
+      "Bash(npx supabase functions deploy:*)",
+      "Bash(supabase functions deploy:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Bash(rm:*)",
+      "Bash(npx dotenv:*)",
+      "Bash(dotenv:*)",
+      "Bash(npx supabase migration repair:*)",
+      "Bash(supabase migration repair:*)",
+      "Bash(npx supabase secrets:*)",
+      "Bash(supabase secrets:*)",
+      "Bash(npx supabase link:*)",
+      "Bash(supabase link:*)",
+      "PowerShell(Set-Content:*)",
+      "PowerShell(Add-Content:*)",
+      "PowerShell(Out-File:*)",
+      "PowerShell(Remove-Item:*)"
     ]
   }
 }
