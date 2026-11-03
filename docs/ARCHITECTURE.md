@@ -3,7 +3,7 @@
 Stand S1 (2026-10-29). Verbindlich für S2–S10. Schema: `supabase/migrations/` (0001 Fundament, 0002 Härtung), Typen: `supabase/functions/_shared/database.types.ts` (`npm run db:types`).
 
 ## Rollen
-`profiles.role` (Enum `user_role`): **customer** (Standard, per Trigger beim Anlegen des Auth-Nutzers), **rental_provider** (nur über RPC `become_rental_provider()` aus Profil → „Für Vermieter"; wandelt nur `customer` um), **admin** (nur per SQL im Supabase-Dashboard), **partner** (nur im Enum, Portal ist „Später"). Rechte auf eigene Daten hängen am Eigentum (`customer_id = auth.uid()`), nicht an der Rolle: Wer Vermieter wird, behält seine Anfragen.
+`profiles.role` (Enum `user_role`): **customer** (Standard, per Trigger beim Anlegen des Auth-Nutzers), **rental_provider** (nur über `admin_grant_role` durch den Datenbank-Eigentümer, mit Journal; kein Selbst-Upgrade, `become_rental_provider()` entfällt seit Migration 0022), **admin** (nur per SQL im Supabase-Dashboard), **partner** (nur im Enum, Portal ist „Später"). Rechte auf eigene Daten hängen am Eigentum (`customer_id = auth.uid()`), nicht an der Rolle: Wer Vermieter wird, behält seine Anfragen.
 
 ## Datenmodell
 Alle Beträge Integer-Cent. Enums: `service_type` (transport, move, clearance, assembly), `request_status` (s. u.), `region` (vienna, austria, international), `offer_status` (pending, approved, archived).

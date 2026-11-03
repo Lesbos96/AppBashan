@@ -712,7 +712,7 @@ for (const r of results) {
   report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
 }
 report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
-report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
+report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, ${count('SQL', 'Verfügbarkeit')} Verfügbarkeit, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
 writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
 const allGood = results.every((r) => r.good) && same
 console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')

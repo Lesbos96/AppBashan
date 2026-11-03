@@ -156,7 +156,7 @@ Alle Aussagen unten sind aus den Dateien belegt (Erhebung per Lesezugriff, Stich
 | U6 | `fee_splits`: eine Zeile je Anfrage, Upsert, Kaskadenlöschung, `payee` null bei Kontolöschung [B27] | M01:196-212, M10:97-100, `docs/OPEN_ISSUES.md:7` | Journal R11 |
 | U7 | Gebühr entsteht beim Absenden ohne Empfänger [B26] | H:259 | R10 |
 | U8 | Gebührensatz ohne Gültigkeitsdatum [B29] | M10:21-24 | R12 |
-| U9 | `become_rental_provider` macht sofort zum Vermieter; ein Kunde könnte sich so Zugriff auf den Gebührensatz verschaffen [B13, B36] | M01:60-69, M01:290-299 | R8; die Funktion entfällt in S9b |
+| U9 | `become_rental_provider` macht sofort zum Vermieter; ein Kunde könnte sich so Zugriff auf den Gebührensatz verschaffen [B13, B36] | M01:60-69, M01:290-299 | R8; die Funktion entfällt seit S9a-4c (Migration 0022) |
 | U10 | Ein Login je Firma (`partners.id = profiles.id`) [B15] | `docs/ARCHITECTURE.md:25` | `partner_members` |
 | U11 | Bucket prüft nur den Header; kein Partner-Bereich [B14] | `docs/OPEN_ISSUES.md:103` | Abschnitt 7 |
 | U12 | Konto löschen kaskadiert auf bestätigte Aufträge (Kaskade M01:107, 174); der Fremdschlüssel M01:173 ohne Kaskade blockiert dagegen das Löschen eines Vermieters mit Buchungen (`docs/OPEN_ISSUES.md:7`) [B35, B38] | M01:107, 174; M01:146, 173 | R11, S9h |
