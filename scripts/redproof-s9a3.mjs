@@ -221,12 +221,18 @@ const run = async () => {
     probe: () => probe({ stmt: 'perform 1 from public.geo_districts', value: `(select count(*) from public.geo_districts)`, role: 'authenticated', claims: custClaims }),
     loose: 'ok | 23', locked: '42501: permission denied for table geo_districts | 23',
   })
+  // Isoliert (M-3, Berater S9a-4c): innere Schichten nur in der Probe-Transaktion offen (Rollback), umgeschaltet wird allein die Zielsperre.
+  // geocode_cache: eigene Testzeile, Lese-Policy nur in der Probe; Wert = Zeilen der Testzeile aus Kundensicht (Startwert 0, bleibt bei Fehler 0).
+  const gcKey = `redproof:${randomUUID()}`
   add({
-    ...grantToggle('geocode_cache: SELECT für authenticated (Schicht: RLS ohne Policy)', 'grant select on public.geocode_cache to authenticated', 'revoke select on public.geocode_cache from authenticated'),
-    kind: 'Schicht', tests: 'geocode_cache und geo_districts', testFile: 'tests/rls/quote-hardening.test.ts',
-    // Zeilen, die der Kunde sieht (nicht die der Tabelle: der Cache füllt sich mit jedem Geocode-Aufruf der Tests)
-    probe: () => probe({ stmt: `perform set_config('app.probe_val', (select count(*) from public.geocode_cache)::text, true)`, value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: custClaims }),
-    loose: 'ok | 0', locked: '42501: permission denied for table geocode_cache | <null>',
+    ...grantToggle('geocode_cache: SELECT für authenticated (isoliert: Lese-Policy nur in der Probe)', 'grant select on public.geocode_cache to authenticated', 'revoke select on public.geocode_cache from authenticated'),
+    tests: 'geocode_cache und geo_districts', testFile: 'tests/rls/quote-hardening.test.ts',
+    probe: () => probe({
+      setup: `insert into public.geocode_cache (key, value, expires_at) values (${q1(gcKey)}, '[]', now() + interval '1 hour'); create policy redproof_gc on public.geocode_cache for select to authenticated using (true); select set_config('app.probe_val', '0', true)`,
+      stmt: `perform set_config('app.probe_val', (select count(*) from public.geocode_cache where key = ${q1(gcKey)})::text, true)`,
+      value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: custClaims,
+    }),
+    loose: 'ok | 1', locked: '42501: permission denied for table geocode_cache | 0',
   })
   add({
     ...grantToggle('quote_district: EXECUTE für authenticated (Schicht: kein Recht auf geo_boundaries)', 'grant execute on function public.quote_district(double precision, double precision) to authenticated', 'revoke execute on function public.quote_district(double precision, double precision) from authenticated'),
@@ -234,12 +240,31 @@ const run = async () => {
     probe: () => probe({ stmt: 'perform * from public.quote_district(16.3731, 48.2086)', value: `(select district from public.quote_district(16.3731, 48.2086))`, role: 'authenticated', claims: custClaims }),
     loose: '42501: permission denied for table geo_boundaries | 1', locked: '42501: permission denied for function quote_district | 1',
   })
+  // quote_save_request ist SECURITY INVOKER (0020): ohne diese Öffnung hielte immer die nächste Schicht.
+  const STAGING = 'public.photo_staging_interval()'
+  const INNER = [
+    'create policy redproof_ps on public.platform_settings for select to authenticated using (true)',
+    'grant insert on public.service_requests, public.price_revisions, public.request_contacts, public.audit_log to authenticated',
+    'grant update (current_revision) on public.service_requests to authenticated',
+    'create policy redproof_sr_i on public.service_requests for insert to authenticated with check (true)',
+    'create policy redproof_sr_u on public.service_requests for update to authenticated using (true) with check (true)',
+    'create policy redproof_pr_i on public.price_revisions for insert to authenticated with check (true)',
+    'create policy redproof_rc_i on public.request_contacts for insert to authenticated with check (true)',
+    'create policy redproof_al_i on public.audit_log for insert to authenticated with check (true)',
+  ].join('; ')
+  // Wert = Anfragen des Kunden: gelockert legt die Funktion eine an (2), gesperrt bleibt es bei 1 mit dem 42501 der Zielsperre.
+  const saveProbe = (open) => () => probe({ setup: `${INNER}; grant execute on function ${open} to authenticated`, stmt: `perform ${callSql()}`, value: reqCount, role: 'authenticated', claims: custClaims })
   add({
-    ...grantToggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
-    kind: 'Schicht', tests: 'Schreib-Funktionen: anon und authenticated erhalten 42501', testFile: 'tests/rls/quote.test.ts',
-    probe: () => probe({ stmt: `perform ${callSql()}`, value: reqCount, role: 'authenticated', claims: custClaims }),
-    // seit 0020 ruft quote_save_request zuerst photo_staging_interval() auf: dessen fehlendes EXECUTE ist die Schicht dahinter
-    loose: '42501: permission denied for function photo_staging_interval | 1', locked: '42501: permission denied for function quote_save_request | 1',
+    ...grantToggle('quote_save_request: EXECUTE für authenticated (isoliert: innere Schichten und photo_staging_interval nur in der Probe offen)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
+    tests: 'Schreib-Funktionen: anon und authenticated erhalten 42501', testFile: 'tests/rls/quote.test.ts',
+    probe: saveProbe(STAGING),
+    loose: 'ok | 2', locked: '42501: permission denied for function quote_save_request | 1',
+  })
+  add({
+    ...grantToggle('photo_staging_interval: EXECUTE für authenticated (isoliert: innere Schichten und quote_save_request nur in der Probe offen)', `grant execute on function ${STAGING} to authenticated`, `revoke execute on function ${STAGING} from authenticated`),
+    tests: null,
+    probe: saveProbe(SAVE),
+    loose: 'ok | 2', locked: '42501: permission denied for function photo_staging_interval | 1',
   })
   // 4b. Nachzug S9a-1 (A1-N2, A1-N3): Sperren aus 0015/0016 mit Ist-Wert; Version 9990 wird nie angelegt -----------------------------------
   const publishAuthed = 'public.publish_version(uuid, int)'

@@ -13,10 +13,10 @@ import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/phot
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { formatEuro } from '../../lib/money'
-import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
+import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
-import { type UploadFailure, discardStaging, failureText, photoRejectedText, uploadAll } from '../../lib/uploads'
+import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
 import { objectOf } from '../entruempelung/options'
 import { dayText } from './format'
 
@@ -181,12 +181,14 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const [uploaded, setUploaded] = useState(0)
   const busy = useRef(false)
   const sentRef = useRef(false)
-  useEffect(
-    () => () => {
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
       if (sentRef.current) clearPhotos(photoKey)
-    },
-    [photoKey],
-  )
+    }
+  }, [photoKey])
   const [accepted, setAccepted] = useState<Accepted>({})
   const [saved] = useState(() => readContact(path))
   const [name, setName] = useState(saved.name)
@@ -217,6 +219,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   /** Für „Anderes Konto“ und nach einem 401: ohne Abmelden leitet die Anmeldung bei bestehender Sitzung sofort zurück. */
   const otherAccount = async () => {
     stashDraft(path)
+    // noch mit der alten Sitzung: deren Staging-Dateien zählen sonst bis zum Aufräumen gegen ihr Kontingent
+    await discardStaging(supabase)
     await leaveAccount()
     void navigate(`/anmelden?next=${encodeURIComponent(`/${path}/zusammenfassung`)}`)
   }
@@ -227,7 +231,6 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
     busy.current = true
     setStatus({ kind: 'sending' })
     setUploaded(0)
-    let staged: { userId: string; clientRef: string; photos: ReturnType<typeof getPhotos> } | null = null
     try {
       const { data } = await supabase.auth.getSession()
       const live = data.session
@@ -242,27 +245,30 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         void navigate(`/${path}/termin`, { replace: true })
         return
       }
-      // clientRef aus dem Entwurf ohne die bestätigten Angaben: nach einem 409 bleibt sie dieselbe
-      const clientRef = refFor(path, { ...body, priceVersion: 0, termsHash: '', shown: null })
-      // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
       const toSend = getPhotos(photoKey)
-      staged = { userId: live.user.id, clientRef, photos: toSend }
+      const photoIds = toSend.map((p) => p.id)
+      // clientRef: Entwurf ohne die bestätigten Angaben (nach einem 409 bleibt sie) und mit dem Fotosatz (anderer Satz = neuer Versuch)
+      const clientRef = refFor(path, refBody(body, photoIds))
+      // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; ein Ref-Wechsel entfernt vorher die Dateien der alten Ref (uploads.ts).
+      // `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
       const failure = await uploadAll(supabase, live.user.id, clientRef, toSend, setUploaded)
       if (failure) {
         setStatus({ kind: 'photos', failure })
         return
       }
-      const quote = await sendQuote({ ...body, photoIds: toSend.map((p) => p.id) }, clientRef, live.access_token)
-      sentRef.current = true // geleert wird erst beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
+      const quote = await sendQuote({ ...body, photoIds }, clientRef, live.access_token)
+      forgetStaging()
+      sentRef.current = true // geleert wird beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
+      if (!mounted.current) clearPhotos(photoKey) // Seite während des Sendens verlassen: der Cleanup lief schon
       finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
       if (error.kind === 'rate_limited') setWait(60)
       // Der Server nimmt die Staging-Dateien nicht an: alte Dateien wegräumen, beim erneuten Senden neue Namen
-      if (error.kind === 'rejected' && staged && reuploadCodes.includes(error.code ?? '')) {
-        await discardStaging(supabase, staged.userId, staged.clientRef, staged.photos).catch(() => undefined)
-        renewPhotoIds(photoKey)
+      if (error.kind === 'rejected' && reuploadCodes.includes(error.code ?? '')) {
+        await discardStaging(supabase)
+        renewPhotoIds(photoKey) // neue IDs = neue clientRef; gespeichert wurde nichts
       }
       // Ein 409 ohne alles, was der Kunde bestätigen müsste, ist nicht bestätigbar: wie nicht verfügbar behandeln (sonst Schleife aus 409)
       const incomplete = (error.kind === 'price_changed' && (!error.conflict.snapshot || error.conflict.priceVersion === undefined)) || (error.kind === 'terms_changed' && !error.conflict.terms)

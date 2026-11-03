@@ -146,13 +146,39 @@ test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Date
       await expect.poll(() => calls.removedFiles).toEqual([first.map((id) => `u-1/${quoteCalls[0]!.body.clientRef}/${id}.jpg`)])
       await sendButton(page).click()
       await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
-      expect(quoteCalls[1]!.body.clientRef).toBe(quoteCalls[0]!.body.clientRef) // dieselbe Anfrage
+      expect(quoteCalls[1]!.body.clientRef).not.toBe(quoteCalls[0]!.body.clientRef) // neue IDs = neue Ref (M-1); gespeichert wurde nichts
       const second = ids(quoteCalls[1]!.body)
       expect(second).toHaveLength(2)
       expect(second.filter((id) => first.includes(id))).toEqual([]) // neue Dateinamen
       expect(calls.uploads).toHaveLength(4)
     })
   }
+})
+
+test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt', async ({ page }) => {
+  const calls = await mockPhotos(page)
+  const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
+  await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
+  const first = quoteCalls[0]!.body
+  const [id1, id2] = ids(first)
+  await page.getByRole('link', { name: 'Termin' }).click() // über die App zurück: ein Neuladen oder goBack verwürfe bzw. verfehlte die Fotos im Speicher
+  await expect(page.getByRole('heading', { name: 'Wann passt es?' })).toBeVisible()
+  await page.getByRole('link', { name: 'Entrümpelung' }).click() // Ergebnis
+  await page.getByRole('link', { name: 'Zurück' }).click() // zurück in den Wizard, letzter Schritt = Fotos
+  await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
+  await expect(page.getByText('1 von 8')).toBeVisible()
+  await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
+  await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
+  await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
+  await page.getByRole('checkbox').check()
+  await expect(page.getByRole('img', { name: /^Foto / })).toHaveCount(1)
+  await sendButton(page).click()
+  await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+  const second = quoteCalls[1]!.body
+  expect(second.clientRef).not.toBe(first.clientRef)
+  expect(ids(second)).toEqual([id2]) // genau das angezeigte Foto
+  expect(calls.uploads.at(-1)!.path).toBe(`u-1/${second.clientRef}/${id2}.jpg`)
+  expect(calls.removedFiles).toEqual([[`u-1/${first.clientRef}/${id1}.jpg`, `u-1/${first.clientRef}/${id2}.jpg`]])
 })
 
 test('422 too_many_photos: eigener Text, Weg zurück zu den Angaben', async ({ page }) => {

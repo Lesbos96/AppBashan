@@ -345,10 +345,4 @@ describe('audit_log, Rollen, aal2-Admin', () => {
       grant_effect_ok: 'ok',
     })
   })
-
-  it('become_rental_provider bleibt der Weg zur Vermieter-Rolle (Marker im eigenen Konto)', async () => {
-    expect(must(await cust.db.rpc('become_rental_provider'))).toBe('rental_provider')
-    expect(must(await service.from('profiles').select('role').eq('id', cust.id).single()).role).toBe('rental_provider')
-    expect(must(await adm.db.rpc('become_rental_provider'))).toBe('admin')
-  })
 })

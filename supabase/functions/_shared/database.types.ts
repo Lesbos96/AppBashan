@@ -843,10 +843,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      become_rental_provider: {
-        Args: never
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
       booking_terms: { Args: never; Returns: Json }
       photo_cleanup: { Args: never; Returns: undefined }
       photo_orphans: {

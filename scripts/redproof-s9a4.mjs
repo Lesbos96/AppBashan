@@ -34,9 +34,9 @@ const SNAPSHOT = `
   union all
   select 'trigger', tgrelid::regclass || ' ' || tgenabled::text || ' ' || pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS}
   union all
-  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count'))
-       or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting'))
+  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') || ' ' || p.proowner::regrole::text || ' ' || p.prosecdef::text || ' ' || coalesce(p.proconfig::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count', 'my_role', 'is_admin'))
+       or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting', 'become_rental_provider', 'admin_grant_role'))
   union all
   select 'coldefault', table_name || '.' || column_name || ' ' || coalesce(column_default, '<kein Default>') from information_schema.columns where table_schema = 'public' and table_name = 'request_photos'
   union all
@@ -353,13 +353,14 @@ const run = async () => {
   const noReq = `not exists (select 1 from public.service_requests r where r.customer_id = (select auth.uid()) and r.client_ref::text = (storage.foldername(name))[2])`
   const form = `name ~ ${RX}`
   const noRow = `not exists (select 1 from public.request_photos p where p.storage_path = objects.name)`
+  const cnt = `(select private.staging_photo_count()) < 40` // Mengengrenze (0021): bleibt bei allen Lockerungen außer der eigenen erhalten, damit sie allein die Zielbedingung messen (N-2)
   const insProbe = (name) => () => probe({ stmt: putAs(name), value: objCount(name), role: 'authenticated', claims: claims(A) })
   const foreignName = `${B.id}/${refPl}/${id()}.jpg`
   const lateName = `${A.id}/${ref1}/${id()}.jpg`
   const oddName = `${A.id}/${refPl}/foto.jpg`
-  add({ ...policyLoosen('Storage-INSERT: Fremdordner-Bedingung entfernt (Datei in Ordner eines anderen)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${noReq} and ${noRow}`), tests: 'fremder Ordner', probe: insProbe(foreignName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
-  add({ ...policyLoosen('Storage-INSERT: Bedingung „keine Anfrage zu client_ref“ entfernt (Hinzufügen nach dem Absenden)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noRow}`), tests: 'in den Ordner', probe: insProbe(lateName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
-  add({ ...policyLoosen('Storage-INSERT: Pfadform nicht mehr geprüft', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${own} and ${noReq} and ${noRow}`), tests: 'falsche Pfadform', probe: insProbe(oddName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+  add({ ...policyLoosen('Storage-INSERT: Fremdordner-Bedingung entfernt (Datei in Ordner eines anderen)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${noReq} and ${noRow} and ${cnt}`), tests: 'fremder Ordner', probe: insProbe(foreignName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+  add({ ...policyLoosen('Storage-INSERT: Bedingung „keine Anfrage zu client_ref“ entfernt (Hinzufügen nach dem Absenden)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noRow} and ${cnt}`), tests: 'in den Ordner', probe: insProbe(lateName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
+  add({ ...policyLoosen('Storage-INSERT: Pfadform nicht mehr geprüft', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${own} and ${noReq} and ${noRow} and ${cnt}`), tests: 'falsche Pfadform', probe: insProbe(oddName), loose: 'ok | 1', locked: `${RLS_DENIED} | 0` })
   // 7. Storage-Policies: Löschen und Ersetzen über die Storage-API (Direkt-DELETE auf storage.objects sperrt Supabase selbst) -------------------
   const removeProbe = (owner, victim) => async () => {
     const name = victim()
@@ -413,7 +414,7 @@ const run = async () => {
     return `${r.error ? r.error.statusCode : 'ok'} | ${there ? 1 : 0}`
   }
   add({ ...policyLoosen('Storage-DELETE: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: hier hält allein die Zeile)', 'request_photos_objects_delete', 'storage.objects', 'using', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyDelete, loose: 'entfernt 1 | Datei weg', locked: 'entfernt 0 | Datei da' })
-  add({ ...policyLoosen('Storage-INSERT: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: Name einer übernommenen Datei)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyInsert, loose: 'ok | 1', locked: '403 | 0' })
+  add({ ...policyLoosen('Storage-INSERT: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: Name einer übernommenen Datei)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq} and ${cnt}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyInsert, loose: 'ok | 1', locked: '403 | 0' })
 
   // 7c. Migration 0021: Kontingent (40 eigene, nicht übernommene Dateien), kein Default, NULL-Pfad. C hat 40 Dateien, E 39 plus eine übernommene (Alt-Zeile).
   const forty = async (u, n) => {
@@ -435,7 +436,7 @@ const run = async () => {
     return `${r.error ? r.error.statusCode : 'ok'} | ${n}`
   }
   add({ ...policyLoosen('Storage-INSERT: Mengengrenze (40) entfernt (41. Datei eines Kontos)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq} and ${noRow}`), tests: 'bis zur Grenze erlaubt', probe: overLimit(C), loose: 'ok | 41', locked: '403 | 40' })
-  add({ ...patchFn('staging_photo_count: übernommene Dateien zählen mit (Aussperr-Schutz: 40 Dateien, davon eine übernommen)', 'private.staging_photo_count()', 'and not exists (select 1 from public.request_photos p where p.storage_path = o.name)', ''), tests: 'bis zur Grenze erlaubt', probe: overLimit(E), loose: '403 | 40', locked: 'ok | 41' })
+  add({ ...patchFn('staging_photo_count: übernommene Dateien zählen mit (Aussperr-Schutz: 40 Dateien, davon eine übernommen)', 'private.staging_photo_count()', 'and not exists (select 1 from public.request_photos p where p.storage_path = o.name)', ''), kind: 'Verfügbarkeit', tests: 'bis zur Grenze erlaubt', probe: overLimit(E), loose: '403 | 40', locked: 'ok | 41' })
   const notNull = 'null value in column "storage_path" of relation "request_photos" violates not-null constraint'
   const noPath = `insert into public.request_photos (request_id) values ('${R2}')`
   add({
@@ -471,23 +472,82 @@ const run = async () => {
     probe: () => probe({ setup: `update storage.objects set created_at = now() - interval '24 hours 30 minutes' where bucket_id = '${BUCKET}' and name = '${path(A, refS, S1)}'`, stmt: 'perform 1', value: orphans([path(A, refS, S1)]), role: 'service_role' }),
     loose: 'ok | 1', locked: 'ok | 0',
   })
-  for (const [label, sig, extra] of [
-    ['photo_orphans: EXECUTE für authenticated (Schicht: kein Recht auf photo_staging_interval)', 'public.photo_orphans()', 'perform * from public.photo_orphans()'],
-    ['photo_staging_interval: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', INTERVAL, 'perform public.photo_staging_interval()'],
-  ]) {
-    add({
-      ...toggle(label, `grant execute on function ${sig} to authenticated`, `revoke execute on function ${sig} from authenticated`, 'Schicht'),
-      tests: null,
-      probe: () => probe({ stmt: extra, value: '1', role: 'authenticated', claims: claims(A) }),
-      loose: sig === INTERVAL ? 'P0001: setting_missing | 1' : '42501: permission denied for function photo_staging_interval | 1',
-      locked: `42501: permission denied for function ${sig.includes('orphans') ? 'photo_orphans' : 'photo_staging_interval'} | 1`,
-    })
-  }
   add({
-    ...toggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`, 'Schicht'),
+    ...toggle('photo_orphans: EXECUTE für authenticated (Schicht: kein Recht auf photo_staging_interval)', `grant execute on function public.photo_orphans() to authenticated`, `revoke execute on function public.photo_orphans() from authenticated`, 'Schicht'),
     tests: null,
-    probe: () => probe({ stmt: `perform ${callSql({ p_client_ref: randomUUID() })}`, value: `(select count(*) from public.service_requests where customer_id = '${A.id}')`, role: 'authenticated', claims: claims(A) }),
-    loose: '42501: permission denied for function photo_staging_interval | 3', locked: '42501: permission denied for function quote_save_request | 3',
+    probe: () => probe({ stmt: 'perform * from public.photo_orphans()', value: '1', role: 'authenticated', claims: claims(A) }),
+    loose: '42501: permission denied for function photo_staging_interval | 1', locked: '42501: permission denied for function photo_orphans | 1',
+  })
+  // Isoliert (M-3, Berater S9a-4c): quote_save_request ist SECURITY INVOKER (0020); die inneren Schichten (RLS auf platform_settings, fehlende
+  // Schreibrechte auf vier Tabellen) sind nur in der Probe-Transaktion offen (Rollback), umgeschaltet wird allein die Zielsperre.
+  // Wert = Anfragen des Kunden A: gelockert legt die Funktion eine Anfrage an (n+1), gesperrt bleibt es bei n mit dem 42501 der Zielsperre.
+  const reqCount = `(select count(*) from public.service_requests where customer_id = '${A.id}')`
+  const INNER = [
+    'create policy redproof_ps on public.platform_settings for select to authenticated using (true)',
+    'grant insert on public.service_requests, public.price_revisions, public.request_contacts, public.audit_log to authenticated',
+    'grant update (current_revision) on public.service_requests to authenticated',
+    'create policy redproof_sr_i on public.service_requests for insert to authenticated with check (true)',
+    'create policy redproof_sr_u on public.service_requests for update to authenticated using (true) with check (true)',
+    'create policy redproof_pr_i on public.price_revisions for insert to authenticated with check (true)',
+    'create policy redproof_rc_i on public.request_contacts for insert to authenticated with check (true)',
+    'create policy redproof_al_i on public.audit_log for insert to authenticated with check (true)',
+  ].join('; ')
+  const saveProbe = (open) => () => probe({ setup: `${INNER}; grant execute on function ${open} to authenticated`, stmt: `perform ${callSql({ p_client_ref: randomUUID() })}`, value: reqCount, role: 'authenticated', claims: claims(A) })
+  add({
+    ...toggle('quote_save_request: EXECUTE für authenticated (isoliert: innere Schichten und photo_staging_interval nur in der Probe offen)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
+    tests: null,
+    probe: saveProbe(INTERVAL),
+    loose: 'ok | 4', locked: '42501: permission denied for function quote_save_request | 3',
+  })
+  add({
+    ...toggle('photo_staging_interval: EXECUTE für authenticated (isoliert: innere Schichten und quote_save_request nur in der Probe offen)', `grant execute on function ${INTERVAL} to authenticated`, `revoke execute on function ${INTERVAL} from authenticated`),
+    tests: null,
+    probe: saveProbe(SAVE),
+    loose: 'ok | 4', locked: '42501: permission denied for function photo_staging_interval | 3',
+  })
+  // 0022: Selbst-Upgrade. Gelockert = Funktion und Recht aus 0001/0016 wieder da; Wert = Gebührenschlüssel aus Kundensicht (Startwert 0).
+  const anonDb = mkClient(PUB)
+  let brpOn = false
+  const rpcReady = async () => {
+    // PostgREST lädt das Schema nach DDL neu; erst dann sieht der zuständige Test den Zustand
+    for (let i = 0; i < 20; i++) {
+      const missing = (await anonDb.rpc('become_rental_provider')).error?.code === 'PGRST202'
+      if (missing !== brpOn) return
+      await new Promise((r) => setTimeout(r, 500))
+    }
+    throw new Error('PostgREST-Schema nicht nachgeladen')
+  }
+  const BRP = `create function public.become_rental_provider() returns public.user_role
+language plpgsql security definer set search_path = ''
+as $f$
+declare
+  uid uuid := (select auth.uid());
+  r public.user_role;
+begin
+  perform set_config('app.mv_role_grant', uid::text || ':rental_provider', true);
+  update public.profiles set role = 'rental_provider' where id = uid and role = 'customer';
+  perform set_config('app.mv_role_grant', '', true);
+  select role into r from public.profiles where id = uid;
+  return r;
+end
+$f$;
+revoke all on function public.become_rental_provider() from public, anon;
+grant execute on function public.become_rental_provider() to authenticated;
+notify pgrst, 'reload schema'`
+  add({
+    label: 'become_rental_provider entfernt (0022): Kunde stuft sich selbst hoch und liest den Gebührensatz', kind: 'Sperre', save: () => null,
+    apply: () => { sql(BRP); brpOn = true },
+    restore: () => { sql(`drop function public.become_rental_provider(); notify pgrst, 'reload schema'`); brpOn = false },
+    tests: 'kein Selbst-Upgrade', testFile: 'tests/rls/rls.test.ts',
+    probe: async () => {
+      await rpcReady()
+      return probe({
+        setup: `select set_config('app.probe_val', '0', true)`,
+        stmt: `perform public.become_rental_provider(); perform set_config('app.probe_val', (select count(distinct key) from public.platform_settings where key in ('fee_rate', 'fee_vat_rate'))::text, true)`,
+        value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: claims(A),
+      })
+    },
+    loose: 'ok | 2', locked: '42883: function public.become_rental_provider() does not exist | 0',
   })
 
   // --- Läufe --------------------------------------------------------------------------------------------------------------------------------

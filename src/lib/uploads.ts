@@ -11,7 +11,7 @@ const SIGNED_SECONDS = 10 * 60
 export type UploadFailure = 'offline' | 'too_big' | 'denied' | 'failed'
 
 export const failureText: Record<UploadFailure, string> = {
-  offline: 'Keine Verbindung. Die Fotos sind noch nicht hochgeladen, die Anfrage ist nicht gesendet.',
+  offline: 'Keine Verbindung. Die Fotos sind noch nicht hochgeladen.',
   too_big: 'Ein Foto ist zu groß. Geh zurück, wähle ein kleineres Foto und sende die Anfrage erneut.',
   denied: 'Die Fotos lassen sich gerade nicht hochladen. Versuche es später noch einmal.',
   failed: 'Die Fotos konnten nicht hochgeladen werden. Versuche es gleich noch einmal.',
@@ -29,22 +29,41 @@ const isOffline = (error: { message?: string; code?: string }) => navigator.onLi
 /** Staging-Pfad `{user}/{clientRef}/{id}.jpg`: die Datenbank prüft ihn in den Storage-Policies und beim Übernehmen durch `quote`. */
 const stagingPath = (userId: string, clientRef: string, photo: Photo) => `${userId}/${clientRef}/${photo.id}.jpg`
 
-// Pfade, die in dieser Sitzung schon liegen: ein erneutes Senden (z. B. nach einem 409) lädt nichts doppelt hoch.
-const uploaded = new Set<string>()
+/**
+ * Staging-Stand dieser Sitzung: Konto, Ref und die Pfade, die dort liegen. Dieselbe Ref lädt nichts doppelt hoch (z. B. nach einem 409).
+ * Wechselt die Ref (geänderte Angaben oder Fotos), werden vorher die alten Dateien entfernt; sonst zählen sie bis zum Aufräumen gegen das Kontingent (0021).
+ */
+type Staged = { userId: string; clientRef: string; paths: Set<string> }
+let staged: Staged | null = null
+
+/** Löschen erlaubt die Delete-Policy (0021) nur im eigenen Ordner ohne Anfrage zur Ref: übernommene Fotos bleiben. Fehler sind egal, den Rest räumt photo_cleanup auf. */
+async function removePaths(db: Db, paths: string[]): Promise<void> {
+  if (paths.length === 0) return
+  try {
+    await db.storage.from(BUCKET).remove(paths)
+  } catch {
+    // siehe oben
+  }
+}
+
+async function stagingFor(db: Db, userId: string, clientRef: string): Promise<Staged> {
+  if (staged && staged.userId === userId && staged.clientRef === clientRef) return staged
+  const old = staged
+  staged = { userId, clientRef, paths: new Set() }
+  // Anderes Konto: dessen Ordner ist für diese Sitzung gesperrt; „Anderes Konto“ räumt vorher mit `discardStaging` auf.
+  if (old && old.userId === userId) await removePaths(db, [...old.paths])
+  return staged
+}
 
 /** Ein Foto ins Staging, ohne Upsert (es gibt keine Update-Policy). „Gibt es schon“ zählt als Erfolg: dieselbe ID ist dieselbe Datei. */
-export async function uploadPhoto(db: Db, userId: string, clientRef: string, photo: Photo): Promise<UploadFailure | null> {
+async function uploadPhoto(db: Db, s: Staged, photo: Photo): Promise<UploadFailure | null> {
   if (photo.blob.size > MAX_BYTES) return 'too_big'
-  const path = stagingPath(userId, clientRef, photo)
-  if (uploaded.has(path)) return null
+  const path = stagingPath(s.userId, s.clientRef, photo)
+  if (s.paths.has(path)) return null
   const upload = await db.storage.from(BUCKET).upload(path, photo.blob, { contentType: 'image/jpeg', upsert: false })
-  if (!upload.error) {
-    uploaded.add(path)
-    return null
-  }
-  const status = (upload.error as { statusCode?: string }).statusCode
-  if (status === '409' || /already exists/i.test(upload.error.message)) {
-    uploaded.add(path)
+  const status = upload.error ? (upload.error as { statusCode?: string }).statusCode : undefined
+  if (!upload.error || status === '409' || /already exists/i.test(upload.error.message)) {
+    s.paths.add(path)
     return null
   }
   if (status === '413') return 'too_big'
@@ -54,20 +73,26 @@ export async function uploadPhoto(db: Db, userId: string, clientRef: string, pho
 
 /** Alle Fotos nacheinander; der erste Fehler bricht ab, `onDone` meldet die Zahl der Fotos, die liegen. */
 export async function uploadAll(db: Db, userId: string, clientRef: string, photos: readonly Photo[], onDone: (n: number) => void): Promise<UploadFailure | null> {
+  const s = await stagingFor(db, userId, clientRef)
   let done = 0
   for (const photo of photos) {
-    const failure = await uploadPhoto(db, userId, clientRef, photo)
+    const failure = await uploadPhoto(db, s, photo)
     if (failure) return failure
     onDone(++done)
   }
   return null
 }
 
-/** Räumt die Staging-Dateien weg, die der Server nicht mehr annimmt (Löschen ist vor dem Absenden erlaubt). Ein Fehler hier ist egal: den Rest räumt der Server auf. */
-export async function discardStaging(db: Db, userId: string, clientRef: string, photos: readonly Photo[]): Promise<void> {
-  const paths = photos.map((p) => stagingPath(userId, clientRef, p))
-  paths.forEach((p) => uploaded.delete(p))
-  if (paths.length > 0) await db.storage.from(BUCKET).remove(paths)
+/** Entfernt die Dateien des aktuellen Stands: nach `photo_missing`/`photo_expired` und vor „Anderes Konto“ (noch mit der alten Sitzung). */
+export async function discardStaging(db: Db): Promise<void> {
+  const old = staged
+  staged = null
+  if (old) await removePaths(db, [...old.paths])
+}
+
+/** Nach dem Absenden: die Dateien gehören zur Anfrage, der nächste Entwurf beginnt ohne Stand. */
+export function forgetStaging(): void {
+  staged = null
 }
 
 /** Signierte Links (10 Minuten) zu den Fotos einer eigenen Anfrage; nie öffentliche Links. */

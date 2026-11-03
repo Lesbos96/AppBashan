@@ -97,9 +97,9 @@ beforeAll(async () => {
   otherProvider = await makeUser('vermieter-2')
   admin = await makeUser('admin')
 
-  // Vermieter-Rolle über den vorgesehenen Weg, admin nur über Eigentümer-SQL (admin_grant_role).
-  expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
-  expect(must(await otherProvider.db.rpc('become_rental_provider'))).toBe('rental_provider')
+  // Rollen nur über Eigentümer-SQL (admin_grant_role, mit Journal); ein Selbst-Upgrade gibt es seit 0022 nicht mehr.
+  ownerGrantRole(provider.id, 'rental_provider')
+  ownerGrantRole(otherProvider.id, 'rental_provider')
   ownerGrantRole(admin.id, 'admin')
 
   requestA = await makeRequest(a.id)
@@ -172,9 +172,8 @@ describe('anon', () => {
     },
   )
 
-  it('lädt keine Fotos und wird nicht Vermieter', async () => {
+  it('lädt keine Fotos', async () => {
     expect((await anon.storage.from('request-photos').download(photoPathB)).error).not.toBeNull()
-    expect((await anon.rpc('become_rental_provider')).error).not.toBeNull()
   })
 })
 
@@ -441,8 +440,32 @@ describe('Rollen', () => {
     ])
   })
 
-  it('der Vermieter-Weg macht nie admin und stuft admin nicht herab', async () => {
-    expect(must(await provider.db.rpc('become_rental_provider'))).toBe('rental_provider')
-    expect(must(await admin.db.rpc('become_rental_provider'))).toBe('admin')
+  it('kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen Gebührensatz', async () => {
+    // Die RPC gibt es seit 0022 nicht mehr; der Name steht deshalb nicht in den generierten Typen.
+    expect((await a.db.rpc('become_rental_provider' as never)).error).not.toBeNull()
+    expect(must(await service.from('profiles').select('role').eq('id', a.id).single()).role).toBe('customer')
+    expect(must(await a.db.from('platform_settings').select('key'))).toEqual([])
+  })
+
+  it('SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste', () => {
+    const rows = ownerSql(`select p.oid::regprocedure::text as fn, pg_get_userbyid(p.proowner) as owner,
+        coalesce(array_to_string(p.proconfig, ','), '') as cfg,
+        has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as auth
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private') and p.prosecdef order by 1`)
+    for (const r of rows) {
+      expect.soft(r.owner, String(r.fn)).toBe('postgres')
+      expect.soft(r.cfg, String(r.fn)).toBe('search_path=""')
+    }
+    const open = rows
+      .filter((r) => r.anon === true || r.auth === true)
+      .map((r) => `${r.fn}:${[r.anon === true && 'anon', r.auth === true && 'authenticated'].filter(Boolean).join('+')}`)
+    expect(open).toEqual([
+      'booking_terms():anon+authenticated',
+      'private.is_admin():authenticated',
+      'private.my_role():authenticated',
+      'private.staging_photo_count():authenticated',
+      'withdraw(uuid):authenticated',
+    ])
   })
 })

@@ -5,7 +5,7 @@ const invoke = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
 
 const { attemptKey, draftKeys, purgeHandover, readSent, readShown, rememberShown, shownKey, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
-const { QuoteError, buildBody, parseSnapshot, priceLabel, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
+const { QuoteError, buildBody, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
 
 const store = () => {
   const map = new Map<string, string>()
@@ -113,6 +113,16 @@ describe('clientRef', () => {
     const b = refFor('montage', { service: 'assembly', preferredDate: '2026-11-16' })
     expect(b).not.toBe(a)
     expect(refFor('montage', { service: 'assembly', preferredDate: '2026-11-16' })).toBe(b)
+  })
+
+  it('hängt am Fotosatz: gleiche IDs in anderer Reihenfolge = gleiche Ref, ein Foto weniger = neue Ref, Bestätigtes zählt nicht', () => {
+    const P1 = 'a0b1c2d3-0000-4000-8000-000000000001'
+    const P2 = 'a0b1c2d3-0000-4000-8000-000000000002'
+    const body = { service: 'clearance', preferredDate: '2026-11-15' }
+    const a = refFor('entruempelung', refBody(body, [P1, P2]))
+    expect(refFor('entruempelung', refBody(body, [P2, P1]))).toBe(a)
+    expect(refFor('entruempelung', refBody({ ...body, priceVersion: 7, termsHash: 'x', shown: { kind: 'offer' } }, [P1, P2]))).toBe(a)
+    expect(refFor('entruempelung', refBody(body, [P2]))).not.toBe(a)
   })
 
   it('ersetzt eine gespeicherte Ref, die keine UUID ist', () => {

@@ -3,6 +3,10 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-11-03 · S9a-4c · Nachabnahme S9a-4b (in Arbeit)
+- `tmp/proof/s9a4c-rot-app.log`: Unit (Z. 1–69) und E2E (Z. 70–185) stammen aus einem parallelen Lauf, den der `test-runner` gestartet hat (nicht die Hauptsession, nicht `advisor-report`); beide schrieben in dieselbe Datei, jeder Lauf hat sein eigenes `EXIT=`. Danach drei Nachläufe des E2E-Tests „Verlorene Antwort“ (Z. 186 ff.): die ersten beiden scheiterten an Locatoren (Navigation), der dritte (Z. 313) an `fotos.spec.ts:178`, der M-1-Assertion. Künftig je Lauf eine eigene Logdatei.
+- `db:push` von 0022 lief vor der Ergänzung „Rollenzählung mit `current_user`“; der Nachtrag steht in `s9a4c-roles.log` (postgres, 0 Nutzer, 0 Profile, 0 `rental_provider`).
+
 ## 2026-10-31 · S8b-2 · Anfragen senden und Aufträge (abgeschlossen, Rest von S8b offen)
 - Termin (`/:service/termin`), Zusammenfassung mit „Anfrage als x@y senden“ und „Anderes Konto“, Bestätigung, Aufträge-Liste (nur eigene Anfragen, Filter `customer_id`, feste Spalten). `clientRef` je Inhalt, Entwurf wandert über die Anmeldung (15 min, localStorage), keine automatischen Wiederholungen. Code: `src/lib/{draft,quote}.ts`, `src/screens/anfrage/`.
 - Server: Mietzeit nur als Wiener Ortszeit, ISO mit Z/Offset gibt 400 (`pickupAt:`/`returnAt:`); neu `formatEuroRounded`. `quote` im Dev-Projekt deployt. Berater: Plan `tmp/proof/s8b2-berater-plan.md`.

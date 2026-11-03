@@ -6,6 +6,7 @@ import { quoteDb } from '../../supabase/functions/_shared/quote/db.ts'
 import { handleQuote, type QuoteDeps } from '../../supabase/functions/_shared/quote/handler.ts'
 import type { Point, ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
 import type { RouteProvider } from '../../supabase/functions/_shared/route/provider.ts'
+import { ownerGrantRole } from '../support/owner.ts'
 import { anon, DENIED, deleteUsers, makeUser, must, pause, run, service, type TestUser } from '../support/db.ts'
 import { assemblyCall, CARGO_VAN, CONTACT, clearanceCall, clearanceInputs, clientRef, geocodeFake, GRAZ, hmac, moveCall, moveInputs, place, post, rentalCall, rentalInput, settle, TERMS, termin, VIENNA_A, VIENNA_B } from '../support/quote.ts'
 
@@ -84,7 +85,7 @@ beforeAll(async () => {
   a = await makeUser('quote-a')
   b = await makeUser('quote-b')
   landlord = await makeUser('quote-vermieter')
-  must(await landlord.db.rpc('become_rental_provider'))
+  ownerGrantRole(landlord.id, 'rental_provider')
   const offer = must(
     await landlord.db
       .from('rental_offers')

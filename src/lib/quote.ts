@@ -48,6 +48,15 @@ export function buildBody(path: Path, tariffs: Tariffs, confirmed: Confirmed): B
 }
 
 /**
+ * Inhalt, aus dem die `clientRef` entsteht: der Entwurf ohne die bestätigten Angaben (nach einem 409 bleibt die Ref) und der Fotosatz
+ * (sortierte IDs). Ein anderer Fotosatz ist ein neuer Versuch: die gespeicherte Anfrage einer Ref hat genau diese Fotos (`quote_save_request`
+ * übernimmt `p_photo_ids` ganz oder gar nicht, der idempotente Zweig liefert die vorhandene Anfrage).
+ */
+export function refBody(body: Body, photoIds: readonly string[]): Body {
+  return { ...body, priceVersion: 0, termsHash: '', shown: null, photoIds: [...photoIds].sort() }
+}
+
+/**
  * `clientRef` je Entwurf: gleicher Inhalt (Doppeltipp, erneuter Versuch) behält die Ref, geänderter Inhalt bekommt eine neue.
  * Sonst lieferte der Server bei geänderten Eingaben die alte gespeicherte Antwort.
  */
