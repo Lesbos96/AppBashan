@@ -1,7 +1,6 @@
-import { useSyncExternalStore } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
-import { MAX_BYTES, MAX_PHOTOS, type Photo } from './photos'
+import { MAX_BYTES, type Photo } from './photos'
 
 type Db = SupabaseClient<Database>
 
@@ -9,115 +8,66 @@ const BUCKET = 'request-photos'
 /** Laufzeit signierter Links in Sekunden (ARCHITECTURE.md, Datenschutz). */
 const SIGNED_SECONDS = 10 * 60
 
-export type UploadFailure = 'offline' | 'limit' | 'too_big' | 'failed' | 'remove_failed'
+export type UploadFailure = 'offline' | 'too_big' | 'denied' | 'failed'
 
 export const failureText: Record<UploadFailure, string> = {
-  offline: 'Keine Verbindung.',
-  limit: `Mehr als ${MAX_PHOTOS} Fotos gehen nicht.`,
-  too_big: 'Das Foto ist zu groß.',
-  failed: 'Das hat nicht geklappt.',
-  remove_failed: 'Entfernen hat nicht geklappt.',
+  offline: 'Keine Verbindung. Die Fotos sind noch nicht hochgeladen, die Anfrage ist nicht gesendet.',
+  too_big: 'Ein Foto ist zu groß. Geh zurück, wähle ein kleineres Foto und sende die Anfrage erneut.',
+  denied: 'Die Fotos lassen sich gerade nicht hochladen. Versuche es später noch einmal.',
+  failed: 'Die Fotos konnten nicht hochgeladen werden. Versuche es gleich noch einmal.',
+}
+
+/** Text zu den 422 von `quote`, die die Fotos betreffen. `photo_missing` und `photo_expired` lädt die App beim erneuten Senden neu hoch. */
+export const photoRejectedText: Record<string, string> = {
+  photo_missing: 'Ein Foto ist nicht angekommen. Wir laden die Fotos beim erneuten Senden neu hoch.',
+  photo_expired: 'Die Fotos lagen zu lange bereit. Wir laden sie beim erneuten Senden neu hoch.',
+  too_many_photos: 'Mehr als 8 Fotos gehen nicht. Entferne Fotos und sende die Anfrage erneut.',
 }
 
 const isOffline = (error: { message?: string; code?: string }) => navigator.onLine === false || (!error.code && /fetch|network|load failed/i.test(error.message ?? ''))
 
-/**
- * Ein Foto, idempotent: erst die Zeile in `request_photos` (die Foto-ID ist der Primärschlüssel, der Server setzt den Pfad
- * `{user}/{request}/{id}.jpg` und prüft Limit und Besitz), dann die Datei. „Gibt es schon“ zählt bei beidem als Erfolg, ein Wiederholen
- * nach einem Abbruch ergibt also nie ein zweites Foto. Bei Fehlern bleibt die Zeile stehen; nur `removeUpload` löscht, den Rest räumt der Server auf.
- */
-export async function uploadPhoto(db: Db, userId: string, requestId: string, photo: Photo): Promise<UploadFailure | null> {
+/** Staging-Pfad `{user}/{clientRef}/{id}.jpg`: die Datenbank prüft ihn in den Storage-Policies und beim Übernehmen durch `quote`. */
+const stagingPath = (userId: string, clientRef: string, photo: Photo) => `${userId}/${clientRef}/${photo.id}.jpg`
+
+// Pfade, die in dieser Sitzung schon liegen: ein erneutes Senden (z. B. nach einem 409) lädt nichts doppelt hoch.
+const uploaded = new Set<string>()
+
+/** Ein Foto ins Staging, ohne Upsert (es gibt keine Update-Policy). „Gibt es schon“ zählt als Erfolg: dieselbe ID ist dieselbe Datei. */
+export async function uploadPhoto(db: Db, userId: string, clientRef: string, photo: Photo): Promise<UploadFailure | null> {
   if (photo.blob.size > MAX_BYTES) return 'too_big'
-  const entry = await db.from('request_photos').insert({ id: photo.id, request_id: requestId })
-  if (entry.error && entry.error.code !== '23505') {
-    if (entry.error.code === '23514') return 'limit'
-    return isOffline(entry.error) ? 'offline' : 'failed'
+  const path = stagingPath(userId, clientRef, photo)
+  if (uploaded.has(path)) return null
+  const upload = await db.storage.from(BUCKET).upload(path, photo.blob, { contentType: 'image/jpeg', upsert: false })
+  if (!upload.error) {
+    uploaded.add(path)
+    return null
   }
-  const upload = await db.storage.from(BUCKET).upload(`${userId}/${requestId}/${photo.id}.jpg`, photo.blob, { contentType: 'image/jpeg', upsert: false })
-  if (!upload.error) return null
   const status = (upload.error as { statusCode?: string }).statusCode
-  if (status === '409' || /already exists/i.test(upload.error.message)) return null
+  if (status === '409' || /already exists/i.test(upload.error.message)) {
+    uploaded.add(path)
+    return null
+  }
   if (status === '413') return 'too_big'
+  if (status === '403' || /row-level security/i.test(upload.error.message)) return 'denied'
   return isOffline(upload.error) ? 'offline' : 'failed'
 }
 
-/** Löscht zuerst die Zeile, dann die Datei (ohne Zeile kann niemand sie mehr sehen; ein Rest wird als Waise aufgeräumt). `false`, wenn die Zeile bleibt. */
-export async function deletePhoto(db: Db, userId: string, requestId: string, id: string): Promise<boolean> {
-  const row = await db.from('request_photos').delete().eq('id', id)
-  if (row.error) return false
-  await db.storage.from(BUCKET).remove([`${userId}/${requestId}/${id}.jpg`])
-  return true
-}
-
-export type UploadEntry = { photo: Photo; status: 'queued' | 'uploading' | 'done' | 'error'; failure: UploadFailure | null }
-
-// Die Warteschlange liegt auf Modulebene wie der Foto-Speicher: Das Verlassen der Bestätigungsseite bricht keinen Upload ab.
-const queues = new Map<string, UploadEntry[]>()
-const contexts = new Map<string, { db: Db; userId: string }>()
-const listeners = new Set<() => void>()
-const empty: UploadEntry[] = []
-
-function setQueue(requestId: string, entries: UploadEntry[]) {
-  queues.set(requestId, entries)
-  listeners.forEach((l) => l())
-}
-
-function patch(requestId: string, id: string, change: Partial<UploadEntry>) {
-  const entries = queues.get(requestId)
-  if (entries) setQueue(requestId, entries.map((e) => (e.photo.id === id ? { ...e, ...change } : e)))
-}
-
-const running = new Set<string>()
-
-/** Arbeitet die wartenden Fotos einer Anfrage nacheinander ab. */
-async function drain(requestId: string) {
-  const ctx = contexts.get(requestId)
-  if (!ctx || running.has(requestId)) return
-  running.add(requestId)
-  try {
-    for (let next = queues.get(requestId)?.find((e) => e.status === 'queued'); next; next = queues.get(requestId)?.find((e) => e.status === 'queued')) {
-      patch(requestId, next.photo.id, { status: 'uploading', failure: null })
-      const failure = await uploadPhoto(ctx.db, ctx.userId, requestId, next.photo)
-      patch(requestId, next.photo.id, failure ? { status: 'error', failure } : { status: 'done', failure: null })
-    }
-  } finally {
-    running.delete(requestId)
+/** Alle Fotos nacheinander; der erste Fehler bricht ab, `onDone` meldet die Zahl der Fotos, die liegen. */
+export async function uploadAll(db: Db, userId: string, clientRef: string, photos: readonly Photo[], onDone: (n: number) => void): Promise<UploadFailure | null> {
+  let done = 0
+  for (const photo of photos) {
+    const failure = await uploadPhoto(db, userId, clientRef, photo)
+    if (failure) return failure
+    onDone(++done)
   }
+  return null
 }
 
-/** Nimmt die Fotos einer gerade gesendeten Anfrage entgegen und lädt sie hoch. */
-export function queueUploads(db: Db, userId: string, requestId: string, photos: readonly Photo[]): void {
-  if (photos.length === 0) return
-  contexts.set(requestId, { db, userId })
-  setQueue(requestId, [...(queues.get(requestId) ?? empty), ...photos.map((photo) => ({ photo, status: 'queued' as const, failure: null }))])
-  void drain(requestId)
-}
-
-export function retryUpload(requestId: string, id: string): void {
-  patch(requestId, id, { status: 'queued', failure: null })
-  void drain(requestId)
-}
-
-export async function removeUpload(requestId: string, id: string): Promise<void> {
-  const entry = queues.get(requestId)?.find((e) => e.photo.id === id)
-  const ctx = contexts.get(requestId)
-  if (!entry || !ctx || entry.status === 'uploading') return
-  // Das Foto bleibt in der Liste, bis der Server die Zeile gelöscht hat; sonst bliebe es unbemerkt bei der Anfrage.
-  if (!(await deletePhoto(ctx.db, ctx.userId, requestId, id))) return patch(requestId, id, { status: 'error', failure: 'remove_failed' })
-  URL.revokeObjectURL(entry.photo.url)
-  setQueue(requestId, (queues.get(requestId) ?? empty).filter((e) => e.photo.id !== id))
-}
-
-export const getUploads = (requestId: string): readonly UploadEntry[] => queues.get(requestId) ?? empty
-
-export function useUploads(requestId: string): readonly UploadEntry[] {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => getUploads(requestId),
-  )
+/** Räumt die Staging-Dateien weg, die der Server nicht mehr annimmt (Löschen ist vor dem Absenden erlaubt). Ein Fehler hier ist egal: den Rest räumt der Server auf. */
+export async function discardStaging(db: Db, userId: string, clientRef: string, photos: readonly Photo[]): Promise<void> {
+  const paths = photos.map((p) => stagingPath(userId, clientRef, p))
+  paths.forEach((p) => uploaded.delete(p))
+  if (paths.length > 0) await db.storage.from(BUCKET).remove(paths)
 }
 
 /** Signierte Links (10 Minuten) zu den Fotos einer eigenen Anfrage; nie öffentliche Links. */

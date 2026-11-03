@@ -1,4 +1,4 @@
-// Stand 0019, nach 0020 nicht mehr lauffähig (quote_save_request hat eine neue Signatur); der Nachweis bleibt docs/proof/s9a3/. Aktuell: redproof-s9a4.mjs.
+// Stand 0019, ab S9a-4b mit der Signatur von 0020 (p_photo_ids); der Nachweis von S9a-3 bleibt docs/proof/s9a3/. Fotos: redproof-s9a4.mjs.
 // Rot-Beweis S9a-3 (nur Dev-Projekt). Drei Teile, jede Prüfung misst den Ist-Wert:
 //  1. SQL-Sperren aus 0019: lockern (committet, Eigentümer-SQL), Probe „Ergebnis | Wert“ (Rollback), wiederherstellen, Probe erneut, zuständiger Test muss gelockert rot werden.
 //  2. Function-Sperren in quote (Redeploy-Beweis R2-N13): Quelltext lockern, deployen, Test muss rot werden (Ist-Wert = Fehlermeldung des Tests),
@@ -55,7 +55,7 @@ const snapshot = () => JSON.stringify(sql(SNAPSHOT))
 const def = (name) => sql(`select pg_get_functiondef('${name}'::regprocedure) as d`)[0].d
 const conDef = (name, table) => sql(`select pg_get_constraintdef(oid) as d from pg_constraint where conname = ${q1(name)} and conrelid = '${table}'::regclass`)[0].d
 
-const SAVE = 'public.quote_save_request(uuid, uuid, public.service_type, jsonb, jsonb, int, int, int, int, text, double precision, double precision, text, double precision, double precision, jsonb, public.region, smallint, date, text, text, numeric, jsonb, jsonb)'
+const SAVE = 'public.quote_save_request(uuid, uuid, public.service_type, jsonb, jsonb, int, int, int, int, text, double precision, double precision, text, double precision, double precision, jsonb, public.region, smallint, date, text, text, numeric, jsonb, jsonb, uuid[])'
 const TERMS = { cancel_free_hours: 48, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) }
 const CONTACT = { name: 'Test Kunde', phone: '+43 660 1234567', email: 'kunde@movenow.test', stairsDoor: null }
 
@@ -224,8 +224,9 @@ const run = async () => {
   add({
     ...grantToggle('geocode_cache: SELECT für authenticated (Schicht: RLS ohne Policy)', 'grant select on public.geocode_cache to authenticated', 'revoke select on public.geocode_cache from authenticated'),
     kind: 'Schicht', tests: 'geocode_cache und geo_districts', testFile: 'tests/rls/quote-hardening.test.ts',
-    probe: () => probe({ stmt: 'perform 1 from public.geocode_cache', value: `(select count(*) from public.geocode_cache)`, role: 'authenticated', claims: custClaims }),
-    loose: 'ok | 0', locked: '42501: permission denied for table geocode_cache | 0',
+    // Zeilen, die der Kunde sieht (nicht die der Tabelle: der Cache füllt sich mit jedem Geocode-Aufruf der Tests)
+    probe: () => probe({ stmt: `perform set_config('app.probe_val', (select count(*) from public.geocode_cache)::text, true)`, value: `current_setting('app.probe_val', true)`, role: 'authenticated', claims: custClaims }),
+    loose: 'ok | 0', locked: '42501: permission denied for table geocode_cache | <null>',
   })
   add({
     ...grantToggle('quote_district: EXECUTE für authenticated (Schicht: kein Recht auf geo_boundaries)', 'grant execute on function public.quote_district(double precision, double precision) to authenticated', 'revoke execute on function public.quote_district(double precision, double precision) from authenticated'),
@@ -237,7 +238,8 @@ const run = async () => {
     ...grantToggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`),
     kind: 'Schicht', tests: 'Schreib-Funktionen: anon und authenticated erhalten 42501', testFile: 'tests/rls/quote.test.ts',
     probe: () => probe({ stmt: `perform ${callSql()}`, value: reqCount, role: 'authenticated', claims: custClaims }),
-    loose: 'P0001: setting_missing | 1', locked: '42501: permission denied for function quote_save_request | 1',
+    // seit 0020 ruft quote_save_request zuerst photo_staging_interval() auf: dessen fehlendes EXECUTE ist die Schicht dahinter
+    loose: '42501: permission denied for function photo_staging_interval | 1', locked: '42501: permission denied for function quote_save_request | 1',
   })
   // 4b. Nachzug S9a-1 (A1-N2, A1-N3): Sperren aus 0015/0016 mit Ist-Wert; Version 9990 wird nie angelegt -----------------------------------
   const publishAuthed = 'public.publish_version(uuid, int)'

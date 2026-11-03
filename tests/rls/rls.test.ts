@@ -199,7 +199,8 @@ describe('Kunden sehen nur Eigenes', () => {
     const refA = must(await service.from('service_requests').select('client_ref').eq('id', requestA).single()).client_ref
     const ownFolder = `${a.id}/${refA}/${crypto.randomUUID()}.jpg`
     expect((await a.db.storage.from('request-photos').upload(ownFolder, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
-    expect((await a.db.from('request_photos').insert({ request_id: requestB })).error).not.toBeNull()
+    // gültiger Pfad der fremden Anfrage: einzige Sperre ist der fehlende INSERT-Grant (0020)
+    expect((await a.db.from('request_photos').insert({ request_id: requestB, storage_path: foreign })).error?.code).toBe('42501')
   })
 
   it('fremde Fotos lassen sich nicht löschen', async () => {
@@ -253,7 +254,7 @@ describe('Kunden setzen nur „zurückgezogen"', () => {
     const refA = must(await service.from('service_requests').select('client_ref').eq('id', requestA).single()).client_ref
     const path = `${a.id}/${refA}/${crypto.randomUUID()}.jpg`
     expect((await a.db.storage.from('request-photos').upload(path, png, { contentType: 'image/jpeg' })).error).not.toBeNull()
-    expect((await a.db.from('request_photos').insert({ request_id: requestA })).error).not.toBeNull()
+    expect((await a.db.from('request_photos').insert({ request_id: requestA, storage_path: path })).error?.code).toBe('42501')
   })
 
   it('Mietanfrage: nur zurückziehen', async () => {

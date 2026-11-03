@@ -1,26 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import type { Photo } from '../../src/lib/photos'
-import { getUploads, queueUploads, removeUpload, uploadPhoto } from '../../src/lib/uploads'
+import { discardStaging, uploadAll, uploadPhoto } from '../../src/lib/uploads'
 
-type Err = { code?: string; message: string; statusCode?: string }
-const photo = (size = 4): Photo => ({ id: 'a0b1c2d3-0000-4000-8000-000000000001', blob: new Blob([new Uint8Array(size)]), url: 'blob:x' })
+type Err = { message: string; statusCode?: string }
+const photo = (id: string, size = 4): Photo => ({ id, blob: new Blob([new Uint8Array(size)]), url: 'blob:x' })
+const P1 = 'a0b1c2d3-0000-4000-8000-000000000001'
+const P2 = 'a0b1c2d3-0000-4000-8000-000000000002'
 
-/** Minimaler Ersatz für den Client: `insert` und `upload` liefern die vorgegebenen Fehler. */
-function fakeDb(insert: Err | null, upload: Err | null) {
-  const calls = { insert: [] as unknown[], upload: [] as string[] }
+/** Minimaler Ersatz für den Client: `upload` liefert die vorgegebenen Fehler der Reihe nach, `remove` zeichnet die Pfade auf. */
+function fakeDb(...errors: (Err | null)[]) {
+  const calls = { upload: [] as { path: string; upsert: unknown }[], remove: [] as string[][] }
   const db = {
-    from: () => ({
-      insert: async (row: unknown) => {
-        calls.insert.push(row)
-        return { error: insert }
-      },
-    }),
     storage: {
       from: () => ({
-        upload: async (path: string) => {
-          calls.upload.push(path)
-          return { error: upload }
+        upload: async (path: string, _blob: Blob, options: { upsert: boolean }) => {
+          calls.upload.push({ path, upsert: options.upsert })
+          return { error: errors[calls.upload.length - 1] ?? null }
         },
+        remove: async (paths: string[]) => (calls.remove.push(paths), { error: null }),
       }),
     },
   }
@@ -28,64 +25,57 @@ function fakeDb(insert: Err | null, upload: Err | null) {
 }
 
 describe('uploadPhoto', () => {
-  it('Erfolg: Zeile mit id und request_id, dann Datei im Pfad {user}/{request}/{id}.jpg', async () => {
-    const { db, calls } = fakeDb(null, null)
-    expect(await uploadPhoto(db, 'u', 'r', photo())).toBeNull()
-    expect(calls.insert).toEqual([{ id: photo().id, request_id: 'r' }])
-    expect(calls.upload).toEqual([`u/r/${photo().id}.jpg`])
+  it('Erfolg: Staging-Pfad {user}/{clientRef}/{id}.jpg, ohne Upsert, keine Zeile in der Datenbank', async () => {
+    const { db, calls } = fakeDb()
+    expect(await uploadPhoto(db, 'u', 'ref-ok', photo(P1))).toBeNull()
+    expect(calls.upload).toEqual([{ path: `u/ref-ok/${P1}.jpg`, upsert: false }])
   })
 
   it('zu groß: kein Aufruf an den Server', async () => {
-    const { db, calls } = fakeDb(null, null)
-    expect(await uploadPhoto(db, 'u', 'r', photo(10 * 1024 * 1024 + 1))).toBe('too_big')
-    expect(calls.insert).toEqual([])
+    const { db, calls } = fakeDb()
+    expect(await uploadPhoto(db, 'u', 'ref-big', photo(P1, 10 * 1024 * 1024 + 1))).toBe('too_big')
+    expect(calls.upload).toEqual([])
   })
 
   it.each([
-    ['Zeile schon da (23505)', { code: '23505', message: 'dup' }, null, null],
-    ['Datei schon da (409)', null, { statusCode: '409', message: 'The resource already exists' }, null],
-    ['Limit (23514)', { code: '23514', message: 'Höchstens 8 Fotos je Anfrage' }, null, 'limit'],
-    ['Datei zu groß (413)', null, { statusCode: '413', message: 'The object exceeded the maximum allowed size' }, 'too_big'],
-    ['Netz bei der Zeile', { message: 'TypeError: Failed to fetch' }, null, 'offline'],
-    ['Netz bei der Datei', null, { message: 'Failed to fetch' }, 'offline'],
-    ['anderer Fehler bei der Zeile', { code: '42501', message: 'rls' }, null, 'failed'],
-    ['anderer Fehler bei der Datei', null, { statusCode: '500', message: 'boom' }, 'failed'],
-  ])('%s', async (_, insert, upload, expected) => {
-    const { db, calls } = fakeDb(insert, upload)
-    expect(await uploadPhoto(db, 'u', 'r', photo())).toBe(expected)
-    if (expected === 'limit' || expected === 'offline' || expected === 'failed') {
-      if (insert) expect(calls.upload).toEqual([]) // ohne Zeile keine Datei
-    }
+    ['Datei schon da (409)', { statusCode: '409', message: 'The resource already exists' }, null],
+    ['Datei zu groß (413)', { statusCode: '413', message: 'The object exceeded the maximum allowed size' }, 'too_big'],
+    ['Kontingent oder Policy (403)', { statusCode: '403', message: 'new row violates row-level security policy' }, 'denied'],
+    ['Netz', { message: 'Failed to fetch' }, 'offline'],
+    ['anderer Fehler', { statusCode: '500', message: 'boom' }, 'failed'],
+  ])('%s', async (name, error, expected) => {
+    const { db } = fakeDb(error)
+    expect(await uploadPhoto(db, 'u', `ref-${name}`, photo(P1))).toBe(expected)
+  })
+
+  it('ein Foto, das liegt, wird beim erneuten Senden nicht noch einmal hochgeladen', async () => {
+    const { db, calls } = fakeDb()
+    await uploadPhoto(db, 'u', 'ref-twice', photo(P1))
+    await uploadPhoto(db, 'u', 'ref-twice', photo(P1))
+    expect(calls.upload).toHaveLength(1)
   })
 })
 
-describe('Warteschlange', () => {
-  const settled = async (request: string, status: string) => {
-    for (let i = 0; i < 50 && getUploads(request).some((e) => e.status !== status); i++) await new Promise((r) => setTimeout(r, 10))
-  }
-  const queueDb = (rowDelete: { message: string } | null) => {
-    const removed: string[][] = []
-    const db = {
-      from: () => ({ insert: async () => ({ error: null }), delete: () => ({ eq: async () => ({ error: rowDelete }) }) }),
-      storage: { from: () => ({ upload: async () => ({ error: null }), remove: async (paths: string[]) => (removed.push(paths), { error: null }) }) },
-    }
-    return { db: db as never, removed }
-  }
+describe('uploadAll', () => {
+  it('lädt nacheinander hoch und meldet den Fortschritt; der erste Fehler bricht ab', async () => {
+    const ok = fakeDb()
+    const seen: number[] = []
+    expect(await uploadAll(ok.db, 'u', 'ref-all', [photo(P1), photo(P2)], (n) => seen.push(n))).toBeNull()
+    expect(seen).toEqual([1, 2])
 
-  it('lädt nacheinander hoch; Entfernen bei Serverfehler lässt das Foto stehen und meldet es, danach klappt es', async () => {
-    const failing = queueDb({ message: 'offline' })
-    queueUploads(failing.db, 'u', 'req-1', [photo()])
-    await settled('req-1', 'done')
-    expect(getUploads('req-1').map((e) => e.status)).toEqual(['done'])
-    await removeUpload('req-1', photo().id)
-    expect(getUploads('req-1')[0]).toMatchObject({ status: 'error', failure: 'remove_failed' })
-    expect(failing.removed).toEqual([]) // Datei bleibt, solange die Zeile bleibt
+    const failing = fakeDb({ statusCode: '500', message: 'boom' })
+    expect(await uploadAll(failing.db, 'u', 'ref-fail', [photo(P1), photo(P2)], () => undefined)).toBe('failed')
+    expect(failing.calls.upload).toHaveLength(1)
+  })
+})
 
-    const working = queueDb(null)
-    queueUploads(working.db, 'u', 'req-2', [photo()])
-    await settled('req-2', 'done')
-    await removeUpload('req-2', photo().id)
-    expect(getUploads('req-2')).toEqual([])
-    expect(working.removed).toEqual([[`u/req-2/${photo().id}.jpg`]])
+describe('discardStaging', () => {
+  it('löscht die Staging-Dateien; danach wird dasselbe Foto wieder hochgeladen', async () => {
+    const { db, calls } = fakeDb()
+    await uploadPhoto(db, 'u', 'ref-discard', photo(P1))
+    await discardStaging(db, 'u', 'ref-discard', [photo(P1)])
+    expect(calls.remove).toEqual([[`u/ref-discard/${P1}.jpg`]])
+    await uploadPhoto(db, 'u', 'ref-discard', photo(P1))
+    expect(calls.upload).toHaveLength(2)
   })
 })

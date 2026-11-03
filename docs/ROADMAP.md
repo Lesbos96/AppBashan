@@ -107,7 +107,7 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 - [x] S9a-1 Preisversionen und Sätze unveränderlich (2026-11-01)
 - [x] S9a-2 Statusmaschine, Revisionen, Kontakte (2026-11-02)
 - [x] S9a-3 `quote`-Härtung: Haltefenster und Preisabgleich, Adressprüfung, Bezirk aus Bezirksgrenzen, Bedingungen und Kontakt im Snapshot, `rental_bookings` gesperrt (2026-11-02, `docs/proof/s9a3/`)
-- [ ] S9a-4 Fotos-Staging (`docs/S9a_PLAN.md`)
+- [x] S9a-4 Fotos-Staging (`docs/S9a_PLAN.md`): 4a Backend (0020), 4b App und Nachzug (0021, 2026-11-03, `docs/proof/s9a4a/`, `docs/proof/s9a4b/`). S9a fertig; offene Nachzug-Punkte stehen in `docs/OPEN_ISSUES.md` („S9a-4b · Offen“)
 
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)

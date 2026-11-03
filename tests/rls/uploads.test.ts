@@ -697,3 +697,91 @@ describe("Aufräumen", () => {
     ).toHaveLength(1);
   }, 90_000);
 });
+
+// Migration 0021: Mengengrenze je Nutzer (40 eigene, nicht übernommene Dateien), kein Default für storage_path, Zeilen-Bedingung der Storage-Policies.
+describe("Staging-Kontingent und Pfad (0021)", () => {
+  const LIMIT = 40;
+  const count = (userId: string) =>
+    Number(ownerSql(`select count(*)::int as n from storage.objects where bucket_id = '${BUCKET}' and name like '${userId}/%'`)[0]!.n);
+
+  it("bis zur Grenze erlaubt, die 41. Datei verweigert (403); Löschen und Übernehmen geben Platz frei", async () => {
+    const c = await makeUser("stage-limit"); // frisches Konto: Kontingent 0
+    const ref = crypto.randomUUID();
+    const first: { id: string; path: string }[] = [];
+    for (let i = 0; i < LIMIT; i += 10) {
+      const batch = await Promise.all(
+        Array.from({ length: 10 }, () => stage(c, ref)),
+      );
+      for (const s of batch) {
+        expect(s.error).toBeNull();
+        first.push(s);
+      }
+    }
+    expect(count(c.id)).toBe(LIMIT);
+    const over = await stage(c, ref);
+    expect(over.error).toMatchObject(DENIED);
+    expect(count(c.id)).toBe(LIMIT);
+    // ein anderes Konto ist nicht betroffen
+    expect((await stage(b, crypto.randomUUID())).error).toBeNull();
+    // eigene Staging-Datei löschen gibt Platz frei
+    expect(
+      must(await c.db.storage.from(BUCKET).remove([first[0]!.path])),
+    ).toHaveLength(1);
+    expect((await stage(c, ref)).error).toBeNull();
+    expect((await stage(c, ref)).error).toMatchObject(DENIED);
+    // übernommene Dateien zählen nicht: nach dem Absenden ist wieder Platz
+    await saved(c, ref, [first[1]!.id]);
+    expect((await stage(c, crypto.randomUUID())).error).toBeNull();
+    expect(count(c.id)).toBe(LIMIT + 1);
+    expect((await stage(c, crypto.randomUUID())).error).toMatchObject(DENIED);
+  }, 120_000);
+
+  it("Insert in request_photos ohne storage_path: Trigger lehnt ab (photo_insert_forbidden), mit Marker ebenso", async () => {
+    const ref = crypto.randomUUID();
+    const rid = (await saved(a, ref, [])).id;
+    const res = probes("select 1", [
+      { name: "ohne Marker", sql: `insert into public.request_photos (request_id) values ('${rid}')` },
+      {
+        name: "mit Marker",
+        sql: `perform set_config('app.mv_photo_request', '${rid}', true); insert into public.request_photos (request_id) values ('${rid}')`,
+      },
+    ]);
+    expect(res).toEqual({
+      "ohne Marker": "P0001: photo_insert_forbidden",
+      "mit Marker": "P0001: photo_insert_forbidden",
+    });
+  });
+
+  it("kein Default mehr: die Spalte hat keinen Standardwert", async () => {
+    expect(
+      ownerSql(
+        "select column_default from information_schema.columns where table_schema = 'public' and table_name = 'request_photos' and column_name = 'storage_path'",
+      ),
+    ).toEqual([{ column_default: null }]);
+  });
+
+  it("Zeilen-Bedingung (Alt-Pfad {uid}/{request_id}/…): Kunde löscht kein übernommenes Objekt und lädt nicht unter dessen Namen hoch", async () => {
+    // Alt-Zeilen, deren zweiter Ordner nicht die client_ref ist: hier hält nur die Bedingung „keine Zeile in request_photos“
+    const d = await makeUser("stage-legacy");
+    const rid = (await saved(d, crypto.randomUUID(), [])).id;
+    const kept = pathOf(d, rid, crypto.randomUUID());
+    const free = pathOf(d, rid, crypto.randomUUID());
+    ownerSql(
+      `begin; alter table public.request_photos disable trigger guard_photo_insert; insert into public.request_photos (request_id, storage_path) values ('${rid}', '${kept}'), ('${rid}', '${free}'); alter table public.request_photos enable trigger guard_photo_insert; commit`,
+    );
+    expect(
+      ownerSql(
+        "select tgenabled from pg_trigger where tgname = 'guard_photo_insert' and tgrelid = 'public.request_photos'::regclass",
+      ),
+    ).toEqual([{ tgenabled: "O" }]);
+    paths.push(kept);
+    const up = await service.storage.from(BUCKET).upload(kept, bytes, JPEG);
+    expect(up.error).toBeNull();
+    // löschen: verweigert, die Datei bleibt (Storage meldet eine leere Liste)
+    expect(must(await d.db.storage.from(BUCKET).remove([kept]))).toHaveLength(0);
+    expect(await exists(kept)).toBe(true);
+    // hochladen unter dem Namen einer Zeile ohne Datei: verweigert (die Sperre liegt allein an der Zeile)
+    expect((await d.db.storage.from(BUCKET).upload(free, bytes, JPEG)).error).toMatchObject(DENIED);
+    expect(await exists(free)).toBe(false);
+  });
+});

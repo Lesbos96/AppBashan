@@ -605,7 +605,7 @@ export type Database = {
           created_at?: string
           id?: string
           request_id: string
-          storage_path?: string
+          storage_path: string
         }
         Update: {
           created_at?: string

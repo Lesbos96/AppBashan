@@ -9,14 +9,14 @@ import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
 import { type Path, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
-import { takePhotos } from '../../lib/photos'
+import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { formatEuro } from '../../lib/money'
 import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
-import { queueUploads } from '../../lib/uploads'
+import { type UploadFailure, discardStaging, failureText, photoRejectedText, uploadAll } from '../../lib/uploads'
 import { objectOf } from '../entruempelung/options'
 import { dayText } from './format'
 
@@ -149,7 +149,9 @@ export function Zusammenfassung({ path }: { path: Path }) {
   )
 }
 
-type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'error'; error: QuoteError }
+type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'photos'; failure: UploadFailure } | { kind: 'error'; error: QuoteError }
+/** 422 von `quote`, nach denen das erneute Senden die Fotos mit neuen Namen hochlädt. */
+const reuploadCodes = ['photo_missing', 'photo_expired']
 /**
  * Vom Kunden bestätigte Änderungen nach einem 409; `clientRef` bleibt dabei stabil, weil nichts gespeichert wurde.
  * Der angenommene Preis steht im sessionStorage (`rememberShown`), wie der aus dem Konfigurator: Anzeige und gesendetes `shown` lesen dieselbe Quelle.
@@ -174,7 +176,17 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const accountSwitched = consentFor !== null && consentFor !== '' && consentFor !== 'anon' && !consent
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [wait, setWait] = useState(0)
+  const photoKey = config.service
+  const { photos } = usePhotos(photoKey)
+  const [uploaded, setUploaded] = useState(0)
   const busy = useRef(false)
+  const sentRef = useRef(false)
+  useEffect(
+    () => () => {
+      if (sentRef.current) clearPhotos(photoKey)
+    },
+    [photoKey],
+  )
   const [accepted, setAccepted] = useState<Accepted>({})
   const [saved] = useState(() => readContact(path))
   const [name, setName] = useState(saved.name)
@@ -214,6 +226,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
     if (busy.current) return
     busy.current = true
     setStatus({ kind: 'sending' })
+    setUploaded(0)
+    let staged: { userId: string; clientRef: string; photos: ReturnType<typeof getPhotos> } | null = null
     try {
       const { data } = await supabase.auth.getSession()
       const live = data.session
@@ -229,13 +243,27 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         return
       }
       // clientRef aus dem Entwurf ohne die bestätigten Angaben: nach einem 409 bleibt sie dieselbe
-      const quote = await sendQuote(body, refFor(path, { ...body, priceVersion: 0, termsHash: '', shown: null }), live.access_token)
-      queueUploads(supabase, live.user.id, quote.id, takePhotos(services[path].service))
+      const clientRef = refFor(path, { ...body, priceVersion: 0, termsHash: '', shown: null })
+      // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
+      const toSend = getPhotos(photoKey)
+      staged = { userId: live.user.id, clientRef, photos: toSend }
+      const failure = await uploadAll(supabase, live.user.id, clientRef, toSend, setUploaded)
+      if (failure) {
+        setStatus({ kind: 'photos', failure })
+        return
+      }
+      const quote = await sendQuote({ ...body, photoIds: toSend.map((p) => p.id) }, clientRef, live.access_token)
+      sentRef.current = true // geleert wird erst beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
       finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
       if (error.kind === 'rate_limited') setWait(60)
+      // Der Server nimmt die Staging-Dateien nicht an: alte Dateien wegräumen, beim erneuten Senden neue Namen
+      if (error.kind === 'rejected' && staged && reuploadCodes.includes(error.code ?? '')) {
+        await discardStaging(supabase, staged.userId, staged.clientRef, staged.photos).catch(() => undefined)
+        renewPhotoIds(photoKey)
+      }
       // Ein 409 ohne alles, was der Kunde bestätigen müsste, ist nicht bestätigbar: wie nicht verfügbar behandeln (sonst Schleife aus 409)
       const incomplete = (error.kind === 'price_changed' && (!error.conflict.snapshot || error.conflict.priceVersion === undefined)) || (error.kind === 'terms_changed' && !error.conflict.terms)
       setStatus({ kind: 'error', error: incomplete ? new QuoteError('unavailable') : error })
@@ -272,7 +300,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
     void send(session?.user.id ?? '', next)
   }
   const newSnapshot = confirmChange?.conflict.snapshot
-  const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
+  const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (photoRejectedText[error.code ?? ''] ?? rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'photos' ? failureText[status.failure] : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
 
   return (
     <>
@@ -309,6 +337,26 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
           </GroupedList>
           <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
         </section>
+
+        {photos.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Fotos</h2>
+            <Card className="flex flex-col gap-3 p-4">
+              <ul className="m-0 grid list-none grid-cols-4 gap-2 p-0">
+                {photos.map((p, i) => (
+                  <li key={p.id}>
+                    <img src={p.url} alt={`Foto ${i + 1}`} className="aspect-square w-full rounded-[10px] object-cover" />
+                  </li>
+                ))}
+              </ul>
+              {(sending || status.kind === 'idle') && (
+                <p className="m-0 text-footnote text-pretty text-text-secondary">
+                  {sending ? <span role="status" className="tabular-nums">{uploaded} von {photos.length} hochgeladen</span> : 'Nach dem Senden lassen sich die Fotos nicht mehr ändern. Prüfe sie jetzt.'}
+                </p>
+              )}
+            </Card>
+          </section>
+        )}
 
         {confirmChange?.kind !== 'terms_changed' && (
           <section className="flex flex-col gap-2">
@@ -414,13 +462,13 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
           <Button disabled={!consent} onClick={toLogin}>
             Anmelden und senden
           </Button>
-        ) : error?.kind === 'rejected' || error?.kind === 'invalid_input' ? (
+        ) : (error?.kind === 'rejected' && !reuploadCodes.includes(error.code ?? '')) || error?.kind === 'invalid_input' ? (
             <Link to={error.kind === 'rejected' ? (config.hasAddresses ? config.back : `/${path}/termin`) : invalidTarget(path, error.field)} className="press flex h-[54px] w-full items-center justify-center rounded-button-primary bg-[image:var(--gradient-primary-button)] text-headline text-white shadow-primary-button">
               Angaben ändern
             </Link>
           ) : (
             <Button disabled={!canSend || confirmChange !== null} aria-busy={sending} className="disabled:opacity-70!" onClick={() => void send(session.user.id)}>
-              {sending ? 'Wird gesendet …' : wait > 0 ? `Bitte warten (${wait} s)` : error ? 'Erneut senden' : 'Anfrage senden'}
+              {sending ? 'Wird gesendet …' : wait > 0 ? `Bitte warten (${wait} s)` : error || status.kind === 'photos' ? 'Erneut senden' : 'Anfrage senden'}
             </Button>
           )}
       </ActionBar>

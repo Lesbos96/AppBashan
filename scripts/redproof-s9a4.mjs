@@ -35,8 +35,10 @@ const SNAPSHOT = `
   select 'trigger', tgrelid::regclass || ' ' || tgenabled::text || ' ' || pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS}
   union all
   select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version'))
+    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count'))
        or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting'))
+  union all
+  select 'coldefault', table_name || '.' || column_name || ' ' || coalesce(column_default, '<kein Default>') from information_schema.columns where table_schema = 'public' and table_name = 'request_photos'
   union all
   select 'acl', c.oid::regclass || ' ' || coalesce(c.relacl::text, '') from pg_class c where c.oid in ${OBJECTS}
   union all
@@ -66,7 +68,7 @@ const dayIn = (n) => new Date(Date.now() + n * 86_400_000).toLocaleDateString('s
 const lit = (v) => (v === null ? 'null' : Array.isArray(v) ? q1(`{${v.join(',')}}`) : q1(typeof v === 'object' ? JSON.stringify(v) : String(v)))
 
 // --- Fixtures (im finally gelöscht) ----------------------------------------------------------------------------------------------------
-let A, B // { id, db (JWT-Client) }
+let A, B, C, E // { id, db (JWT-Client) }; C und E haben je 40 Dateien (Kontingent, 0021)
 let priceVersion
 const made = [] // Storage-Pfade zum Aufräumen
 const put = async (path, body = JPEG) => {
@@ -173,6 +175,8 @@ const run = async () => {
   priceVersion = sql(`select version from public.current_price_version`)[0].version
   A = await newUser('a')
   B = await newUser('b')
+  C = await newUser('c')
+  E = await newUser('e')
   const RLS_DENIED = '42501: new row violates row-level security policy for table "objects"'
   // Staging-Ordner: S (frisch, nicht übernommen), X (für Ablauf), N (neun Dateien), BF (Ordner von B), R1 (mit Anfrage und übernommenem Foto), R2 (Anfrage ohne Foto)
   const refS = randomUUID(), refX = randomUUID(), refN = randomUUID(), refB = randomUUID(), ref1 = randomUUID(), ref2 = randomUUID(), refPl = randomUUID()
@@ -242,7 +246,7 @@ const run = async () => {
     loose, locked,
   })
   add(noSetting('photo_staging_hours fehlt: photo_staging_interval liefert Ersatzwert statt Fehler', 'perform public.photo_staging_interval()', settingCount, 'ok | 0', 'P0001: setting_missing | 0'))
-  add(noSetting('photo_staging_hours fehlt: Absenden speichert trotzdem', `perform ${callSql({ p_client_ref: randomUUID() })}`, `(select count(*) from public.service_requests where customer_id = '${A.id}')`, 'ok | 3', 'P0001: setting_missing | 2', 'Sperre', 'photo_staging_hours fehlt'))
+  add(noSetting('photo_staging_hours fehlt: Absenden speichert trotzdem', `perform ${callSql({ p_client_ref: randomUUID() })}`, `(select count(*) from public.service_requests where customer_id = '${A.id}')`, 'ok | 4', 'P0001: setting_missing | 3', 'Sperre', 'photo_staging_hours fehlt'))
   add(noSetting('photo_staging_hours fehlt: Waisenliste läuft weiter', 'perform * from public.photo_orphans()', settingCount, 'ok | 0', 'P0001: setting_missing | 0'))
   // 3. request_photos: Einfügen nur am Funktionspfad -----------------------------------------------------------------------------------------
   const ins = (req, name) => `insert into public.request_photos (request_id, storage_path) values ('${req}', '${name}')`
@@ -260,7 +264,7 @@ const run = async () => {
     loose: 'ok | 1', locked: 'P0001: photo_insert_forbidden | 0',
   })
   add({
-    ...patchFn('guard_photo_insert: Pfadpräfix der Anfrage nicht mehr verlangt (fremder Ordner mit Marker)', GUARD, 'if not found or not starts_with(', 'if not found or false and not starts_with('),
+    ...patchFn('guard_photo_insert: Pfadpräfix der Anfrage nicht mehr verlangt (fremder Ordner mit Marker)', GUARD, 'new.storage_path is null or not starts_with(', 'new.storage_path is null or false and not starts_with('),
     tests: null,
     probe: () => probe({ stmt: `perform set_config('app.mv_photo_request', '${R2}', true); ${ins(R2, fresh(B, refB))}`, value: rowsOf(R2), role: 'owner' }),
     loose: 'ok | 1', locked: 'P0001: photo_insert_forbidden | 0',
@@ -388,7 +392,65 @@ const run = async () => {
     },
     loose: 'ok | verschoben', locked: 'Fehler | unverändert',
   })
-  // 8. Aufräumen: Waisenliste ---------------------------------------------------------------------------------------------------------------------
+  // 7b. Zeilen-Bedingung „keine Zeile in request_photos“ (A-M2): Alt-Pfad {uid}/{request_id}/{id}.jpg, hier hält nur die Zeile (die client_ref-Bedingung greift nicht)
+  const R3 = (await service.rpc('quote_save_request', baseArgs({ p_client_ref: randomUUID() }))).data?.[0]?.id
+  if (!R3) throw new Error('Fixtures: Anfrage R3 nicht angelegt')
+  const legacyKept = `${A.id}/${R3}/${id()}.jpg`
+  const legacyFree = `${A.id}/${R3}/${id()}.jpg`
+  const legacyRows = (req, ...names) => sql(`begin; alter table public.request_photos disable trigger guard_photo_insert; insert into public.request_photos (request_id, storage_path) values ${names.map((n) => `('${req}', '${n}')`).join(', ')}; alter table public.request_photos enable trigger guard_photo_insert; commit; select 1 as x`)
+  legacyRows(R3, legacyKept, legacyFree)
+  await put(legacyKept)
+  const legacyDelete = async () => {
+    if (!(await exists(legacyKept))) await service.storage.from(BUCKET).upload(legacyKept, JPEG, { contentType: 'image/jpeg' })
+    const r = await A.db.storage.from(BUCKET).remove([legacyKept])
+    return `entfernt ${r.data?.length ?? 0} | Datei ${(await exists(legacyKept)) ? 'da' : 'weg'}`
+  }
+  const legacyInsert = async () => {
+    await service.storage.from(BUCKET).remove([legacyFree])
+    const r = await A.db.storage.from(BUCKET).upload(legacyFree, JPEG, { contentType: 'image/jpeg' })
+    const there = await exists(legacyFree)
+    if (there) made.push(legacyFree)
+    return `${r.error ? r.error.statusCode : 'ok'} | ${there ? 1 : 0}`
+  }
+  add({ ...policyLoosen('Storage-DELETE: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: hier hält allein die Zeile)', 'request_photos_objects_delete', 'storage.objects', 'using', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyDelete, loose: 'entfernt 1 | Datei weg', locked: 'entfernt 0 | Datei da' })
+  add({ ...policyLoosen('Storage-INSERT: Zeilen-Bedingung entfernt (Alt-Pfad, A-M2: Name einer übernommenen Datei)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq}`), tests: 'Zeilen-Bedingung (Alt-Pfad', probe: legacyInsert, loose: 'ok | 1', locked: '403 | 0' })
+
+  // 7c. Migration 0021: Kontingent (40 eigene, nicht übernommene Dateien), kein Default, NULL-Pfad. C hat 40 Dateien, E 39 plus eine übernommene (Alt-Zeile).
+  const forty = async (u, n) => {
+    for (let i = 0; i < n; i += 10) await Promise.all(Array.from({ length: Math.min(10, n - i) }, () => put(`${u.id}/${randomUUID()}/${id()}.jpg`)))
+  }
+  await forty(C, 40)
+  await forty(E, 39)
+  const RE = (await service.rpc('quote_save_request', baseArgs({ p_customer: E.id, p_client_ref: randomUUID() }))).data?.[0]?.id
+  if (!RE) throw new Error('Fixtures: Anfrage RE nicht angelegt')
+  const adoptedE = `${E.id}/${RE}/${id()}.jpg`
+  legacyRows(RE, adoptedE)
+  await put(adoptedE)
+  // Nach dem Versuch: Anzahl der Objekte des Nutzers (mit dem neuen, falls angenommen), dann das neue wieder entfernen
+  const overLimit = (u) => async () => {
+    const name = `${u.id}/${randomUUID()}/${id()}.jpg`
+    const r = await u.db.storage.from(BUCKET).upload(name, JPEG, { contentType: 'image/jpeg' })
+    const n = Number(sql(`select count(*)::int as n from storage.objects where bucket_id = '${BUCKET}' and name like '${u.id}/%'`)[0].n)
+    if (!r.error) await service.storage.from(BUCKET).remove([name])
+    return `${r.error ? r.error.statusCode : 'ok'} | ${n}`
+  }
+  add({ ...policyLoosen('Storage-INSERT: Mengengrenze (40) entfernt (41. Datei eines Kontos)', 'request_photos_objects_insert', 'storage.objects', 'with check', `${base} and ${form} and ${own} and ${noReq} and ${noRow}`), tests: 'bis zur Grenze erlaubt', probe: overLimit(C), loose: 'ok | 41', locked: '403 | 40' })
+  add({ ...patchFn('staging_photo_count: übernommene Dateien zählen mit (Aussperr-Schutz: 40 Dateien, davon eine übernommen)', 'private.staging_photo_count()', 'and not exists (select 1 from public.request_photos p where p.storage_path = o.name)', ''), tests: 'bis zur Grenze erlaubt', probe: overLimit(E), loose: '403 | 40', locked: 'ok | 41' })
+  const notNull = 'null value in column "storage_path" of relation "request_photos" violates not-null constraint'
+  const noPath = `insert into public.request_photos (request_id) values ('${R2}')`
+  add({
+    ...patchFn('guard_photo_insert: NULL-Pfad nicht mehr abgefangen (Schicht: NOT NULL der Spalte, Marker gesetzt)', GUARD, 'new.storage_path is null or ', ''),
+    kind: 'Schicht', tests: 'ohne storage_path',
+    probe: () => probe({ stmt: `perform set_config('app.mv_photo_request', '${R2}', true); ${noPath}`, value: rowsOf(R2) }),
+    loose: `23502: ${notNull} | 0`, locked: 'P0001: photo_insert_forbidden | 0',
+  })
+  add({
+    ...toggle("storage_path: Default '' wiederhergestellt (Schicht: NOT NULL; der Trigger ist im Probe-Ablauf aus, Rollback)", "alter table public.request_photos alter column storage_path set default ''", 'alter table public.request_photos alter column storage_path drop default', 'Schicht'),
+    tests: 'kein Default mehr',
+    probe: () => probe({ setup: 'alter table public.request_photos disable trigger guard_photo_insert', stmt: noPath, value: rowsOf(R2) }),
+    loose: 'ok | 1', locked: `23502: ${notNull} | 0`,
+  })
+  // 8. Aufräumen: Waisenliste---------------------------------------------------------------------------------------------------------------------
   const orphanSetup = `update storage.objects set created_at = now() - interval '30 hours' where bucket_id = '${BUCKET}' and name in ('${adoptedPath}', '${path(A, refX, X1)}')`
   const orphans = (names) => names.map((n) => `(select count(*) from public.photo_orphans() where name = '${n}')`).join(` || '/' || `)
   add({
@@ -425,7 +487,7 @@ const run = async () => {
     ...toggle('quote_save_request: EXECUTE für authenticated (Schicht: RLS auf platform_settings)', `grant execute on function ${SAVE} to authenticated`, `revoke execute on function ${SAVE} from authenticated`, 'Schicht'),
     tests: null,
     probe: () => probe({ stmt: `perform ${callSql({ p_client_ref: randomUUID() })}`, value: `(select count(*) from public.service_requests where customer_id = '${A.id}')`, role: 'authenticated', claims: claims(A) }),
-    loose: '42501: permission denied for function photo_staging_interval | 2', locked: '42501: permission denied for function quote_save_request | 2',
+    loose: '42501: permission denied for function photo_staging_interval | 3', locked: '42501: permission denied for function quote_save_request | 3',
   })
 
   // --- Läufe --------------------------------------------------------------------------------------------------------------------------------
@@ -466,7 +528,7 @@ async function liveProbe() {
   }
   const record = (label, got, want, extra = {}) => {
     const good = got === want
-    results.push({ label: `Live-Probe quote: ${label}`, kind: 'Sperre', part: 'Live', looseValue: got, lockedValue: got, loose: want, locked: want, good, effect: good, blocked: good, ...extra })
+    results.push({ label: `Beobachtung quote (deployt): ${label}`, kind: 'Beobachtung', part: 'Live', looseValue: got, lockedValue: got, loose: want, locked: want, good, effect: good, blocked: good, ...extra })
     console.log(`${good ? 'OK    ' : 'FEHLER'} [Live] ${label}: ${got} (erwartet ${want})`)
   }
   // Adresse wie in der App: Kandidat der Function route (die Prüfung in quote verlangt Label und Punkt des Anbieters).
@@ -491,7 +553,8 @@ async function liveProbe() {
   const state = (r) => `${r.status} ${r.json?.error ?? ''}`.trim()
   // 1. Parser der deployten Version: kein Array → 400 (die alte Version verwirft den Schlüssel und antwortet anders)
   record('photoIds kein Array → 400 invalid_input (neue Version deployt)', state(await post(A, { ...move(randomUUID(), []), photoIds: 'x', priceVersion, termsHash: 'f'.repeat(64), shown: { kind: 'price', totalCents: 0, lowCents: 0, highCents: 0 } })), '400 invalid_input')
-  const pause = () => new Promise((r) => setTimeout(r, 25_000))
+  // Das Nutzerlimit von quote zählt in festen Minutenfenstern (6 je Minute): bis kurz nach der nächsten Minutengrenze warten
+  const pause = () => new Promise((r) => setTimeout(r, 62_000 - (Date.now() % 60_000)))
   // 2. fremde Foto-ID → 422, nichts gespeichert
   const refF = randomUUID()
   const foreignId = randomUUID()
@@ -519,6 +582,13 @@ async function liveProbe() {
   // 5. Wiederholung derselben clientRef: nichts kommt hinzu
   const again = await settle(A, move(refO, [own, randomUUID()]))
   record('Wiederholung derselben clientRef: dieselbe Anfrage, keine weitere Zeile', `${state(again)} / gleich ${again.json?.id === ok.json?.id} / Zeilen ${(await service.from('request_photos').select('id').eq('request_id', ok.json?.id)).data?.length}`, '200 / gleich true / Zeilen 1')
+  // 5b. Rohaufrufe mit falschen Bestätigungen (R2-N13, Beobachtung des Deploy-Zustands): 409 und keine Anfrage. Anderer Nutzer: eigenes Rate-Limit.
+  const refW = randomUUID()
+  const nReq = async (ref) => (await service.from('service_requests').select('id').eq('client_ref', ref)).data?.length
+  const wrongTerms = await post(B, { ...move(refW, []), priceVersion, termsHash: 'f'.repeat(64), shown: { kind: 'price', totalCents: 0, lowCents: 0, highCents: 0 } })
+  record('falscher termsHash → 409 terms_changed, keine Anfrage', `${state(wrongTerms)} / Anfragen ${await nReq(refW)}`, '409 terms_changed / Anfragen 0')
+  const wrongShown = await post(B, { ...move(refW, []), priceVersion, termsHash: wrongTerms.json?.terms?.termsHash ?? 'f'.repeat(64), shown: { kind: 'price', totalCents: 0, lowCents: 0, highCents: 0 } })
+  record('falsches shown → 409 price_changed, keine Anfrage', `${state(wrongShown)} / Anfragen ${await nReq(refW)}`, '409 price_changed / Anfragen 0')
   // 6. nach dem Absenden: Hinzufügen/Löschen/Ersetzen über die Storage-API des Kunden
   const addLate = await A.db.storage.from(BUCKET).upload(`${A.id}/${refO}/${randomUUID()}.jpg`, JPEG, { contentType: 'image/jpeg' })
   const delLate = await A.db.storage.from(BUCKET).remove([`${A.id}/${refO}/${own}.jpg`])
@@ -562,7 +632,7 @@ try {
 } finally {
   // Aufräumen: Konten löschen (Kaskade entfernt Anfragen und Fotozeilen), dann die Dateien; sicherheitshalber alle Policies/Trigger zurück (Snapshot-Vergleich meldet Reste)
   sql('drop policy if exists redproof_update on storage.objects')
-  for (const u of [A, B]) if (u) await service.auth.admin.deleteUser(u.id)
+  for (const u of [A, B, C, E]) if (u) await service.auth.admin.deleteUser(u.id)
   for (let i = 0; i < made.length; i += 100) await service.storage.from(BUCKET).remove(made.slice(i, i + 100))
 }
 const same = outcome.before === outcome.after
@@ -582,7 +652,7 @@ for (const r of results) {
   report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
 }
 report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
-report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Live ${count('Live', 'Sperre')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
+report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
 writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
 const allGood = results.every((r) => r.good) && same
 console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')

@@ -4,26 +4,14 @@ import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price,
 import { setTerminAddress } from './konfigurator-helpers'
 import { fillEntruempelungBeispiel } from './dienste-helpers'
 
-// Foto-Uploads nach dem Senden (Bestätigungsseite). Alle Aufrufe an PostgREST und Storage sind abgefangen.
+// Foto-Uploads vor dem Absenden (Zusammenfassung). Alle Aufrufe an Storage und `quote` sind abgefangen.
 export const REQUEST = '7b0e7a58-6f0c-4c52-9d0c-5a1f3b9d2e11'
 
-export type Calls = { rows: { id: string; request_id: string }[]; uploads: { path: string; type: string | null; body: Buffer }[]; removedRows: number; removedFiles: string[][] }
-export type Hooks = { row?: (n: number) => Reply; upload?: (n: number) => Reply }
+export type Calls = { uploads: { path: string; type: string | null; body: Buffer }[]; removedFiles: string[][] }
+export type Hooks = { upload?: (n: number) => Reply }
 
 export async function mockPhotos(page: Page, hooks: Hooks = {}): Promise<Calls> {
-  const calls: Calls = { rows: [], uploads: [], removedRows: 0, removedFiles: [] }
-  await page.route('**/rest/v1/request_photos**', async (r) => {
-    const method = r.request().method()
-    if (method === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
-    if (method === 'DELETE') {
-      calls.removedRows++
-      return r.fulfill({ status: 204, headers: cors })
-    }
-    calls.rows.push(r.request().postDataJSON() as { id: string; request_id: string })
-    const out = hooks.row?.(calls.rows.length) ?? {}
-    if (out.abort) return r.abort('failed')
-    return r.fulfill({ status: out.status ?? 201, headers: cors, json: out.json })
-  })
+  const calls: Calls = { uploads: [], removedFiles: [] }
   await page.route('**/storage/v1/object/request-photos**', async (r) => {
     const method = r.request().method()
     if (method === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
@@ -42,11 +30,13 @@ export async function mockPhotos(page: Page, hooks: Hooks = {}): Promise<Calls> 
 
 export const storageError = (status: number, error: string, message: string): Reply => ({ status, json: { statusCode: String(status), error, message } })
 
-/** Entrümpelung mit zwei Fotos bis zum Absenden; `photo` ist die Bilddatei (Standard: ein kleines JPEG). */
-export async function sendWithPhotos(page: Page, photo?: Buffer) {
+export type SendOptions = { photo?: Buffer; reply?: (n: number) => Reply }
+
+/** Entrümpelung mit zwei Fotos bis zur Zusammenfassung, angemeldet und Einwilligung gesetzt. Gibt die Aufrufe von `quote` zurück. */
+export async function prepareSummary(page: Page, { photo, reply }: SendOptions = {}) {
   await anonymousPrices(page)
   await mockAuth(page)
-  await mockQuote(page, () => ({ json: answer(price(117500), { id: REQUEST }) }))
+  const quoteCalls = await mockQuote(page, reply ?? (() => ({ json: answer(price(117500), { id: REQUEST }) })))
   await page.goto('/entruempelung')
   await fillEntruempelungBeispiel(page, photo)
   await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
@@ -59,7 +49,15 @@ export async function sendWithPhotos(page: Page, photo?: Buffer) {
   await signInWithCode(page)
   await expect(page).toHaveURL(/\/entruempelung\/zusammenfassung$/)
   await page.getByRole('checkbox').check()
-  await page.getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ }).click()
-  await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+  return quoteCalls
 }
 
+export const sendButton = (page: Page) => page.getByRole('button', { name: /^(Anfrage senden|Erneut senden)$/ })
+
+/** Wie `prepareSummary`, dann Senden. `sent: false`, wenn die Seite auf der Zusammenfassung bleiben soll (Fehlerzustände). */
+export async function sendWithPhotos(page: Page, options: SendOptions & { sent?: boolean } = {}) {
+  const quoteCalls = await prepareSummary(page, options)
+  await sendButton(page).click()
+  if (options.sent !== false) await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+  return quoteCalls
+}

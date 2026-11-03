@@ -45,7 +45,7 @@ export async function preparePhoto(file: File): Promise<Blob> {
   return blob
 }
 
-// Fotos liegen nur im Speicher (Blobs passen nicht in den sessionStorage); `takePhotos` übergibt sie nach dem Absenden an die Upload-Warteschlange (`uploads.ts`).
+// Fotos liegen nur im Speicher (Blobs passen nicht in den sessionStorage); die Zusammenfassung lädt sie vor dem Absenden ins Staging (`uploads.ts`).
 const store = new Map<string, Photo[]>()
 const listeners = new Set<() => void>()
 const empty: Photo[] = []
@@ -55,11 +55,17 @@ function set(key: string, photos: Photo[]) {
   listeners.forEach((l) => l())
 }
 
-/** Leert den Speicher eines Flows und gibt die Fotos ab; die Object-URLs gehören danach der Warteschlange. */
-export function takePhotos(key: string): Photo[] {
-  const photos = store.get(key) ?? empty
+export const getPhotos = (key: string): readonly Photo[] => store.get(key) ?? empty
+
+/** Nach dem Absenden: Speicher des Flows leeren und die Object-URLs freigeben. */
+export function clearPhotos(key: string): void {
+  getPhotos(key).forEach((p) => URL.revokeObjectURL(p.url))
   set(key, empty)
-  return photos
+}
+
+/** Neue Dateinamen für alle Fotos (nach `photo_missing`/`photo_expired`): die alte Staging-Datei lässt sich nicht überschreiben. */
+export function renewPhotoIds(key: string): void {
+  set(key, getPhotos(key).map((p) => ({ ...p, id: crypto.randomUUID() })))
 }
 
 export function usePhotos(key: string) {

@@ -70,7 +70,8 @@ test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Tok
   const body = calls[0]!.body
   expect(body['clientRef']).toMatch(UUID)
   // Der Aufruf kennt nur die Kundenwahl und das, was der Kunde bestätigt hat (Version, Bedingungen, gezeigter Preis, Kontakt)
-  expect(Object.keys(body).sort()).toEqual(['clientRef', 'contact', 'from', 'inputs', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
+  expect(Object.keys(body).sort()).toEqual(['clientRef', 'contact', 'from', 'inputs', 'photoIds', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
+  expect(body['photoIds']).toEqual([]) // ohne Fotos eine leere Liste
   expect(body['shown']).toMatchObject({ kind: 'price', totalCents: 77040 })
   expect(body['contact']).toEqual({ name: 'Anna Muster', phone: '+43 660 1234567', email: 'anna@movenow.test' })
   const { shown: _shown, priceVersion: _version, ...rest } = body
