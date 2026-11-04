@@ -3,6 +3,13 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-11-04 · S9b-0 · Bauplan S9b (nur Dokumente) · abgeschlossen
+- `docs/S9b_PLAN.md`: vier Teilschritte S9b-1 bis S9b-4 (Partnerkern mit Statusfunktionen, Scope/USt./Stammdaten/Dokumente, echte TOTP-Tests und Satz lesen, Journal), Migrationen ab 0023, Rot-Beweis-Skript `scripts/redproof-s9b.mjs` mit vollständigem Snapshot und Restprüfung. Beks hat die Fragen 1–8 am 2026-11-04 mit „Alle ok, weiter“ beantwortet. Geändert wurden nur Dateien unter `docs/` (kein `src/`, `supabase/`, `tests/`, `scripts/`, `.claude/`), keine Migration, kein `db:push`, kein Deploy.
+- Berater (`advisor-report`): Runde 1 hoch 1 (H-1), mittel 9, niedrig 10, alle eingearbeitet (N-1 und N-4 teilweise); Runde 2 hoch 0, mittel 3 (R2-M1 bis R2-M3), niedrig 9 (R2-N1 bis R2-N9), mit Teilschritt in `docs/OPEN_ISSUES.md`. Der Plan blieb nach der letzten Abnahme unverändert (Commit 5f1c705). Nachweise: `docs/proof/s9b0/` (beide Berichte, Migrationsliste 0001–0022 lokal = remote); `npm run scan:proof` 89 Dateien, 0 Treffer, EXIT=0 (`tmp/proof/s9b0-scan-proof.log`, nicht kopiert, weil nach dem Scan entstanden).
+- Von Beks zu bestätigen (Entwurfsänderungen aus der Beratung, nicht in seiner Antwort enthalten): (a) `vat_rule` bis Phase 2 nur `standard_20`; (b) keine Dauer-Fixture im Journal (Journal-Tests laufen im Rollback); (c) `admin_approve_partner` und `admin_set_partner_status` entstehen schon in S9b-1. Vorarbeit für S9b-3: TOTP im Dev-Dashboard aktivieren, `otpauth` als `devDependency` freigeben.
+- Prozessabweichung: Die Session startete im Modus `acceptEdits` statt `default` und stoppte; Beks erlaubte das Umstellen mit `set_session_permission_mode`, danach lief A1 (Ref `vcpbbzdyltvffvzjrzdi` = Dev). 7f8bf63 (S9a-4c, PROGRESS-Hinweis AK7) wurde direkt auf main committet, nicht auf dem Branch – Prozessabweichung, nur Doku.
+- Weiter bei: S9b-1 (Beks startet die Session).
+
 ## 2026-11-03 · S9a-4c · Nachabnahme S9a-4b, Rechte-Funde · abgeschlossen
 - Migration 0022: `become_rental_provider()` gelöscht (H-1: Selbst-Upgrade machte den Gebührensatz für jeden Kunden lesbar), Staging-Zählung als Indexbereich (EXPLAIN belegt). Rot-Beweise vor dem Fix in `docs/proof/s9a4c/`; RLS-Test „kein Selbst-Upgrade“ und DEFINER-Allowlist.
 - M-1 (Ref hängt am Fotosatz, `refBody`), M-2 (Staging-Stand je Konto und Ref), N-4 (Mount-Ref); Redproofs `s9a3`/`s9a4` isoliert umgebaut (M-3: n zu n+1 statt Schicht), Art „Verfügbarkeit“ getrennt gezählt.
