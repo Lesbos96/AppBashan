@@ -25,7 +25,7 @@ beforeEach(() => {
   vi.stubGlobal('sessionStorage', session)
 })
 
-const route = { region: 'vienna', outsideKm: 0, driveHours: 0.2, distanceKm: 4.8, totalKm: 9.6, geometry: [[16.37, 48.2]] }
+const route = { region: 'vienna' as const, outsideKm: 0, driveHours: 0.2, distanceKm: 4.8, totalKm: 9.6, geometry: [[16.37, 48.2]] }
 const from = { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }
 const to = { label: 'Praterstraße 1, 1020 Wien', point: { lat: 48.21, lon: 16.38 } }
 const full: TransportFlow = { ...initialFlow, from, to, routeConsent: true, route: { ...route, geometry: [[16.37, 48.2]] }, hours: 5, crew: 3, boxes: 20 }
