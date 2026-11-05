@@ -116,12 +116,19 @@ describe('Staging-Stand (M-2)', () => {
     expect(calls.remove).toEqual([[`u/ref-1/${P1}.jpg`, `u/ref-1/${P2}.jpg`]])
   })
 
-  it('verlorene Upload-Antwort: discardStaging entfernt auch diese Datei; gleiche Ref lädt sie erneut hoch', async () => {
+  it('verlorene Upload-Antwort: discardStaging entfernt auch diese Datei', async () => {
     const { db, calls } = fakeDb({ message: 'Failed to fetch' })
     expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBe('offline')
-    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBeNull() // erneuter Versuch, keine Sperre durch „versucht“
-    expect(calls.upload).toHaveLength(2)
     await discardStaging(db)
+    // alter Code: nichts entfernt (die Datei stand nur nach Erfolg im Stand)
     expect(calls.remove).toEqual([[`u/ref-1/${P1}.jpg`]])
+  })
+
+  it('verlorene Upload-Antwort: dieselbe Ref versucht das Foto erneut (keine Sperre durch „versucht“)', async () => {
+    const { db, calls } = fakeDb({ message: 'Failed to fetch' })
+    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBe('offline')
+    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBeNull()
+    expect(calls.upload).toHaveLength(2)
+    expect(calls.remove).toEqual([])
   })
 })
