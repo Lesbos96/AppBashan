@@ -101,6 +101,8 @@ export function Progress({ value, max, label }: { value: number; max: number; la
       aria-valuemin={1}
       aria-valuemax={max}
       aria-valuenow={value}
+      // Ohne Wertetext läse ein Bildschirmleser Prozent (Schritt 1 von 6 = 0 %)
+      aria-valuetext={`Schritt ${value} von ${max}`}
       className="grid gap-1"
       style={{ gridTemplateColumns: `repeat(${max}, minmax(0, 1fr))` }}
     >

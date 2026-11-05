@@ -450,3 +450,18 @@ test.describe('Eingabezweck (1.3.5)', () => {
       await expect(page.getByLabel(label)).toHaveAttribute('autocomplete', value)
   })
 })
+
+test.describe('Fortschritt mit Wertetext (4.1.2)', () => {
+  test('Entrümpelung und Onboarding nennen Schritt bzw. Seite statt Prozent', async ({ page }) => {
+    await page.goto('/willkommen')
+    await expect(page.getByRole('progressbar', { name: 'Seite' })).toHaveAttribute('aria-valuetext', 'Seite 1 von 3')
+    await page.getByRole('button', { name: 'Weiter' }).press('Enter')
+    await expect(page.getByRole('progressbar', { name: 'Seite' })).toHaveAttribute('aria-valuetext', 'Seite 2 von 3')
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/entruempelung')
+    await expect(page.getByRole('progressbar', { name: 'Fortschritt' })).toHaveAttribute('aria-valuetext', 'Schritt 1 von 6')
+    await page.getByRole('radio', { name: /^Wohnung/ }).click()
+    await weiter(page).click()
+    await expect(page.getByRole('progressbar', { name: 'Fortschritt' })).toHaveAttribute('aria-valuetext', 'Schritt 2 von 6')
+  })
+})

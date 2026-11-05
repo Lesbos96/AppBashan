@@ -67,7 +67,7 @@ export function Onboarding() {
       </div>
 
       <section className="relative -mt-8 flex flex-1 flex-col rounded-t-sheet-top bg-background px-6 pt-6 pb-[max(var(--safe-bottom),24px)]">
-        <div role="progressbar" aria-label="Seite" aria-valuemin={1} aria-valuemax={pages.length} aria-valuenow={index + 1} className="flex gap-1.5">
+        <div role="progressbar" aria-label="Seite" aria-valuemin={1} aria-valuemax={pages.length} aria-valuenow={index + 1} aria-valuetext={`Seite ${index + 1} von ${pages.length}`} className="flex gap-1.5">
           {pages.map((_, i) => (
             <span key={i} className={`h-1.5 rounded-[3px] transition-all ${i === index ? 'w-[22px] bg-primary' : 'w-1.5 bg-fill'}`} />
           ))}
