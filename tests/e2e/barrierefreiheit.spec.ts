@@ -289,14 +289,15 @@ test.describe('Sichtbarer Text im Namen (2.5.3)', () => {
 })
 
 test.describe('Foto-Zähler wird angesagt (4.1.3)', () => {
-  test('Zähler ist eine höfliche Live-Region und nennt „Fotos"', async ({ page }) => {
+  test('Überschrift und Zähler bilden eine höfliche Live-Region, ohne zweites Element „Fotos"', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await page.goto('/transport')
-    const counter = page.getByText(/^\d von 8 Fotos$/)
-    await expect(counter).toHaveText('0 von 8 Fotos')
-    await expect(counter).toHaveAttribute('aria-live', 'polite')
+    const region = page.locator('[aria-live="polite"][aria-atomic="true"]', { has: page.getByRole('heading', { name: 'Fotos' }) })
+    await expect(region).toHaveText(/^Fotos\s*0 von 8$/)
     await addPhotos(page, 2)
-    await expect(counter).toHaveText('2 von 8 Fotos')
+    await expect(region).toHaveText(/^Fotos\s*2 von 8$/)
+    // Der Shot-Spec sucht „Fotos" exakt: genau ein Treffer
+    await expect(page.getByText('Fotos', { exact: true })).toHaveCount(1)
   })
 })
 

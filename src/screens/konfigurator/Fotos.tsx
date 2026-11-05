@@ -26,12 +26,11 @@ export function Fotos({ storeKey, level = 3 }: { storeKey: string; level?: 2 | 3
   return (
     <>
       <Card className="flex flex-col gap-3 px-4 py-3.5">
-        <div className="flex items-baseline justify-between">
+        {/* Neue oder entfernte Fotos werden angesagt (WCAG 4.1.3): die Region umfasst Überschrift und Zähler, also „Fotos, 2 von 8" */}
+        <div aria-live="polite" aria-atomic="true" className="flex items-baseline justify-between">
           <Heading className="m-0 text-headline">Fotos</Heading>
-          {/* Neue oder entfernte Fotos werden angesagt (WCAG 4.1.3) */}
-          <span aria-live="polite" aria-atomic="true" className="text-[13px] text-text-secondary tabular-nums">
+          <span className="text-[13px] text-text-secondary tabular-nums">
             {photos.length} von {MAX_PHOTOS}
-            <span className="sr-only"> Fotos</span>
           </span>
         </div>
         <div className="grid grid-cols-5 gap-[7px]">
