@@ -29,6 +29,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E14 · Kontextgrenze überschritten, weitergearbeitet.** Nach Phase 3 meldete `get_session` rund 220.000 Tokens Kontext. `CLAUDE.md` verlangt ab etwa 150.000: committen, Stand festhalten, Stopp, Fortsetzung in einer neuen Session. Der Nachtauftrag verlangt aber ausdrücklich Prüfdurchgänge, „bis ein weiterer Durchgang nichts Sinnvolles mehr findet“, und niemand kann über Nacht eine neue Session starten (Sessions startet nur Beks). Entscheidung: Alles ist committet und gepusht; die Prüfdurchgänge laufen über `reviewer`-Agenten mit eigenem Kontext, der Hauptkontext nimmt nur deren Befunde und kleine Edits auf. Frage F8.
 
+- **E15 · Prüfdurchgang 1.** Drei `reviewer`-Läufe (ARCHITEKTUR, Rechtsentwürfe, INVESTOREN) mit eigenem Kontext. Ergebnis: ARCHITEKTUR 6 hoch, 6 mittel, 9 niedrig; Rechtsentwürfe 2 hoch, 9 mittel, 3 niedrig; INVESTOREN 4 hoch, 7 mittel, 3 niedrig. Die tragenden Befunde habe ich am Code nachgeprüft (u. a. `withdraw` ohne Aufruf in `src/`, `guard_platform_setting` schützt nur die drei Gebührenschlüssel, CORS ohne serverseitige Sperre, Bezirksgrenzen CC BY 4.0, PLZ des Ziels im Listing) und alle eingearbeitet, außer: Rechtsbefund 9 (Termin bei „Flexibel“) war nur teilweise richtig, der Code rechnet ohne Zeitfenster 00:00 und mit „Flexibel“ 08:00; beides steht jetzt im Text. Wichtigste Korrekturen: Zurückziehen ist nicht in der App, sondern nur in der Datenbank; geplante Partnerfunktionen im Investoren-Dokument klar als geplant markiert; „unabhängige Abnahme“ ersetzt durch „KI-Prüf-Agenten, keine externe Sicherheitsprüfung“.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -42,6 +44,9 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **F7 · Ansprache der Rechtstexte:** Kunden-Texte per Du, Partner-Verträge in dritter Person. Passt das, oder sollen die Partner-Texte ebenfalls per Du sein?
 
 - **F8 · Kontextgrenze bei Nachtaufträgen:** Soll die 150.000-Token-Regel aus `CLAUDE.md` auch für unbeaufsichtigte Aufträge gelten (dann endet die Nacht dort), oder ist Weiterarbeiten über Subagents wie hier (E14) in Ordnung?
+
+- **F9 · Einstellungen ohne Trigger-Schutz:** `guard_platform_setting` schützt nur `fee_rate`, `fee_vat_rate`, `fee_notice_days` (M16:42-45). Stornostufen, Fristen, Anfahrtspauschale und Haltefenster kann `service_role` per UPDATE/DELETE ändern (nur TRUNCATE ist entzogen, M15:271). Bestehende Aufträge sind über den Snapshot der Revision geschützt, neue nicht. Soll die Datenbank für alle Schlüssel „nur neue Version“ erzwingen? (Geld- und Sicherheitsfrage für den `advisor` in der nächsten passenden Session.)
+- **F10 · Zurückziehen ohne Knopf:** `withdraw()` ist gebaut, die App ruft es nicht auf (`docs/ROADMAP.md:103` offen). Kunden können eine gesendete Anfrage heute nicht selbst zurückziehen. Bewusst bis S9i, oder vorziehen?
 
 ## Stand
 
