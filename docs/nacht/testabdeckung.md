@@ -51,4 +51,17 @@ Legende: ✓ getestet · teilw. = nur einzelne Fälle · ✗ kein Test · E2E = 
 
 ## Verlauf
 
-(wird je Teilziel ergänzt)
+| Teilziel | Commit | Ergebnis |
+|---|---|---|
+| Phase 1 Bestandsliste | 6e7435f | diese Datei |
+| Phase 2 `flow.ts` (gespeicherter Zustand, Grenzen aus `LIMITS`) | dcf9236 (Test, rot), 92a466a (Fix) | **echter Fehler:** Bruchzahlen bei Feldern, die das Preismodul mit `int()` liest (`crew`, `vehicles`, Stockwerke, Kartons, Halteverbot, Entrümpelung `floor`), wurden aus dem sessionStorage übernommen; die Vorschau blieb im Fehlerzustand und jeder Stepper-Schritt behielt den Bruch. Vor dem Fix 7 Fälle rot, danach grün. Fix: `whole()` in `flow.ts`. |
+| Phase 2 reine Logik (`quote`, `prices`, `route`, `onboarding`, `preview`, `format`, `options`) | 9dfa301 | `quote-helpers.test.ts` (17), `client-lib.test.ts` (16), `preview-helpers.test.ts` (10). Bemerkenswert: `loadPrices` filtert Quellen-Links auf `https://` (kein `javascript:`-Link im Info-Sheet) – jetzt per Test belegt. |
+| Phase 3 Fotos/Uploads | 548d9bb (Test, rot), 186aef5 (Fix) | **echter Fehler:** HEIC-Datei ohne MIME-Typ (Chrome unter Windows) bekam „Das ist kein Bild.“ statt der HEIC-Meldung, weil der Namens-Check erst nach der Typprüfung lief. Der bestehende Testfall dafür endete mit `if (!type) return` und prüfte nichts. Vor dem Fix 3 Fälle rot. Fix: HEIC-Prüfung zuerst; `return` im alten Test entfernt. E2E `fotos.spec.ts:191` (HEIC mit Typ) und `konfigurator.spec.ts:162` („kein Bild“ für `.txt`) bleiben gültig. |
+| Phase 3 Entwurfsspeicher | 765f127 | `draft-extra.test.ts` (27): Kontakt, Termin, `readShownFull` (keine Zusatzfelder wie `feeCents` übernommen), `readSent`, gesperrter Speicher. |
+| Phase 4 Komponententests | 6a53368 | `screens.test.ts` (24): Start, Onboarding, Profil, Datenschutz, Impressum, Folgt, Anmelden (Token aus dem Fragment nie im Markup), Aufträge (keine Abfrage ohne Sitzung), Gesendet (Festpreis, Abweichung, Angebot, unlesbarer Snapshot, fremder Pfad). Je Screen die Regeln aus `CLAUDE.md`: keine Gebühr/Prototyp-Texte, Beträge nur mit geschütztem Leerzeichen, Felder mit Label, Knöpfe/Links mit Namen. Gegenprobe: die Regel-Prüfung schlägt bei sechs absichtlich falschen Markups an. Gemockt: Supabase, Sitzung, `Illustration` (matchMedia ohne Server-Snapshot) und `Sheet` (liest `window.innerHeight` im Render). |
+
+**Prüfläufe (test-runner, Logs in `tmp/proof/`):** `nacht-tests-check-1.log` (Stand 186aef5) `npm run check` EXIT=0, 471 Tests; `nacht-tests-check-2.log` (Stand 6a53368) `npm run check` EXIT=0, 522 Tests (vorher auf `main`: 368 laut `PROGRESS.md`); `nacht-tests-build-2.log` `npm run build` mit Dummy-Werten für URL und Publishable Key (kein `.env.local`) EXIT=0. E2E nicht gelaufen: an den Screens ändern die beiden Fixes nur Validierung bzw. Meldungsreihenfolge, und die betroffenen E2E-Fälle sind oben nachgeschlagen.
+
+**Grenzen der Komponententests:** Erster Render ohne Effekte. Screens, die erst nach dem Laden der Tarife etwas zeigen (Konfigurator, Entrümpelung, Montage, Zusammenfassung), zeigen dort nur den Ladezustand; sie bleiben bei den E2E. Bekannte Fehler aus `OPEN_ISSUES.md` (z. B. Plan-M-1, „Vorher angezeigt“ bei Spannen) sind hier bewusst nicht getestet (T4), sie gehören zur Aufgabe „OPEN_ISSUES“.
+
+**Hinweis zum Zusammenführen:** Die Aufgabe „OPEN_ISSUES“ (Branch `nacht-open-issues`) ändert `Sent` in `src/lib/draft.ts`, falls Plan-M-1 dort umgesetzt ist. Dann müssen `draft-extra.test.ts` („Bestätigung (sent)“) und `screens.test.ts` („Bestätigung nach dem Senden“) beim Zusammenführen auf das neue Feld umgestellt werden; Einzelheiten in `docs/nacht/open-issues.md`.
