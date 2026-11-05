@@ -34,8 +34,9 @@ test.describe('App-Shell', () => {
   test('Tab-Bar erreicht alle Tabs mit der Tastatur', async ({ page }) => {
     await page.goto('/')
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
+    // Phase 1: genau drei Tabs, kein „Miete“ (OPEN_ISSUES S9a-2/S9a-3 „Tab Miete“)
+    await expect(nav.getByRole('link')).toHaveText([/Start/, /Aufträge/, /Profil/])
     for (const [label, heading] of [
-      ['Miete', 'Dieser Bereich ist noch nicht verfügbar'],
       ['Profil', 'Noch kein Konto'],
       ['Start', 'Was hast du vor?'],
     ]) {

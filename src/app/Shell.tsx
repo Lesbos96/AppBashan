@@ -5,9 +5,9 @@ import { TabBar } from '../components/Bars'
 import { spring } from '../lib/motion'
 import { useOnline } from '../lib/online'
 
+// Phase 1: Start · Aufträge · Profil („Miete“ kommt erst in Phase 2 zurück, CLAUDE.md „UI“).
 const tabs = [
   { to: '/', label: 'Start', icon: 'home' },
-  { to: '/miete', label: 'Miete', icon: 'truck' },
   { to: '/auftraege', label: 'Aufträge', icon: 'orders' },
   { to: '/profil', label: 'Profil', icon: 'profile' },
 ]
