@@ -36,6 +36,11 @@ test.describe('App-Shell', () => {
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
     // Phase 1: genau drei Tabs, kein „Miete“ (OPEN_ISSUES S9a-2/S9a-3 „Tab Miete“)
     await expect(nav.getByRole('link')).toHaveText([/Start/, /Aufträge/, /Profil/])
+    // gleich verteilt über die ganze Leiste (gemessen, nicht aus dem Bild): gleiche Breiten, der letzte Tab endet am rechten Rand
+    const bar = (await nav.boundingBox())!
+    const boxes = await Promise.all((await nav.getByRole('link').all()).map(async (l) => (await l.boundingBox())!))
+    for (const b of boxes) expect(Math.abs(b.width - boxes[0]!.width)).toBeLessThan(1)
+    expect(bar.x + bar.width - (boxes[2]!.x + boxes[2]!.width)).toBeLessThan(16)
     for (const [label, heading] of [
       ['Profil', 'Noch kein Konto'],
       ['Start', 'Was hast du vor?'],
