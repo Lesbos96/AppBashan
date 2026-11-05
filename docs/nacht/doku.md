@@ -20,12 +20,20 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **E7 · Kontext.** `CLAUDE.md` verlangt ab etwa 150.000 Tokens: committen, Stand festhalten, Stopp. Deshalb lasse ich breite Suchen von `Explore` erledigen (Pfade, Zeilen, kurze Auszüge) und lese selbst nur gezielte Zeilenbereiche. Erreiche ich die Grenze, steht hier „Weiter bei:“.
 - **E8 · `PROGRESS.md` bleibt unberührt.** Der Nachtauftrag ist keine ROADMAP-Session; der Bericht steht hier. Ein Eintrag oben in `PROGRESS.md` würde mit S9b-1 kollidieren, das vom selben `main` startet.
 
+- **E9 · Phase 1, Faktenbasis.** Vier `Explore`-Läufe (Migrationen Tabellen/RLS, Migrationen Funktionen/Trigger, Edge Functions/Konfiguration/Skripte, App/Tests). Ihre Zeilenangaben habe ich an den tragenden Stellen selbst nachgeprüft; ein Lauf hatte Funktionen aus M15 falsch M16 zugeordnet (`is_admin`, `assert_admin`, `publish_version`), korrigiert nach Grep. Beschrieben ist nur, was gebaut ist; Geplantes steht getrennt in Abschnitt 8 der Datei.
+- **E10 · `docs/ARCHITECTURE.md` nicht korrigiert.** Drei veraltete Stellen gefunden (`:32`, `:67`, `:100`). Der Auftrag erlaubt Änderungen unter `docs/`, aber `ARCHITECTURE.md` ist eine Quelle, auf die `CLAUDE.md` und die ROADMAP verweisen; ich liste die Stellen in `docs/ARCHITEKTUR.md` Abschnitt 9 und überlasse die Korrektur der nächsten Session. Frage F5.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
 - **F2 · Supabase-Connector:** Der Connector war in dieser Cloud-Session verbunden und hätte Migrationen, SQL und Deploys erlaubt. Nicht benutzt. Für unbeaufsichtigte Läufe trennen?
 - **F3 · `docs/legal/` und `docs/recht/`:** Welche Fassung gilt künftig? Vorschlag: `docs/recht/` ersetzt `docs/legal/` nach Rechtsprüfung; das Löschen von `docs/legal/` machst du.
 
+- **F4 · Miete per direktem UPDATE:** `rental_bookings` lässt den Kunden `requested → withdrawn` per UPDATE setzen (Grant M01:383, Policy und Trigger M17:114-132), ohne `status_events`. Bewusst so belassen bis Phase 2, oder beim Umbau der Miete auf eine Funktion wie `withdraw()` umstellen?
+- **F5 · `docs/ARCHITECTURE.md`:** Sollen die drei veralteten Stellen (`quote` schreibt `fee_splits`, „Anfrage bearbeiten“, Tab-Bar mit „Miete“) in der nächsten Session korrigiert werden, oder ersetzt `docs/ARCHITEKTUR.md` künftig den Ist-Teil?
+- **F6 · Produktivprojekt einrichten:** M17 und M19 enthalten DELETE-Anweisungen für Dev-Daten. Auf einem leeren Projekt wirkungslos. Bitte beim Aufsetzen des Produktivprojekts alle Migrationen vor den ersten echten Daten einspielen.
+
 ## Stand
 
-- Start: Branch angelegt, diese Datei angelegt.
+- Start: Branch angelegt, diese Datei angelegt (81d865e).
+- Phase 1: `docs/ARCHITEKTUR.md` geschrieben.
