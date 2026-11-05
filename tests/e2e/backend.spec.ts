@@ -22,7 +22,8 @@ test('Tarife und Bedingungen kommen aus seed.sql: 28 Zeilen, Bedingungen mit gü
   })
   await page.goto('/profil/preise')
   await expect(page.getByRole('dialog', { name: 'Wie rechnet MoveNow?' })).toContainText('55,75 € je Stunde')
-  expect(loaded).toEqual(['200 /rest/v1/current_price_version', '200 /rest/v1/price_config'])
+  // Im Dev-Modus lädt React StrictMode doppelt; maßgeblich ist, dass jeder Aufruf mit 200 aus der Schicht kam.
+  expect(new Set(loaded)).toEqual(new Set(['200 /rest/v1/current_price_version', '200 /rest/v1/price_config']))
 })
 
 // Rot-Beweis der Fixture (nur mit E2E_REDPROOF=1): ein ungemockter Aufruf ohne Aufräumen muss den Test scheitern lassen

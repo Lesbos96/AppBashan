@@ -68,17 +68,20 @@ async function transportToSummary(page: Page, piano: boolean) {
   await fillContact(page)
 }
 
-/** Antwort der Auftragsliste mit genau einer Anfrage (Spalten wie `Auftraege.tsx`). */
-async function mockOrders(page: Page, rows: object[], first?: Reply) {
-  let n = 0
-  await page.route('**/rest/v1/service_requests**', (r) => {
-    n++
-    if (n === 1 && first) return r.fulfill({ status: first.status ?? 200, headers: cors, json: first.json })
-    return r.fulfill({ headers: cors, json: rows })
-  })
+/**
+ * Antwort der Auftragsliste (Spalten wie `Auftraege.tsx`). Solange `failure.reply` gesetzt ist, scheitert jeder Aufruf:
+ * Im Dev-Modus lädt React StrictMode doppelt und verwirft das erste Ergebnis, ein „nur der erste Aufruf scheitert" käme nie an.
+ */
+async function mockOrders(page: Page, rows: object[], failure: { reply?: Reply } = {}) {
+  await page.route('**/rest/v1/service_requests**', (r) =>
+    failure.reply ? r.fulfill({ status: failure.reply.status ?? 200, headers: cors, json: failure.reply.json }) : r.fulfill({ headers: cors, json: rows }),
+  )
 }
 
 const noFeeKeys = (body: unknown) => expect(JSON.stringify(body)).not.toMatch(/fee|commission|provision|platform/i)
+
+/** Seitenübergang abgeschlossen: Während die alte Seite ausblendet, stehen kurz zwei `main` im DOM (Shell, AnimatePresence). */
+const oneMain = (page: Page) => expect(page.locator('main')).toHaveCount(1)
 
 test.describe('W2 Umzug', () => {
   test('Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis', async ({ page }) => {
@@ -93,6 +96,7 @@ test.describe('W2 Umzug', () => {
     await page.getByRole('button', { name: 'Anfrage senden' }).click()
 
     await expect(page).toHaveURL(/\/umzug\/gesendet$/)
+    await oneMain(page)
     await expect(page.getByRole('heading', { name: 'Anfrage gesendet.' })).toBeVisible()
     await expect(page.getByText('Angefragt')).toBeVisible()
     await expect(page.getByText(euro('689,61 €'))).toBeVisible()
@@ -120,9 +124,11 @@ test.describe('W2 Umzug', () => {
     await umzugToSummary(page)
     await page.getByRole('link', { name: 'Termin', exact: true }).click()
     await expect(page).toHaveURL(/\/umzug\/termin$/)
+    await oneMain(page)
     await expect(page.getByRole('button', { name: /, 15\. .*ausgewählt/ })).toBeVisible()
     await page.getByRole('link', { name: 'Umzug' }).first().click()
     await expect(page).toHaveURL(/\/umzug$/)
+    await oneMain(page)
     await expect(page.getByRole('button', { name: euro('Richtpreis 689,61 €') })).toBeVisible()
     // Wieder vor: Kontakt ist noch da
     await weiter(page).click()
@@ -160,6 +166,7 @@ test.describe('W3 Möbeltransport', () => {
     await page.getByRole('button', { name: 'Anfrage senden' }).click()
 
     await expect(page).toHaveURL(/\/transport\/gesendet$/)
+    await oneMain(page)
     await expect(page.getByText('Wir melden uns mit einem Angebot', { exact: false })).toBeVisible()
     await expect(page.getByText('Wartet auf Angebot')).toBeVisible()
     await expect(page.getByText(/\d,\d\d.€/)).toHaveCount(0)
@@ -265,11 +272,14 @@ test.describe('W6 Transportermiete und W7 Vermieter (noch nicht gebaut)', () => 
 test.describe('W9 Aufträge', () => {
   test('Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge', async ({ page }) => {
     await mockAuth(page)
-    await mockOrders(page, [{ id: 'a', service: 'assembly', status: 'requested', preferred_date: '2026-12-15', from_address: 'Neubaugasse 12, 1070 Wien', to_address: null, price_revisions: { snapshot: price(77040) }, created_at: '2026-11-05T10:00:00Z' }], { status: 400, json: { message: 'Test' } })
+    // 400 statt Abbruch: postgrest-js wiederholt Netzwerkfehler und 5xx mit Wartezeit
+    const failure: { reply?: Reply } = { reply: { status: 400, json: { message: 'Test' } } }
+    await mockOrders(page, [{ id: 'a', service: 'assembly', status: 'requested', preferred_date: '2026-12-15', from_address: 'Neubaugasse 12, 1070 Wien', to_address: null, price_revisions: { snapshot: price(77040) }, created_at: '2026-11-05T10:00:00Z' }], failure)
     await page.goto('/anmelden?next=%2Fauftraege')
     await signInWithCode(page)
     await expect(page).toHaveURL(/\/auftraege$/)
     await expect(page.getByRole('alert')).toContainText('Die Aufträge konnten nicht geladen werden')
+    delete failure.reply
     await page.getByRole('button', { name: 'Erneut versuchen' }).click()
     await expect(page.getByText('Aktiv · 1')).toBeVisible()
     await expect(page.getByText(euro('770,40 €'))).toBeVisible()
