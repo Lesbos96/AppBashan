@@ -4,6 +4,8 @@
 // Fee-Proben laufen nur in probes(…) (Rollback) oder mit künftigem Datum: nie committete Fee-Zeilen mit effective_from ≤ heute, solange ein Fee-Trigger gelockert ist.
 // Start: npx dotenv -e .env.local -- node scripts/redproof-s9a1.mjs [--only <Namensteil>[,<Namensteil>…]]  (--only schreibt tmp/proof/s9a1-rotbeweis-nachpruefung.md)
 import './dev-guard.mjs'
+console.error('Gesperrt bis R1 Redproof-Härtung (Abnahme nachtabnahme-vorher-redproof-r2.md: M-5)')
+process.exit(2)
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 

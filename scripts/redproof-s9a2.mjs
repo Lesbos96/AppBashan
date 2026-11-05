@@ -7,6 +7,8 @@
 // Vorher/Nachher: Definitionen (md5), Policies, Trigger und Rechte werden verglichen. Bericht: tmp/proof/s9a2-rotbeweis.md
 // Start: npx dotenv -e .env.local -- node scripts/redproof-s9a2.mjs [--only <Namensteil>[,…]] [--no-tests]
 import './dev-guard.mjs'
+console.error('Gesperrt bis R1 Redproof-Härtung (Abnahme nachtabnahme-vorher-redproof-r2.md: N-6)')
+process.exit(2)
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'

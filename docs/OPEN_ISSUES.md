@@ -252,7 +252,7 @@ Der Plan `docs/S9b_PLAN.md` ändert sich nach dieser Abnahme nicht mehr. Die zus
 **Von Beks zu bestätigen** (Entwurfsänderungen der Beratung, `docs/S9b_PLAN.md` Kopf): `vat_rule` bis Phase 2 nur `standard_20`; keine Dauer-Fixture im Journal; Statusfunktionen in S9b-1. Der Plan führt N-5 (Partnerzugriff auf Fotos) als Negativtest in S9b-1 und übergibt die Umsetzung an S9d; R11-1, R11-7, R7-4, N-10 und A4c-N3 sind den Teilschritten S9b-1 bis S9b-4 zugeordnet, erledigt sind sie erst mit deren Abschluss.
 
 ## R1 Redproof-Härtung · Nachtabnahme 2026-11-05 (Berater `tmp/proof/nachtabnahme-vorher-redproof.md`, hoch 1)
-Konstruktionsmängel aller Redproof-Skripte (redproof-s9a3 und redproof-s9a4), nicht der Nachtabnahme. `redproof-s9a3.mjs` und `redproof-s9a4.mjs` sind gesperrt (Exit 2 direkt nach dem Dev-Guard, kein Umgehungsschalter) bis zum eigenen Schritt „R1 Redproof-Härtung“ vor S9b-1. Die Dev-Sperren sind in der Nachtabnahme über devcheck, test:rls und live-uploads belegt. **S9b-1 baut redproof-s9b erst auf dem in R1 gehärteten Gerüst, nicht als Kopie von redproof-s9a4.**
+Konstruktionsmängel aller Redproof-Skripte (redproof-s9a1 bis redproof-s9a4), nicht der Nachtabnahme. Runde 2: `tmp/proof/nachtabnahme-vorher-redproof-r2.md` (hoch 0). `redproof-s9a1.mjs` bis `redproof-s9a4.mjs` sind gesperrt (Exit 2 direkt nach dem Dev-Guard, kein Umgehungsschalter) bis zum eigenen Schritt „R1 Redproof-Härtung“ vor S9b-1. Die Dev-Sperren sind in der Nachtabnahme über devcheck, test:rls und live-uploads belegt. **S9b-1 baut redproof-s9b erst auf dem in R1 gehärteten Gerüst, nicht als Kopie von redproof-s9a4.**
 
 | Nr. | Einstufung | Teilschritt | Kurzbeschreibung |
 |---|---|---|---|
@@ -265,6 +265,9 @@ Konstruktionsmängel aller Redproof-Skripte (redproof-s9a3 und redproof-s9a4), n
 | N-2 | niedrig | R1 (vor S9b-1) | Nach Abbruch in `run()` überlagert ein TypeError (`outcome` undefined, Zeile 742) den eigentlichen Fehler. Fix: `if (!outcome) process.exit(1)` |
 | N-3 | niedrig | R1 (vor S9b-1) | Startprüfung erkennt nur Trigger „D“, nicht „R“ oder „A“. Fix: Soll ist „O“ |
 | N-4 | niedrig | R1 (vor S9b-1) | Wiederholung bei Transport-Timeout, während die erste Anfrage serverseitig läuft („tuple concurrently updated“). Fix: nach Transportfehler im restore den Zustand lesen und vergleichen statt blind wiederholen |
+| M-5 | mittel | R1 (vor S9b-1) | `redproof-s9a1.mjs` war nicht gesperrt und lauffähig (Mängel wie H-1 und M-1, abgeschwächt: Lockerungen von Triggern, `is_admin()` ohne aal2 und Policies, Autocommit, kein Signal-Handler, Vorher-Basis relativ). Gesperrt wie s9a3/s9a4; R1 härtet auch s9a1 oder entfernt es (Entscheidung dort) |
+| N-6 | niedrig | R1 (vor S9b-1) | `redproof-s9a2.mjs` war nur faktisch gesperrt (alte Signatur von `quote_save_request`, 0019), legt vorher ein Wegwerf-Konto an. Jetzt ausdrücklich gesperrt; R1 härtet oder entfernt es |
+| N-7 | niedrig | R1 (vor S9b-1) | `redproof-s9a4.mjs:686-706`: Werkzeugprüfungen (dev-guard mit fiktiver Ref, A-N4 über s9a3) erwarten Exit 2 mit „ABBRUCH“ und messen nach dem Entsperren die Sperre statt der Wirkung. R1 entfernt alle Sperren im selben Commit; die Sperrmeldung enthält nie „ABBRUCH“ |
 | N-5 | niedrig | keiner | `Shell.tsx`: Fokus nach „Zurück“ auf der Überschrift statt auf dem auslösenden Element. WCAG-konform, keine Regression, kein Handlungsbedarf |
 
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
