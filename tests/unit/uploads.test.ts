@@ -107,4 +107,21 @@ describe('Staging-Stand (M-2)', () => {
     await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)
     expect(calls.upload).toHaveLength(2)
   })
+
+  // OPEN_ISSUES A4c-N2: Die Datei kann angekommen sein, obwohl die Antwort verloren ging; sie zählte sonst bis photo_cleanup gegen das Kontingent.
+  it('verlorene Upload-Antwort: Ref-Wechsel entfernt auch diese Datei', async () => {
+    const { db, calls } = fakeDb(null, { message: 'Failed to fetch' })
+    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1), photo(P2)], none)).toBe('offline')
+    await uploadAll(db, 'u', 'ref-2', [photo(P1)], none)
+    expect(calls.remove).toEqual([[`u/ref-1/${P1}.jpg`, `u/ref-1/${P2}.jpg`]])
+  })
+
+  it('verlorene Upload-Antwort: discardStaging entfernt auch diese Datei; gleiche Ref lädt sie erneut hoch', async () => {
+    const { db, calls } = fakeDb({ message: 'Failed to fetch' })
+    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBe('offline')
+    expect(await uploadAll(db, 'u', 'ref-1', [photo(P1)], none)).toBeNull() // erneuter Versuch, keine Sperre durch „versucht“
+    expect(calls.upload).toHaveLength(2)
+    await discardStaging(db)
+    expect(calls.remove).toEqual([[`u/ref-1/${P1}.jpg`]])
+  })
 })
