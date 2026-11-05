@@ -189,20 +189,24 @@ export function stashDraft(path: Path): void {
       const value = sessionStorage.getItem(key)
       if (value !== null) items[key] = value
     }
-    localStorage.setItem(HANDOVER_KEY, JSON.stringify({ until: Date.now() + HANDOVER_TTL_MS, items }))
+    localStorage.setItem(HANDOVER_KEY, JSON.stringify({ until: Date.now() + HANDOVER_TTL_MS, path, items }))
   } catch {
     // Speicher gesperrt: der Entwurf bleibt nur in diesem Tab
   }
 }
 
-/** Schreibt die Übergabe einmalig zurück (nur Schlüssel, die in diesem Tab fehlen) und löscht sie. Ungültiges oder Abgelaufenes wird verworfen. */
+/**
+ * Schreibt die Übergabe einmalig zurück (nur Schlüssel, die in diesem Tab fehlen) und löscht sie. Ungültiges oder Abgelaufenes wird verworfen.
+ * Nur die Entwurfsschlüssel des Service, der die Übergabe angelegt hat (OPEN_ISSUES S8b-2 F5); eine Übergabe ohne gültigen `path` gilt nicht.
+ */
 export function restoreDraft(): void {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(HANDOVER_KEY) ?? 'null')
     localStorage.removeItem(HANDOVER_KEY)
     if (!raw || typeof raw !== 'object' || !('until' in raw) || typeof raw.until !== 'number' || raw.until <= Date.now() || !('items' in raw) || !raw.items || typeof raw.items !== 'object') return
+    if (!('path' in raw) || typeof raw.path !== 'string' || !paths.includes(raw.path as Path)) return
     if (JSON.stringify(raw.items).length > MAX_HANDOVER_CHARS) return
-    const allowed = new Set(paths.flatMap(draftKeys))
+    const allowed = new Set(draftKeys(raw.path as Path))
     for (const [key, value] of Object.entries(raw.items)) {
       if (allowed.has(key) && typeof value === 'string' && sessionStorage.getItem(key) === null) sessionStorage.setItem(key, value)
     }

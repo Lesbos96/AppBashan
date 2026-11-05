@@ -73,9 +73,25 @@ describe('Übergabe über die Anmeldung', () => {
   })
 
   it('übernimmt nur bekannte Schlüssel, nie fremde', () => {
-    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, items: { 'movenow.flow.montage': '{}', 'evil.key': 'x' } }))
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items: { 'movenow.flow.montage': '{}', 'evil.key': 'x' } }))
     restoreDraft()
     expect([...session.map.keys()]).toEqual(['movenow.flow.montage'])
+  })
+
+  it('übernimmt nur die Schlüssel des Service, der die Übergabe angelegt hat (F5)', () => {
+    const items = { 'movenow.flow.montage': '{}', 'movenow.termin.montage': '{}', 'movenow.flow.move': '{"from":"fremd"}', 'movenow.contact.umzug': '{"name":"x"}' }
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items }))
+    restoreDraft()
+    expect([...session.map.keys()].sort()).toEqual(['movenow.flow.montage', 'movenow.termin.montage'])
+  })
+
+  it('Übergabe ohne oder mit unbekanntem Service wird verworfen', () => {
+    for (const path of [undefined, 'miete', 42]) {
+      local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path, items: { 'movenow.flow.montage': '{}' } }))
+      restoreDraft()
+      expect(session.map.size).toBe(0)
+      expect(local.getItem('movenow.handover')).toBeNull()
+    }
   })
 
   it('kaputter Eintrag stört nicht', () => {
@@ -232,7 +248,7 @@ describe('Antwort von quote', () => {
   })
 
   it('Übergabe über 20 000 Zeichen wird verworfen', () => {
-    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, items: { 'movenow.flow.montage': 'x'.repeat(20_001) } }))
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items: { 'movenow.flow.montage': 'x'.repeat(20_001) } }))
     restoreDraft()
     expect(session.map.size).toBe(0)
     expect(local.getItem('movenow.handover')).toBeNull()
