@@ -194,13 +194,30 @@ Grundlage: `npm run shots:all` (536 bestanden, EXIT=0, `tmp/proof/ende-shots-all
 | Tests: fester Betrag 95,74 €, feste Wartezeiten, `tabTo` ohne Fehler bei Nichterreichen | niedrig | behoben als T1 (Betrag aus dem Knopf, Zähler muss sich ändern, `tabTo` wirft) |
 | Schutztest „erster Aufruf" prüft nur `body` | niedrig | in Kauf genommen |
 | Testzahl in der Nachtdatei uneinheitlich | niedrig | Endzahlen im Abschnitt „Ende" |
+
+Nach der Abnahme umgesetzt (Commits): A21b `e875fb9` (Hinweis am Feld; Reviewer-Runde `tmp/proof/a21b-review.md`: 6 Bilder, kein hoch/mittel), A21c `9877b39` (`text-pretty`, Reviewer-Fund niedrig: „Ziffern." stand bei 390 px allein), T1 `cc84b87` (Tests), P2b `b284985` (Vorladen mit `requestIdleCallback`, nicht bei `saveData`).
 | Tab „Miete" in der Tab-Leiste | niedrig | nicht aus dieser Nacht, bekannt |
 
 Ohne Befund: Fokusrahmen in allen Listen (Kontrolllauf: 0 abgeschnitten), Live-Regionen (keine melden beim ersten Anzeigen), Router-Handles statisch, Vorladen fängt Fehler ab, kein fester 15-%-Wert, keine Gebühr in Kunden-Screens (keine Texte geändert außer Bedienelement-Namen und Statusmeldungen).
 
 ## Abgebrochen
 
-(noch nichts)
+Kein Teilziel abgebrochen. Bewusst nicht umgesetzt (mit Begründung oben): A16 Pfeiltasten in eigenen Radiogruppen, A17 Schalter-/Segmentkontrast aus `tokens.json`, A18 Endlos-Animationen, Rest von A12 (Adresskarte, Segmente), Illustrationen und Supabase-Teile aus dem Einstieg lösen, `preconnect` (hier nicht messbar).
+
+## Ende
+
+### Letzte Läufe auf dem Branch (vor dem Zusammenführen mit `main`)
+| Lauf | Ergebnis | Log |
+|---|---|---|
+| `npm run check` | EXIT=0, 368 Unit-Tests, Lint, Typecheck, Deno | `tmp/proof/final-check.log` |
+| `npm run build` | EXIT=0, keine Warnung | `tmp/proof/final-build.log` |
+| `npm run test:e2e` | EXIT=0, **132 bestanden** (vorher 102, 30 neue Tests) | `tmp/proof/final-e2e.log` |
+| `npm run shots` | EXIT=0, 134 bestanden (67 Zustände, Light und Dark) | `tmp/proof/final-shots.log` |
+| `npm run shots:all` | EXIT=0, 536 bestanden (vor A21b/A21c) | `tmp/proof/ende-shots-all.log` |
+| `npm run test:rls` | nicht gelaufen: kein Zugang zum Dev-Projekt; die Nacht ändert nichts an `supabase/`, Datenbank oder Edge Functions | – |
+
+### Zusammenführen mit `main` (Freigabe von Beks in der Nacht)
+Beks hat um ca. 03:00 Uhr geschrieben: „erledige jetzt alles ohne mich zu fragen. Speichere und merge dann alles. du darfst alles machen nur nicht mein projekt kaputt machen". Damit gilt das ursprüngliche Verbot „Merge auf main, PR bleibt draft" nicht mehr. Während der Nacht hatten vier andere Nacht-Sessions `main` verändert (bis `86b123e`). Vorgehen: `main` in den Branch mergen (keine Umschreibung der Geschichte), Konflikte lösen, alle Prüfungen auf dem zusammengeführten Stand, erst dann den PR nach `main` mergen. Ergebnis siehe unten.
 
 ## Fragen an Beks
 
