@@ -345,9 +345,11 @@ const anfrageRoutes: (typeof routes)[number][] = [
     path: '/',
     steps: async (page) => {
       await page.goto('/')
-      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
+      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
       await page.goto('/umzug/gesendet')
       await expect(page.getByText('689,61 €')).toBeVisible()
+      // Festpreis ist „Angefragt“, nicht „Wartet auf Angebot“ (wie quote: needsQuote nur bei Angebot oder Spanne)
+      await expect(page.getByText('Angefragt', { exact: true })).toBeVisible()
     },
   },
   { name: 'zusammenfassung-angemeldet', path: '/', steps: async (page) => { await summary(undefined, false)(page); await expect(page.getByText('Anfrage als')).toBeVisible() } },
