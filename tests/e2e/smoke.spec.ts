@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
 
 test('Start lädt ohne Konsolenfehler', async ({ page }) => {

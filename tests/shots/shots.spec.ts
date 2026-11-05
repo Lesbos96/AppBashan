@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from '../e2e/backend'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price, range, toSummary, type Reply } from '../e2e/anfrage-helpers'

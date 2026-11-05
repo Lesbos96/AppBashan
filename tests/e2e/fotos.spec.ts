@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './backend'
 import { UUID, answer, price } from './anfrage-helpers'
 import { collectErrors } from './console'
 import { mockPhotos, prepareSummary, REQUEST, sendButton, sendWithPhotos, storageError } from './fotos-helpers'
