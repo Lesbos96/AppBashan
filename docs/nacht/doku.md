@@ -35,7 +35,7 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E17 · Prüfdurchgang 3.** Zwei `reviewer`-Läufe nur auf Befunde hoch/mittel: Rechts- und Investoren-Dokumente „Keine Befunde hoch oder mittel“; ARCHITEKTUR 4 × mittel in den neuen Abschnitten (fehlende Codes 405/413 bei `quote`, Beleg „nur JPEG“, Guard-Lücke auch bei `setup-photo-cleanup.mjs`, Trigger setzt nur den Hash), alle am Code bestätigt und korrigiert (4fd5c83). Danach ein letzter Lauf über die ganze ARCHITEKTUR (E18).
 
-- **E18 · Prüfdurchgänge 4 und 5, Abschluss der Prüfung.** Durchgang 4 (ganze ARCHITEKTUR, nur hoch/mittel): 2 × mittel zu Betragsspalten und `fee_splits` (d589bf9). Durchgang 5 (nur Geld-Abschnitte und Abgleich mit INVESTOREN): 1 × mittel, `cent_whole` gilt nur für `price_config`, `call_out_fee_cents` und Stornostufen haben keinen Check; korrigiert und als Befund in ARCHITEKTUR 9.12 und F9 aufgenommen. Die Befundzahl fiel von Durchgang zu Durchgang (1: 34, 2: 30, 3: 4, 4: 2, 5: 1) auf Präzisierungen einzelner Sätze; die Rechts- und Investoren-Dokumente waren ab Durchgang 3 ohne Befund hoch oder mittel. Ein sechster Durchgang würde nach diesem Verlauf höchstens weitere Wortpräzisierungen finden; deshalb Abschluss.
+- **E18 · Prüfdurchgänge 4 und 5, Abschluss der Prüfung.** Durchgang 4 (ganze ARCHITEKTUR, nur hoch/mittel): 2 × mittel zu Betragsspalten und `fee_splits` (d589bf9). Durchgang 5 (nur Geld-Abschnitte und Abgleich mit INVESTOREN): 1 × mittel, `cent_whole` gilt nur für `price_config`, `call_out_fee_cents` und Stornostufen haben keinen Check; korrigiert und als Befund in ARCHITEKTUR 9.12 und F9 aufgenommen. Die Befundzahl fiel von Durchgang zu Durchgang (1: 49 aller Schweregrade; 2: 22 plus rund 40 fehlende Pflichtthemen aus der Checkliste; ab 3 nur hoch/mittel gezählt: 3: 4, 4: 2, 5: 1) auf Präzisierungen einzelner Sätze; die Rechts- und Investoren-Dokumente waren ab Durchgang 3 ohne Befund hoch oder mittel. Ein sechster Durchgang würde nach diesem Verlauf höchstens weitere Wortpräzisierungen finden; deshalb Abschluss.
 
 ## Fragen an Beks
 
@@ -75,4 +75,7 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - Phase 2: `docs/recht/impressum.md` (3b7791d), `datenschutz-kunden.md` (b86d47f), `datenschutz-partner.md` (bd8755d), `agb-kunden.md` (aad7071), `agb-partner.md` (06ae18f), `partnervertrag.md` (8790d3d).
 - Phase 3: `docs/INVESTOREN.md` (0d70c0b).
 - Prüfdurchgang 1 (E15): d46bd70, 60c97cf, 02bd4dd, 3d66aa6, cd1a966.
-- Prüfdurchgang 2 (E16): 5aca674, a99f6f5 und der Commit mit diesem Eintrag.
+- Prüfdurchgang 2 (E16): 5aca674, a99f6f5, abad9c9.
+- Prüfdurchgang 3 (E17): 4fd5c83, bbff3ae.
+- Prüfdurchgänge 4 und 5 (E18): d589bf9, 97baffd und der Commit mit diesem Eintrag.
+- Ende: Alle Phasen fertig, PR bleibt Entwurf. Kein Code, keine Migration, kein Deploy, keine Datei außerhalb von `docs/` geändert, keine Datei gelöscht, kein Supabase-Werkzeug benutzt.
