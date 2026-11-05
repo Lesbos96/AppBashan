@@ -74,8 +74,29 @@ Ohne Befund in allen Zuständen: interaktive Elemente ohne Namen (0), Reflow bei
 | A19 | Deaktivierte Knöpfe unter 4,5:1 (18 Fälle) | 1.4.3 nimmt inaktive Elemente aus | Leisten, Stepper | kein Fund; als UX-Punkt schon in OPEN_ISSUES |
 | A20 | Tab-Bar zeigt „Miete" (Phase 1: drei Tabs) | kein A11y-Fund | Tab-Bar | nicht angefasst, bekannt (OPEN_ISSUES „S9a-2 · UI") |
 
+### Ausgangslage Tests (vorher)
+- Baseline im separaten Worktree vom Stand `main` (`git worktree` im Scratchpad, damit Änderungen im Repo den Lauf nicht beeinflussen): `npm run check` EXIT=0 (`tmp/nacht/baseline-check.log`), `npm run build` EXIT=0 (`tmp/nacht/baseline-build.log`, Warnung „Some chunks are larger than 500 kB"), `npm run test:e2e` EXIT=0, 102 bestanden (`tmp/nacht/baseline-e2e.log`, mit Tarif-Ersatz).
+
 ### Messung Bundle und Ladezeit (vorher)
-(folgt nach dem Baseline-Build)
+Werkzeug: `tmp/nacht/measure.mjs` (Build aus `dist/`, eigener statischer Server mit gzip, Chromium 390×844, Drosselung wie Lighthouse-Mobil: 150 ms RTT, 1,6 Mbit/s, CPU ×4, ohne Cache, Median aus 5 Läufen). Bericht `tmp/nacht/messung-vorher.md`.
+
+| Datei | roh | gzip | brotli |
+|---|---:|---:|---:|
+| `index-*.js` (einziges JS, alles in einem Chunk) | 896,4 kB | 254,3 kB | 214,8 kB |
+| `index-*.css` | 51,0 kB | 10,6 kB | 9,2 kB |
+| Inter-Schriften (7 Teilmengen, `unicode-range`) | 213,4 kB | – | – |
+
+| Route | FCP | LCP | h1 sichtbar | übertragen |
+|---|---:|---:|---:|---:|
+| `/` | 2028 ms | 2028 ms | 2029 ms | 267 kB |
+| `/montage` | 1952 ms | 2380 ms | 2001 ms | 267 kB |
+| `/umzug` | 1948 ms | 2428 ms | 1990 ms | 267 kB |
+| `/profil` | 1984 ms | 1984 ms | 2011 ms | 267 kB |
+| `/anmelden` | 1960 ms | 1960 ms | 1995 ms | 267 kB |
+
+Zusammensetzung des JS (Sourcemap eines Analyse-Builds, `tmp/nacht/composition-vorher.txt`): react-dom 22,6 %, motion (motion-dom + framer-motion) 16,6 %, Supabase 24,1 % (davon auth-js 10,8 %, realtime-js + phoenix 6,1 %, storage-js 2,5 %), react-router 10,7 %, Illustrationen 7,0 %, Icons 1,5 %, Screens und Bibliotheken der App rund 12 %, `src/lib/motion.ts` 0,6 % (bindet die ganze `tokens.json` ein, gebraucht wird nur `motion.spring`).
+
+Hinweis: Im Messbrowser (Linux, headless) lädt keine Inter-Datei (`document.fonts` ohne geladene Schrift); der Browser löst offenbar eine frühere Schrift des Stapels auf, die Ursache habe ich nicht geprüft. Wo Inter greift (z. B. Android, Windows), kommt mindestens die Teilmenge latin (47 kB) dazu. Die Zahlen oben enthalten keine Schrift.
 
 ## Phase 2 · Barrierefreiheits-Funde beheben
 
