@@ -54,4 +54,31 @@ Zeilen beziehen sich auf `docs/OPEN_ISSUES.md` im Stand `main` 1630668.
 
 ## Verlauf
 
-(je Eintrag: Commit, Test, Ergebnis)
+| # | Eintrag | Code-Commit | Doku-Commit | Test (Phase 3) | Ergebnis |
+|---|---|---|---|---|---|
+| 1 | Plan-M-1 „Vorher angezeigt“ bei Spannen | fc30353 | 15e7d15 | `tests/unit/gesendet.test.ts` (6, Server-Rendering der Bestätigung) | **Rot vorher gemessen:** derselbe Fall auf dem alten Code (alte Schnittstelle `rememberShown(path, totalCents, shown)`, `shownCents: readShown`) zeigte den Hinweis bei gleicher Spanne, `tmp/proof/nacht-oi-1-rot.log` EXIT=1; danach grün. `Sent.shown` ersetzt `shownCents`; `shownKey`/`readShown` entfallen; `rememberShown(path, shown)`. Angepasst: `draft.test.ts`, Shot-Fixture `gesendet-preis-aktualisiert`. Hinweis bei Angebot nach Preis-Vorschau bleibt (siehe Frage 2). |
+| 2 | Tab „Miete“ | 96f51ea, 13282fa | 17c77bc, 7fa3bc2 | E2E `shell.spec.ts:34` (drei Tabs, per `boundingBox()` gleich breit, letzter Tab am rechten Rand) | E2E-Lauf b: Tab-Test grün (vor 13282fa). Reviewer-Runde 390 (`tmp/proof/nacht-oi-shots-runde-a.md`) fand „hoch“: `TabBar` hatte fest `grid-cols-4`, rechts blieb ein Viertel leer → 13282fa (`repeat(n, 1fr)`). Nach 13282fa noch nicht erneut aufgenommen (siehe Prüfläufe). |
+| 3 | Shot-Mock `gesendet-umzug` | ee47792 | 17c77bc | Shot-Test prüft „Angefragt“ | Shots 390/430/1280 hell/dunkel EXIT=0 (`nacht-oi-shots-b.log`, `-c.log`); Reviewer: Status-Chip „Angefragt“ korrekt. |
+| 16 | F5 `restoreDraft` nur für den eigenen Service | b077005 | 7fa3bc2 | `draft.test.ts`: zwei neue Fälle; der 20.000-Zeichen-Test trägt jetzt einen Pfad, damit er weiter die Grenze prüft | Rot auf altem Code abgeleitet (alter Code ließ die Schlüssel aller Services zu), nicht gemessen. |
+| 12 | A-N1 `Confirmed.shown` | c891a92 | def3f2d | `draft.test.ts`: ein `shown` im Bestätigten wird ignoriert | `buildBody` liest nur `readShownFull`. |
+| 14 | A4c-N2 Staging „versucht“ | 2464690 | 014a7d7 | `uploads.test.ts`: zwei Fälle mit verlorener Antwort | Auf altem Code hätte der Ref-Wechsel nur `[P1]` entfernt (abgeleitet). |
+| 13 | A4c-N1 „Anderes Konto“ beim Senden | ed2fb72 | 014a7d7 | E2E `anfrage.spec.ts` „Während des Sendens ist ‚Anderes Konto‘ gesperrt“ | **E2E hier nicht lauffähig** (braucht Tarife vom Dev-Projekt, siehe unten). Code: `if (busy.current) return` und `disabled={sending}`. |
+| 15 | Grenzen beim Laden (`:162`) | 4b6f80f | e200abc | `tests/unit/flow-limits.test.ts` (Grenzwert und +1) | Beschreibung ≤ 500, Label ≤ 200 (wie `parse.ts`), Routenlinie ≤ 50.000 Punkte (eigene Wahl: großzügig über Wien–Graz mit rund 2.100 Punkten). |
+| 17 | „4,8 km · innerhalb Wiens“ | b301fa0 | f9220a5 | `tests/unit/route-text.test.ts` | Ein Helfer `routeText` statt zweier gleicher Ausdrücke (Termin, Zusammenfassung). Shot steht aus (Screens brauchen Tarife). |
+| 10 | `anmelden-link-abgelaufen` | – | – | – | **veraltet:** `Anmelden.tsx:168` blendet die Anleitung im Fehlerzustand schon aus. |
+| 19 | `anmelden-zu-viele`: Knopf aktiv | – | – | – | **übersprungen, Frage 4** (wie lange sperren?). |
+| 18 | N-2 Preisversion nach 409 | – | – | – | **übersprungen:** braucht einen gespeicherten Versionsstand neben `shown` und eine Regel für das Neuladen in der Zusammenfassung; laut Eintrag „nur UX“, Umbau größer als der Nutzen in einer unbeaufsichtigten Nacht. |
+
+### Prüfläufe und Umgebung
+
+- `npm run check` (Stand ee47792): EXIT=0, 374 Unit-Tests (`tmp/proof/nacht-oi-check-a.log`). Weitere Einzelläufe je Eintrag in `tmp/proof/nacht-oi-*.log`, alle EXIT=0.
+- **E2E in dieser Umgebung nur eingeschränkt:** (1) Die Projekt-Version von Playwright erwartet einen Headless-Build, der hier fehlt; gelaufen wird mit einer temporären Konfiguration `tmp/pw-night.config.ts` (nicht im Repo), die nur den Browserpfad auf das vorinstallierte Chromium setzt. (2) Die E2E laden Tarife vom echten Dev-Projekt (`anonymousPrices` leitet weiter); ohne Schlüssel läuft die App mit einer Dummy-URL, alle preisabhängigen Tests laufen in Timeouts. Lauf b (Stand ee47792): 29 grün, 73 rot; die roten Tests hängen alle am Laden der Tarife oder an Konsolenfehlern dieses Ladens. Der Vergleichslauf auf `main` mit derselben Umgebung steht unten.
+- Shots nur für Screens ohne Tarife möglich: `start`, `miete`, `gesendet-umzug`, `gesendet-preis-aktualisiert` bei 390/430/1280 hell/dunkel, EXIT=0; `gesendet-preis` braucht Tarife (rot).
+
+## Fragen an Beks
+
+1. Die E2E brauchen das echte Dev-Projekt für die Tarife. Sollen sie die Tarife künftig mocken (wie `quote`), damit sie ohne Schlüssel laufen?
+2. `:107` (4): Soll der Hinweis „Vorher angezeigt“ auch erscheinen, wenn der Server ein Angebot statt des gezeigten Preises liefert? Der Code sagt bewusst „nie still“, der Reviewer wollte ihn nur bei neuem Richtpreis.
+3. `:107` (1): Wann ist der Hinweis „Die Abholung muss in Wien liegen …“ nötig? Die App kennt den Abholbezirk nicht.
+4. `:186` (3): Soll „Code senden“ nach „Zu viele Versuche“ für eine feste Zeit gesperrt werden, und wie lange?
+5. Zusammenführen mit `nacht-testabdeckung`: Dort prüfen `draft-extra.test.ts` und `screens.test.ts` noch `Sent.shownCents` (hier durch `Sent.shown` ersetzt) und `flow.ts` ändert sich auf beiden Branches (dort `whole()`, hier Längengrenzen). Reihenfolge-Vorschlag: zuerst `nacht-testabdeckung`, dann diesen Branch und die beiden Testdateien auf `shown` umstellen.
