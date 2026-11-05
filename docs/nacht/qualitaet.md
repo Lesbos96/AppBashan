@@ -168,6 +168,14 @@ Gesamter Code-Diff der Nacht (`git diff 1630668..HEAD -- src`) noch einmal geles
 | S2 | Doku: In der Fundliste stand für A5 noch „Live-Region", umgesetzt ist der Fokus auf die Überschrift | Fundliste korrigiert | – |
 | S3 | A14 hatte einen Shot-Schritt gebrochen (siehe A14b); Ursache: `test:e2e` enthält die Shots nicht | Ab hier läuft nach Code-Änderungen auch `npm run shots` | `r1-shots.log` |
 
+## Durchgang 2 (Phasen erneut, Kriterien außerhalb des Prüfskripts)
+
+Geprüft per Code-Durchsicht: Eingabezweck (1.3.5), Pflichtangaben und Fehlerhinweise (3.3.1–3.3.3), Zeitlimits (2.2.1), barrierefreie Anmeldung (3.3.8), Ziehen (2.5.7), Farbe als einziges Merkmal (1.4.1), Linkzweck (2.4.4), Wert von Fortschrittsanzeigen (4.1.2).
+
+| Nr. | Fund | WCAG | Änderung | Prüfung |
+|---|---|---|---|---|
+| A21 | Zusammenfassung: „Anfrage senden" bleibt gesperrt, solange Name, Telefon oder Mailadresse fehlen oder ungültig sind, ohne Hinweis, welches Feld; Pflicht nur indirekt über den Platzhalter „optional" bei Stiege/Tür erkennbar | 3.3.1 (A), 3.3.2 (A) | Name, Telefon, Mailadresse mit `aria-required`; beim Verlassen eines ungültigen Feldes ein kurzer Hinweis darunter („Gib deinen Namen an.", „Prüfe die Telefonnummer, sie braucht mindestens 5 Ziffern.", „Prüfe die Mailadresse.") in `text-destructive` wie die Fehlertexte der Anmeldung, verknüpft über `aria-invalid` und `aria-describedby`, in einer höflichen Live-Region. Beim Tippen verschwindet der Hinweis, sobald der Wert gültig ist, er kommt beim Tippen aber nicht neu dazu (keine Ansage je Tastendruck). Die Freischaltung des Knopfs ist unverändert. Erster Versuch zeigte den Hinweis schon beim Tippen, wenn das Feld früher einmal verlassen worden war (Test rot, `tmp/proof/a21-e2e.log`), daher umgebaut | `tmp/proof/a21b-check.log` EXIT=0, `tmp/proof/a21b-e2e.log` EXIT=0 (79 bestanden), `tmp/proof/a21b-shots.log` EXIT=0 (Zusammenfassung und Fotos 390 Light/Dark, 40 bestanden: ohne Fehler sieht die Seite aus wie vorher) |
+
 Ohne Befund: Fokusrahmen in allen Listen (Kontrolllauf: 0 abgeschnitten), Live-Regionen (keine melden beim ersten Anzeigen), Router-Handles statisch, Vorladen fängt Fehler ab, kein fester 15-%-Wert, keine Gebühr in Kunden-Screens (keine Texte geändert außer Bedienelement-Namen und Statusmeldungen).
 
 ## Abgebrochen

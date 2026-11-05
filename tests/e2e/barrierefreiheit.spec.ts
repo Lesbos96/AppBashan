@@ -416,3 +416,27 @@ test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', () => {
     await expect(page.locator('#aussen')).toBeFocused()
   })
 })
+
+test.describe('Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2)', () => {
+  test('Pflichtfelder sind markiert; ungültige Eingabe zeigt nach dem Verlassen einen verknüpften Hinweis', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await anonymousPrices(page)
+    await toSummary(page)
+    for (const label of ['Name', 'Telefon', 'Mailadresse']) await expect(page.getByLabel(label)).toHaveAttribute('aria-required', 'true')
+    await expect(page.getByLabel('Stiege / Tür')).not.toHaveAttribute('aria-required', 'true')
+    // Gültige Werte aus fillContact: kein Hinweis
+    await expect(page.getByText(/^Prüfe die/)).toHaveCount(0)
+    const phone = page.getByLabel('Telefon')
+    await phone.fill('12')
+    // Während der Eingabe noch kein Hinweis
+    await expect(page.getByText('Prüfe die Telefonnummer, sie braucht mindestens 5 Ziffern.')).toHaveCount(0)
+    await phone.press('Tab')
+    const hint = page.getByText('Prüfe die Telefonnummer, sie braucht mindestens 5 Ziffern.')
+    await expect(hint).toBeVisible()
+    await expect(phone).toHaveAttribute('aria-invalid', 'true')
+    await expect(phone).toHaveAttribute('aria-describedby', (await hint.getAttribute('id'))!)
+    await phone.fill('+43 660 1234567')
+    await expect(hint).toHaveCount(0)
+    await expect(phone).not.toHaveAttribute('aria-invalid', 'true')
+  })
+})
