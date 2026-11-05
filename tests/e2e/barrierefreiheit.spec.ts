@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { anonymousPrices, toSummary } from './anfrage-helpers'
+import { weiter } from './dienste-helpers'
 
 // Barrierefreiheit (WCAG 2.2 AA): Prüfungen, die das Prüfskript der Nacht vom 2026-11-05 als Funde gemeldet hat (docs/nacht/qualitaet.md).
 
@@ -127,5 +128,36 @@ test.describe('Fokus nicht verdeckt (2.4.11)', () => {
     await page.goto('/')
     await settled(page)
     expect(await coveredWhileTabbing(page, 'Tab', 12)).toEqual([])
+  })
+})
+
+test.describe('Fokus in Freitextfeldern sichtbar (2.4.7)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+  })
+
+  /** Rahmen am umgebenden Label, solange das Textfeld den Fokus hat. */
+  const labelRing = (page: Page, name: RegExp) =>
+    page.getByLabel(name).evaluate((el) => {
+      const cs = getComputedStyle(el.closest('label')!)
+      return { style: cs.outlineStyle, width: parseFloat(cs.outlineWidth), color: cs.outlineColor, accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() }
+    })
+
+  test('Transport: „Gegenstände & Umfang"', async ({ page }) => {
+    await page.goto('/transport')
+    await page.getByLabel(/Gegenstände & Umfang/).focus()
+    const ring = await labelRing(page, /Gegenstände & Umfang/)
+    expect(ring.style).toBe('solid')
+    expect(ring.width).toBeGreaterThanOrEqual(2)
+  })
+
+  test('Entrümpelung: „Was sollten wir noch wissen?"', async ({ page }) => {
+    await page.goto('/entruempelung')
+    await page.getByRole('radio', { name: /^Wohnung/ }).click()
+    for (let i = 0; i < 5; i++) await weiter(page).click()
+    await page.getByLabel(/Was sollten wir noch wissen/).focus()
+    const ring = await labelRing(page, /Was sollten wir noch wissen/)
+    expect(ring.style).toBe('solid')
+    expect(ring.width).toBeGreaterThanOrEqual(2)
   })
 })

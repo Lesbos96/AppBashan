@@ -113,7 +113,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
           />
           <p className="m-0 mt-2 px-1 text-footnote text-text-secondary">Klavier, Flügel und Tresor plant ein Partner persönlich.</p>
           <Card className="mt-3 overflow-hidden">
-            <label className="flex flex-col gap-1 px-4 py-3">
+            <label className="flex flex-col gap-1 rounded-t-card px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
               <span className="text-[13px]/[18px] text-text-secondary">Gegenstände &amp; Umfang</span>
               <textarea
                 rows={2}

@@ -231,7 +231,7 @@ function Formular({ tariffs }: { tariffs: Record<string, number> }) {
             <>
               <Fotos storeKey="clearance" />
               <Card>
-                <label className="flex flex-col gap-1 px-4 py-3">
+                <label className="flex flex-col gap-1 rounded-card px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
                   <span className="text-[13px]/[18px] text-text-secondary">Was sollten wir noch wissen? (optional)</span>
                   <textarea
                     rows={3}
