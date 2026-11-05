@@ -50,10 +50,15 @@ export function Shell() {
     if (nav.seq === 0) return
     const container = document.querySelector<HTMLElement>(`[data-page="${nav.seq}"]`)
     if (!container) return
+    // Fokus beim Wechsel: meist der angetippte Link der alten Seite, der mit ihr verschwindet (dann body)
+    const before = document.activeElement
     const focusHeading = () => {
       const h1 = container.querySelector<HTMLElement>('h1')
       if (!h1) return false
-      if (container.contains(document.activeElement)) return true
+      const active = document.activeElement
+      if (container.contains(active)) return true
+      // Hat der Nutzer den Fokus inzwischen woandershin gesetzt, nicht wegziehen
+      if (active && active !== document.body && active !== before) return true
       if (!h1.hasAttribute('tabindex')) h1.tabIndex = -1
       h1.focus({ preventScroll: true })
       return true

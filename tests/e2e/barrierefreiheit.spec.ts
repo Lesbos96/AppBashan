@@ -388,3 +388,31 @@ test.describe('Onboarding: neue Seite wird angesagt (4.1.3)', () => {
     await expect(page.getByRole('button', { name: 'Weiter' })).toBeFocused()
   })
 })
+
+test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', () => {
+  test('setzt der Nutzer den Fokus vor dem Nachladen der Überschrift woandershin, bleibt er dort', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    // Tarife verzögert: die Entrümpelung zeigt ihre Überschrift erst nach dem Laden
+    await page.route(/\/rest\/v1\/price_config/, async (r) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await r.continue()
+    })
+    await page.goto('/entruempelung')
+    await page.getByRole('radio', { name: /^Wohnung/ }).click()
+    for (let i = 0; i < 5; i++) await weiter(page).click()
+    // Die Richtwert-Seite lädt die Tarife neu und setzt den Fokus nicht selbst (anders als der Wizard)
+    await page.getByRole('button', { name: 'Richtwert anzeigen' }).press('Enter')
+    await expect(page.getByRole('status').filter({ hasText: 'Preise laden' })).toBeVisible()
+    // Ein Element außerhalb der Seite (wie die Tab-Leiste) bekommt den Fokus, bevor die Überschrift da ist
+    await page.evaluate(() => {
+      const b = document.createElement('button')
+      b.id = 'aussen'
+      b.textContent = 'Außen'
+      document.body.append(b)
+      b.focus()
+    })
+    await expect(page.getByRole('heading', { name: 'Dein erster Preisrahmen.', level: 1 })).toBeVisible()
+    await page.waitForTimeout(300)
+    await expect(page.locator('#aussen')).toBeFocused()
+  })
+})

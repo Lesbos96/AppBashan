@@ -57,7 +57,7 @@ Ohne Befund in allen Zuständen: interaktive Elemente ohne Namen (0), Reflow bei
 | A2 | Fokussiertes Element liegt ganz (114 Fälle) oder teilweise (46) unter der fixierten Aktions-, Preis- oder Tab-Leiste bzw. unter der Kopfleiste; der Browser scrollt nur bis an den Fensterrand | 2.4.11 (AA) | Transport, Umzug, Zusammenfassung, Entrümpelung, Start | beheben: `scroll-padding` oben und unten |
 | A3 | Freitextfelder „Gegenstände & Umfang" und der Hinweis in der Entrümpelung haben `outline-none` ohne Ersatz | 2.4.7 (AA) | Transport, Umzug, Entrümpelung | beheben: Rahmen am Label wie bei `Field` |
 | A4 | Seitentitel ist auf allen Seiten „MoveNow" | 2.4.2 (A) | alle | beheben: Titel je Route |
-| A5 | Seitenwechsel wird Bildschirmlesern nicht angesagt (Fokus fällt nach dem Wechsel auf `body`) | 4.1.3 (AA), Umfeld 2.4.3 | alle | beheben: höfliche Live-Region mit dem Seitentitel |
+| A5 | Seitenwechsel wird Bildschirmlesern nicht angesagt (Fokus fällt nach dem Wechsel auf `body`) | 4.1.3 (AA), Umfeld 2.4.3 | alle | beheben: Fokus auf die Überschrift der neuen Seite (Entscheidung in Phase 2, siehe A5 dort; ursprünglich geplant war eine Live-Region) |
 | A6 | Anmeldung: nach „Code senden" und „Andere Adresse" verschwindet das fokussierte Element, der Fokus fällt auf `body` | 2.4.3 (A) | Anmelden | beheben: Fokus ins neue Feld |
 | A7 | Wartezeit nach 429 („Noch 59 s.") steht in `role="alert"` und wird jede Sekunde neu vorgelesen | 4.1.3 (AA), stört 2.2.4 | Zusammenfassung | beheben: Zähler außerhalb der Live-Region |
 | A8 | Geänderter Richtpreis in der Preisleiste wird nicht angesagt (sichtbar zählt er hoch) | 4.1.3 (AA) | Transport, Umzug, Montage | beheben: unsichtbare Statusmeldung mit dem Endbetrag |
@@ -157,6 +157,18 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 - **Leerlauf (unnötige Neuberechnungen):** 5 s ohne Eingabe nach dem Laden, CPU ×4 (`tmp/nacht/leerlauf-vorher.md`): Start 19 ms Hauptthread (0,4 %), Onboarding 51 ms (1 %, 15 Layouts durch die Illustrations-Animation), Profil und Umzug 2–3 ms; mit „Bewegung reduzieren" überall ≈ 0. Kein Handlungsbedarf, keine Änderung.
 - **Nicht umgesetzt (Empfehlung):** Illustrationen liegen per `import.meta.glob(…, { eager: true })` alle im Einstieg (62,7 kB roh, 19 % des Einstiegs-Chunks). Nur in Flows gebraucht: 25,2 kB roh / ≈ 8 kB gzip; davon werden `van-cargo`, `van-city`, `van-landlord` derzeit nirgends verwendet (Miete, Phase 2). Herauslösen ginge nur über eine Registrierung je Flow-Chunk; eine vergessene Registrierung wäre ein Laufzeitfehler. Gewinn ≈ 3,5 % beim Start, deshalb nicht in dieser Nacht. Ebenso die Supabase-Teile Realtime (`realtime-js`, `phoenix`, 55 kB roh) und `iceberg-js`, die die App nicht nutzt, `createClient` aber immer einbindet; das ginge nur mit Einzelclients statt `supabase-js`.
 - **Bilder:** keine Rasterbilder im Ladepfad. Die App-Icons (PNG) lädt nur die Installation; ohne Optimierungswerkzeug (keine neuen Abhängigkeiten) lassen sie sich nicht verlustfrei verkleinern. Keine Änderung.
+
+## Selbstprüfung (Durchgang 1)
+
+Gesamter Code-Diff der Nacht (`git diff 1630668..HEAD -- src`) noch einmal gelesen.
+
+| Nr. | Fund | Änderung | Prüfung |
+|---|---|---|---|
+| S1 | A5: Der Observer hätte den Fokus auf die nachgeladene Überschrift gezogen, auch wenn der Nutzer in der Wartezeit schon ein Element außerhalb der neuen Seite fokussiert hatte (heute praktisch nur theoretisch, weil Seiten mit nachgeladener Überschrift keine Tab-Leiste haben) | Shell merkt sich den Fokus beim Wechsel und zieht nur von dort bzw. von `body` weg | Rot: `tmp/proof/r1-rot.log` EXIT=1 (Fokus wurde weggezogen). Grün: `tmp/proof/r1-check.log` EXIT=0, `tmp/proof/r1-e2e.log` EXIT=0 (**129 bestanden**), `tmp/proof/r1-shots.log` EXIT=0 (**`npm run shots`, alle 67 Zustände Light und Dark, 134 bestanden**, inklusive Prüfung auf Konsolenfehler, erster vollständiger Shot-Lauf nach dem Lazy Loading) |
+| S2 | Doku: In der Fundliste stand für A5 noch „Live-Region", umgesetzt ist der Fokus auf die Überschrift | Fundliste korrigiert | – |
+| S3 | A14 hatte einen Shot-Schritt gebrochen (siehe A14b); Ursache: `test:e2e` enthält die Shots nicht | Ab hier läuft nach Code-Änderungen auch `npm run shots` | `r1-shots.log` |
+
+Ohne Befund: Fokusrahmen in allen Listen (Kontrolllauf: 0 abgeschnitten), Live-Regionen (keine melden beim ersten Anzeigen), Router-Handles statisch, Vorladen fängt Fehler ab, kein fester 15-%-Wert, keine Gebühr in Kunden-Screens (keine Texte geändert außer Bedienelement-Namen und Statusmeldungen).
 
 ## Abgebrochen
 
