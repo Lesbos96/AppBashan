@@ -24,7 +24,7 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 ## 4. Konto und Anmeldung
 
 - **Daten:** E-Mail-Adresse, Einmal-Code und Anmelde-Link (derselbe Einmal-Wert, gültig 15 Minuten), Sitzungsdaten. Beim ersten Anmelden entsteht ein Profil mit der Rolle „Kunde“; es hat Felder für Name und Telefon, die die App heute nicht abfragt.
-- **Zweck:** Damit du eine Buchungsanfrage senden und deine Aufträge sehen kannst. Ein Konto entsteht erst, wenn du eine Anfrage absendest.
+- **Zweck:** Damit du eine Buchungsanfrage senden und deine Aufträge sehen kannst. Die App fragt die Anmeldung erst beim Absenden einer Anfrage ab; das Konto entsteht, sobald du dabei zum ersten Mal einen Code anforderst (`src/lib/auth.ts:42-47`).
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO (Vertrag bzw. vorvertragliche Maßnahmen).
 - **Speicherdauer:** bis zur Löschung des Kontos. [OFFEN: Eine Funktion „Konto löschen“ gibt es noch nicht; Verfahren, Frist und Anonymisierung bestätigter Aufträge festlegen (`docs/OPEN_ISSUES.md:7`).] [OFFEN: welche technischen Daten (z. B. IP-Adresse) das Anmeldesystem protokolliert und wie lange.]
 - **Empfänger:** Supabase (Anmeldung, Datenbank) und der Mailversand. [OFFEN: Mail-Anbieter; heute nutzt das Projekt den Standard-Mailer von Supabase, vor dem Livegang ist ein eigener Anbieter mit Auftragsverarbeitungsvertrag vorgesehen (`docs/OPEN_ISSUES.md:32`).]
@@ -42,7 +42,7 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 - **Daten:** gewählte Leistung und deine Angaben zum Umfang (z. B. Personen, Fahrzeuge, Stunden, Gegenstände, Volumen, Etagen), Abhol- und Zieladresse mit Koordinaten, Wiener Bezirk der Abholadresse, berechnete Strecke und Region, Wunschtermin und Zeitfenster, Freitext (bis 800 Zeichen), Kontakt für den Auftrag (Name, Telefon, E-Mail, Stiege/Tür), Fotos (Abschnitt 7), der Preis-Stand zum Zeitpunkt des Absendens (Betrag oder Spanne, Tarifversion, Bedingungen) und ein Beleg, welchen Betrag und welche Bedingungen du bestätigt hast. Jede Statusänderung (z. B. „zurückgezogen“) wird mit Zeitpunkt und auslösendem Konto protokolliert.
 - **Zweck:** Vermittlung an passende Partnerbetriebe, Zustandekommen und Abwicklung des Vertrags mit dem Partner, Nachweis deiner Zustimmung zum Preis.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO; für die Protokolle zusätzlich Art. 6 Abs. 1 lit. f DSGVO (Nachweis und Streitbeilegung).
-- **Speicherdauer:** [OFFEN: Im Code ist keine automatische Löschfrist umgesetzt. Vorschlag aus dem Projekt, nicht entschieden: zurückgezogene und abgelaufene Anfragen 12 Monate, abgeschlossene Aufträge 3 Jahre, Buchhaltungsunterlagen 7 Jahre (§ 132 BAO) (`docs/ARCHITECTURE.md:62`).] Löschst du dein Konto, werden Profil, Anfragen, Preis-Stände, Kontakte, Fotoeinträge und Statusprotokolle mitgelöscht; die Fotodateien entfernt der stündliche Aufräumjob. Der Beleg deiner Preisbestätigung bleibt mit der Konto-Kennung (ohne Name, Adresse oder E-Mail) bestehen [OFFEN: Frist für diesen Beleg festlegen].
+- **Speicherdauer:** [OFFEN: Im Code ist keine automatische Löschfrist umgesetzt. Vorschlag aus dem Projekt, nicht entschieden: zurückgezogene und abgelaufene Anfragen 12 Monate, abgeschlossene Aufträge 3 Jahre, Buchhaltungsunterlagen 7 Jahre (§ 132 BAO) (`docs/ARCHITECTURE.md:62`).] Eine Funktion „Konto löschen“ ist **[noch nicht gebaut]**; geplant ist, Konten mit Aufträgen, für die ein Vertrag zustande kam, zu anonymisieren statt zu löschen, weil Abrechnungsdaten aufbewahrt werden müssen (`docs/S9_KONZEPT.md`, R11 und S9h). Technisch gilt heute: Wird ein Konto gelöscht, werden Profil, Anfragen, Preis-Stände, Kontakte, Fotoeinträge und Statusprotokolle mitgelöscht, die Fotodateien entfernt der stündliche Aufräumjob; der Beleg deiner Preisbestätigung bleibt mit der Konto-Kennung (ohne Name, Adresse oder E-Mail) bestehen [OFFEN: Frist für diesen Beleg festlegen].
 - **Empfänger:** Supabase (Datenbank); Partnerbetriebe nach Abschnitt 8.
 
 ## 7. Fotos
@@ -50,13 +50,13 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 - **Daten:** bis zu 8 Fotos je Anfrage, je höchstens 10 MB. Die App wandelt jedes Bild vor dem Hochladen in ein neues JPEG um (längste Kante höchstens 2.000 Pixel); dabei entfallen eingebettete Daten wie Aufnahmeort und Gerät. Auf Fotos erkennbare Personen, Kennzeichen oder Dokumente sind personenbezogene Daten: Bitte fotografiere nur Möbel, Gegenstände und Räume.
 - **Zweck:** Umfang des Auftrags für Preis und Durchführung einschätzen.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO.
-- **Ablauf und Speicherdauer:** Die Fotos werden nach der Anmeldung in einen privaten Speicher geladen und beim Absenden der Anfrage zugeordnet; danach kannst du sie nicht mehr ändern. Fotos, die keiner Anfrage zugeordnet wurden, löscht ein stündlicher Job nach 24 Stunden plus einer Stunde Karenz. Angezeigt werden Fotos nur über Links, die 10 Minuten gültig sind. [OFFEN: Löschfrist für Fotos zugeordneter Anfragen; Vorschlag im Projekt 90 Tage nach Abschluss, Rücknahme oder Ablauf.]
+- **Ablauf und Speicherdauer:** Die Fotos werden nach der Anmeldung in einen privaten Speicher geladen und beim Absenden der Anfrage zugeordnet; danach kannst du sie nicht mehr ändern. Fotos, die keiner Anfrage zugeordnet wurden, löscht ein stündlicher Job nach 24 Stunden plus einer Stunde Karenz. Angezeigt werden Fotos nur über Links, die 10 Minuten gültig sind. Für die hochgeladenen Fotos zugeordneter Anfragen gibt es noch keine Löschfrist [OFFEN: Frist festlegen; Vorschlag im Projekt 90 Tage nach Abschluss, Rücknahme oder Ablauf]. Die Kopien für Partner werden 30 Tage nach Abschluss oder Storno gelöscht **[noch nicht gebaut]**.
 - **Für Partnerbetriebe [noch nicht gebaut]:** Partner erhalten nie die hochgeladene Datei, sondern eine vom Server geprüfte und neu erzeugte Kopie ohne eingebettete Daten (längste Kante höchstens 1.600 Pixel), angezeigt über 10 Minuten gültige Links. Vor der Annahme sehen diese Kopien alle Partnerbetriebe, denen deine Anfrage angeboten wird.
 - **Empfänger:** Supabase (Speicher); Partnerbetriebe nach Abschnitt 8.
 
 ## 8. Weitergabe an Partnerbetriebe [noch nicht gebaut]
 
-- **Vor der Annahme:** Deine Anfrage wird an Partnerbetriebe verteilt, die für die Leistung, den Bezirk der Abholadresse und den Termin in Frage kommen. Sie sehen Bezirk, Umfang, Termin, Preis und die Foto-Kopien, aber **keine Hausnummer, keinen Namen und keine Kontaktdaten**.
+- **Vor der Annahme:** Deine Anfrage wird an Partnerbetriebe verteilt, die für die Leistung, den Bezirk der Abholadresse und den Termin in Frage kommen. Sie sehen den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Preis und die Foto-Kopien, aber **keine Straße, keine Hausnummer, keinen Namen und keine Kontaktdaten** (`docs/S9_KONZEPT.md`, 5.5).
 - **Nach der Annahme:** Nur der Partner, der angenommen hat, erhält Adresse und Kontakt für den Auftrag. Sein Zugriff endet 30 Tage nach Abschluss oder Storno des Auftrags; danach löschen wir die Foto-Kopien.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO (Vermittlung und Erfüllung des Vertrags, den du mit dem Partner schließt).
 - **Rolle des Partners:** [OFFEN: Ist der Partner für die Daten nach der Annahme eigener Verantwortlicher oder Auftragsverarbeiter von MoveNow? (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10). Der Text hier geht von eigener Verantwortung des Partners für die Durchführung aus.]
@@ -76,7 +76,7 @@ Vor dem Livegang sollen Adresssuche, Routenberechnung und Anmeldung zusätzlich 
 ## 10. Speicherung in deinem Browser
 
 Die App legt in deinem Browser nur ab, was für den Ablauf nötig ist:
-- die Anmeldesitzung (Voreinstellung der Supabase-Bibliothek);
+- die Anmeldesitzung (Zugangs- und Aktualisierungstoken im lokalen Speicher, Voreinstellung der Supabase-Bibliothek), bis du dich abmeldest;
 - für höchstens 15 Minuten das Rücksprungziel nach der Anmeldung und eine Kopie des gerade gesendeten Entwurfs, damit der Link aus der Mail auch in einem neuen Tab funktioniert;
 - eine Markierung „Einführung gesehen“ ohne Ablauf;
 - im Sitzungsspeicher des Tabs den Entwurf deiner Anfrage (Angaben, Termin, Adressen, Kontakt, angezeigter Preis); er verschwindet, wenn du den Tab schließt oder dich abmeldest.
@@ -93,6 +93,10 @@ Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlic
 | Hosting der App | Auslieferung der App | [OFFEN] | [OFFEN: Anbieter, Protokolle] |
 | Bot-Schutz (Turnstile) | Prüfung gegen automatisierte Zugriffe | [OFFEN] | [noch nicht gebaut], Abschnitt 9a |
 | Partnerbetriebe | Durchführung deines Auftrags | Österreich | [noch nicht gebaut], Abschnitt 8 |
+
+### 11a. Übermittlung in Drittländer
+
+[OFFEN: Ob Daten außerhalb des EWR verarbeitet werden (z. B. durch Konzerngesellschaften von Supabase, des Mail- oder Hosting-Anbieters oder des Bot-Schutzes) und auf welcher Grundlage (Angemessenheitsbeschluss, Standardvertragsklauseln), ist nicht geklärt. Abschnitt erst nach Wahl der Anbieter ausfüllen.]
 
 ## 12. Deine Rechte
 

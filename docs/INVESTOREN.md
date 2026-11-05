@@ -6,7 +6,7 @@ Stand: 2026-11-05. Quelle sind ausschließlich Code und Dokumente dieses Reposit
 
 - **Was:** eine App, die in Wien Möbeltransport, Umzug, Entrümpelung sowie Montage und Demontage von Möbeln vermittelt. Kundinnen und Kunden sehen sofort einen Preis und senden eine verbindliche Buchungsanfrage; ein von MoveNow geprüfter Partnerbetrieb soll sie in der App annehmen (Partnerteil geplant, siehe Stand).
 - **Geld:** MoveNow erhält vom Partner eine Provision von 15 % des Gesamtpreises (inklusive 20 % USt.). Kundinnen und Kunden zahlen keine Zusatzgebühr und zahlen direkt an den Partner; über MoveNow läuft in Phase 1 kein Zahlungsfluss.
-- **Stand:** Der Kundenteil ist gebaut (Preis, Adressprüfung, Strecke, Fotos, Anmeldung, Anfrage senden, Aufträge, Zurückziehen) und läuft gegen ein Entwicklungsprojekt. Der Partnerteil (Registrierung, Annahme, Angebote, Storno, Abrechnung) ist geplant und freigegeben, aber noch nicht gebaut. Es gibt kein Produktivsystem, keine echten Nutzer und keine Partner.
+- **Stand:** Der Kundenteil ist bis zum Senden gebaut (Preis, Adressprüfung, Strecke, Fotos, Anmeldung, Anfrage senden, Aufträge-Liste; Zurückziehen nur in der Datenbank, noch ohne Oberfläche) und läuft gegen ein Entwicklungsprojekt. Der Partnerteil (Registrierung, Annahme, Angebote, Storno, Abrechnung) ist geplant und freigegeben, aber noch nicht gebaut. Es gibt kein Produktivsystem, keine echten Nutzer und keine Partner.
 - **Bis zum Start fehlen** vor allem: der Partnerteil (Schritte S9b bis S9i), eine Rechtsprüfung (Buchungsbutton, Storno, Rücktritt, Partner-AGB), Verträge mit Mail-, Routen- und Hosting-Anbietern und die Einrichtung des Produktivprojekts (Abschnitt 7).
 
 ## 2. Produkt
@@ -50,7 +50,7 @@ Design und Bedienung orientieren sich an iOS (Referenz in `docs/reference/design
 ## 6. Stand der Technik
 
 ### Gebaut (Schritte S1 bis S9a, abgeschlossen 2026-11-03)
-- App: Vite, React, TypeScript, Tailwind; Start, Onboarding, Konfiguratoren für Transport und Umzug, Entrümpelung, Montage; Termin, Zusammenfassung, Bestätigung; Anmeldung; Aufträge-Liste; Zurückziehen; Profil mit Tarif-Transparenz. Die Anmeldung ist nur durch Tests und lokal belegt; echter Mailversand mit eigenem Mail-Anbieter ist noch nicht eingerichtet und nicht getestet (`docs/OPEN_ISSUES.md:32`).
+- App: Vite, React, TypeScript, Tailwind; Start, Onboarding, Konfiguratoren für Transport und Umzug, Entrümpelung, Montage; Termin, Zusammenfassung, Bestätigung; Anmeldung; Aufträge-Liste; Profil mit Tarif-Transparenz. Zurückziehen gibt es als Datenbankfunktion, in der App noch ohne Knopf (`docs/ROADMAP.md:102-103`, Auftragsdetail offen). Die Anmeldung ist nur durch Tests und lokal belegt; echter Mailversand mit eigenem Mail-Anbieter ist noch nicht eingerichtet und nicht getestet (`docs/OPEN_ISSUES.md:32`).
 - Backend auf Supabase (Postgres mit PostGIS, Auth, Storage, Edge Functions):
   - **Preis-Engine** als ein Modul für App und Server, centgenau, gegen den Prototyp mit 60 Golden-Fällen geprüft (`docs/PRICING.md:66`).
   - **Routing** über openrouteservice hinter einem austauschbaren Adapter; Kilometer außerhalb Wiens per Geometrie-Schnitt mit der Wiener Stadtgrenze; Wiener Bezirk aus den Bezirksgrenzen; Cache und Rate-Limits.

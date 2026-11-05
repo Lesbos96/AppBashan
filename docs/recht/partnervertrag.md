@@ -55,7 +55,7 @@
 
 5.2 Zahlung per Überweisung auf [OFFEN: Konto von MoveNow] innerhalb von [OFFEN: Tage] ab Rechnungsdatum.
 
-5.3 Verzug: Zahlungssperre ab 14 Tagen nach Fälligkeit, Sperre ab 45 Tagen, danach Inkasso (Punkt 8.6 der Partner-AGB).
+5.3 Verzug: Zahlungssperre ab 14 Tagen nach Fälligkeit, Sperre ab 45 Tagen, danach Inkasso (Punkt 8.6 der Partner-AGB). [OFFEN: Fristen vorläufig, `docs/S9_KONZEPT.md`, 10.4]
 
 ## § 6 Zugang und Sicherheit
 

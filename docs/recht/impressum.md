@@ -47,7 +47,7 @@ MoveNow vermittelt Leistungen geprüfter Partnerbetriebe. Vertragspartner für d
 
 ## Kartendaten und Routen
 
-Grenzdaten von Wien, Österreich und den Wiener Bezirken: © OpenStreetMap-Mitwirkende, Open Database License (ODbL). Adresssuche und Routenberechnung: openrouteservice des Heidelberg Institute for Geoinformation Technology (HeiGIT), Deutschland (`supabase/functions/_shared/route/provider.ts:22-25`). [OFFEN: Attributionsvorgaben des gewählten Routendienst-Vertrags übernehmen]
+Grenzen von Wien und Österreich: © OpenStreetMap-Mitwirkende, Open Database License (ODbL). Grenzen der Wiener Bezirke: Stadt Wien – data.wien.gv.at („Bezirksgrenzen“), Lizenz CC BY 4.0 (`supabase/migrations/20261102100000_0019_quote_hardening.sql:51`). [OFFEN: genaue Namensnennung nach den Vorgaben der Stadt Wien] Adresssuche und Routenberechnung: openrouteservice des Heidelberg Institute for Geoinformation Technology (HeiGIT), Deutschland (`supabase/functions/_shared/route/provider.ts:22-25`). [OFFEN: Attributionsvorgaben des gewählten Routendienst-Vertrags übernehmen]
 
 ## Haftung für Links
 

@@ -2,7 +2,7 @@
 
 # Allgemeine Geschäftsbedingungen für Kundinnen und Kunden
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05. Abläufe und Werte stammen aus `docs/S9_KONZEPT.md` (Abschnitte 1, 8, 10, Werte in 5.10) und sind dort **vorläufig bis zur Rechtsprüfung** (Abschnitt 11). Annahme, Angebote, Nachtrag, Storno und Fertigmeldung sind **noch nicht gebaut** (S9c ff.); heute gibt es nur Senden und Zurückziehen. Die Werte stehen als einstellbare Schlüssel in `platform_settings`; was beim Vertragsschluss galt, steht im Preis-Stand der Buchung. Dieser Text erscheint in Kunden-Screens: Er nennt deshalb keine Vergütung von MoveNow durch Partner (`CLAUDE.md`, UI und Geld). [OFFEN: Rechtsprüfung, ob und wie eine solche Vergütung offenzulegen ist.]
+> Entwurf aus dem Nachtauftrag vom 2026-11-05. Abläufe und Werte stammen aus `docs/S9_KONZEPT.md` (Abschnitte 1, 8, 10, Werte in 5.10) und sind dort **vorläufig bis zur Rechtsprüfung** (Abschnitt 11). Annahme, Angebote, Nachtrag, Storno und Fertigmeldung sind **noch nicht gebaut** (S9c ff.); heute gibt es nur das Senden. Zurückziehen ist in der Datenbank vorhanden (`withdraw()`), in der App aber noch ohne Oberfläche (`docs/ROADMAP.md:103`). Die Werte stehen als einstellbare Schlüssel in `platform_settings`; was beim Vertragsschluss galt, steht im Preis-Stand der Buchung. Dieser Text erscheint in Kunden-Screens: Er nennt deshalb keine Vergütung von MoveNow durch Partner (`CLAUDE.md`, UI und Geld). [OFFEN: Rechtsprüfung, ob und wie eine solche Vergütung offenzulegen ist.]
 
 ## 1. Geltung
 
@@ -16,9 +16,9 @@
 
 2.1 MoveNow vermittelt Leistungen geprüfter Partner in Wien. MoveNow führt keine Transporte, Umzüge, Entrümpelungen oder Montagen selbst durch und wird nicht Vertragspartner der Leistung.
 
-2.2 Vertragspartner für die Leistung ist der Partner, der deine Anfrage in der App annimmt bzw. dessen Festangebot du bestätigst. Name und Kontakt des Partners erhältst du mit der Bestätigung in der App und per Mail.
+2.2 Vertragspartner für die Leistung ist der Partner, der deine Anfrage in der App annimmt bzw. dessen Festangebot du bestätigst. Bei einem Festangebot siehst du den Partner schon mit dem Angebot; Kontakt und Bestätigung erhältst du mit dem Vertragsschluss in der App und per Mail. [OFFEN: welche Angaben zum Partner das Angebot zeigt; das Konzept nennt „Betrag und Partner“ (`docs/S9_KONZEPT.md`, 8.2).]
 
-2.3 Die Nutzung der App ist für dich kostenlos. Du zahlst nur den Preis des Auftrags an den Partner.
+2.3 Die Nutzung der App ist für dich kostenlos. Du zahlst nur den Preis des Auftrags an den Partner. [OFFEN: prüfen, ob und wie offenzulegen ist, dass MoveNow von den Partnern vergütet wird, und dass diese Vergütung die Auswahl der Partner nicht beeinflusst.]
 
 2.4 [OFFEN: Pflichtinformationen für Verträge über Online-Marktplätze (§ 4 FAGG, insbesondere die Angaben für Online-Marktplätze nach dem Modernisierungsrichtlinie-Umsetzungsgesetz): Hauptparameter der Auswahl der Partner (Leistung, Bezirk der Abholadresse, Termin, erste Annahme), Hinweis, dass alle Partner Unternehmer sind, und wie die Pflichten zwischen Partner und MoveNow verteilt sind. Vgl. `docs/S9_KONZEPT.md`, Abschnitt 11, Punkte 1 und 6.]
 
@@ -44,11 +44,11 @@
 
 ## 5. Buchungsanfrage und Vertragsschluss
 
-5.1 Mit „[OFFEN: Beschriftung des Buttons nach Rechtsprüfung, Vorschlag im Projekt „Zahlungspflichtig buchen“]“ sendest du eine verbindliche Buchungsanfrage zum angezeigten Preis. [OFFEN: Bindung an die Anfrage bis zur Annahme (§ 862 ABGB) und Verhältnis zum kostenlosen Zurückziehen nach Punkt 8.1 klären (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 3).]
+5.1 Mit „[OFFEN: Beschriftung des Buttons nach Rechtsprüfung, Vorschlag im Projekt „Zahlungspflichtig buchen“; der Wortlaut muss dazu passen, dass du nicht an MoveNow, sondern nach Vertragsschluss an den Partner zahlst]“ sendest du eine verbindliche Buchungsanfrage zum angezeigten Preis. [OFFEN: Bindung an die Anfrage bis zur Annahme (§ 862 ABGB) und Verhältnis zum kostenlosen Zurückziehen nach Punkt 8.1 klären (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 3).]
 
 5.2 Buchbar sind Aufträge mit Abholadresse in Wien und Ziel in Österreich. Der Termin muss mindestens 2 Stunden in der Zukunft liegen.
 
-5.3 MoveNow bietet deine Anfrage allen Partnern an, die für die Leistung, den Bezirk der Abholadresse und den Termin in Frage kommen. Vor der Annahme sehen sie Bezirk, Umfang, Termin, Preis und Kopien deiner Fotos, aber keine Hausnummer, keinen Namen und keine Kontaktdaten.
+5.3 MoveNow bietet deine Anfrage allen Partnern an, die für die Leistung, den Bezirk der Abholadresse und den Termin in Frage kommen. Eine Anfrage, die ein Partner selbst als Kunde sendet, wird ihm nicht angeboten. Vor der Annahme sehen die Partner den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Preis und Kopien deiner Fotos, aber keine Straße, keine Hausnummer, keinen Namen und keine Kontaktdaten.
 
 5.4 **Festpreis:** Der Vertrag mit dem Partner kommt zustande, wenn ein Partner deine Anfrage in der App annimmt. Den Auftrag erhält der Partner, der zuerst annimmt. Die Annahmefrist beträgt höchstens 24 Stunden, höchstens die Hälfte der Zeit bis zum Termin und mindestens 2 Stunden. Nimmt innerhalb der Frist kein Partner an, ist die Anfrage abgelaufen; lehnen alle angefragten Partner ab oder passt kein Partner, wird sie als „nicht vermittelt“ geschlossen. Du wirst in beiden Fällen informiert und kannst neu senden, dann zum dann gültigen Preis.
 
@@ -79,7 +79,7 @@
 - danach 50 % des Gesamtpreises,
 - am Tag des Termins (Wiener Zeit) 100 % des Gesamtpreises.
 
-Maßgeblich sind die Stufen, die du vor dem Absenden gesehen hast; sie stehen im Preis-Stand deiner Buchung. Die Stornogebühr stellt dir der Partner in Rechnung. [OFFEN: Zulässigkeit nach § 6 KSchG und richterliches Mäßigungsrecht (§ 1336 ABGB); Verhältnis zum Rücktrittsrecht nach Punkt 10 (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 5). Als „Termin“ gilt der Beginn des gewählten Zeitfensters, ohne Zeitfenster 00:00 Uhr des Termintags (`docs/S9_KONZEPT.md`, 5.10).]
+Maßgeblich sind die Stufen, die du vor dem Absenden gesehen hast; sie stehen im Preis-Stand deiner Buchung. Die Stornogebühr stellt dir der Partner in Rechnung. [OFFEN: Zulässigkeit nach § 6 KSchG und richterliches Mäßigungsrecht (§ 1336 ABGB); Verhältnis zum Rücktrittsrecht nach Punkt 10 (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 5). Als „Termin“ gilt der Beginn des gewählten Zeitfensters (bei „Flexibel“ 08:00 Uhr), bei Leistungen ohne Zeitfenster 00:00 Uhr des Termintags, jeweils Wiener Zeit (`docs/S9_KONZEPT.md`, 5.10; so gerechnet in `supabase/migrations/20261102110000_0020_photo_staging.sql:213-227`). Für Transport und Umzug verschiebt das die 48-Stunden-Grenze auf den Beginn des Vortags; klären, ob der Kundentext das so nennen soll.]
 
 8.3 **Storno durch den Partner:** Sagt der Partner nach dem Vertragsschluss ab, zahlst du nichts. Liegt der Termin noch mindestens 24 Stunden entfernt und beruhte die Buchung nicht auf einem Festangebot, bietet MoveNow deine Anfrage automatisch zum gleichen Preis anderen Partnern an; diese Folgeanfrage kannst du kostenlos zurückziehen oder stornieren. Sonst kannst du neu senden.
 
@@ -108,6 +108,12 @@ Nach dem Termin fragt dich die App, ob der Auftrag stattgefunden hat. Antwortest
 12.2 MoveNow haftet für die Vermittlung und den Betrieb der App. Für leichte Fahrlässigkeit haftet MoveNow nicht, ausgenommen bei Personenschäden. [OFFEN: Zulässigkeit und Umfang nach § 6 Abs. 1 Z 9 KSchG prüfen.]
 
 12.3 MoveNow bemüht sich um eine durchgehend erreichbare App, schuldet sie aber nicht. Wartung und Störungen können die Nutzung zeitweise einschränken.
+
+## 12a. Vertragsschluss in der App
+
+[OFFEN: Informationen für Vertragsabschlüsse im elektronischen Geschäftsverkehr (ECG): technische Schritte bis zum Vertragsschluss, ob und wo der Vertragstext gespeichert und abrufbar ist (heute: Preis-Stand und Bedingungen je Anfrage in der App), Erkennen und Berichtigen von Eingabefehlern vor dem Absenden (Zusammenfassung), Vertragssprache Deutsch.]
+
+[OFFEN: Pflichten nach dem Digital Services Act für Online-Plattformen, etwa ein Meldeweg für rechtswidrige Inhalte (z. B. Fotos) und die Angaben zur Auswahl der Partner; prüfen, ob die Ausnahmen für Klein- und Kleinstunternehmen gelten.]
 
 ## 13. Datenschutz
 

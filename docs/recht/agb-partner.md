@@ -20,7 +20,9 @@
 
 2.2 Für alle Partnerfunktionen ist ein zweiter Anmeldefaktor (Authenticator-App) Pflicht.
 
-2.3 MoveNow prüft Angaben und Unterlagen und gibt den Partner frei oder lehnt den Antrag mit Begründung ab. Bei der Freigabe legt MoveNow die Leistungen und die Wiener Bezirke (1 bis 23) fest, für die der Partner Anfragen erhält. Ein Anspruch auf Freigabe besteht nicht. Eine Ablehnung ist endgültig; ein neuer Antrag mit demselben Konto ist nicht möglich. [OFFEN: Prüfkriterien schriftlich festlegen.]
+2.3 MoveNow prüft Angaben und Unterlagen und gibt den Partner frei oder lehnt den Antrag mit Begründung ab. Bei der Freigabe legt MoveNow die Leistungen und die Wiener Bezirke (1 bis 23) fest, für die der Partner Anfragen erhält. Ein Anspruch auf Freigabe besteht nicht. Eine Ablehnung ist endgültig; ein neuer Antrag mit demselben Konto ist nicht möglich (Entscheidung Beks, `docs/S9b_PLAN.md:5`). [OFFEN: Prüfkriterien schriftlich festlegen; prüfen, ob die endgültige Ablehnung ohne neuen Antrag zulässig ist.]
+
+2.5 [OFFEN: Pflichten nach dem Digital Services Act für Online-Marktplätze, insbesondere Nachverfolgbarkeit der Unternehmer (Angaben und ihre Prüfung vor der Freigabe); prüfen, ob die Ausnahme für Klein- und Kleinstunternehmen gilt.]
 
 2.4 Firmenname, Rechtsform, UID, Kleinunternehmer-Status und Anschrift ändert nach der Freigabe nur MoveNow auf Antrag des Partners; die Kontaktdaten ändert der Partner selbst. Phase 1 kennt je Partner ein Konto (Inhaberin oder Inhaber).
 
@@ -34,7 +36,7 @@
 
 ## 4. Verteilung der Anfragen (Art. 5 P2B-VO)
 
-4.1 Eine Anfrage wird gleichzeitig allen freigegebenen Partnern im Status „aktiv“ angeboten, deren Leistungen und Bezirke passen. Maßgeblich ist der Bezirk der Abholadresse. Der Partner sieht keine eigenen Anfragen als Kunde.
+4.1 Eine Anfrage wird gleichzeitig allen freigegebenen Partnern im Status „aktiv“ angeboten, deren Leistungen und Bezirke passen. Maßgeblich ist der Bezirk der Abholadresse. Eine Anfrage, die der Partner selbst als Kunde gesendet hat, wird ihm nicht angeboten (keine Selbstbuchung, `docs/S9_KONZEPT.md`, 7.2).
 
 4.2 Den Auftrag erhält der Partner, der zuerst annimmt. Es gibt keine Reihung, keine Bewertung und keine bezahlte Bevorzugung. Die Provision hat keinen Einfluss auf die Verteilung.
 
@@ -42,7 +44,7 @@
 
 ## 5. Annahme, Festangebot und Vertrag mit der Kundin oder dem Kunden
 
-5.1 Vor der Annahme sieht der Partner Bezirk, Umfang, Termin, Kopien der Fotos ohne eingebettete Daten, den Gesamtpreis und den Betrag, den er nach Abzug der Provision erhält. Name, Hausnummer und Kontaktdaten sieht er erst nach der Annahme.
+5.1 Vor der Annahme sieht der Partner den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Kopien der Fotos ohne eingebettete Daten, den Gesamtpreis und den Betrag, den er nach Abzug der Provision erhält. Name, Hausnummer und Kontaktdaten sieht er erst nach der Annahme.
 
 5.2 **Festpreis:** Mit der Annahme in der App kommt der Vertrag über die Leistung zwischen Partner und Kundin oder Kunde zum angezeigten Gesamtpreis zustande. Die Annahme ist nur innerhalb der Annahmefrist möglich und nur, wenn der angezeigte Auszahlungsbetrag noch gilt; hat sich der Provisionssatz zwischenzeitlich geändert, muss der Partner den neuen Betrag bestätigen.
 
@@ -88,7 +90,7 @@
 
 8.5 **Rechnung und Zahlung:** MoveNow stellt dem Partner monatlich eine Rechnung über die Provisionen der Aufträge, die im Monat ihren Endstand erreicht haben (abgeschlossen oder storniert), in Phase 1 außerhalb der App. Der Partner zahlt per Überweisung innerhalb von [OFFEN: Zahlungsziel]. Aufträge ohne Fertigmeldung gelten 7 Tage nach dem Termin als abgeschlossen, wenn die Kundin oder der Kunde nicht widerspricht.
 
-8.6 **Zahlungsverzug:** Nach einer Erinnerung kann MoveNow den Partner 14 Tage nach Fälligkeit auf „Zahlungssperre“ setzen: Er erhält keine neuen Anfragen, laufende Aufträge führt er aus. 45 Tage nach Fälligkeit kann MoveNow den Partner sperren; danach folgt Inkasso. Jede Sperre wird schriftlich begründet (Punkt 10). [OFFEN: Verzugszinsen, Mahnspesen.]
+8.6 **Zahlungsverzug:** Nach einer Erinnerung kann MoveNow den Partner 14 Tage nach Fälligkeit auf „Zahlungssperre“ setzen: Er erhält keine neuen Anfragen, laufende Aufträge führt er aus. 45 Tage nach Fälligkeit kann MoveNow den Partner sperren; danach folgt Inkasso. Jede Sperre wird schriftlich begründet (Punkt 10). [OFFEN: Fristen 14 und 45 Tage sind vorläufig (`docs/S9_KONZEPT.md`, 10.4); Verzugszinsen, Mahnspesen.]
 
 ## 9. Änderungen dieser Bedingungen und des Provisionssatzes (Art. 3 P2B-VO)
 
