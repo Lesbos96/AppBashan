@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, type Variants } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { AnimatePresence, motion, useIsPresent, type Variants } from 'motion/react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { ScrollRestoration, useMatches, useNavigationType, useOutlet } from 'react-router'
 import { TabBar } from '../components/Bars'
 import { spring } from '../lib/motion'
@@ -24,6 +24,27 @@ const pages: Variants = {
   enter: (d: Direction) => ({ opacity: 0, x: d === 'push' ? '100%' : d === 'pop' ? '-28%' : 0 }),
   center: { opacity: 1, x: 0 },
   exit: (d: Direction) => ({ opacity: 0, x: d === 'push' ? '-28%' : d === 'pop' ? '100%' : 0 }),
+}
+
+/** Eine Seite im Seitenwechsel. Die ausblendende Seite bleibt bis zum Ende der Animation im DOM: für Bildschirmleser, Tastatur und Zeiger sofort aus dem Weg (inert + aria-hidden). */
+function Page({ seq, direction, bar, children }: { seq: number; direction: Direction; bar: boolean; children: ReactNode }) {
+  const present = useIsPresent()
+  return (
+    <motion.div
+      data-page={seq}
+      inert={!present}
+      aria-hidden={present ? undefined : true}
+      custom={direction}
+      variants={pages}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={spring}
+      className={`min-h-dvh w-full bg-background ${bar ? 'pb-[calc(49px+var(--safe-bottom)+24px)]' : 'pb-safe'}`}
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 export function Shell() {
@@ -81,19 +102,9 @@ export function Shell() {
         </p>
       )}
       <AnimatePresence mode="popLayout" initial={false} custom={nav.direction}>
-        <motion.div
-          key={`${handle.key}:${nav.seq}`}
-          data-page={nav.seq}
-          custom={nav.direction}
-          variants={pages}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={spring}
-          className={`min-h-dvh w-full bg-background ${handle.bar === false ? 'pb-safe' : 'pb-[calc(49px+var(--safe-bottom)+24px)]'}`}
-        >
+        <Page key={`${handle.key}:${nav.seq}`} seq={nav.seq} direction={nav.direction} bar={handle.bar !== false}>
           {outlet}
-        </motion.div>
+        </Page>
       </AnimatePresence>
       {handle.bar !== false && <TabBar tabs={tabs} />}
       <ScrollRestoration />

@@ -14,10 +14,24 @@ import { createClient } from '@supabase/supabase-js'
 
 const SB = 'node_modules/supabase/dist/supabase.js'
 const cli = (...args) => execFileSync(process.execPath, [SB, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 })
+// Transportfehler zur Management-API (Netz, nicht die Abfrage): bis zu 3 Versuche mit Backoff 2 s / 4 s. Sperren/Wiederherstellungen
+// (alter ... enable/disable, alter policy, create or replace) und Selects sind idempotent. Die Fixture-Inserts sind es nicht: kam eine Anfrage
+// trotz Transportfehler an, entstehen Doppelzeilen in Wegwerf-Konten, die das Aufräumen (Konto-Kaskade) entfernt.
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+const isTransport = (m) => /Transport error|HttpClientError|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|fetch failed/i.test(m)
 const sql = (q) => {
-  const json = JSON.parse(cli('db', 'query', '--linked', q))
-  if (json._tag === 'Error') throw new Error(json.error?.message)
-  return json.rows
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const json = JSON.parse(cli('db', 'query', '--linked', q))
+      if (json._tag === 'Error') throw new Error(json.error?.message)
+      return json.rows
+    } catch (e) {
+      const msg = `${e?.message ?? e}\n${e?.stdout ?? ''}`
+      if (attempt >= 3 || !isTransport(msg)) throw e
+      console.log(`  Transportfehler zur Management-API, Versuch ${attempt + 1} von 3 in ${2 * attempt} s`)
+      sleep(2000 * attempt)
+    }
+  }
 }
 const q1 = (s) => `'${s.replaceAll("'", "''")}'`
 
@@ -147,6 +161,7 @@ const combine = (a, b) => ({
   restore: (saved) => { const [x, y] = JSON.parse(saved); a.restore(x); b.restore(y) },
 })
 
+const restoreFailed = []
 const runSql = async (selected, withTests, testRun) => {
   for (const s of selected) {
     // Lockerungen von photo_orphans wirken auf den echten Aufräumjob (stündlich um :23): nur in Minute 27–50 starten.
@@ -159,7 +174,12 @@ const runSql = async (selected, withTests, testRun) => {
       looseValue = await s.probe()
       if (withTests && s.tests) redTests = testRun(s.tests, s.testFile ?? 'tests/rls/uploads.test.ts')
     } finally {
-      s.restore(saved)
+      // Wiederherstellung läuft auch nach Abbruch von apply/probe; sql() versucht Transportfehler dreimal. Schlägt sie endgültig fehl, bleibt der
+      // Name der Sperre im Log (und in restoreFailed), der Fehler von apply/probe wird nicht verdeckt, und das Netz am Ende (restoreTriggers) greift.
+      try { s.restore(saved) } catch (e) {
+        restoreFailed.push(s.label)
+        console.error(`WIEDERHERSTELLUNG FEHLGESCHLAGEN: ${s.label}: ${e?.message ?? e}`)
+      }
     }
     const lockedValue = await s.probe()
     const effect = looseValue === s.loose
@@ -686,14 +706,38 @@ function tools() {
 
 mkdirSync('tmp/proof', { recursive: true })
 mkdirSync('tmp/reports', { recursive: true })
+// Netz unter allem: Trigger-Zustand vor dem Lauf. Ist schon einer ausgeschaltet (Rest eines abgebrochenen Laufs), startet das Skript nicht,
+// sonst würde „ausgeschaltet“ als Ausgangszustand gelten. Am Ende (auch nach Abbruch) wird jeder Trigger auf diesen Zustand zurückgesetzt.
+const TRIGGERS = `select tgrelid::regclass::text as t, tgname as n, tgenabled::text as e from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS} order by 1, 2`
+const triggersBefore = sql(TRIGGERS)
+const off = triggersBefore.filter((r) => r.e === 'D')
+if (off.length > 0) {
+  console.error(`ABBRUCH: Trigger vor dem Lauf ausgeschaltet: ${off.map((r) => `${r.t}.${r.n}`).join(', ')}. Erst von Hand einschalten und den Zustand prüfen.`)
+  process.exit(2)
+}
+const MODE = { O: 'enable', D: 'disable', R: 'enable replica', A: 'enable always' }
+const restoreTriggers = () => {
+  const fixed = []
+  for (const r of sql(TRIGGERS)) {
+    const want = triggersBefore.find((b) => b.t === r.t && b.n === r.n)?.e
+    if (want && want !== r.e) {
+      sql(`alter table ${r.t} ${MODE[want]} trigger ${r.n}`)
+      fixed.push(`${r.t}.${r.n}: ${r.e} → ${want}`)
+    }
+  }
+  return fixed
+}
 let outcome
 try {
   outcome = await run()
 } finally {
-  // Aufräumen: Konten löschen (Kaskade entfernt Anfragen und Fotozeilen), dann die Dateien; sicherheitshalber alle Policies/Trigger zurück (Snapshot-Vergleich meldet Reste)
-  sql('drop policy if exists redproof_update on storage.objects')
-  for (const u of [A, B, C, E]) if (u) await service.auth.admin.deleteUser(u.id)
-  for (let i = 0; i < made.length; i += 100) await service.storage.from(BUCKET).remove(made.slice(i, i + 100))
+  // Aufräumen: jeder Schritt einzeln abgesichert, damit ein Netzfehler die übrigen nicht überspringt.
+  const step = async (label, f) => { try { await f() } catch (e) { restoreFailed.push(label); console.error(`AUFRÄUMEN FEHLGESCHLAGEN: ${label}: ${e?.message ?? e}`) } }
+  await step('Trigger zurücksetzen', () => { const fixed = restoreTriggers(); if (fixed.length) console.error(`Netz: Trigger zurückgesetzt: ${fixed.join('; ')}`); restoreFailed.push(...fixed.map((f) => `Trigger-Rest ${f}`)) })
+  await step('Policy redproof_update', () => sql('drop policy if exists redproof_update on storage.objects'))
+  for (const u of [A, B, C, E]) if (u) await step(`Konto ${u.id}`, () => service.auth.admin.deleteUser(u.id))
+  for (let i = 0; i < made.length; i += 100) await step('Dateien löschen', () => service.storage.from(BUCKET).remove(made.slice(i, i + 100)))
+  if (restoreFailed.length) console.error(`OFFEN, von Hand prüfen: ${restoreFailed.join(' | ')}`)
 }
 const same = outcome.before === outcome.after
 const count = (part, kind) => results.filter((r) => r.good && r.part === part && r.kind === kind).length
@@ -714,7 +758,7 @@ for (const r of results) {
 report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
 report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, ${count('SQL', 'Verfügbarkeit')} Verfügbarkeit, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
 writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
-const allGood = results.every((r) => r.good) && same
+const allGood = results.every((r) => r.good) && same && restoreFailed.length === 0
 console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')
 console.log(allGood ? 'REDPROOF BESTANDEN' : 'REDPROOF FEHLGESCHLAGEN')
 process.exitCode = allGood ? 0 : 1
