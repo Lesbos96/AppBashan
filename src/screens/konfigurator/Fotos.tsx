@@ -27,8 +27,10 @@ export function Fotos({ storeKey }: { storeKey: string }) {
       <Card className="flex flex-col gap-3 px-4 py-3.5">
         <div className="flex items-baseline justify-between">
           <h3 className="m-0 text-headline">Fotos</h3>
-          <span className="text-[13px] text-text-secondary tabular-nums">
+          {/* Neue oder entfernte Fotos werden angesagt (WCAG 4.1.3) */}
+          <span aria-live="polite" aria-atomic="true" className="text-[13px] text-text-secondary tabular-nums">
             {photos.length} von {MAX_PHOTOS}
+            <span className="sr-only"> Fotos</span>
           </span>
         </div>
         <div className="grid grid-cols-5 gap-[7px]">

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { anonymousPrices, mockQuote, toSummary } from './anfrage-helpers'
 import { EMAIL, mockAuth, signInWithCode } from './auth-helpers'
 import { weiter } from './dienste-helpers'
+import { addPhotos } from './konfigurator-helpers'
 
 // Barrierefreiheit (WCAG 2.2 AA): Prüfungen, die das Prüfskript der Nacht vom 2026-11-05 als Funde gemeldet hat (docs/nacht/qualitaet.md).
 
@@ -284,5 +285,17 @@ test.describe('Sichtbarer Text im Namen (2.5.3)', () => {
       await expect(button).toHaveCount(1)
       await expect(button).toContainText(visible)
     }
+  })
+})
+
+test.describe('Foto-Zähler wird angesagt (4.1.3)', () => {
+  test('Zähler ist eine höfliche Live-Region und nennt „Fotos"', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/transport')
+    const counter = page.getByText(/^\d von 8 Fotos$/)
+    await expect(counter).toHaveText('0 von 8 Fotos')
+    await expect(counter).toHaveAttribute('aria-live', 'polite')
+    await addPhotos(page, 2)
+    await expect(counter).toHaveText('2 von 8 Fotos')
   })
 })
