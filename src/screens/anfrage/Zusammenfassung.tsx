@@ -348,7 +348,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
             <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" aria-required value={name} onChange={(e) => { setName(e.target.value); edit('name', e.target.value) }} onBlur={(e) => leave('name', e.target.value)} {...invalid('name')} />
             <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" aria-required value={phone} onChange={(e) => { setPhone(e.target.value); edit('phone', e.target.value) }} onBlur={(e) => leave('phone', e.target.value)} {...invalid('phone')} />
             <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" aria-required value={mail} onChange={(e) => { setEmail(e.target.value); edit('email', e.target.value || session?.user.email || '') }} onBlur={(e) => leave('email', e.target.value)} {...invalid('email')} />
-            <Field label="Stiege / Tür" name="stairs" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
+            <Field label="Stiege / Tür" name="stairs" autoComplete="address-line2" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
           </GroupedList>
           {/* Höfliche Live-Region: Hinweise erscheinen über dem festen Satz; ohne Hinweis sieht der Abschnitt aus wie bisher */}
           <div aria-live="polite" className="flex flex-col gap-1">
