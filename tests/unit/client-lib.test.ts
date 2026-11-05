@@ -1,5 +1,5 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Supabase-Client gemockt: from(...).select(...).single()/eq().order() und functions.invoke.
 const invoke = vi.fn()
@@ -23,6 +23,7 @@ beforeEach(() => {
   invoke.mockReset()
   tables = {}
 })
+afterEach(() => vi.unstubAllGlobals())
 
 describe('loadPrices (Info-Sheet „Wie rechnet MoveNow?“)', () => {
   const row = { key: 'hourly.crew2_van', value: '89.5', unit: 'eur_per_hour', label: '2 Personen + Transporter', sources: [{ label: 'Quelle A', url: 'https://example.at/a' }], researched_at: '2026-10-29' }

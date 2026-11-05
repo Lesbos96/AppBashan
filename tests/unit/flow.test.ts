@@ -64,7 +64,7 @@ describe('readFlow (Transport und Umzug)', () => {
     ['unbekannte Fahrzeugart', { ...full, vehicleType: 'bus' }],
     ['Adresse ohne Text', { ...full, from: { point: from.point } }],
     ['Punkt mit Text statt Zahl', { ...full, to: { label: to.label, point: { lat: '48.2', lon: 16.38 } } }],
-    ['Punkt unendlich', { ...full, to: { label: to.label, point: { lat: null, lon: 16.38 } } }],
+    ['Punkt mit null-Koordinate (JSON speichert Infinity und NaN als null)', { ...full, to: { label: to.label, point: { lat: null, lon: 16.38 } } }],
     ['Route ohne Einwilligung', { ...full, routeConsent: false }],
     ['Route ohne Ziel', { ...full, to: null }],
     ['Route mit unbekannter Region', { ...full, route: { ...route, region: 'mars' } }],

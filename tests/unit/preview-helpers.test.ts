@@ -102,7 +102,8 @@ describe('Vorschau Entrümpelung und Montage', () => {
 })
 
 describe('Datum in der Anfrage (Kalendertag, nie Zeitpunkt)', () => {
-  it('formatiert de-AT unabhängig von der Zeitzone', () => {
+  // format.ts formatiert mit timeZone: 'UTC'; nachweislich gleich unter TZ=Pacific/Auckland und TZ=America/Los_Angeles (Nachtlauf, docs/nacht/testabdeckung.md)
+  it('formatiert de-AT als Kalendertag (UTC-basiert)', () => {
     expect(utc('2026-11-13')).toBe(Date.UTC(2026, 10, 13))
     expect(dayText('2026-11-13')).toBe('Freitag, 13. November 2026')
     expect(shortDayText('2026-11-13')).toMatch(/^Fr\.?, 13\. Nov\.?$/)

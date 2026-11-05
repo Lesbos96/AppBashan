@@ -52,10 +52,11 @@ const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/[ \t\r\n]+
 
 /** Regeln, die jeder Kunden-Screen einhält (CLAUDE.md „Geld“ und „UI“). */
 function expectCustomerRules(html: string) {
-  // Keine Gebühr, kein Prototyp-Text
-  expect(text(html)).not.toMatch(/gebühr|provision|15\s?%|plattform|prototyp|konzeptdemo/i)
-  // Jeder Betrag kommt aus formatEuro/formatEuroRounded: geschütztes Leerzeichen vor €, damit Zahl und € nie umbrechen
-  for (const m of html.matchAll(/(.)€/g)) expect(m[1], `Betrag ohne geschütztes Leerzeichen: …${html.slice(Math.max(0, m.index - 20), m.index + 1)}`).toBe(String.fromCharCode(160))
+  // Keine Gebühr, kein Prototyp-Text: im sichtbaren Text und in vorgelesenen bzw. angezeigten Attributen
+  const attributes = [...html.matchAll(/\s(?:aria-label|title|placeholder|alt)="([^"]*)"/g)].map((m) => m[1]).join(' ')
+  expect(`${text(html)} ${attributes}`).not.toMatch(/gebühr|provision|15\s?%|plattform|prototyp|konzeptdemo/i)
+  // Jeder Betrag kommt aus formatEuro/formatEuroRounded: geschütztes Leerzeichen vor €, damit Zahl und € nie umbrechen (auch ein € ganz am Anfang zählt)
+  for (const m of html.matchAll(/(^|[\s\S])€/g)) expect(m[1], `Betrag ohne geschütztes Leerzeichen: …${html.slice(Math.max(0, m.index - 20), m.index + 2)}`).toBe(String.fromCharCode(160))
   // Jedes sichtbare Eingabefeld hat ein Label (umschließend, for= oder aria-label)
   for (const m of html.matchAll(/<input\b[^>]*>/g)) {
     const tag = m[0]
@@ -63,7 +64,7 @@ function expectCustomerRules(html: string) {
     const id = /\sid="([^"]+)"/.exec(tag)?.[1]
     const before = html.slice(0, m.index)
     const wrapped = before.lastIndexOf('<label') > before.lastIndexOf('</label>')
-    const labelled = /aria-label(ledby)?="/.test(tag) || (id !== undefined && html.includes(`for="${id}"`))
+    const labelled = /aria-label(ledby)?="/.test(tag) || (id !== undefined && new RegExp(`<label\\b[^>]*\\sfor="${id}"`).test(html))
     expect(wrapped || labelled, `Feld ohne Label: ${tag}`).toBe(true)
   }
   // Jeder Knopf und jeder Link hat einen zugänglichen Namen
@@ -82,6 +83,9 @@ describe('Regel-Prüfung selbst (Gegenprobe)', () => {
     ['Feld ohne Label', '<input type="text" value="x"/>'],
     ['Knopf ohne Namen', '<button type="button"><svg aria-hidden="true"></svg></button>'],
     ['Link ohne Namen', '<a href="/x"></a>'],
+    ['Gebühr nur im aria-label', '<button aria-label="Plattformgebühr anzeigen">i</button>'],
+    ['€ ganz am Anfang', '€ 12'],
+    ['for= an einem Nicht-Label', '<input id="n" type="text"/><span for="n">Name</span>'],
   ])('schlägt an: %s', (_, html) => {
     expect(() => expectCustomerRules(html)).toThrow()
   })
@@ -97,6 +101,7 @@ describe('Ruhige Screens', () => {
     ['Start', Start, '/'],
     ['Onboarding', Onboarding, '/willkommen'],
     ['Profil (abgemeldet)', Profil, '/profil'],
+    ['Profil mit offenem Info-Sheet „Wie rechnet MoveNow?“ (Ladezustand)', Profil, '/profil/preise'],
     ['Datenschutz', Datenschutz, '/profil/datenschutz'],
     ['Impressum', Impressum, '/profil/impressum'],
   ])('%s rendert ohne Netz und hält die Kunden-Regeln ein', (_, Screen, at) => {
@@ -142,7 +147,7 @@ describe('Aufträge', () => {
     expect(fromCalls).toEqual([])
   })
 
-  it('ohne Sitzung: keine Liste und keine Abfrage (Weiterleitung zur Anmeldung)', () => {
+  it('ohne Sitzung: keine Liste und keine Abfrage (die Weiterleitung selbst prüft die E2E)', () => {
     currentSession = null
     const html = render(h(Auftraege), '/auftraege')
     expect(text(html)).not.toContain('Noch keine Aufträge')
@@ -170,7 +175,7 @@ describe('Bestätigung nach dem Senden', () => {
     const t = text(html)
     expect(t).toContain('Anfrage gesendet.')
     expect(t).toContain(`Richtpreis 123,45${nbsp}€`)
-    expect(t).toContain('Fr., 20. Nov.')
+    expect(t).toMatch(/Fr\.?, 20\. Nov\.?/)
     expect(t).toContain('Angefragt')
     expect(t).not.toContain('Der Preis wurde aktualisiert.')
   })

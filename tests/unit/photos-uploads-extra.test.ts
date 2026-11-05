@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAX_BYTES, PhotoError, clearPhotos, getPhotos, preparePhoto, renewPhotoIds } from '../../src/lib/photos'
 import { failureText, photoRejectedText, photoUrls } from '../../src/lib/uploads'
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('preparePhoto: Grenzfälle', () => {
   // Chrome unter Windows und manche Android-Galerien liefern für .heic keinen MIME-Typ (`type` leer).
@@ -17,7 +19,9 @@ describe('preparePhoto: Grenzfälle', () => {
     await expect(preparePhoto(new File(['x'], 'notiz.txt', { type: '' }))).rejects.toThrow('Das ist kein Bild.')
   })
 
-  it('genau 10 MB passieren die Größenprüfung (erst das Dekodieren scheitert hier ohne Browser)', async () => {
+  it('genau 10 MB passieren die Größenprüfung (das Dekodieren scheitert hier gewollt)', async () => {
+    // ausdrücklich werfen, statt sich darauf zu verlassen, dass Node kein createImageBitmap kennt
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(new Error('kein Bild')))
     const exact = new File([new Uint8Array(MAX_BYTES)], 'a.jpg', { type: 'image/jpeg' })
     const error = await preparePhoto(exact).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(PhotoError)

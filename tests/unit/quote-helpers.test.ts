@@ -90,6 +90,7 @@ describe('Fehlertexte', () => {
   it('jede Fehlerart hat einen Text ohne Code, Gebühr oder Fachbegriff', () => {
     const texts = [...Object.values(errorText), ...Object.values(rejectedText)]
     expect(Object.keys(errorText).sort()).toEqual(['offline', 'provider', 'rate_limited', 'unauthorized', 'unavailable'])
+    expect(Object.keys(rejectedText).sort()).toEqual(['address_imprecise', 'address_mismatch', 'address_point_required', 'district_required', 'offer_not_bookable', 'pickup_outside_vienna'])
     for (const t of texts) {
       expect(t).toMatch(/^[A-ZÄÖÜ]/)
       expect(t).not.toMatch(/_|\d{3}|gebühr|provision|15 ?%|plattform/i)
