@@ -206,8 +206,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const leave = (field: keyof typeof validField, value: string) => setHints((h) => ({ ...h, [field]: !validField[field](value) }))
   const edit = (field: keyof typeof validField, value: string) => validField[field](value) && setHints((h) => (h[field] ? { ...h, [field]: false } : h))
   const hintText = { name: 'Gib deinen Namen an.', phone: 'Prüfe die Telefonnummer, sie braucht mindestens 5 Ziffern.', email: 'Prüfe die Mailadresse.' }
-  const contactErrors = { name: hints.name ? hintText.name : null, phone: hints.phone ? hintText.phone : null, email: hints.email ? hintText.email : null }
-  const invalid = (field: keyof typeof contactErrors) => (contactErrors[field] ? { 'aria-invalid': true, 'aria-describedby': `kontakt-${field}-hinweis` } : {})
+  // Der Hinweis steht direkt unter der Eingabe in der Zeile des Feldes (`Field` mit `hintId`), damit er beim Verlassen im Blick bleibt
+  const hint = (field: keyof typeof validField) => ({ hint: hints[field] ? hintText[field] : null, hintId: `kontakt-${field}-hinweis` })
 
   useEffect(() => {
     if (wait <= 0) return
@@ -345,23 +345,12 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         <section className="flex flex-col gap-2">
           <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Dein Kontakt</h2>
           <GroupedList>
-            <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" aria-required value={name} onChange={(e) => { setName(e.target.value); edit('name', e.target.value) }} onBlur={(e) => leave('name', e.target.value)} {...invalid('name')} />
-            <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" aria-required value={phone} onChange={(e) => { setPhone(e.target.value); edit('phone', e.target.value) }} onBlur={(e) => leave('phone', e.target.value)} {...invalid('phone')} />
-            <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" aria-required value={mail} onChange={(e) => { setEmail(e.target.value); edit('email', e.target.value || session?.user.email || '') }} onBlur={(e) => leave('email', e.target.value)} {...invalid('email')} />
+            <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" aria-required value={name} onChange={(e) => { setName(e.target.value); edit('name', e.target.value) }} onBlur={(e) => leave('name', e.target.value)} {...hint('name')} />
+            <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" aria-required value={phone} onChange={(e) => { setPhone(e.target.value); edit('phone', e.target.value) }} onBlur={(e) => leave('phone', e.target.value)} {...hint('phone')} />
+            <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" aria-required value={mail} onChange={(e) => { setEmail(e.target.value); edit('email', e.target.value || session?.user.email || '') }} onBlur={(e) => leave('email', e.target.value)} {...hint('email')} />
             <Field label="Stiege / Tür" name="stairs" autoComplete="address-line2" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
           </GroupedList>
-          {/* Höfliche Live-Region: Hinweise erscheinen über dem festen Satz; ohne Hinweis sieht der Abschnitt aus wie bisher */}
-          <div aria-live="polite" className="flex flex-col gap-1">
-            {(['name', 'phone', 'email'] as const).map(
-              (field) =>
-                contactErrors[field] && (
-                  <p key={field} id={`kontakt-${field}-hinweis`} className="m-0 px-4 text-footnote text-destructive">
-                    {contactErrors[field]}
-                  </p>
-                ),
-            )}
-            <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
-          </div>
+          <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
         </section>
 
         {photos.length > 0 && (
