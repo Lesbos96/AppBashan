@@ -100,7 +100,11 @@ Hinweis: Im Messbrowser (Linux, headless) lädt keine Inter-Datei (`document.fon
 
 ## Phase 2 · Barrierefreiheits-Funde beheben
 
-(folgt)
+Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Specs über den `test-runner` (Logs `tmp/nacht/<fund>-*.log`). Neue Tests in `tests/e2e/barrierefreiheit.spec.ts`.
+
+| Fund | Änderung | Prüfung |
+|---|---|---|
+| A1 | `theme.css`: Fokusrahmen 2 px in voller Akzentfarbe statt 3 px mit 45 % Deckkraft (Light ≈ 7:1, Dark ≈ 11:1 statt 2,2:1 bzw. 2,8:1). Labels mit `has-[:focus-visible]` (Segmente, Felder, Adresssuche) ebenso. Zeilen in Listen mit `overflow-hidden` (Listenzeilen, Wertezeilen, Adresskarte, Treffer der Adresssuche, Fahrzeugart, Montage-Zeile) zeichnen den Rahmen nach innen, sonst schnitt die Liste ihn ab. „Überspringen" im Onboarding mit Mint-Rahmen auf dunklem Grund. Entscheidung 2 px statt 3 px: bei voller Deckkraft wirkt 3 px schwer, 2 px erfüllt auch das AAA-Kriterium 2.4.13 (Mindestdicke 2 px). | `a1-check.log` EXIT=0 (368 Unit), `a1-e2e.log` EXIT=0 (28 bestanden, darunter 4 neue Tests: Light, Dark, Listenzeile, Onboarding) |
 
 ## Phase 3 · Tempo
 

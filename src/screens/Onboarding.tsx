@@ -59,7 +59,7 @@ export function Onboarding() {
             MoveNow
           </span>
           {!last && (
-            <button type="button" onClick={done} className="press -mr-2 flex h-11 items-center px-2 text-body text-white/80">
+            <button type="button" onClick={done} className="press -mr-2 flex h-11 items-center px-2 text-body text-white/80 focus-visible:outline-mint">
               Überspringen
             </button>
           )}

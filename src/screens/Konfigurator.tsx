@@ -201,7 +201,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
             <SwitchRow label="Montage / Demontage" icon="drill" checked={flow.assembly} onChange={(assembly) => update({ assembly })} switchLabel="Montage oder Demontage dazubuchen" />
             {flow.assembly && (
               <li className="relative before:absolute before:top-0 before:right-0 before:left-[58px] before:h-[0.5px] before:bg-separator">
-                <button type="button" onClick={() => setSheet('assembly')} className="press flex min-h-[52px] w-full items-center justify-between gap-3 pr-3 pl-[58px] text-left">
+                <button type="button" onClick={() => setSheet('assembly')} className="press flex min-h-[52px] w-full items-center justify-between gap-3 pr-3 pl-[58px] text-left focus-visible:-outline-offset-2">
                   <span className="text-subhead text-text-secondary">Standardmöbel · {lmText(assemblyLm)}</span>
                   <span className="flex items-center gap-1 whitespace-nowrap text-body tabular-nums">
                     {assemblyCents !== undefined && formatEuro(assemblyCents)}
@@ -236,7 +236,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
                 update({ vehicleType: v.value })
                 setSheet(null)
               }}
-              className="press flex min-h-14 items-center justify-between gap-3 px-4 text-left text-body not-first:border-t-[0.5px] not-first:border-separator"
+              className="press flex min-h-14 items-center justify-between gap-3 px-4 text-left text-body focus-visible:-outline-offset-2 not-first:border-t-[0.5px] not-first:border-separator"
             >
               {v.label}
               {flow.vehicleType === v.value && <Icon name="check" width={20} height={20} className="text-primary" />}

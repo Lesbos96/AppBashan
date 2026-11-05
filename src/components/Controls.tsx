@@ -29,7 +29,7 @@ export function Segmented({
         <label
           key={o.value}
           // Das Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per ::before auf 44 px.
-          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] has-[:checked]:font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent/45"
+          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] has-[:checked]:font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
         >
           <input
             type="radio"
