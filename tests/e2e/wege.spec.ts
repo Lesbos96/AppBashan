@@ -3,7 +3,7 @@ import { answer, cors, fillContact, mockQuote, pickDate, price, type Reply } fro
 import { mockAuth, signInWithCode } from './auth-helpers'
 import { expect, test } from './backend'
 import { collectErrors } from './console'
-import { weiter } from './dienste-helpers'
+import { fillKuecheBeispiel, weiter } from './dienste-helpers'
 import { fillUmzugBeispiel, mockRoute, setAddress, setTerminAddress } from './konfigurator-helpers'
 
 /*
@@ -305,6 +305,31 @@ test.describe('W6 Transportermiete und W7 Vermieter (noch nicht gebaut)', () => 
     await expect(page.getByRole('heading', { name: 'Dieser Bereich ist noch nicht verfügbar' })).toBeVisible()
     await page.getByRole('link', { name: 'Profil' }).first().click()
     await expect(page).toHaveURL(/\/profil$/)
+  })
+})
+
+test.describe('F Fehlerfälle quer', () => {
+  test('Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung', async ({ page }) => {
+    const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
+    // Bis der Test es abschaltet: StrictMode lädt im Dev-Modus doppelt (siehe mockOrders)
+    let failing = true
+    await page.route(/\/rest\/v1\/rpc\/booking_terms/, (r) => (failing ? r.fulfill({ status: 400, headers: cors, json: { message: 'Test' } }) : r.fallback()))
+    await page.goto('/')
+    await page.getByRole('link', { name: /^Montage/ }).click()
+    await fillKuecheBeispiel(page)
+    await weiter(page).click()
+    await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
+    await pickDate(page)
+    await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
+    await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
+    await oneMain(page)
+    await expect(page.getByRole('alert')).toContainText('Die Angaben konnten nicht geladen werden')
+    await expect(page.getByRole('button', { name: /senden/ })).toHaveCount(0)
+    failing = false
+    await page.getByRole('button', { name: 'Erneut versuchen' }).click()
+    await expect(page.getByLabel('Name')).toBeVisible()
+    await expect(page.getByText(euro('770,40 €')).first()).toBeVisible()
+    expect(calls).toHaveLength(0)
   })
 })
 
