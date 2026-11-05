@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { anonymousPrices, toSummary } from './anfrage-helpers'
 
 // Barrierefreiheit (WCAG 2.2 AA): Prüfungen, die das Prüfskript der Nacht vom 2026-11-05 als Funde gemeldet hat (docs/nacht/qualitaet.md).
 
@@ -61,5 +62,70 @@ test.describe('Fokusrahmen (1.4.11, 2.4.7)', () => {
     const ring = await tabTo(page, /Überspringen/)
     const head = await page.evaluate(() => getComputedStyle(document.querySelector('main > div')!).backgroundColor)
     expect(contrast(ring.color, head)).toBeGreaterThanOrEqual(3)
+  })
+})
+
+/**
+ * Tab (bzw. Umschalt+Tab) durch die Seite: Welche fokussierten Elemente überlappen eine fixierte Leiste (Kopf-, Aktions-, Preis-, Tab-Leiste)?
+ * Gemessen per getBoundingClientRect, Leisten sind fixierte Elemente unter halber Fensterhöhe, die das Element nicht enthalten.
+ */
+async function coveredWhileTabbing(page: Page, key: 'Tab' | 'Shift+Tab', steps: number) {
+  const covered = new Set<string>()
+  for (let i = 0; i < steps; i++) {
+    await page.keyboard.press(key)
+    const hit = await page.evaluate(() => {
+      const el = document.activeElement
+      if (!el || el === document.body) return null
+      const r = el.getBoundingClientRect()
+      for (const bar of document.querySelectorAll('body *')) {
+        if (getComputedStyle(bar).position !== 'fixed' || bar.contains(el)) continue
+        const b = bar.getBoundingClientRect()
+        if (b.height === 0 || b.height > innerHeight / 2) continue
+        const y = Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top)
+        const x = Math.min(r.right, b.right) - Math.max(r.left, b.left)
+        if (y > 1 && x > 1) return `${el.tagName.toLowerCase()} „${((el as HTMLElement).innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '').slice(0, 40)}"`
+      }
+      return null
+    })
+    if (hit) covered.add(hit)
+  }
+  return [...covered]
+}
+
+/** Seitenübergang beendet: genau ein `main`, die Seite ohne Transformation (sonst sind fixierte Leisten an die Seite gebunden). */
+async function settled(page: Page) {
+  await expect(page.locator('main')).toHaveCount(1)
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('main')!.parentElement!).transform === 'none')
+}
+
+test.describe('Fokus nicht verdeckt (2.4.11)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+  })
+
+  test('Umzug-Konfigurator: kein fokussiertes Element unter Kopf- oder Preisleiste', async ({ page }) => {
+    await page.goto('/umzug')
+    await expect(page.getByRole('heading', { name: 'Was muss mit?' })).toBeVisible()
+    await settled(page)
+    expect(await coveredWhileTabbing(page, 'Tab', 45)).toEqual([])
+    expect(await coveredWhileTabbing(page, 'Shift+Tab', 45)).toEqual([])
+  })
+
+  test('Zusammenfassung: Kontaktfelder und Einwilligung nicht unter den Leisten', async ({ page }) => {
+    await anonymousPrices(page)
+    await toSummary(page)
+    await settled(page)
+    await page.evaluate(() => {
+      ;(document.activeElement as HTMLElement | null)?.blur()
+      window.scrollTo(0, 0)
+    })
+    expect(await coveredWhileTabbing(page, 'Tab', 25)).toEqual([])
+    expect(await coveredWhileTabbing(page, 'Shift+Tab', 25)).toEqual([])
+  })
+
+  test('Start: Mietkarte nicht unter der Tab-Leiste', async ({ page }) => {
+    await page.goto('/')
+    await settled(page)
+    expect(await coveredWhileTabbing(page, 'Tab', 12)).toEqual([])
   })
 })

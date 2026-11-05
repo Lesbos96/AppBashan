@@ -216,6 +216,12 @@
 }
 
 @layer base {
+  /* Fokus und Sprungziele landen nicht unter den fixierten Leisten (WCAG 2.4.11): oben die Navigationsleiste (44 px),
+     unten die höchste Leiste (Aktionsleiste der Bestätigung mit zwei Knöpfen, 126 px); Preis- und Tab-Leiste sind niedriger. */
+  html {
+    scroll-padding-top: calc(44px + var(--safe-top) + 8px);
+    scroll-padding-bottom: calc(126px + var(--safe-bottom) + 8px);
+  }
   body {
     margin: 0;
     background: var(--background);
