@@ -102,9 +102,54 @@ Ergebnis: hoch 0, mittel 2, niedrig 5. Alle umgesetzt:
 - N: Service Worker an der Mock-Schicht vorbei → `serviceWorkers: 'block'` in `playwright.config.ts` (die App registriert heute keinen; WebSockets nutzt sie nicht).
 - N: `backend.spec.ts` „abgebrochen" träte auch ohne Sperre ein (DNS) → Kommentar; beweisend ist die Meldung in `unmocked`.
 - N: Abbruch W2 ohne echtes Browser-Zurück → zweimal `page.goBack()` ergänzt, vor der Negativprüfung `oneMain`.
-- N: `docs/proof/nacht-e2e/nacht-e2e-r2-rotbeweis.log` nennt `backend.spec.ts:30`; durch einen späteren Kommentar steht der Test eine Zeile tiefer. Das Log bleibt unverändert (Nachweise werden nicht geändert).
+- N: `docs/proof/nacht-e2e/nacht-e2e-r2-rotbeweis.log` nennt `backend.spec.ts:30`; durch spätere Kommentarzeilen steht der Test heute in Zeile 32. Das Log bleibt unverändert (Nachweise werden nicht geändert).
 
-Eigener Fund: Die Shots nutzen jetzt dieselbe Mock-Schicht, liefen in dieser Nacht aber noch nicht → eigener Lauf (siehe unten).
+Eigener Fund: Die Shots nutzen jetzt dieselbe Mock-Schicht, liefen in dieser Nacht aber noch nicht → eigener Lauf: `npm run shots` EXIT=0, 134 von 134 (67 Light, 67 Dark), keine Konsolenfehler, kein ungemockter Aufruf (`docs/proof/nacht-e2e/nacht-e2e-shots.log`). Screenshots brauchen damit ebenfalls kein Supabase.
+
+### Nachdurchgang (alle Phasen erneut)
+- **Phase 1:** Eine Lücke gefunden: Der Fehlerzustand der Zusammenfassung („Die Angaben konnten nicht geladen werden", wenn Tarife oder Bedingungen fehlen) hatte keinen Test → ergänzt (`wege.spec.ts`, „F Fehlerfälle quer"). Der erste Lauf (Runde 6) war in einzelnen Wiederholungen rot: Der Test tippte nach dem Seitenübergang zu früh auf das Radio „Küche" (`force` wartet nicht auf Stillstand). Fix: auf URL, genau ein `main` und die vollständig sichtbare Überschrift warten; danach 60 von 60 je Projekt bei fünffacher Wiederholung (Runde 7). Das rote Log liegt bei den Nachweisen (`nacht-e2e-r6-wege.log`).
+- **Phase 2:** Sperre deckt http und https; Service Worker blockiert; WebSockets nutzt die App nicht; ein wiederverwendeter Dev-Server ist abgedeckt (hostunabhängige Muster). Nichts weiter.
+- **Phase 3:** Jeder Weg aus Phase 1 hat Erfolg, Abbruch und Fehler, soweit der Weg gebaut ist. Montage (W5) und Anmeldung (W8) waren schon dicht und bekamen nichts dazu, um keine Doppeltests zu bauen.
+- **Phase 4:** beide Projekte in jedem Abschlusslauf.
+- **Dritter Durchgang:** keine weitere sinnvolle Lücke. Ende.
+
+### Echte Fehler in der App
+Keiner gefunden, deshalb kein Fix-Commit. Die Beobachtung zur Anmeldung (sehr schnelles Zurück, oben unter Phase 3) ist kein realistischer Nutzerfall und als Frage F-3 notiert.
+
+## Ergebnis
+
+### Commits auf `nacht-e2e`
+| Commit | Inhalt |
+|---|---|
+| dd0eafc | Start: Prüfung, Nachtdatei |
+| a2044d8 | Phase 1: Nutzerwege und Abdeckung |
+| 67d9a1e | Phase 2: Mock-Schicht, Fixture, alle Specs und Shots darauf, `playwright.config.ts`, Wege-Entwurf |
+| 0b10cc5 | Phase 2: Selbsttest und Rot-Beweis der Mock-Schicht, Doku |
+| 9ec286e | Phase 3: Wege-Tests warten auf den Seitenübergang, Fehler-Mock für StrictMode |
+| 59eec7c | Phase 4: Projekt `e2e-desktop`, `test:e2e` mit beiden Größen, `test:e2e:mobile` |
+| ec04015 | Doku Phase 3 und 4 |
+| a83cb4f | Nachweise Runde 1, 2, 4 |
+| 046fb61 | Review-Funde umgesetzt |
+| fb955bc | Nachdurchgang: Fehlerzustand der Zusammenfassung |
+| 00bef27 | Nachdurchgang: Test wartet auf das Ende des Übergangs |
+| (dieser) | Abschluss: Nachweise Runde 7, Shots, Review; Nachtdatei; PROGRESS |
+
+### Testergebnisse (Abschluss, Runde 7, `docs/proof/nacht-e2e/`)
+- `npm run check`: EXIT=0, 368 Unit-Tests.
+- `wege.spec.ts`, fünffach wiederholt, Handy und Desktop: EXIT=0, je Projekt 60 von 60.
+- `npm run test:e2e` (Handy und Desktop): EXIT=0, je Projekt 116 bestanden, 1 übersprungen (Rot-Beweis, nur mit `E2E_REDPROOF=1`); 11,2 Minuten in diesem Container. Vorher: 102 Tests, nur Handy, Tarife aus dem Dev-Projekt.
+- Rot-Beweis der Mock-Schicht (Runde 2): EXIT=1 wie erwartet, Meldung „Aufruf ohne Mock" mit der URL, Fehler-Screenshot erzeugt.
+- `npm run shots`: EXIT=0, 134 von 134.
+- `npm run scan:proof`: EXIT=0, 104 Dateien, 0 Treffer.
+- Nicht gelaufen (nicht nötig, kein `src/`, kein `supabase/` geändert): `build`, `test:rls`, `shots:all`.
+
+### Empfehlung: übernehmen
+1. **`tests/e2e/backend.ts` mit Fixture und die Importänderungen** (wichtigste Änderung): Die Suite hängt nicht mehr vom Dev-Projekt ab, läuft ohne `.env.local` und kann kein echtes Backend mehr erreichen. Voraussetzung für E2E in CI.
+2. **`tests/e2e/wege.spec.ts`** (12 Tests): schließt die Lücken Umzug und Möbeltransport bis zum Senden, Platzhalter Miete und Vermieter, Ladefehler von Aufträgen, Konfigurator und Zusammenfassung.
+3. **`tests/e2e/backend.spec.ts`** (Selbsttest, Rot-Beweis per Variable).
+4. **`playwright.config.ts`:** `webServer.env`, `serviceWorkers: 'block'`, `PW_CHROMIUM_PATH`, Projekt `e2e-desktop`.
+5. **`package.json`:** `test:e2e` mit beiden Größen nur, wenn die doppelte Laufzeit passt (F-4); sonst `test:e2e` wie vorher und Desktop als eigener Befehl.
+- Danach kann der pausierte Design-Auftrag (bekhanidrisov74-hub/movenow#5) seine Vorher-Shots ohne Supabase aufnehmen; auf `nacht-design` fehlt diese Mock-Schicht noch.
 
 ## Fragen an Beks
 
