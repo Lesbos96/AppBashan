@@ -7,6 +7,8 @@
 // Vorher/Nachher: Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte werden verglichen. Bericht: tmp/proof/s9a4-rotbeweis.md
 // Nie parallel zu test:rls, test:e2e oder Shots. Start: npx dotenv -e .env.local -- node scripts/redproof-s9a4.mjs [--only <Namensteil>[,…]] [--no-tests] [--no-live]
 import './dev-guard.mjs'
+console.error('Gesperrt bis R1 Redproof-Härtung (Abnahme nachtabnahme-vorher-redproof.md: H-1, M-1 bis M-4)')
+process.exit(2)
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'

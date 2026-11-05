@@ -251,5 +251,21 @@ Der Plan `docs/S9b_PLAN.md` ändert sich nach dieser Abnahme nicht mehr. Die zus
 
 **Von Beks zu bestätigen** (Entwurfsänderungen der Beratung, `docs/S9b_PLAN.md` Kopf): `vat_rule` bis Phase 2 nur `standard_20`; keine Dauer-Fixture im Journal; Statusfunktionen in S9b-1. Der Plan führt N-5 (Partnerzugriff auf Fotos) als Negativtest in S9b-1 und übergibt die Umsetzung an S9d; R11-1, R11-7, R7-4, N-10 und A4c-N3 sind den Teilschritten S9b-1 bis S9b-4 zugeordnet, erledigt sind sie erst mit deren Abschluss.
 
+## R1 Redproof-Härtung · Nachtabnahme 2026-11-05 (Berater `tmp/proof/nachtabnahme-vorher-redproof.md`, hoch 1)
+Konstruktionsmängel aller Redproof-Skripte (redproof-s9a3 und redproof-s9a4), nicht der Nachtabnahme. `redproof-s9a3.mjs` und `redproof-s9a4.mjs` sind gesperrt (Exit 2 direkt nach dem Dev-Guard, kein Umgehungsschalter) bis zum eigenen Schritt „R1 Redproof-Härtung“ vor S9b-1. Die Dev-Sperren sind in der Nachtabnahme über devcheck, test:rls und live-uploads belegt. **S9b-1 baut redproof-s9b erst auf dem in R1 gehärteten Gerüst, nicht als Kopie von redproof-s9a4.**
+
+| Nr. | Einstufung | Teilschritt | Kurzbeschreibung |
+|---|---|---|---|
+| H-1 | hoch | R1 (vor S9b-1) | Vorher-Basis nur für Trigger gegen einen Sollstand abgesichert; Funktionen (md5, ACL, Eigentümer, `prosecdef`, `proconfig`), Abwesenheit von `become_rental_provider`, Policies, Tabellen-ACLs, `storage_path`-Default und RLS gelten relativ zum Startzustand, „identisch“ (Zeile 758) kann einen gelockerten Zustand bestätigen. Fix: Sollstand aus einer nur aus Migrationen gebauten DB einchecken, Start und Ende dagegen prüfen (Exit 2 mit Schlüsselliste), Startprüfung Trigger `e !== 'O'` (N-3) |
+| M-1 | mittel | R1 (vor S9b-1) | Bei SIGINT, Kill, Konsole schließen oder Verbindungsverlust bleibt jede committete Lockerung offen; Netz nur für Trigger und `redproof_update`. Fix: Lockerung in die Probe-Transaktion, wo kein Test den Zustand sehen muss; Offen-Markierung mit ausführbarem Restore-SQL; Signal-Handler (SIGINT, SIGTERM, SIGBREAK, SIGHUP) mit synchronem restore; idempotentes Netz für Rechte, Default, Policies, 0022-Funktion |
+| M-2 | mittel | R1 (vor S9b-1) | Nach endgültig gescheitertem restore läuft die Schleife weiter; der Folgeschritt liest die Lockerung als „Original“. Fix: sofort werfen, Label und Pfad der Wiederherstellungsdatei nennen |
+| M-3 | mittel | R1 (vor S9b-1) | `tmp/reports/redproof-s9a4.json` wird vor dem vitest-Lauf nicht gelöscht, `r.status` nicht geprüft, kein Timeout: veraltetes Ergebnis kann einen falschen Rot-Beweis liefern, hängendes vitest lässt die Lockerung offen. Fix: Datei vorher löschen, neu und `ran > 0` verlangen, Timeout mit anschließendem restore |
+| M-4 | mittel | R1 (vor S9b-1) | Bleibt eine `photo_orphans`-Lockerung offen, löscht der stündliche Aufräumlauf (:23) echte Dev-Dateien. Fix: wie M-1; Cron-Job während der Schritte pausieren oder vor dem restore bei :20 hart abbrechen |
+| N-1 | niedrig | R1 (vor S9b-1) | Wiederherstellungsdateien heißen `.sql`, enthalten aber JSON und werden im Log nicht genannt. Fix: ausführbares SQL schreiben, Pfad ausgeben |
+| N-2 | niedrig | R1 (vor S9b-1) | Nach Abbruch in `run()` überlagert ein TypeError (`outcome` undefined, Zeile 742) den eigentlichen Fehler. Fix: `if (!outcome) process.exit(1)` |
+| N-3 | niedrig | R1 (vor S9b-1) | Startprüfung erkennt nur Trigger „D“, nicht „R“ oder „A“. Fix: Soll ist „O“ |
+| N-4 | niedrig | R1 (vor S9b-1) | Wiederholung bei Transport-Timeout, während die erste Anfrage serverseitig läuft („tuple concurrently updated“). Fix: nach Transportfehler im restore den Zustand lesen und vergleichen statt blind wiederholen |
+| N-5 | niedrig | keiner | `Shell.tsx`: Fokus nach „Zurück“ auf der Überschrift statt auf dem auslösenden Element. WCAG-konform, keine Regression, kein Handlungsbedarf |
+
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).
