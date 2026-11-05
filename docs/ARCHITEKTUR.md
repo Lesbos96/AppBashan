@@ -88,7 +88,7 @@ Gegen ein Produktivprojekt läuft kein Test (`docs/GOLIVE.md:26`).
 
 ## 3. Datenmodell (Endstand nach M22)
 
-Alle Tabellen in `public`, RLS auf allen 18 Tabellen. Beträge sind ganze Cent: `int` in Anfragen, Revisionen und Mieten; in `price_config` und `platform_settings` ist `value` `numeric`, Cent-Werte sind per Check ganzzahlig (`cent_whole`, M02:40-41).
+Alle Tabellen in `public`, RLS auf allen 18 Tabellen. Beträge sind ganze Cent: `int` in `price_revisions`, `rental_offers`, `rental_bookings` und `fee_splits`; `service_requests` hat seit M18 keine Betragsspalte mehr (M18:103-107); in `price_config` und `platform_settings` ist `value` `numeric`, Cent-Werte sind per Check ganzzahlig (`cent_whole`, M02:40-41).
 
 | Tabelle | Zweck | Personenbezug | Anlage |
 |---|---|---|---|
@@ -107,7 +107,7 @@ Alle Tabellen in `public`, RLS auf allen 18 Tabellen. Beträge sind ganze Cent: 
 | `geocode_cache` | Geocoding-Kandidaten, Schlüssel HMAC über das normierte Label, 24 h (`QH:33`, `:169-190`) | Adresskandidaten ohne Kontobezug | M19:19 |
 | `route_rate_limits` | Zähler je Bucket und Zeitfenster, Bucket aus HMAC über IP bzw. Konto | pseudonym | M06:14 |
 | `rental_offers`, `rental_bookings` | Mietangebote und Mietanfragen; Phase 2, im Dev-Projekt nur Demo-Angebote (`supabase/seed.sql:118-138`) | ja | M01:144, M01:171 |
-| `fee_splits` | Gebührenaufteilung aus S8a; wird seit M18 von niemandem mehr geschrieben, Ablösung durch das Journal in S9b | nein | M01:196, M18:132-133 |
+| `fee_splits` | Gebührenaufteilung aus S8a mit Kopie der Sätze je Zeile; wird seit M18 von niemandem mehr geschrieben (leer), Ablösung durch das Journal in S9b | indirekt (`payee_id`) | M01:196-212, M18:132-133 |
 
 Enums: `user_role` (customer, rental_provider, admin, partner; M01:18), `service_type` (transport, move, clearance, assembly; M01:19), `request_status` (12 Werte, M17:48-51), `region` (vienna, austria, international; M01:23), `offer_status` (M01:24).
 
@@ -237,8 +237,8 @@ Belege: Policies M01:266-267, M15:50-51, `:276-283`, M16:185-207, M17:114-116, `
 
 ### 6.3 Geld und Gebühr
 - Begriffe: Was Datenbank und Code „Gebühr“ nennen (`fee_rate`, `fee_cents`, `splitFee`), heißt in den Verträgen mit Partnern „Provision“ (`docs/recht/agb-partner.md`).
-- Beträge als ganze Cent in allen Tabellen (M01:151-207, M18:19-30).
-- Der Gebührensatz steht nur in `platform_settings` (`fee_rate`, `fee_vat_rate`, Version 1 aus dem Seed, `supabase/seed.sql:86-87`). Kunden lesen ihn weder direkt noch über `current_fee_rates`; `booking_terms()` liefert Kunden nur Stornostufen, Anfahrtspauschale und `termsHash`, keinen `fee_*`-Schlüssel (M16:81-104).
+- Beträge als ganze Cent (`int`; in `price_config` und `platform_settings` `numeric` mit Ganzzahl-Check, M02:40-41; Belege M01:151-207, M18:19-30).
+- Der geltende Gebührensatz steht nur in `platform_settings` (`fee_rate`, `fee_vat_rate`, Version 1 aus dem Seed, `supabase/seed.sql:86-87`). Die leere Altlast `fee_splits` trägt je Zeile eine Kopie der Sätze (M01:202-203) und ist nur für `payee_id` = eigenes Konto und admin lesbar. Kunden lesen ihn weder direkt noch über `current_fee_rates`; `booking_terms()` liefert Kunden nur Stornostufen, Anfahrtspauschale und `termsHash`, keinen `fee_*`-Schlüssel (M16:81-104).
 - `splitFee(total, {feeRate, vatRate})` (`supabase/functions/_shared/pricing/fee.ts:17-25`) rechnet wie `platform()` im Prototyp, wird heute aber **nirgends aufgerufen**: Seit S9a-2 entsteht beim Absenden keine Gebührenzeile mehr; das Journal `commission_entries` entsteht bei der Annahme und ist noch nicht gebaut (S9b-4).
 - Kaution und Kraftstoff sind nicht Teil der Berechnungsbasis (Preismodul Miete, `docs/PRICING.md`).
 
