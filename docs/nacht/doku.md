@@ -31,6 +31,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E15 · Prüfdurchgang 1.** Drei `reviewer`-Läufe (ARCHITEKTUR, Rechtsentwürfe, INVESTOREN) mit eigenem Kontext. Ergebnis: ARCHITEKTUR 6 hoch, 6 mittel, 9 niedrig; Rechtsentwürfe 2 hoch, 9 mittel, 3 niedrig; INVESTOREN 4 hoch, 7 mittel, 3 niedrig. Die tragenden Befunde habe ich am Code nachgeprüft (u. a. `withdraw` ohne Aufruf in `src/`, `guard_platform_setting` schützt nur die drei Gebührenschlüssel, CORS ohne serverseitige Sperre, Bezirksgrenzen CC BY 4.0, PLZ des Ziels im Listing) und alle eingearbeitet, außer: Rechtsbefund 9 (Termin bei „Flexibel“) war nur teilweise richtig, der Code rechnet ohne Zeitfenster 00:00 und mit „Flexibel“ 08:00; beides steht jetzt im Text. Wichtigste Korrekturen: Zurückziehen ist nicht in der App, sondern nur in der Datenbank; geplante Partnerfunktionen im Investoren-Dokument klar als geplant markiert; „unabhängige Abnahme“ ersetzt durch „KI-Prüf-Agenten, keine externe Sicherheitsprüfung“.
 
+- **E16 · Prüfdurchgang 2.** Drei weitere `reviewer`-Läufe mit anderem Blick: Vollständigkeit von ARCHITEKTUR (ergänzt: Umgebungen und `dev-guard`, Tests, Build-Prüfung, Fehlercodes, Grenzen, Inhalts-Hash), Stimmigkeit aller neun Dateien (3 hoch, 5 mittel, 4 niedrig; behoben u. a. Fristbeginn „7 Tage nach dem Termin“, Datenumfang vor der Annahme im Investoren-Dokument, falscher Abschnittsverweis, Nummerierung) und Checkliste der Pflichtinhalte (DSGVO Art. 13, ECG/UGB/MedienG, Verbraucher-AGB, P2B Art. 3–12): fehlende Themen als [OFFEN] ergänzt, nichts erfunden. Nicht übernommen: Befund „SMTP ist keine Handy-Test-Vorgabe“ (falsch, `docs/OPEN_ISSUES.md:32` sagt „PFLICHT vor dem ersten Test auf einem Handy“).
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -48,8 +50,23 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **F9 · Einstellungen ohne Trigger-Schutz:** `guard_platform_setting` schützt nur `fee_rate`, `fee_vat_rate`, `fee_notice_days` (M16:42-45). Stornostufen, Fristen, Anfahrtspauschale und Haltefenster kann `service_role` per UPDATE/DELETE ändern (nur TRUNCATE ist entzogen, M15:271). Bestehende Aufträge sind über den Snapshot der Revision geschützt, neue nicht. Soll die Datenbank für alle Schlüssel „nur neue Version“ erzwingen? (Geld- und Sicherheitsfrage für den `advisor` in der nächsten passenden Session.)
 - **F10 · Zurückziehen ohne Knopf:** `withdraw()` ist gebaut, die App ruft es nicht auf (`docs/ROADMAP.md:103` offen). Kunden können eine gesendete Anfrage heute nicht selbst zurückziehen. Bewusst bis S9i, oder vorziehen?
 
+- **F11 · Geschäftliche Festlegungen für die Rechtstexte** (nur du kannst sie liefern; ein Anwalt prüft danach):
+  - Betreiberdaten: Firma, Rechtsform, Anschrift, E-Mail, UID, Firmenbuch, Gewerbe, Kammer (`docs/recht/impressum.md`, Tabelle „Anbieter“).
+  - Ob Unternehmer als Kunden buchen dürfen (`docs/recht/agb-kunden.md`, 1.3).
+  - Zahlungsart und Fälligkeit zwischen Kunde und Partner, z. B. Anzahlung oder Zahlung vor Ort (`agb-kunden.md`, 9.2).
+  - Provisionsrechnung: Zahlungsziel, Rechnungsweg, Konto, Verzugszinsen und Mahnspesen (`agb-partner.md`, 8.5–8.6; `partnervertrag.md`, § 5).
+  - Kündigungsfrist des Partners, Gerichtsstand (`agb-partner.md`, 16–17; `partnervertrag.md`, § 8–9).
+  - Verlangte Unterlagen je Leistung; Konzept (Ausweis, VIES-Protokoll) und S9b-Plan (Gewerbeschein, Firmenbuch, Sonstiges) weichen ab (`agb-partner.md`, 2.1; `datenschutz-partner.md`, 3).
+  - Mindestdeckung der Haftpflicht- und Transportversicherung der Partner (`agb-partner.md`, 6.1).
+  - Partnervertrag online in der App oder mit Unterschrift (`partnervertrag.md`, Kopf).
+  - Löschfristen (Vorschläge 12 Monate, 3 Jahre, 90 Tage für Fotos; `datenschutz-kunden.md`, 6 und 7).
+  - Anbieter für Mail, Hosting, Bot-Schutz und die Region der Supabase-Projekte (`docs/ARCHITEKTUR.md`, 2.3; `docs/GOLIVE.md`).
+
 ## Stand
 
 - Start: Branch angelegt, diese Datei angelegt (81d865e).
 - Phase 1: `docs/ARCHITEKTUR.md` (8dbee2f).
 - Phase 2: `docs/recht/impressum.md` (3b7791d), `datenschutz-kunden.md` (b86d47f), `datenschutz-partner.md` (bd8755d), `agb-kunden.md` (aad7071), `agb-partner.md` (06ae18f), `partnervertrag.md` (8790d3d).
+- Phase 3: `docs/INVESTOREN.md` (0d70c0b).
+- Prüfdurchgang 1 (E15): d46bd70, 60c97cf, 02bd4dd, 3d66aa6, cd1a966.
+- Prüfdurchgang 2 (E16): 5aca674, a99f6f5 und der Commit mit diesem Eintrag.

@@ -28,7 +28,11 @@
 
 3.2 Halte den Zugang zu deinem Postfach geschützt. Wer Code oder Link nutzt, handelt in deinem Konto.
 
-3.3 [OFFEN: Löschen des Kontos. Eine Funktion dafür ist noch nicht gebaut (`docs/OPEN_ISSUES.md:7`); bis dahin per E-Mail an die Adresse im Impressum.]
+3.3 [OFFEN: Zulässige Nutzung der App, ausgeschlossene Güter (z. B. Gefahrgut), Folgen falscher Angaben, Sperre oder Beendigung eines Kundenkontos durch MoveNow.]
+
+3.4 [OFFEN: Zugang von Erklärungen per Mail und in der App (Annahme, Angebote, Nachträge, Storno).]
+
+3.5 [OFFEN: Löschen des Kontos. Eine Funktion dafür ist noch nicht gebaut (`docs/OPEN_ISSUES.md:7`); bis dahin per E-Mail an die Adresse im Impressum.]
 
 ## 4. Preise
 
@@ -60,7 +64,7 @@
 
 6.1 Deine Angaben zu Umfang, Gegenständen, Etagen, Zugang und Adressen müssen zutreffen und vollständig sein; Fotos helfen dem Partner, den Auftrag einzuschätzen. Nach dem Absenden kannst du die Anfrage nicht mehr ändern; zieh sie zurück und sende sie neu [noch nicht gebaut: Zurückziehen hat in der App noch keinen Knopf].
 
-6.2 [OFFEN: weitere Mitwirkungspflichten (z. B. Zugang, Parkmöglichkeit, Halteverbotszone, Aufzug, Sicherung von Wertsachen, Entleerung von Möbeln), soweit die Partner sie verlangen dürfen; im Projekt nicht festgelegt.]
+6.2 [OFFEN: weitere Mitwirkungspflichten (z. B. Zugang, Parkmöglichkeit, Halteverbotszone, Aufzug, Sicherung von Wertsachen, Entleerung von Möbeln, Erreichbarkeit am Termin und Folgen von Wartezeit), soweit die Partner sie verlangen dürfen; im Projekt nicht festgelegt.]
 
 ## 7. Mehraufwand (Nachtrag)
 
@@ -80,6 +84,8 @@
 - am Tag des Termins (Wiener Zeit) 100 % des Gesamtpreises.
 
 Maßgeblich sind die Stufen, die du vor dem Absenden gesehen hast; sie stehen im Preis-Stand deiner Buchung. Die Stornogebühr stellt dir der Partner in Rechnung. [OFFEN: Zulässigkeit nach § 6 KSchG und richterliches Mäßigungsrecht (§ 1336 ABGB); Verhältnis zum Rücktrittsrecht nach Punkt 10 (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 5). Als „Termin“ gilt der Beginn des gewählten Zeitfensters (bei „Flexibel“ 08:00 Uhr), bei Leistungen ohne Zeitfenster 00:00 Uhr des Termintags, jeweils Wiener Zeit (`docs/S9_KONZEPT.md`, 5.10; so gerechnet in `supabase/migrations/20261102110000_0020_photo_staging.sql:213-227`). Für Transport und Umzug verschiebt das die 48-Stunden-Grenze auf den Beginn des Vortags; klären, ob der Kundentext das so nennen soll.]
+
+8.2a [OFFEN: Verschieben des Termins nach Vertragsschluss; im Projekt nicht vorgesehen (Zurückziehen bzw. Storno und Neusenden).]
 
 8.3 **Storno durch den Partner:** Sagt der Partner nach dem Vertragsschluss ab, zahlst du nichts. Liegt der Termin noch mindestens 24 Stunden entfernt und beruhte die Buchung nicht auf einem Festangebot, bietet MoveNow deine Anfrage automatisch zum gleichen Preis anderen Partnern an; diese Folgeanfrage kannst du kostenlos zurückziehen oder stornieren. Sonst kannst du neu senden.
 
@@ -103,7 +109,7 @@ Nach dem Termin fragt dich die App, ob der Auftrag stattgefunden hat. Antwortest
 
 ## 12. Gewährleistung und Haftung
 
-12.1 Für die Leistung haftet der Partner nach den gesetzlichen Bestimmungen. [OFFEN: Haftung für Transportschäden und Umzugsgut, Versicherungspflicht der Partner, Reklamationsfristen; im Projekt nicht festgelegt.]
+12.1 Für die Leistung haftet der Partner nach den gesetzlichen Bestimmungen; deine gesetzlichen Gewährleistungsrechte gegenüber dem Partner bleiben unberührt. [OFFEN: Gewährleistung für die Leistung (Mängelanzeige, Verbesserung, Preisminderung) ausformulieren.] [OFFEN: Haftung für Transportschäden und Umzugsgut, Versicherungspflicht der Partner, Reklamationsfristen; im Projekt nicht festgelegt.]
 
 12.2 MoveNow haftet für die Vermittlung und den Betrieb der App. Für leichte Fahrlässigkeit haftet MoveNow nicht, ausgenommen bei Personenschäden. [OFFEN: Zulässigkeit und Umfang nach § 6 Abs. 1 Z 9 KSchG prüfen.]
 
@@ -130,3 +136,7 @@ Beschwerden zur App oder zur Vermittlung an [OFFEN: Adresse]. Beschwerden zur Le
 ## 16. Recht und Gerichtsstand
 
 Es gilt österreichisches Recht. Zwingende Verbraucherschutzbestimmungen deines Aufenthaltsstaats bleiben unberührt. Für Klagen gegen dich als Verbraucherin oder Verbraucher ist das Gericht an deinem Wohnsitz, gewöhnlichen Aufenthalt oder Beschäftigungsort zuständig (§ 14 KSchG). [OFFEN: prüfen]
+
+## 17. Schlussbestimmungen
+
+[OFFEN: Teilunwirksamkeit einzelner Bestimmungen (bei Verbrauchern ohne geltungserhaltende Ersatzklausel, prüfen).]

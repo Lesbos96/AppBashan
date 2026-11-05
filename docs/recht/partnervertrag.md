@@ -23,7 +23,9 @@
 
 1.1 MoveNow nimmt den Partner in die Plattform MoveNow auf und vermittelt ihm Aufträge von Kundinnen und Kunden nach den Partner-AGB.
 
-1.2 Bestandteile des Vertrags in dieser Rangfolge: (1) dieser Vertrag, (2) die Partner-AGB in der bei Abschluss angenommenen Fassung [Version …, angenommen am …], (3) die Datenschutzvereinbarung nach § 7.
+1.2 Bestandteile des Vertrags in dieser Rangfolge: (1) dieser Vertrag, (2) die Partner-AGB in der bei Abschluss angenommenen Fassung [Version …, angenommen am …], (3) die Datenschutzvereinbarung nach § 7. [OFFEN: prüfen, ob der Vorrang dieses Vertrags die Pflichtinhalte der AGB nach der P2B-VO einschränken darf.]
+
+1.3 Haftung und Vertraulichkeit richten sich nach den Punkten 14 und 14a der Partner-AGB. [OFFEN: Abweichungen im Einzelfall]
 
 ## § 2 Freigabe, Leistungen und Gebiet
 

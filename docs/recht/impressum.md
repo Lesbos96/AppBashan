@@ -15,7 +15,8 @@ Informationen nach § 5 Abs. 1 E-Commerce-Gesetz (ECG) und § 14 Unternehmensges
 | E-Mail | [OFFEN: Adresse für schnelle, unmittelbare Kontaktaufnahme] |
 | Telefon | [OFFEN: Nummer, falls angegeben] |
 | Unternehmensgegenstand | Online-Vermittlung von Möbeltransport, Umzug, Entrümpelung sowie Montage und Demontage von Möbeln in Wien. [OFFEN: Transportermiete erst ab Phase 2 aufnehmen, `docs/ROADMAP.md:124`] |
-| Firmenbuchnummer, Firmenbuchgericht | [OFFEN: falls eingetragen] |
+| Firmenbuchnummer, Firmenbuchgericht, Sitz laut Firmenbuch | [OFFEN: falls eingetragen; Hinweis auf Liquidation nur falls zutreffend] |
+| Preisangaben | [OFFEN: Hinweis, ob Preise einschließlich Umsatzsteuer angegeben sind (ECG); siehe `docs/recht/agb-kunden.md`, Punkt 4.1] |
 | UID-Nummer | [OFFEN: falls vorhanden] |
 | Gewerbeberechtigung | [OFFEN: Wortlaut der Gewerbeberechtigung für die Vermittlung; ob und welche Berechtigung nötig ist, klärt die Rechtsprüfung (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 8)] |
 | Gewerbebehörde | [OFFEN: zuständige Behörde] |

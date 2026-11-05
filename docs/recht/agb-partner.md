@@ -34,6 +34,8 @@
 
 3.3 MoveNow wird nicht Vertragspartner der Leistung und nimmt keine Zahlungen der Kundinnen und Kunden entgegen.
 
+3.4 [OFFEN: zusätzliche Vertriebskanäle oder Partnerprogramme (Art. 3 Abs. 1 lit. d P2B-VO) und Nebenwaren oder -dienste von MoveNow (Art. 6 P2B-VO); im Projekt keine vorgesehen.]
+
 ## 4. Verteilung der Anfragen (Art. 5 P2B-VO)
 
 4.1 Eine Anfrage wird gleichzeitig allen freigegebenen Partnern im Status „aktiv“ angeboten, deren Leistungen und Bezirke passen. Maßgeblich ist der Bezirk der Abholadresse. Eine Anfrage, die der Partner selbst als Kunde gesendet hat, wird ihm nicht angeboten (keine Selbstbuchung, `docs/S9_KONZEPT.md`, 7.2).
@@ -61,6 +63,8 @@
 6.3 Der Partner stellt der Kundin oder dem Kunden den Gesamtpreis in Rechnung. Die Provision weist er gegenüber Kundinnen und Kunden nicht aus.
 
 6.4 Der Partner meldet in der App, wenn ein Auftrag begonnen und abgeschlossen ist.
+
+6.4a [OFFEN: ob der Partner Subunternehmer oder Erfüllungsgehilfen einsetzen darf und wie er für sie haftet.]
 
 6.5 Der Partner nutzt Kundendaten nur für den jeweiligen Auftrag (Punkt 11) und schließt für einen über MoveNow vermittelten Auftrag keine Abrede mit der Kundin oder dem Kunden außerhalb der App, die die Provision umgeht. [OFFEN: Zulässigkeit und Reichweite dieser Klausel.]
 
@@ -94,7 +98,7 @@
 
 ## 9. Änderungen dieser Bedingungen und des Provisionssatzes (Art. 3 P2B-VO)
 
-9.1 MoveNow teilt Änderungen dieser Bedingungen und des Provisionssatzes mindestens 30 Tage vor ihrem Wirksamwerden in der App und auf einem dauerhaften Datenträger mit [OFFEN: Weg, z. B. E-Mail; Art. 3 Abs. 2 P2B-VO verlangt mindestens 15 Tage, das Projekt hat 30 Tage entschieden und die Datenbank erzwingt den Vorlauf (`fee_notice_days`)]. Ein neuer Satz ist in der App schon ab der Ankündigung sichtbar. Für bereits angenommene Aufträge gilt der Satz der Annahme.
+9.1 MoveNow teilt Änderungen dieser Bedingungen und des Provisionssatzes mindestens 30 Tage vor ihrem Wirksamwerden in der App und auf einem dauerhaften Datenträger mit [OFFEN: Weg, z. B. E-Mail; Art. 3 Abs. 2 P2B-VO verlangt mindestens 15 Tage, das Projekt hat 30 Tage entschieden und die Datenbank erzwingt den Vorlauf (`fee_notice_days`)]. Ein neuer Satz ist in der App schon ab der Ankündigung sichtbar. Für bereits angenommene Aufträge gilt der Satz der Annahme; Änderungen wirken nie rückwirkend (Art. 8 lit. a P2B-VO) [OFFEN: prüfen].
 
 9.2 Der Partner kann den Vertrag bis zum Wirksamwerden der Änderung kündigen. [OFFEN: Ausnahmen nach Art. 3 Abs. 4 P2B-VO, z. B. gesetzliche Pflichten.]
 
@@ -110,7 +114,7 @@
 
 11.1 Der Partner erhält Daten der Kundinnen und Kunden nur nach Punkt 5.1: vor der Annahme ohne Namen, Hausnummer und Kontakt, nach der Annahme Adresse und Kontakt für den Auftrag. Der Zugriff endet 30 Tage nach Abschluss oder Storno des Auftrags.
 
-11.2 MoveNow speichert die Daten der Vermittlung (Anfragen, Annahmen, Angebote, Nachträge, Stornos, Journal) und nutzt sie für Vermittlung, Abrechnung, Qualitätssicherung und Streitbeilegung. Der Partner hat Zugang zu den Daten seiner eigenen Aufträge und seines Journals; aggregierte Daten anderer Partner erhält er nicht. [OFFEN: Zugang nach Vertragsende (Art. 8 lit. c P2B-VO).]
+11.2 MoveNow speichert die Daten der Vermittlung (Anfragen, Annahmen, Angebote, Nachträge, Stornos, Journal) und nutzt sie für Vermittlung, Abrechnung, Qualitätssicherung und Streitbeilegung. Der Partner hat Zugang zu den Daten seiner eigenen Aufträge und seines Journals; aggregierte Daten anderer Partner erhält er nicht. [OFFEN: Zugang nach Vertragsende (Art. 8 P2B-VO, Buchstabe prüfen); Weitergabe von Plattformdaten an Dritte und Zugang zu personenbezogenen Daten (Art. 9 P2B-VO).]
 
 11.3 [OFFEN: Rolle des Partners für Kundendaten (eigener Verantwortlicher oder Auftragsverarbeiter) und die daraus folgende Vereinbarung; Regelung im Partnervertrag.] Die Datenschutzerklärung für Partnerbetriebe steht in `docs/recht/datenschutz-partner.md`.
 
@@ -122,7 +126,7 @@
 
 ## 13. Beschwerden (Art. 11 und 12 P2B-VO)
 
-13.1 Beschwerden des Partners, auch gegen eine Einschränkung, Sperre oder Entscheidung über eine Anfahrtspauschale, richtet er an [OFFEN: Adresse]. MoveNow prüft sie, antwortet schriftlich und teilt das Ergebnis mit. [OFFEN: Fristen.]
+13.1 Beschwerden des Partners, auch gegen eine Einschränkung, Sperre oder Entscheidung über eine Anfahrtspauschale, richtet er an [OFFEN: Adresse]. MoveNow prüft sie, antwortet schriftlich und teilt das Ergebnis mit. [OFFEN: Fristen; jährliche Information über Zahl, Gegenstand und Dauer der Beschwerden (Art. 11 Abs. 4 P2B-VO), falls keine Ausnahme für kleine Unternehmen gilt.]
 
 13.2 [OFFEN: Benennung von Mediatoren (Art. 12 P2B-VO) oder Ausnahme für kleine Unternehmen (Art. 11 Abs. 5, Art. 12 Abs. 7).]
 
@@ -131,6 +135,12 @@
 14.1 Der Partner haftet für die Ausführung der Leistung gegenüber der Kundin oder dem Kunden allein und stellt MoveNow von Ansprüchen frei, die aus seiner Leistung entstehen.
 
 14.2 MoveNow haftet für die Vermittlung und den Betrieb der App nur bei Vorsatz und grober Fahrlässigkeit, außer bei Personenschäden. [OFFEN: Umfang einer Haftungsbeschränkung zwischen Unternehmern prüfen.]
+
+14.3 [OFFEN: Haftung des Partners gegenüber MoveNow bei falschen Angaben in der Registrierung und bei Verstößen gegen diese Bedingungen.]
+
+## 14a. Vertraulichkeit
+
+[OFFEN: Vertraulichkeit von Geschäftsinterna beider Seiten (z. B. Journal, Qualitätszähler, Prüfunterlagen) und Dauer der Pflicht über das Vertragsende hinaus.]
 
 ## 15. Geistiges Eigentum (Art. 3 Abs. 1 lit. e P2B-VO)
 
@@ -143,3 +153,7 @@ Der Vertrag läuft auf unbestimmte Zeit. Der Partner kann jederzeit mit [OFFEN: 
 ## 17. Recht und Gerichtsstand
 
 Es gilt österreichisches Recht. Gerichtsstand ist [OFFEN: Wien, sachlich zuständiges Gericht; prüfen].
+
+## 18. Schlussbestimmungen
+
+[OFFEN: Teilunwirksamkeit, Abtretung von Rechten aus dem Vertrag, Schriftform bzw. Textform.]
