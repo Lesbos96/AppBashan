@@ -42,4 +42,5 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 ## Stand
 
 - Start: Branch angelegt, diese Datei angelegt (81d865e).
-- Phase 1: `docs/ARCHITEKTUR.md` geschrieben.
+- Phase 1: `docs/ARCHITEKTUR.md` (8dbee2f).
+- Phase 2: `docs/recht/impressum.md` (3b7791d), `datenschutz-kunden.md` (b86d47f), `datenschutz-partner.md` (bd8755d), `agb-kunden.md` (aad7071), `agb-partner.md` (06ae18f), `partnervertrag.md` (8790d3d).
