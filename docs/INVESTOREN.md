@@ -87,7 +87,7 @@ Design und Bedienung orientieren sich an iOS (Referenz in `docs/reference/design
 11. Vertrag mit dem Routendienst (kommerzielle Nutzung, Auftragsverarbeitung, Kontingent); Ausweichanbieter ist vorgesehen.
 12. Bot-Schutz vor Routing und Anmeldung (Pflicht vor dem Livegang); ohne ihn lassen sich über die Anmeldung beliebig Konten anlegen und Mails an Fremde auslösen (`docs/GOLIVE.md:35`, `:45`).
 13. Bekannter Blocker: Nach einer verlorenen Serverantwort und geändertem Fotosatz kann eine zweite Anfrage entstehen (`docs/GOLIVE.md:54`, Punkt 23).
-13a. Weitere Pflichtpunkte der Livegang-Liste: Migrationen 0017 und 0019 nur auf leeren Tabellen anwenden (Punkt 5a), Tarife über den verlässlichen Seed-Weg einspielen (Punkt 6), ersten Admin per SQL anlegen (Punkt 8), Foto-Aufräumen im Produktivprojekt einrichten (Punkt 13a), Rücksprung nach der Anmeldung in der iOS-App prüfen (Punkt 20), Supabase-Advisor ohne Warnungen (Punkt 22).
+    - Weitere Pflichtpunkte der Livegang-Liste: Migrationen 0017 und 0019 nur auf leeren Tabellen anwenden (Punkt 5a), Tarife über den verlässlichen Seed-Weg einspielen (Punkt 6), ersten Admin per SQL anlegen (Punkt 8), Foto-Aufräumen im Produktivprojekt einrichten (Punkt 13a), Rücksprung nach der Anmeldung in der iOS-App prüfen (Punkt 20), Supabase-Advisor ohne Warnungen (Punkt 22).
 
 ### Technik
 14. Partnerteil vollständig offen (S9b bis S9i); ohne ihn ist keine echte Buchung möglich.
