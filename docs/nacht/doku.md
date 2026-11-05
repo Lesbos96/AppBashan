@@ -23,6 +23,10 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **E9 · Phase 1, Faktenbasis.** Vier `Explore`-Läufe (Migrationen Tabellen/RLS, Migrationen Funktionen/Trigger, Edge Functions/Konfiguration/Skripte, App/Tests). Ihre Zeilenangaben habe ich an den tragenden Stellen selbst nachgeprüft; ein Lauf hatte Funktionen aus M15 falsch M16 zugeordnet (`is_admin`, `assert_admin`, `publish_version`), korrigiert nach Grep. Beschrieben ist nur, was gebaut ist; Geplantes steht getrennt in Abschnitt 8 der Datei.
 - **E10 · `docs/ARCHITECTURE.md` nicht korrigiert.** Drei veraltete Stellen gefunden (`:32`, `:67`, `:100`). Der Auftrag erlaubt Änderungen unter `docs/`, aber `ARCHITECTURE.md` ist eine Quelle, auf die `CLAUDE.md` und die ROADMAP verweisen; ich liste die Stellen in `docs/ARCHITEKTUR.md` Abschnitt 9 und überlasse die Korrektur der nächsten Session. Frage F5.
 
+- **E11 · Zwei Datenschutzerklärungen.** `docs/recht/datenschutz-kunden.md` und `docs/recht/datenschutz-partner.md` statt einer Datei. Begründung: Die Kunden-Erklärung erscheint in Kunden-Screens, und `CLAUDE.md` verbietet dort jeden Hinweis auf „Provision“, „Plattformgebühr“, „15 %“ oder „MoveNow-Gebühr“; die Partner-Erklärung muss das Provisions-Journal aber beschreiben (P2B-Transparenz). Getrennte Texte erfüllen beides.
+- **E12 · Ansprache.** Kunden- und Partner-Datenschutz sowie Kunden-AGB per Du wie die App (`CLAUDE.md`, UI). Partner-AGB und Partnervertrag in dritter Person („der Partner“), wie bei Verträgen zwischen Unternehmern üblich. [Frage an Beks: F7]
+- **E13 · Stand der Rechtsentwürfe.** Sie beschreiben den Stand zum Livegang von Phase 1, also auch den noch nicht gebauten Partnerteil (S9b ff.). Solche Stellen tragen **[noch nicht gebaut]** bzw. verweisen auf `docs/S9_KONZEPT.md`. Keine Firmendaten, keine Nummern, keine erfundenen Fristen: Werte stammen aus dem Konzept (Abschnitt 5.10, 10) und sind dort selbst als vorläufig bis zur Rechtsprüfung markiert.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -32,6 +36,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **F4 · Miete per direktem UPDATE:** `rental_bookings` lässt den Kunden `requested → withdrawn` per UPDATE setzen (Grant M01:383, Policy und Trigger M17:114-132), ohne `status_events`. Bewusst so belassen bis Phase 2, oder beim Umbau der Miete auf eine Funktion wie `withdraw()` umstellen?
 - **F5 · `docs/ARCHITECTURE.md`:** Sollen die drei veralteten Stellen (`quote` schreibt `fee_splits`, „Anfrage bearbeiten“, Tab-Bar mit „Miete“) in der nächsten Session korrigiert werden, oder ersetzt `docs/ARCHITEKTUR.md` künftig den Ist-Teil?
 - **F6 · Produktivprojekt einrichten:** M17 und M19 enthalten DELETE-Anweisungen für Dev-Daten. Auf einem leeren Projekt wirkungslos. Bitte beim Aufsetzen des Produktivprojekts alle Migrationen vor den ersten echten Daten einspielen.
+
+- **F7 · Ansprache der Rechtstexte:** Kunden-Texte per Du, Partner-Verträge in dritter Person. Passt das, oder sollen die Partner-Texte ebenfalls per Du sein?
 
 ## Stand
 
