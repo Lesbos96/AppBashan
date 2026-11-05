@@ -376,3 +376,14 @@ test.describe('Textabstände (1.4.12)', () => {
     expect(await clipped(page)).toEqual([])
   })
 })
+
+test.describe('Onboarding: neue Seite wird angesagt (4.1.3)', () => {
+  test('Titel und Text stehen in einer höflichen Live-Region, der Fokus bleibt auf „Weiter"', async ({ page }) => {
+    await page.goto('/willkommen')
+    const region = page.locator('[aria-live="polite"]', { has: page.getByRole('heading', { level: 1 }) })
+    await expect(region).toHaveCount(1)
+    await page.getByRole('button', { name: 'Weiter' }).press('Enter')
+    await expect(region.getByRole('heading', { level: 1 })).toHaveText('Dein Richtpreis. Sofort.')
+    await expect(page.getByRole('button', { name: 'Weiter' })).toBeFocused()
+  })
+})
