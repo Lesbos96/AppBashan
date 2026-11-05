@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, type Variants } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ScrollRestoration, useMatches, useNavigationType, useOutlet } from 'react-router'
 import { TabBar } from '../components/Bars'
 import { spring } from '../lib/motion'
@@ -12,8 +12,10 @@ const tabs = [
   { to: '/profil', label: 'Profil', icon: 'profile' },
 ]
 
-/** `key` bestimmt, wann die Seite wechselt (Profil und Info-Sheet teilen sich eine); `root` = Tab-Wurzel; `bar: false` blendet die Tab-Bar aus. */
-export type Handle = { key: string; root?: true; bar?: false }
+/** `key` bestimmt, wann die Seite wechselt (Profil und Info-Sheet teilen sich eine); `title` ist der Seitentitel (WCAG 2.4.2); `root` = Tab-Wurzel; `bar: false` blendet die Tab-Bar aus. */
+export type Handle = { key: string; title: string; root?: true; bar?: false }
+
+const documentTitle = (title: string) => `${title} · MoveNow`
 
 type Direction = 'push' | 'pop' | 'tab'
 
@@ -36,6 +38,10 @@ export function Shell() {
   if (nav.handle.key !== handle.key) {
     setNav({ handle, direction: nav.handle.root && handle.root ? 'tab' : type === 'POP' ? 'pop' : 'push', seq: nav.seq + 1 })
   }
+
+  useEffect(() => {
+    document.title = documentTitle(handle.title)
+  }, [handle.title])
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-(--content-max-width) overflow-x-clip">

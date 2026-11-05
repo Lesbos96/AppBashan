@@ -161,3 +161,26 @@ test.describe('Fokus in Freitextfeldern sichtbar (2.4.7)', () => {
     expect(ring.width).toBeGreaterThanOrEqual(2)
   })
 })
+
+test.describe('Seitentitel (2.4.2)', () => {
+  test('jede Seite hat einen eigenen Titel, auch nach dem Wechsel', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    for (const [path, title] of [
+      ['/', 'Start · MoveNow'],
+      ['/profil', 'Profil · MoveNow'],
+      ['/profil/preise', 'Wie rechnet MoveNow? · MoveNow'],
+      ['/profil/datenschutz', 'Datenschutz · MoveNow'],
+      ['/anmelden', 'Anmelden · MoveNow'],
+      ['/umzug', 'Umzug · MoveNow'],
+      ['/montage/termin', 'Montage: Termin · MoveNow'],
+      ['/gibt-es-nicht', 'Seite nicht gefunden · MoveNow'],
+    ]) {
+      await page.goto(path!)
+      await expect(page, path).toHaveTitle(title!)
+    }
+    // Wechsel innerhalb der App
+    await page.goto('/')
+    await page.getByRole('link', { name: /Entrümpelung/ }).press('Enter')
+    await expect(page).toHaveTitle('Entrümpelung · MoveNow')
+  })
+})
