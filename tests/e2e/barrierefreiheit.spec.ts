@@ -19,16 +19,18 @@ function contrast(a: string, b: string) {
   return (x! + 0.05) / (y! + 0.05)
 }
 
-/** Tab bis zum Element mit diesem Namen (höchstens 40 Schritte) und Rahmen des fokussierten Elements. */
+/** Tab bis zum Element mit diesem Namen (höchstens 40 Schritte) und Rahmen des fokussierten Elements; wirft, wenn es nie den Fokus bekommt. */
 async function tabTo(page: Page, name: RegExp) {
-  for (let i = 0; i < 40; i++) {
+  let reached = false
+  for (let i = 0; i < 40 && !reached; i++) {
     await page.keyboard.press('Tab')
     const label = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null
       return el ? (el.getAttribute('aria-label') ?? el.innerText ?? '').trim() : ''
     })
-    if (name.test(label)) break
+    reached = name.test(label)
   }
+  if (!reached) throw new Error(`Per Tab nicht erreicht: ${name}`)
   return page.evaluate(() => {
     const el = document.activeElement!
     const cs = getComputedStyle(el)
@@ -254,10 +256,13 @@ test.describe('Wartezeit nach 429 (4.1.3)', () => {
     const alert = page.getByRole('alert')
     await expect(alert).toContainText('zu viele Anfragen')
     const before = await alert.innerText()
-    await expect(page.getByText(/Noch \d+ s\./)).toBeVisible()
-    await page.waitForTimeout(2200)
-    expect(await alert.innerText()).toBe(before)
     expect(before).not.toMatch(/Noch \d+ s/)
+    // Der sichtbare Zähler läuft (sonst bewiese das Gleichbleiben der Meldung nichts), die Live-Region bleibt gleich
+    const counter = page.locator('p', { has: alert })
+    const start = (await counter.innerText()).match(/Noch (\d+) s\./)?.[1]
+    expect(start).toBeDefined()
+    await expect.poll(async () => (await counter.innerText()).match(/Noch (\d+) s\./)?.[1], { timeout: 5000 }).not.toBe(start)
+    expect(await alert.innerText()).toBe(before)
   })
 })
 
@@ -266,13 +271,15 @@ test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', () => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await page.goto('/montage')
     const status = page.getByRole('status').filter({ hasText: 'Richtpreis' })
-    await expect(status).toHaveText('Richtpreis 95,74 €')
+    const bar = page.getByRole('button', { name: /^Richtpreis .*, alle Positionen anzeigen$/ })
+    // Betrag aus dem Knopf der Preisleiste, nicht fest eingetragen (hängt an den Tarifen)
+    const amount = async () => (await bar.getAttribute('aria-label'))!.match(/^Richtpreis (.+), alle Positionen anzeigen$/)![1]!
+    const first = await amount()
+    await expect(status).toHaveText(`Richtpreis ${first}`)
     await page.getByRole('button', { name: 'Laufmeter erhöhen' }).click()
-    await expect(status).not.toHaveText('Richtpreis 95,74 €')
+    await expect.poll(amount).not.toBe(first)
+    await expect(status).toHaveText(`Richtpreis ${await amount()}`)
     await expect(status).toHaveText(/^Richtpreis \d{1,3}(\.\d{3})*,\d{2}\s€$/)
-    // Die Meldung entspricht dem Betrag im Knopf der Preisleiste
-    const button = await page.getByRole('button', { name: /^Richtpreis .*, alle Positionen anzeigen$/ }).getAttribute('aria-label')
-    expect(button).toContain((await status.innerText()).replace('Richtpreis ', ''))
   })
 })
 
