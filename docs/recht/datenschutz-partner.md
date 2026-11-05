@@ -44,7 +44,7 @@ Für Nutzung der App, Browser-Speicher und Missbrauchsschutz gelten die Abschnit
 - **Zweck:** Vermittlung, Nachweis der Vertragsschlüsse und Zustimmungen, Abrechnung, Streitbeilegung.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO.
 - **Beleg-Fotos des Partners:** Der Server prüft sie, erzeugt sie neu ohne eingebettete Daten und zeigt sie der Kundin oder dem Kunden des Auftrags.
-- **Speicherdauer:** [OFFEN: Vorschlag im Projekt für abgeschlossene Aufträge 3 Jahre, nicht entschieden (`docs/ARCHITECTURE.md:62`).]
+- **Speicherdauer:** [OFFEN: Vorschlag im Projekt für abgeschlossene Aufträge 3 Jahre, nicht entschieden (`docs/ARCHITECTURE.md:63`).]
 
 ## 6. Abrechnung der Vermittlung [noch nicht gebaut]
 

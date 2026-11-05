@@ -37,6 +37,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E18 · Prüfdurchgänge 4 und 5, Abschluss der Prüfung.** Durchgang 4 (ganze ARCHITEKTUR, nur hoch/mittel): 2 × mittel zu Betragsspalten und `fee_splits` (d589bf9). Durchgang 5 (nur Geld-Abschnitte und Abgleich mit INVESTOREN): 1 × mittel, `cent_whole` gilt nur für `price_config`, `call_out_fee_cents` und Stornostufen haben keinen Check; korrigiert und als Befund in ARCHITEKTUR 9.12 und F9 aufgenommen. Die Befundzahl fiel von Durchgang zu Durchgang (1: 49 aller Schweregrade; 2: 22 plus rund 40 fehlende Pflichtthemen aus der Checkliste; ab 3 nur hoch/mittel gezählt: 3: 4, 4: 2, 5: 1) auf Präzisierungen einzelner Sätze; die Rechts- und Investoren-Dokumente waren ab Durchgang 3 ohne Befund hoch oder mittel. Ein sechster Durchgang würde nach diesem Verlauf höchstens weitere Wortpräzisierungen finden; deshalb Abschluss.
 
+- **E19 · Prüfdurchgang 6 nach „weiter“.** Beks schrieb am Morgen „weiter“. Ich habe das als Fortsetzung der Prüfschleife gelesen, weil Durchgang 5 noch einen mittleren Befund hatte und das Abbruchkriterium des Auftrags damit nicht wörtlich erfüllt war; keine neue Aufgabe, keine S9b-Arbeit. Seit Durchgang 3 geändert waren nur `docs/ARCHITEKTUR.md` und diese Datei, deshalb prüfte Durchgang 6 genau diese beiden vollständig. Ergebnis: 3 × mittel (Verweis `docs/ARCHITECTURE.md:62` statt `:63`, auch in beiden Datenschutzerklärungen; überholter Beleg zum Foto-Limit; Commit-Zuordnung im Stand). Alle bestätigt und korrigiert.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -74,7 +76,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - Phase 1: `docs/ARCHITEKTUR.md` (8dbee2f).
 - Phase 2: `docs/recht/impressum.md` (3b7791d), `datenschutz-kunden.md` (b86d47f), `datenschutz-partner.md` (bd8755d), `agb-kunden.md` (aad7071), `agb-partner.md` (06ae18f), `partnervertrag.md` (8790d3d).
 - Phase 3: `docs/INVESTOREN.md` (0d70c0b).
-- Prüfdurchgang 1 (E15): d46bd70, 60c97cf, 02bd4dd, 3d66aa6, cd1a966.
+- Nach Phase 2 und Kontextentscheidung (E14): fd9a016, d46bd70 (die Commit-Nachricht von d46bd70 nennt „GOLIVE 5a“; gemeint ist der Verweis auf Punkt 5a in `docs/ARCHITEKTUR.md`, `docs/GOLIVE.md` wurde nicht geändert).
+- Prüfdurchgang 1 (E15): 60c97cf, 02bd4dd, 3d66aa6, cd1a966.
 - Prüfdurchgang 2 (E16): 5aca674, a99f6f5, abad9c9.
 - Prüfdurchgang 3 (E17): 4fd5c83, bbff3ae.
 - Prüfdurchgänge 4 und 5 (E18): d589bf9, 97baffd und der Commit mit diesem Eintrag.

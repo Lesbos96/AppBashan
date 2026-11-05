@@ -246,7 +246,7 @@ Belege: Policies M01:266-267, M15:50-51, `:276-283`, M16:185-207, M17:114-116, `
 - Der Datenbank-Eigentümer kann Trigger abschalten und Marker setzen; der Inhalts-Hash der Preisversion erkennt nur versehentliche Änderungen (`docs/S9_KONZEPT.md`, R3).
 - admin liest Adressen und Freitext in `service_requests` sowie Name und Telefon in `profiles`; Kontakte und Fotos nicht über RLS. Der Storage-Browser des Dashboards zeigt Originalfotos ohne Audit (`docs/S9_KONZEPT.md`, 7.2).
 - `private.assert_admin` prüft nur die Rolle, nicht `aal2`; der Schutz liegt darin, dass diese Funktionen kein Nutzer-JWT ausführen kann.
-- Die Fotogrenze von 8 prüft der Trigger je Zeile; das Staging-Limit (40) zählt eine Policy (`docs/OPEN_ISSUES.md:9`).
+- Die Fotogrenze von 8 prüft der Trigger `guard_photo_insert` (M21:8-26). Das Staging-Limit (40) zählt eine Policy und ist weich: parallele Uploads sehen denselben Stand und können es überschreiten; es schützt vor Kosten, nicht vor Datenzugriff (M21:28-31). (`docs/OPEN_ISSUES.md:9` beschreibt noch den Stand aus S1 mit einer Policy für die Grenze von 8.)
 
 ## 7. Statusmaschine
 
@@ -280,7 +280,7 @@ Gefunden beim Abgleich von Code, Migrationen und Doku. Keine davon ist im Rahmen
 5. **Migrationen mit DELETE:** M17:13-16 verwirft alle Anfragen, Fotozeilen, Mietanfragen und `fee_splits`; M19:8-10 schaltet den Löschschutz kurz ab und löscht Anfragen ohne Bezirk. Auf einem leeren Produktivprojekt ist das wirkungslos; auf einem Projekt mit Daten würden diese Migrationen Daten löschen. Bereits als Punkt 5a in der Livegang-Liste festgehalten (`docs/GOLIVE.md:23`: vor dem Push `count(*)` = 0 prüfen).
 6. **Namen der Secrets:** Die Functions lesen `SECRET_KEY` (Function-Secret), `.env.example` führt `SUPABASE_SECRET_KEY` (für CLI und Tests). `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS` und `SECRET_KEY` stehen nicht in `.env.example`, sondern in `docs/GOLIVE.md:31`. Kein Fehler, aber leicht zu verwechseln.
 7. **Kein Service Worker:** Die App ist über das Manifest installierbar, hat aber keinen Offline-Cache. Für den Capacitor-Weg unerheblich.
-8. **Keine Funktion „Konto löschen“**, Storage-Dateien bleiben bis zum Aufräumjob liegen; Aufbewahrungsfristen für Anfragen und Fotos sind nicht umgesetzt (`docs/OPEN_ISSUES.md:7`, `docs/ARCHITECTURE.md:62`). Für die Datenschutzerklärung relevant.
+8. **Keine Funktion „Konto löschen“**, Storage-Dateien bleiben bis zum Aufräumjob liegen; Aufbewahrungsfristen für Anfragen und Fotos sind nicht umgesetzt (`docs/OPEN_ISSUES.md:7`, `docs/ARCHITECTURE.md:63`). Für die Datenschutzerklärung relevant.
 9. **`private.geo_boundaries_make_valid()`** hat kein `revoke … from public` (M07:4-13). Es ist eine Trigger-Funktion ohne Rückgabe von Daten; geringe Bedeutung, aber abweichend vom Muster in 6.1.
 10. **Origin nicht erzwungen:** `route` und `quote` setzen CORS-Header nur für erlaubte Origins, lehnen fremde Origins aber nicht ab (`supabase/functions/_shared/http.ts:7-15`). Für Aufrufe außerhalb des Browsers (Skripte, Bots) ist das keine Sperre; dort wirken nur `apikey` bzw. JWT und die Zähler. Deshalb ist der Bot-Schutz vor dem Livegang Pflicht (`docs/GOLIVE.md:35`).
 11. **`withdraw()` ohne Oberfläche:** Die Funktion ist gebaut und getestet, die App ruft sie nicht auf; Kunden können eine Anfrage heute nicht selbst zurückziehen (`docs/ROADMAP.md:103`, offen).
