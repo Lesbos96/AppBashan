@@ -316,6 +316,10 @@ test.describe('F Fehlerfälle quer', () => {
     await page.route(/\/rest\/v1\/rpc\/booking_terms/, (r) => (failing ? r.fulfill({ status: 400, headers: cors, json: { message: 'Test' } }) : r.fallback()))
     await page.goto('/')
     await page.getByRole('link', { name: /^Montage/ }).click()
+    // Die Seite fährt noch herein; `fillKuecheBeispiel` tippt das Radio mit `force`, das wartet nicht auf Stillstand
+    await expect(page).toHaveURL(/\/montage$/)
+    await oneMain(page)
+    await expect(page.locator('main h1')).toBeInViewport({ ratio: 1 })
     await fillKuecheBeispiel(page)
     await weiter(page).click()
     await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
