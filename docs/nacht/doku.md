@@ -35,6 +35,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E17 · Prüfdurchgang 3.** Zwei `reviewer`-Läufe nur auf Befunde hoch/mittel: Rechts- und Investoren-Dokumente „Keine Befunde hoch oder mittel“; ARCHITEKTUR 4 × mittel in den neuen Abschnitten (fehlende Codes 405/413 bei `quote`, Beleg „nur JPEG“, Guard-Lücke auch bei `setup-photo-cleanup.mjs`, Trigger setzt nur den Hash), alle am Code bestätigt und korrigiert (4fd5c83). Danach ein letzter Lauf über die ganze ARCHITEKTUR (E18).
 
+- **E18 · Prüfdurchgänge 4 und 5, Abschluss der Prüfung.** Durchgang 4 (ganze ARCHITEKTUR, nur hoch/mittel): 2 × mittel zu Betragsspalten und `fee_splits` (d589bf9). Durchgang 5 (nur Geld-Abschnitte und Abgleich mit INVESTOREN): 1 × mittel, `cent_whole` gilt nur für `price_config`, `call_out_fee_cents` und Stornostufen haben keinen Check; korrigiert und als Befund in ARCHITEKTUR 9.12 und F9 aufgenommen. Die Befundzahl fiel von Durchgang zu Durchgang (1: 34, 2: 30, 3: 4, 4: 2, 5: 1) auf Präzisierungen einzelner Sätze; die Rechts- und Investoren-Dokumente waren ab Durchgang 3 ohne Befund hoch oder mittel. Ein sechster Durchgang würde nach diesem Verlauf höchstens weitere Wortpräzisierungen finden; deshalb Abschluss.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -49,7 +51,7 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **F8 · Kontextgrenze bei Nachtaufträgen:** Soll die 150.000-Token-Regel aus `CLAUDE.md` auch für unbeaufsichtigte Aufträge gelten (dann endet die Nacht dort), oder ist Weiterarbeiten über Subagents wie hier (E14) in Ordnung?
 
-- **F9 · Einstellungen ohne Trigger-Schutz:** `guard_platform_setting` schützt nur `fee_rate`, `fee_vat_rate`, `fee_notice_days` (M16:42-45). Stornostufen, Fristen, Anfahrtspauschale und Haltefenster kann `service_role` per UPDATE/DELETE ändern (nur TRUNCATE ist entzogen, M15:271). Bestehende Aufträge sind über den Snapshot der Revision geschützt, neue nicht. Soll die Datenbank für alle Schlüssel „nur neue Version“ erzwingen? (Geld- und Sicherheitsfrage für den `advisor` in der nächsten passenden Session.)
+- **F9 · Einstellungen ohne Trigger-Schutz:** `guard_platform_setting` schützt nur `fee_rate`, `fee_vat_rate`, `fee_notice_days` (M16:42-45). Stornostufen, Fristen, Anfahrtspauschale und Haltefenster kann `service_role` per UPDATE/DELETE ändern (nur TRUNCATE ist entzogen, M15:271). Bestehende Aufträge sind über den Snapshot der Revision geschützt, neue nicht. Außerdem haben `call_out_fee_cents` und die Stornostufen keine Wertebereichs- oder Ganzzahl-Checks. Soll die Datenbank für alle Schlüssel „nur neue Version“ und gültige Werte erzwingen? (Geld- und Sicherheitsfrage für den `advisor` in der nächsten passenden Session.)
 - **F10 · Zurückziehen ohne Knopf:** `withdraw()` ist gebaut, die App ruft es nicht auf (`docs/ROADMAP.md:103` offen). Kunden können eine gesendete Anfrage heute nicht selbst zurückziehen. Bewusst bis S9i, oder vorziehen?
 
 - **F11 · Geschäftliche Festlegungen für die Rechtstexte** (nur du kannst sie liefern; ein Anwalt prüft danach):
