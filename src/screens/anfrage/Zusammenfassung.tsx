@@ -218,6 +218,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   }
   /** Für „Anderes Konto“ und nach einem 401: ohne Abmelden leitet die Anmeldung bei bestehender Sitzung sofort zurück. */
   const otherAccount = async () => {
+    // Während des Sendens kein Kontowechsel: sonst entstünde die Anfrage unter dem alten Konto und das Staging wäre schon geleert (OPEN_ISSUES A4c-N1)
+    if (busy.current) return
     stashDraft(path)
     // noch mit der alten Sitzung: deren Staging-Dateien zählen sonst bis zum Aufräumen gegen ihr Kontingent
     await discardStaging(supabase)
@@ -402,7 +404,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
             <p className="m-0 text-body">
               Anfrage als <strong className="font-semibold break-all">{session.user.email}</strong> senden
             </p>
-            <button type="button" onClick={() => void otherAccount()} className="press -ml-3 flex h-11 items-center self-start px-3 text-[15px] font-medium text-accent">
+            <button type="button" disabled={sending} onClick={() => void otherAccount()} className="press -ml-3 flex h-11 items-center self-start px-3 text-[15px] font-medium text-accent disabled:text-text-secondary">
               Anderes Konto
             </button>
           </div>
