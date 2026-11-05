@@ -118,7 +118,7 @@ test.describe('W2 Umzug', () => {
     await mockRoute(page)
     const calls = await mockQuote(page, () => ({ json: answer(price(68961)) }))
     await umzugToSummary(page)
-    await page.getByRole('link', { name: 'Termin' }).click()
+    await page.getByRole('link', { name: 'Termin', exact: true }).click()
     await expect(page).toHaveURL(/\/umzug\/termin$/)
     await expect(page.getByRole('button', { name: /, 15\. .*ausgewählt/ })).toBeVisible()
     await page.getByRole('link', { name: 'Umzug' }).first().click()

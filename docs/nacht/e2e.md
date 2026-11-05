@@ -58,6 +58,21 @@ Quellen: `src/app/router.tsx`, `tests/e2e/*.spec.ts` (101 Tests in 8 Dateien), `
 
 Entscheidung: Phase 3 schließt die fett markierten Lücken in einer neuen Datei `tests/e2e/wege.spec.ts` (je Weg Erfolg, dann Abbruch, dann Fehler). Bestehende Tests bleiben inhaltlich unverändert; sie bekommen nur die Mock-Schicht (Phase 2).
 
+### Phase 2 · Mock-Schicht (`tests/e2e/backend.ts`)
+
+Aufbau, jeweils mit Begründung:
+- **Fixture auf Kontext-Ebene** (`test` mit automatischer Fixture `backend`), nicht auf Seiten-Ebene: gilt auch für weitere Tabs (`context.newPage()` in `anfrage.spec.ts`, Magic-Link-Test), und `page.unrouteAll()` in `anmelden.spec.ts` entfernt sie nicht. Seiten-Routen der Tests gehen vor, `route.fallback()` reicht an die Schicht weiter.
+- **Unterste Schicht: Sperre.** Jeder Aufruf an einen Host außer der App selbst, den kein Mock beantwortet, wird mit `blockedbyclient` abgebrochen und gemeldet; am Testende prüft die Fixture, dass die Liste leer ist. So kann auch ein wiederverwendeter Dev-Server (`reuseExistingServer: true`, z. B. Beks' `npm run dev` mit echter `.env.local`) nichts erreichen: alle Muster sind hostunabhängig (`**/rest/v1/…`).
+- **Standardantworten** nur für öffentliche Lesezugriffe: `current_price_version`, `price_config` (28 Zeilen), `rpc/booking_terms` (fünf Werte plus Hash), dazu eine leere Auftragsliste. Die Werte liest der Test **direkt aus `supabase/seed.sql`** (dieselbe Regex wie `scripts/s9a1-verify.mjs`), damit es keine zweite Kopie der Tarife gibt. Ändert sich das Seed-Format, bricht der Testlauf laut ab (Anzahl 28 geprüft). Der `termsHash` ist ein SHA-256 über die fünf Werte im Format des Servers, nicht der echte Server-Hash (der Mock von `quote` prüft ihn nicht).
+- **Nicht** in der Schicht: Auth, `route`, `quote`, Storage. Die Tests mocken sie wie bisher selbst (`mockAuth`, `mockRoute`, `mockQuote`, `mockPhotos`), weil sie Aufrufe zählen und Fehler gezielt einspielen. Fehlt ein Mock, greift die Sperre.
+- **`anonymousPrices`** (`anfrage-helpers.ts`) reicht jetzt per `fallback()` an die Schicht statt per `continue()` ans Netz.
+- **`playwright.config.ts`:** `webServer.env` setzt `NEXT_PUBLIC_SUPABASE_URL=https://e2e.supabase.invalid` und einen Platzhalter-Key (`.invalid` löst nie auf, RFC 2606); Umgebungsvariablen gehen in Vite vor `.env.local`. Ohne `.env.local` startete die App vorher gar nicht. `PW_CHROMIUM_PATH` (nur wenn gesetzt) nimmt ein vorinstalliertes Chromium; in diesem Container nötig, auf Beks' Rechner ohne Wirkung.
+- **Shots** (`tests/shots/shots.spec.ts`) nutzen dieselbe Fixture: Screenshots brauchen damit ebenfalls kein Supabase mehr.
+- Ein Testtitel geändert: `shell.spec.ts` „Info-Sheet zeigt Tarife aus der Datenbank" → „… (Mock aus seed.sql)", weil der alte Titel nicht mehr stimmt. Erwartungen unverändert.
+- Selbsttest `tests/e2e/backend.spec.ts`: Sperre greift auch für einen echten `*.supabase.co`-Host (Ist-Wert: Aufruf abgebrochen und gemeldet), Tarife kommen mit 200 aus der Schicht. Rot-Beweis der Fixture nur mit `E2E_REDPROOF=1` (sonst übersprungen): ein ungemockter Aufruf ohne Aufräumen muss den Test scheitern lassen. Weil der Auftrag das Löschen von Dateien verbietet, liegt der Rot-Beweis als übersprungener Test in der Datei statt als Wegwerf-Datei.
+
+Ergebnis Runde 1 (bestehende Suite, nur Mock-Schicht): `npm run check` EXIT=0 (368 Unit-Tests), `npm run test:e2e` EXIT=0, 102 von 102, **keine Meldung „Aufruf ohne Mock"**: die bestehenden Tests brauchten außer Tarifen und Bedingungen nichts vom echten Backend (`tmp/proof/nacht-e2e-r1-*.log`).
+
 ## Fragen an Beks
 
 - **F-1:** Die Cloud-Session hat einen Supabase-Connector (MCP) mit Schreibrechten (Migrationen, SQL, Deploy). Soll er für Nachtläufe abgeschaltet werden? Ich habe ihn nicht benutzt.
