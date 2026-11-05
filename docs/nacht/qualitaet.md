@@ -119,12 +119,19 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 | A10 | `ErrorState` bekommt `heading` (Standard h2 wie bisher); die Fehlerseite übergibt h1, Aussehen unverändert | `tmp/proof/a10-check.log` EXIT=0, `tmp/proof/a10-e2e.log` EXIT=0 (40 bestanden: barrierefreiheit, shell, dienste) |
 | A11 | Adressmarker „A" (Ring) im Dark Mode mit Rand und Buchstaben in `accent` (Mint) statt `primary`; Light und Marker „B" unverändert. Entscheidung: `accent` ist im Dark Mode ohnehin die Textfarbe für Akzente (`--accent: #8fd6cf`), keine neue Farbe | Rot: Prüfskript (2,63:1). Grün: `tmp/proof/a11-check.log` EXIT=0, `tmp/proof/a11-e2e.log` EXIT=0 (35 bestanden, neue Tests Light und Dark mit ≥ 4,5:1 für A und B) |
 | A12 | Preisleiste: `min-h-[54px]` statt `h-[54px]` (die Zeile mit `overflow-hidden` schrumpfte sonst in der festen Höhe und schnitt den Betrag ab); Text ohne Preis („Persönliches Angebot", „Strecke fehlt") bricht um statt mit Auslassungspunkten zu enden. Beträge bleiben einzeilig wie vorher (`truncate`, CLAUDE.md: Beträge brechen nie um). Bei normalen Abständen unverändert 54 px. Adresskarte und Segmente: Frage F3 | Rot: Prüfskript (Betrag in Montage/Umzug vertikal, „Persönliches Angebot" horizontal abgeschnitten). Grün: `tmp/proof/a12-check.log` EXIT=0, `tmp/proof/a12-e2e.log` EXIT=0 (46 bestanden, 2 neue Tests mit den Abständen aus 1.4.12) |
+| A1c | Reviewer-Runde nach Phase 2 (`tmp/proof/p2-review.md`, 60 Bilder 390/430/1280 Light/Dark, kein hoch/mittel): zwei niedrige Funde übernommen. Stepper- und Pillenknöpfe `rounded-full` (der Rahmen ragte als Quadrat über die runde Pille), „Überspringen" `rounded-lg`. Nicht übernommen: optischer Feinschliff an der letzten Listenzeile (kosmetisch) und Tab „Miete" (nicht Teil dieses Diffs, bekannt) | `tmp/proof/a1c-p1-check.log` EXIT=0, `tmp/proof/a1c-p1-e2e.log` EXIT=0 (50 bestanden; gemeinsamer Lauf mit P1, andere Dateien) |
 | A1b | Nachtrag zu A1 aus dem Kontrolllauf: Im Info-Sheet schnitt der Scrollbereich den Rahmen zweier Quellen-Links ab (Fokus scrollte sie bis an den Rand). `Sheet`: `scroll-py-4` am Scrollbereich (Commit `8475682`) | Kontrolllauf Sheet-Zustände `tmp/nacht/audit-sheet.log` EXIT=0, abgeschnitten 0 (vorher 4). `tmp/proof/a1b-check.log` EXIT=0, `tmp/proof/a1b-e2e.log` EXIT=0 (50 bestanden) |
 | A13 | Onboarding: Titel und Text der Seite in einer höflichen Live-Region (`aria-live="polite"`); der Fokus bleibt auf „Weiter", der neue Inhalt wird angesagt. Beim ersten Anzeigen keine Ansage | `tmp/proof/a13-check.log` EXIT=0 (368 Unit), `tmp/proof/a13-e2e-voll.log` EXIT=0: **voller E2E-Lauf mit allen Phase-2-Änderungen, 128 bestanden** (vorher 102; 26 neue Tests in `barrierefreiheit.spec.ts`) |
 
 ## Phase 3 · Tempo
 
-(folgt)
+### Plan (aus der Messung in Phase 1)
+- **Lazy Loading:** Flows (Transport/Umzug, Entrümpelung, Montage, Termin/Zusammenfassung/Bestätigung, Anmelden, Aufträge) als eigene Chunks über `lazy` im Router; Start, Profil, Info-Sheet, Onboarding, Rechtstexte bleiben im Einstiegs-Chunk. Nach dem ersten Laden holt die App die übrigen Chunks im Hintergrund, damit spätere Wechsel nicht warten.
+- **Unnötiges im Bundle:** `src/lib/motion.ts` bindet die ganze `tokens.json` ein (5,4 kB roh), gebraucht wird nur `motion.spring` → benannter Import.
+- **Bilder:** keine Rasterbilder im Ladepfad (Illustrationen und Icons sind SVG-Komponenten). Die PNG-Icons (`icon-512.png` 160 kB, `icon-maskable-512.png` 140 kB, `apple-touch-icon.png` 20 kB, `icon-192.png` 27 kB) lädt nur die Installation (Manifest, iOS-Startbildschirm), nicht der Seitenaufruf.
+- **Neuberechnungen:** messen statt vermuten (siehe unten).
+
+(Ergebnisse folgen)
 
 ## Abgebrochen
 
