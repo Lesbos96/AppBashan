@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import { anonymousPrices, mockQuote, toSummary } from './anfrage-helpers'
+import { expect, test } from './backend'
 import { EMAIL, mockAuth, signInWithCode } from './auth-helpers'
 import { weiter } from './dienste-helpers'
 import { addPhotos } from './konfigurator-helpers'
@@ -402,7 +403,8 @@ test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', () => {
     // Tarife verzögert: die Entrümpelung zeigt ihre Überschrift erst nach dem Laden
     await page.route(/\/rest\/v1\/price_config/, async (r) => {
       await new Promise((resolve) => setTimeout(resolve, 1500))
-      await r.continue()
+      // an die Mock-Schicht (backend.ts) weiterreichen, nie ans Netz
+      await r.fallback()
     })
     await page.goto('/entruempelung')
     await page.getByRole('radio', { name: /^Wohnung/ }).click()
