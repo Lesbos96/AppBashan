@@ -62,6 +62,8 @@ export const initialFlow: TransportFlow = {
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const within = (v: unknown, [min, max]: readonly [number, number]) => finite(v) && v >= min && v <= max
+/** Felder, die das Preismodul mit `int()` liest: nur ganze Zahlen, sonst bliebe die Vorschau im Fehlerzustand. */
+const whole = (v: unknown, range: readonly [number, number]) => within(v, range) && Number.isInteger(v)
 const place = (v: unknown) => {
   if (v === null) return true
   const p = v as { label?: unknown; point?: { lat?: unknown; lon?: unknown } | null } | undefined
@@ -82,12 +84,12 @@ function validTransport(raw: unknown): raw is TransportFlow {
     place(r.to) &&
     (r.route === null || (isRouteResult(r.route) && r.routeConsent === true && !!r.from && !!r.to)) &&
     (r.hours === null || within(r.hours, LIMITS.hours)) &&
-    within(r.crew, LIMITS.crew) &&
-    within(r.vehicles, LIMITS.vehicles) &&
-    within(r.fromFloor, LIMITS.floor) &&
-    within(r.toFloor, LIMITS.floor) &&
-    within(r.boxes, LIMITS.boxes) &&
-    within(r.parking, LIMITS.parking) &&
+    whole(r.crew, LIMITS.crew) &&
+    whole(r.vehicles, LIMITS.vehicles) &&
+    whole(r.fromFloor, LIMITS.floor) &&
+    whole(r.toFloor, LIMITS.floor) &&
+    whole(r.boxes, LIMITS.boxes) &&
+    whole(r.parking, LIMITS.parking) &&
     within(r.assemblyLm, LIMITS.assemblyLm) &&
     within(r.volume, [1, 100])
   )
@@ -149,7 +151,7 @@ function validClearance(raw: unknown): raw is ClearanceFlow {
     ['', 'flat', 'house', 'attic', 'cellar', 'office', 'heavy'].includes(r.object as string) &&
     ['light', 'normal', 'full'].includes(r.fill as string) &&
     within(r.area, LIMITS.clearanceArea) &&
-    within(r.floor, LIMITS.floor) &&
+    whole(r.floor, LIMITS.floor) &&
     (r.description as string).length <= 800 &&
     validDraft(r.draft)
   )
