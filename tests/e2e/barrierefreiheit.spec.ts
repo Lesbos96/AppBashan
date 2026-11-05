@@ -324,3 +324,22 @@ test.describe('Fehlerseite (1.3.1, 2.4.6)', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   })
 })
+
+test.describe('Textkontrast der Adressmarker (1.4.3)', () => {
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`Marker „A" und „B" mindestens 4,5:1 (${scheme})`, async ({ page }) => {
+      await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.goto('/umzug')
+      for (const [row, letter] of [['Abholung', 'A'], ['Ziel', 'B']] as const) {
+        // Der Marker ist aria-hidden und steht daher nicht im Namen des Knopfs
+        const marker = page.getByRole('button', { name: new RegExp(`^${row}`) }).locator('span', { hasText: new RegExp(`^${letter}$`) })
+        const { color, background } = await marker.evaluate((el) => {
+          const cs = getComputedStyle(el)
+          return { color: cs.color, background: cs.backgroundColor }
+        })
+        expect(contrast(color, background), `${letter} ${scheme}`).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+  }
+})

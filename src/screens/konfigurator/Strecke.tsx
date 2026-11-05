@@ -14,11 +14,12 @@ const oneDecimal = (n: number) => n.toFixed(1).replace('.', ',')
 
 // Adresskarte --------------------------------------------------------------------------------------------------
 
+// Dark: Primärfarbe auf der Kartenfläche hat nur 2,6:1, daher Akzent (Mint) für Rand und Buchstaben (WCAG 1.4.3)
 function Marker({ letter, filled }: { letter: 'A' | 'B'; filled?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${filled ? 'bg-primary text-white' : 'border-2 border-primary bg-surface text-primary'}`}
+      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${filled ? 'bg-primary text-white' : 'border-2 border-primary bg-surface text-primary dark:border-accent dark:text-accent'}`}
     >
       {letter}
     </span>

@@ -116,6 +116,7 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 | A14 | Foto-Zähler als höfliche Live-Region (`aria-live="polite"`, `aria-atomic`), für Bildschirmleser „2 von 8 Fotos" (unsichtbarer Zusatz „Fotos"); Fehlermeldungen hatten schon `role="alert"` | `tmp/proof/a14-check.log` EXIT=0, `tmp/proof/a14-e2e.log` EXIT=0 (55 bestanden: barrierefreiheit, konfigurator, fotos, dienste) |
 | A15 | `Fotos` bekommt `level` (Standard 3 wie bisher im Konfigurator unter dem h2 des Schritts); die Entrümpelung übergibt 2, weil die Karte dort direkt unter dem h1 steht | `tmp/proof/a15-check.log` EXIT=0, `tmp/proof/a15-e2e.log` EXIT=0 (44 bestanden: barrierefreiheit, dienste, fotos) |
 | A10 | `ErrorState` bekommt `heading` (Standard h2 wie bisher); die Fehlerseite übergibt h1, Aussehen unverändert | `tmp/proof/a10-check.log` EXIT=0, `tmp/proof/a10-e2e.log` EXIT=0 (40 bestanden: barrierefreiheit, shell, dienste) |
+| A11 | Adressmarker „A" (Ring) im Dark Mode mit Rand und Buchstaben in `accent` (Mint) statt `primary`; Light und Marker „B" unverändert. Entscheidung: `accent` ist im Dark Mode ohnehin die Textfarbe für Akzente (`--accent: #8fd6cf`), keine neue Farbe | Rot: Prüfskript (2,63:1). Grün: `tmp/proof/a11-check.log` EXIT=0, `tmp/proof/a11-e2e.log` EXIT=0 (35 bestanden, neue Tests Light und Dark mit ≥ 4,5:1 für A und B) |
 
 ## Phase 3 · Tempo
 
