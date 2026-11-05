@@ -18,7 +18,7 @@ import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
 import { objectOf } from '../entruempelung/options'
-import { dayText } from './format'
+import { dayText, routeText } from './format'
 
 const goods = { normal: 'Möbel', piano: 'Klavier', grand: 'Flügel', safe: 'Tresor' }
 const shortAddress = (label: string) => label.split(',')[0]?.trim() ?? label
@@ -39,7 +39,7 @@ function summaryOf(path: Path): Summary | null {
         place: [
           ['Abholung', `${f.from.label} · ${floorText(f.fromFloor)}${f.fromLift ? ', mit Lift' : ''}`],
           ['Ziel', `${f.to.label} · ${floorText(f.toFloor)}${f.toLift ? ', mit Lift' : ''}`],
-          ['Strecke', f.route ? `${f.route.distanceKm.toFixed(1).replace('.', ',')} km${f.route.outsideKm > 0 ? ` · ${f.route.outsideKm.toFixed(1).replace('.', ',')} km außerhalb Wiens` : ' · innerhalb Wiens'}` : 'wird beim Absenden berechnet'],
+          ['Strecke', f.route ? routeText(f.route) : 'wird beim Absenden berechnet'],
         ],
         scope: [
           ['Transportgut', goods[f.goods]],

@@ -12,3 +12,12 @@ export const longDay = (ms: number) => long.format(ms)
 export const dayText = (date: string | null) => (date ? long.format(utc(date)) : '')
 /** „Fr., 13. Nov.“ */
 export const shortDayText = (date: string | null) => (date ? short.format(utc(date)) : '')
+
+const nbsp = String.fromCharCode(160)
+const km = (v: number) => `${v.toFixed(1).replace('.', ',')}${nbsp}km`
+/**
+ * „4,8 km · innerhalb Wiens“ bzw. „196,1 km · 186,5 km außerhalb Wiens“ (Termin und Zusammenfassung).
+ * Zahl und Einheit sowie „innerhalb/außerhalb Wiens“ bleiben zusammen; umbrechen darf die Zeile nur am Mittelpunkt (OPEN_ISSUES S8b-Abschluss).
+ */
+export const routeText = (r: { distanceKm: number; outsideKm: number }) =>
+  `${km(r.distanceKm)} · ${r.outsideKm > 0 ? `${km(r.outsideKm)} außerhalb${nbsp}Wiens` : `innerhalb${nbsp}Wiens`}`
