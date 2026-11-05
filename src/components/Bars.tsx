@@ -13,7 +13,9 @@ export function TabBar({ tabs }: { tabs: Tab[] }) {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className={`${column} glass bottom-0 z-20 grid grid-cols-4 items-start border-t-[0.5px] border-separator px-2 pb-safe`}
+      className={`${column} glass bottom-0 z-20 grid items-start border-t-[0.5px] border-separator px-2 pb-safe`}
+      // gleich breite Spalten je Tab (Phase 1: drei, Galerie: vier)
+      style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
     >
       {tabs.map((tab) => (
         <NavLink

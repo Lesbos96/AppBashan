@@ -26,7 +26,6 @@ export type Termin = { date: string | null; window: TimeWindow; place: string; p
 const initialTermin: Termin = { date: null, window: 'flexible', place: '', point: null, consent: false }
 export const terminKey = (path: Path) => `movenow.termin.${path}`
 export const attemptKey = (path: Path) => `movenow.attempt.${path}`
-export const shownKey = (path: Path) => `movenow.shown.${path}`
 export const shownFullKey = (path: Path) => `movenow.shownfull.${path}`
 export const contactKey = (path: Path) => `movenow.contact.${path}`
 
@@ -103,42 +102,36 @@ export function useTermin(path: Path): [Termin, (patch: Partial<Termin>) => void
 export const viennaToday = (now = new Date()) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Vienna' }).format(now)
 
 /** Alles, was zu einem Entwurf gehört. Fotos folgen mit S8b-3. */
-export const draftKeys = (path: Path) => [services[path].flowKey, terminKey(path), attemptKey(path), shownKey(path), shownFullKey(path), contactKey(path)]
+export const draftKeys = (path: Path) => [services[path].flowKey, terminKey(path), attemptKey(path), shownFullKey(path), contactKey(path)]
 
 /** Was der Kunde in der Vorschau sah (wie `shown` in `quote`): Festpreis total = low = high, Spanne total null, Angebot mit Gründen. */
 export type Shown = { kind: 'price'; totalCents: number | null; lowCents: number; highCents: number } | { kind: 'offer'; reasons: string[] }
 
-/** Vorschau, die der Kunde beim Weitergehen zuletzt gesehen hat: Gesamtpreis (Cent, für die Bestätigung) und die vollständige Anzeige (für `quote`). */
-export function rememberShown(path: Path, totalCents: number | null, shown: Shown): void {
+/** Vorschau, die der Kunde beim Weitergehen zuletzt gesehen hat, vollständig (für `quote` und für den Vergleich auf der Bestätigung). */
+export function rememberShown(path: Path, shown: Shown): void {
   try {
     sessionStorage.setItem(shownFullKey(path), JSON.stringify(shown))
-    if (totalCents === null) sessionStorage.removeItem(shownKey(path))
-    else sessionStorage.setItem(shownKey(path), String(totalCents))
   } catch {
     // ohne Speicher gibt es keinen Vergleich
   }
 }
 
+/** Strenge Prüfung eines gemerkten `Shown`: ganze Cent ≥ 0, Angebot mit mindestens einem Grund; nur bekannte Felder. */
+function parseShown(raw: unknown): Shown | null {
+  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null
+  const whole = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
+  if (r?.kind === 'offer' && Array.isArray(r.reasons) && r.reasons.length > 0 && r.reasons.every((x) => typeof x === 'string')) return { kind: 'offer', reasons: r.reasons as string[] }
+  if (r?.kind === 'price' && whole(r.lowCents) && whole(r.highCents) && (r.totalCents === null || whole(r.totalCents))) return { kind: 'price', totalCents: r.totalCents as number | null, lowCents: r.lowCents, highCents: r.highCents }
+  return null
+}
+
 export function readShownFull(path: Path): Shown | null {
   try {
-    const raw: unknown = JSON.parse(sessionStorage.getItem(shownFullKey(path)) ?? 'null')
-    const r = raw as Record<string, unknown> | null
-    const whole = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
-    if (r?.kind === 'offer' && Array.isArray(r.reasons) && r.reasons.length > 0 && r.reasons.every((x) => typeof x === 'string')) return { kind: 'offer', reasons: r.reasons as string[] }
-    if (r?.kind === 'price' && whole(r.lowCents) && whole(r.highCents) && (r.totalCents === null || whole(r.totalCents))) return { kind: 'price', totalCents: r.totalCents as number | null, lowCents: r.lowCents, highCents: r.highCents }
+    return parseShown(JSON.parse(sessionStorage.getItem(shownFullKey(path)) ?? 'null'))
   } catch {
     // keine Vorschau vermerkt
   }
   return null
-}
-
-export function readShown(path: Path): number | null {
-  try {
-    const cents = Number(sessionStorage.getItem(shownKey(path)))
-    return Number.isSafeInteger(cents) && cents > 0 ? cents : null
-  } catch {
-    return null
-  }
 }
 
 /** Ergebnis des Absendens für die Bestätigungsseite (nur Anzeige; der Preis stammt aus der Antwort von `quote`). */
@@ -148,8 +141,8 @@ export type Sent = {
   status: 'requested' | 'awaiting_offer'
   needsQuote: boolean
   snapshot: unknown
-  /** Vorschaupreis, den der Kunde zuletzt gesehen hat (Cent), für den Hinweis bei Abweichung. */
-  shownCents: number | null
+  /** Vorschau, die der Kunde zuletzt gesehen hat (vollständig, auch Spanne), für den Hinweis bei Abweichung. */
+  shown: Shown | null
   date: string | null
   route: string
 }
@@ -176,8 +169,7 @@ export function readSent(): Sent | null {
   try {
     const raw: unknown = JSON.parse(sessionStorage.getItem(SENT_KEY) ?? 'null')
     if (raw && typeof raw === 'object' && 'path' in raw && typeof raw.path === 'string' && paths.includes(raw.path as Path) && 'id' in raw && typeof raw.id === 'string') {
-      const shown = 'shownCents' in raw ? raw.shownCents : null
-      return { ...(raw as Sent), shownCents: typeof shown === 'number' && Number.isSafeInteger(shown) && shown > 0 ? shown : null }
+      return { ...(raw as Sent), shown: parseShown('shown' in raw ? raw.shown : null) }
     }
   } catch {
     // keine Bestätigung vorhanden
@@ -197,20 +189,24 @@ export function stashDraft(path: Path): void {
       const value = sessionStorage.getItem(key)
       if (value !== null) items[key] = value
     }
-    localStorage.setItem(HANDOVER_KEY, JSON.stringify({ until: Date.now() + HANDOVER_TTL_MS, items }))
+    localStorage.setItem(HANDOVER_KEY, JSON.stringify({ until: Date.now() + HANDOVER_TTL_MS, path, items }))
   } catch {
     // Speicher gesperrt: der Entwurf bleibt nur in diesem Tab
   }
 }
 
-/** Schreibt die Übergabe einmalig zurück (nur Schlüssel, die in diesem Tab fehlen) und löscht sie. Ungültiges oder Abgelaufenes wird verworfen. */
+/**
+ * Schreibt die Übergabe einmalig zurück (nur Schlüssel, die in diesem Tab fehlen) und löscht sie. Ungültiges oder Abgelaufenes wird verworfen.
+ * Nur die Entwurfsschlüssel des Service, der die Übergabe angelegt hat (OPEN_ISSUES S8b-2 F5); eine Übergabe ohne gültigen `path` gilt nicht.
+ */
 export function restoreDraft(): void {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(HANDOVER_KEY) ?? 'null')
     localStorage.removeItem(HANDOVER_KEY)
     if (!raw || typeof raw !== 'object' || !('until' in raw) || typeof raw.until !== 'number' || raw.until <= Date.now() || !('items' in raw) || !raw.items || typeof raw.items !== 'object') return
+    if (!('path' in raw) || typeof raw.path !== 'string' || !paths.includes(raw.path as Path)) return
     if (JSON.stringify(raw.items).length > MAX_HANDOVER_CHARS) return
-    const allowed = new Set(paths.flatMap(draftKeys))
+    const allowed = new Set(draftKeys(raw.path as Path))
     for (const [key, value] of Object.entries(raw.items)) {
       if (allowed.has(key) && typeof value === 'string' && sessionStorage.getItem(key) === null) sessionStorage.setItem(key, value)
     }

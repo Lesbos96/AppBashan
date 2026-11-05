@@ -55,7 +55,7 @@ function Formular({ tariffs }: { tariffs: Record<string, number> }) {
         />
       </div>
       <PreisLeiste preview={preview} onOpen={() => setSheet(true)} canContinue onContinue={() => {
-        rememberShown('montage', preview.state === 'price' ? preview.price.totalCents : null, shownOf(preview))
+        rememberShown('montage', shownOf(preview))
         void navigate('/montage/termin')
       }} />
       <PreisSheet

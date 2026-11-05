@@ -7,7 +7,7 @@ import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
-import { type Path, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
+import { type Path, finishDraft, readContact, writeContact, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
 import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
@@ -18,7 +18,7 @@ import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
 import { objectOf } from '../entruempelung/options'
-import { dayText } from './format'
+import { dayText, routeText } from './format'
 
 const goods = { normal: 'Möbel', piano: 'Klavier', grand: 'Flügel', safe: 'Tresor' }
 const shortAddress = (label: string) => label.split(',')[0]?.trim() ?? label
@@ -39,7 +39,7 @@ function summaryOf(path: Path): Summary | null {
         place: [
           ['Abholung', `${f.from.label} · ${floorText(f.fromFloor)}${f.fromLift ? ', mit Lift' : ''}`],
           ['Ziel', `${f.to.label} · ${floorText(f.toFloor)}${f.toLift ? ', mit Lift' : ''}`],
-          ['Strecke', f.route ? `${f.route.distanceKm.toFixed(1).replace('.', ',')} km${f.route.outsideKm > 0 ? ` · ${f.route.outsideKm.toFixed(1).replace('.', ',')} km außerhalb Wiens` : ' · innerhalb Wiens'}` : 'wird beim Absenden berechnet'],
+          ['Strecke', f.route ? routeText(f.route) : 'wird beim Absenden berechnet'],
         ],
         scope: [
           ['Transportgut', goods[f.goods]],
@@ -218,6 +218,8 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   }
   /** Für „Anderes Konto“ und nach einem 401: ohne Abmelden leitet die Anmeldung bei bestehender Sitzung sofort zurück. */
   const otherAccount = async () => {
+    // Während des Sendens kein Kontowechsel: sonst entstünde die Anfrage unter dem alten Konto und das Staging wäre schon geleert (OPEN_ISSUES A4c-N1)
+    if (busy.current) return
     stashDraft(path)
     // noch mit der alten Sitzung: deren Staging-Dateien zählen sonst bis zum Aufräumen gegen ihr Kontingent
     await discardStaging(supabase)
@@ -260,7 +262,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
       forgetStaging()
       sentRef.current = true // geleert wird beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
       if (!mounted.current) clearPhotos(photoKey) // Seite während des Sendens verlassen: der Cleanup lief schon
-      finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
+      finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shown: readShownFull(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
@@ -291,7 +293,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
       const { snapshot, priceVersion } = conflict
       if (!snapshot || priceVersion === undefined) return
       const shown = shownFromSnapshot(snapshot)
-      rememberShown(path, snapshot.kind === 'price' ? snapshot.totalCents : null, shown)
+      rememberShown(path, shown)
       // Ohne gespeicherten Wert würde die Karte einen anderen Preis zeigen, als gesendet wird: dann nichts senden
       if (JSON.stringify(readShownFull(path)) !== JSON.stringify(shown)) {
         setStatus({ kind: 'error', error: new QuoteError('unavailable') })
@@ -402,7 +404,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
             <p className="m-0 text-body">
               Anfrage als <strong className="font-semibold break-all">{session.user.email}</strong> senden
             </p>
-            <button type="button" onClick={() => void otherAccount()} className="press -ml-3 flex h-11 items-center self-start px-3 text-[15px] font-medium text-accent">
+            <button type="button" disabled={sending} onClick={() => void otherAccount()} className="press -ml-3 flex h-11 items-center self-start px-3 text-[15px] font-medium text-accent disabled:text-text-secondary">
               Anderes Konto
             </button>
           </div>

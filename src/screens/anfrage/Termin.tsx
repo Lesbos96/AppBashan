@@ -9,12 +9,11 @@ import { Card } from '../../components/Surfaces'
 import { type Path, type TimeWindow, services, timeWindows, useTermin, viennaToday } from '../../lib/draft'
 import { readFlow } from '../../lib/flow'
 import { Suche } from '../konfigurator/Strecke'
-import { longDay, shortDayText, utc } from './format'
+import { longDay, routeText, shortDayText, utc } from './format'
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const month = new Intl.DateTimeFormat('de-AT', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 const street = (label?: string) => label?.split(',')[0]?.trim() ?? ''
-const km = (v: number) => v.toFixed(1).replace('.', ',')
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10)
 
 /** Monatsraster: Datum ab heute (Wien) bis höchstens 365 Tage voraus, wie es `quote` verlangt. */
@@ -107,7 +106,7 @@ export function Termin({ path }: { path: Path }) {
                 <span className="text-body break-words">
                   {street(flow.from?.label)} → {street(flow.to?.label)}
                 </span>
-                <span className="text-[13px]/4 text-text-secondary">{flow.route ? `${km(flow.route.distanceKm)} km · ${flow.route.outsideKm > 0 ? `${km(flow.route.outsideKm)} km außerhalb Wiens` : 'innerhalb Wiens'}` : 'Adressen ändern'}</span>
+                <span className="text-[13px]/4 text-text-secondary">{flow.route ? routeText(flow.route) : 'Adressen ändern'}</span>
               </span>
             </span>
             <Icon name="chevron-right" width={18} height={18} className="shrink-0 text-text-secondary opacity-60" />

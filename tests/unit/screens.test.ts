@@ -166,7 +166,8 @@ describe('Bestätigung nach dem Senden', () => {
   const nbsp = String.fromCharCode(160)
   const id = '7b0e7a58-6f0c-4c52-9d0c-5a1f3b9d2e11'
   const fixed = { kind: 'price', totalCents: 12345, lowCents: 12345, highCents: 12345, lines: [{ key: 'assembly', cents: 12345 }] }
-  const put = (sent: Record<string, unknown>) => session.setItem('movenow.sent', JSON.stringify({ path: 'montage', id, status: 'requested', needsQuote: false, snapshot: fixed, shownCents: 12345, date: '2026-11-20', route: 'Neubaugasse 12', ...sent }))
+  const shownPrice = (c: number) => ({ kind: 'price', totalCents: c, lowCents: c, highCents: c })
+  const put = (sent: Record<string, unknown>) => session.setItem('movenow.sent', JSON.stringify({ path: 'montage', id, status: 'requested', needsQuote: false, snapshot: fixed, shown: shownPrice(12345), date: '2026-11-20', route: 'Neubaugasse 12', ...sent }))
 
   it('Festpreis vom Server: Richtpreis mit Cent, Termin, kein Hinweis bei gleichem Preis', () => {
     put({})
@@ -181,7 +182,7 @@ describe('Bestätigung nach dem Senden', () => {
   })
 
   it('anderer Serverpreis: Hinweis mit dem vorher angezeigten Betrag', () => {
-    put({ shownCents: 10000 })
+    put({ shown: shownPrice(10000) })
     const t = text(render(h(Gesendet, { path: 'montage' }), '/montage/gesendet'))
     expect(t).toContain('Der Preis wurde aktualisiert.')
     expect(t).toContain(`Vorher angezeigt: 100,00${nbsp}€`)

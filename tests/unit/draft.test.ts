@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const invoke = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
 
-const { attemptKey, draftKeys, purgeHandover, readSent, readShown, rememberShown, shownKey, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
+const { attemptKey, draftKeys, purgeHandover, readSent, readShownFull, rememberShown, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
 const { QuoteError, buildBody, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
 
 const store = () => {
@@ -73,9 +73,25 @@ describe('Übergabe über die Anmeldung', () => {
   })
 
   it('übernimmt nur bekannte Schlüssel, nie fremde', () => {
-    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, items: { 'movenow.flow.montage': '{}', 'evil.key': 'x' } }))
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items: { 'movenow.flow.montage': '{}', 'evil.key': 'x' } }))
     restoreDraft()
     expect([...session.map.keys()]).toEqual(['movenow.flow.montage'])
+  })
+
+  it('übernimmt nur die Schlüssel des Service, der die Übergabe angelegt hat (F5)', () => {
+    const items = { 'movenow.flow.montage': '{}', 'movenow.termin.montage': '{}', 'movenow.flow.move': '{"from":"fremd"}', 'movenow.contact.umzug': '{"name":"x"}' }
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items }))
+    restoreDraft()
+    expect([...session.map.keys()].sort()).toEqual(['movenow.flow.montage', 'movenow.termin.montage'])
+  })
+
+  it('Übergabe ohne oder mit unbekanntem Service wird verworfen', () => {
+    for (const path of [undefined, 'miete', 42]) {
+      local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path, items: { 'movenow.flow.montage': '{}' } }))
+      restoreDraft()
+      expect(session.map.size).toBe(0)
+      expect(local.getItem('movenow.handover')).toBeNull()
+    }
   })
 
   it('kaputter Eintrag stört nicht', () => {
@@ -88,21 +104,24 @@ describe('Übergabe über die Anmeldung', () => {
 
   it('Nach dem Senden verschwindet der Entwurf, die Bestätigung bleibt', () => {
     montageDraft()
-    finishDraft('montage', { path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot: null, shownCents: 77040, date: '2026-11-15', route: 'Neubaugasse 12' })
+    const shown = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
+    finishDraft('montage', { path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot: null, shown, date: '2026-11-15', route: 'Neubaugasse 12' })
     for (const key of draftKeys('montage')) expect(session.getItem(key)).toBeNull()
     expect(readSent()?.id).toBe('x')
-    expect(readSent()?.shownCents).toBe(77040)
+    expect(readSent()?.shown).toEqual(shown)
   })
 
-  it('Der zuletzt angezeigte Vorschaupreis wird gemerkt, ein Angebot löscht ihn, Ungültiges ist null', () => {
-    rememberShown('montage', 77040, { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
-    expect(readShown('montage')).toBe(77040)
-    rememberShown('montage', null, { kind: 'offer', reasons: ['special_case'] })
-    expect(readShown('montage')).toBeNull()
-    session.setItem(shownKey('montage'), 'abc')
-    expect(readShown('montage')).toBeNull()
-    session.setItem(shownKey('montage'), '-5')
-    expect(readShown('montage')).toBeNull()
+  it('Die zuletzt angezeigte Vorschau wird vollständig gemerkt (auch Spanne und Angebot), Ungültiges ist null', () => {
+    rememberShown('montage', { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
+    expect(readShownFull('montage')).toEqual({ kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
+    rememberShown('entruempelung', { kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
+    expect(readShownFull('entruempelung')).toEqual({ kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
+    rememberShown('montage', { kind: 'offer', reasons: ['special_case'] })
+    expect(readShownFull('montage')).toEqual({ kind: 'offer', reasons: ['special_case'] })
+    session.setItem('movenow.shownfull.montage', 'abc')
+    expect(readShownFull('montage')).toBeNull()
+    session.setItem('movenow.shownfull.montage', JSON.stringify({ kind: 'price', totalCents: -5, lowCents: 0, highCents: 0 }))
+    expect(readShownFull('montage')).toBeNull()
   })
 })
 
@@ -138,16 +157,19 @@ describe('clientRef', () => {
 
 describe('buildBody', () => {
   const tariffs = { 'min_hours.transport': 2, 'min_hours.move': 3 }
-  const confirmed = { priceVersion: 1, termsHash: 'a'.repeat(64), shown: { kind: 'price' as const, totalCents: 1, lowCents: 1, highCents: 1 }, contact: { name: 'Anna', phone: '+43 660 1234567', email: 'a@b.at', stairsDoor: '' } }
+  const confirmed = { priceVersion: 1, termsHash: 'a'.repeat(64), contact: { name: 'Anna', phone: '+43 660 1234567', email: 'a@b.at', stairsDoor: '' } }
+  const stored = { kind: 'price' as const, totalCents: 1, lowCents: 1, highCents: 1 }
 
   it('Montage: nur Kundenwahl, kein Preis, kein Status, keine Strecke', () => {
     montageDraft()
+    rememberShown('montage', stored)
     const body = buildBody('montage', tariffs, confirmed)!
     expect(Object.keys(body).sort()).toEqual(['contact', 'from', 'inputs', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
-    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }, priceVersion: 1, shown: confirmed.shown, contact: { name: 'Anna' }, timeWindow: 'morning' })
+    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }, priceVersion: 1, shown: stored, contact: { name: 'Anna' }, timeWindow: 'morning' })
   })
 
   it('ohne Termin oder Ort kein Aufruf', () => {
+    rememberShown('montage', stored)
     expect(buildBody('montage', tariffs, confirmed)).toBeNull()
     montageDraft()
     session.setItem('movenow.termin.montage', JSON.stringify({ date: null, window: 'morning', place: 'x y z', point: null, consent: false }))
@@ -156,14 +178,16 @@ describe('buildBody', () => {
 
   it('ohne gemerkten Preis kein Aufruf: shown wird nie beim Senden neu gerechnet', () => {
     montageDraft()
-    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toBeNull()
+    expect(buildBody('montage', tariffs, confirmed)).toBeNull()
   })
 
-  it('ohne bestätigten Preis geht der gemerkte Preis als shown mit', () => {
+  it('shown kommt nur aus dem gemerkten Preis; ein Feld `shown` im Bestätigten wird nicht übernommen (A-N1)', () => {
     montageDraft()
-    const stored = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
-    rememberShown('montage', 77040, stored)
-    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toMatchObject({ shown: stored })
+    const memo = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
+    rememberShown('montage', memo)
+    const sneaky = { ...confirmed, shown: { kind: 'price', totalCents: 1, lowCents: 1, highCents: 1 } } as typeof confirmed
+    expect(buildBody('montage', tariffs, sneaky)).toMatchObject({ shown: memo })
+    expect(buildBody('montage', tariffs, confirmed)).toMatchObject({ shown: memo })
   })
 
   it('Anzeige: Festpreis mit Cent, Spanne in ganzen Euro, Angebot als „Preis nach Prüfung“', () => {
@@ -191,6 +215,7 @@ describe('buildBody', () => {
       }),
     )
     session.setItem('movenow.termin.umzug', JSON.stringify({ date: '2026-11-15', window: 'flexible', place: '', point: null, consent: false }))
+    rememberShown('umzug', stored)
     const body = buildBody('umzug', tariffs, confirmed)!
     expect(body).toMatchObject({ service: 'move', from: { label: 'A 1, 1010 Wien', point: { lat: 48.2, lon: 16.37 } }, to: { label: 'B 2, 1020 Wien' }, returnTrip: true, volume: 12 })
     expect((body['to'] as object) && 'point' in (body['to'] as object)).toBe(false)
@@ -229,7 +254,7 @@ describe('Antwort von quote', () => {
   })
 
   it('Übergabe über 20 000 Zeichen wird verworfen', () => {
-    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, items: { 'movenow.flow.montage': 'x'.repeat(20_001) } }))
+    local.setItem('movenow.handover', JSON.stringify({ until: Date.now() + 60_000, path: 'montage', items: { 'movenow.flow.montage': 'x'.repeat(20_001) } }))
     restoreDraft()
     expect(session.map.size).toBe(0)
     expect(local.getItem('movenow.handover')).toBeNull()

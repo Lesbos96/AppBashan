@@ -75,11 +75,11 @@ describe('Termin', () => {
 
 describe('Gemerkte Vorschau (shown)', () => {
   it('Festpreis, Spanne und Angebot werden vollständig gelesen', () => {
-    rememberShown('transport', 68961, { kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 })
+    rememberShown('transport', { kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 })
     expect(readShownFull('transport')).toEqual({ kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 })
-    rememberShown('entruempelung', null, { kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
+    rememberShown('entruempelung', { kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
     expect(readShownFull('entruempelung')).toEqual({ kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
-    rememberShown('umzug', null, { kind: 'offer', reasons: ['packing'] })
+    rememberShown('umzug', { kind: 'offer', reasons: ['packing'] })
     expect(readShownFull('umzug')).toEqual({ kind: 'offer', reasons: ['packing'] })
   })
 
@@ -102,20 +102,27 @@ describe('Gemerkte Vorschau (shown)', () => {
 })
 
 describe('Bestätigung (sent)', () => {
-  const sent = { path: 'montage', id: '7b0e7a58-6f0c-4c52-9d0c-5a1f3b9d2e11', status: 'requested', needsQuote: false, snapshot: null, shownCents: 12000, date: '2026-11-20', route: 'Neubaugasse' }
+  const shown = { kind: 'price', totalCents: 12000, lowCents: 12000, highCents: 12000 }
+  const sent = { path: 'montage', id: '7b0e7a58-6f0c-4c52-9d0c-5a1f3b9d2e11', status: 'requested', needsQuote: false, snapshot: null, shown, date: '2026-11-20', route: 'Neubaugasse' }
 
   it('liest die Bestätigung und verwirft unbekannte Pfade oder fehlende id', () => {
     session.setItem('movenow.sent', JSON.stringify(sent))
-    expect(readSent()).toMatchObject({ path: 'montage', shownCents: 12000 })
+    expect(readSent()).toMatchObject({ path: 'montage', shown })
     session.setItem('movenow.sent', JSON.stringify({ ...sent, path: 'miete' }))
     expect(readSent()).toBeNull()
     session.setItem('movenow.sent', JSON.stringify({ ...sent, id: 7 }))
     expect(readSent()).toBeNull()
   })
 
-  it.each([0, -5, 1.5, '12000', null])('ungültiger Vorschaupreis %j wird null (kein Hinweis)', (shownCents) => {
-    session.setItem('movenow.sent', JSON.stringify({ ...sent, shownCents }))
-    expect(readSent()?.shownCents).toBeNull()
+  it.each([
+    ['negativ', { ...shown, lowCents: -5 }],
+    ['Bruchteil', { ...shown, totalCents: 1.5 }],
+    ['Text', { ...shown, highCents: '12000' }],
+    ['Angebot ohne Grund', { kind: 'offer', reasons: [] }],
+    ['null', null],
+  ])('ungültige Vorschau (%s) wird null (kein Hinweis)', (_, value) => {
+    session.setItem('movenow.sent', JSON.stringify({ ...sent, shown: value }))
+    expect(readSent()?.shown).toBeNull()
   })
 
   it('clearSent löscht die Bestätigung; gesperrter Speicher wirft nicht', () => {
