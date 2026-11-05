@@ -32,10 +32,16 @@ export default defineConfig({
     env: { NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter' },
   },
   projects: [
+    // Handy (Breite der Referenz) und Desktop; Screenshot und Trace nur bei Fehlschlag (oben), Ablage unter tmp/playwright/
     {
       name: 'e2e',
       testMatch: 'e2e/**/*.spec.ts',
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 },
+    },
+    {
+      name: 'e2e-desktop',
+      testMatch: 'e2e/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 },
     },
     ...sizes.flatMap(([width, height]) =>
       schemes.map((colorScheme) => ({
