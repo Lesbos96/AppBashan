@@ -104,7 +104,7 @@ export function Field({ label, className = '', hint, hintId, ...props }: { label
       {hintId && (
         <div aria-live="polite">
           {hint && (
-            <p id={hintId} className="m-0 px-4 pb-2.5 text-footnote text-destructive">
+            <p id={hintId} className="m-0 px-4 pb-2.5 text-footnote text-pretty text-destructive">
               {hint}
             </p>
           )}
