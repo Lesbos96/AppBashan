@@ -5,8 +5,9 @@ import { MAX_PHOTOS, usePhotos } from '../../lib/photos'
 
 const pick = 'press flex h-[58px] flex-col items-center justify-center gap-0.5 rounded-[14px] bg-tint text-[11px] font-semibold text-accent disabled:opacity-40'
 
-/** Fotos aus Kamera oder Galerie; EXIF wird beim Übernehmen entfernt (siehe `preparePhoto`). */
-export function Fotos({ storeKey }: { storeKey: string }) {
+/** Fotos aus Kamera oder Galerie; EXIF wird beim Übernehmen entfernt (siehe `preparePhoto`). `level`: Ebene der Überschrift „Fotos" (im Konfigurator unter einem h2, in der Entrümpelung direkt unter dem h1). */
+export function Fotos({ storeKey, level = 3 }: { storeKey: string; level?: 2 | 3 }) {
+  const Heading = level === 2 ? 'h2' : 'h3'
   const { photos, add, remove } = usePhotos(storeKey)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,7 +27,7 @@ export function Fotos({ storeKey }: { storeKey: string }) {
     <>
       <Card className="flex flex-col gap-3 px-4 py-3.5">
         <div className="flex items-baseline justify-between">
-          <h3 className="m-0 text-headline">Fotos</h3>
+          <Heading className="m-0 text-headline">Fotos</Heading>
           {/* Neue oder entfernte Fotos werden angesagt (WCAG 4.1.3) */}
           <span aria-live="polite" aria-atomic="true" className="text-[13px] text-text-secondary tabular-nums">
             {photos.length} von {MAX_PHOTOS}

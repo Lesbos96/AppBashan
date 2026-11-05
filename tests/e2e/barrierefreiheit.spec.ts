@@ -299,3 +299,20 @@ test.describe('Foto-Zähler wird angesagt (4.1.3)', () => {
     await expect(counter).toHaveText('2 von 8 Fotos')
   })
 })
+
+test.describe('Überschriften ohne Sprung (1.3.1)', () => {
+  /** Ebenen der sichtbaren Überschriften in Dokumentreihenfolge. */
+  const levels = (page: Page) => page.locator('main h1, main h2, main h3, main h4').evaluateAll((hs) => hs.filter((h) => (h as HTMLElement).offsetParent !== null).map((h) => Number(h.tagName[1])))
+
+  test('Entrümpelung, letzter Schritt: „Fotos" ist h2 unter dem h1; im Konfigurator h3 unter h2', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/entruempelung')
+    await page.getByRole('radio', { name: /^Wohnung/ }).click()
+    for (let i = 0; i < 5; i++) await weiter(page).click()
+    await expect(page.getByRole('heading', { name: 'Fotos', level: 2 })).toBeVisible()
+    const steps = await levels(page)
+    expect(steps.every((l, i) => i === 0 || l <= steps[i - 1]! + 1)).toBe(true)
+    await page.goto('/transport')
+    await expect(page.getByRole('heading', { name: 'Fotos', level: 3 })).toBeVisible()
+  })
+})

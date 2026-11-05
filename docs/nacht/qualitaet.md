@@ -114,6 +114,7 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 | A8 | Preisleiste: unsichtbare Statusmeldung (`role="status"`, `sr-only`) mit dem Endbetrag („Richtpreis 95,74 €", ohne Hochzählen) bzw. „Strecke fehlt, noch kein Richtpreis" / „Persönliches Angebot, kein Richtpreis". Beim ersten Anzeigen sagt sie nichts an (Live-Regionen melden nur Änderungen) | Rot: nicht separat gelaufen (die Meldung existierte vorher nicht). Grün: `tmp/proof/a8-check.log` EXIT=0, `tmp/proof/a8-e2e.log` EXIT=0 (40 bestanden: barrierefreiheit, konfigurator, dienste, komponenten) |
 | A9 | Fotoknöpfe: Namen „Kamera, Foto aufnehmen" und „Galerie, Fotos auswählen" (vorher „Foto aufnehmen" bzw. „Fotos aus der Galerie wählen"); der bestehende Test mit „Foto aufnehmen" trifft weiter (Teiltreffer) | `tmp/proof/a9-check.log` EXIT=0, `tmp/proof/a9-e2e.log` EXIT=0 (45 bestanden: barrierefreiheit, konfigurator, fotos) |
 | A14 | Foto-Zähler als höfliche Live-Region (`aria-live="polite"`, `aria-atomic`), für Bildschirmleser „2 von 8 Fotos" (unsichtbarer Zusatz „Fotos"); Fehlermeldungen hatten schon `role="alert"` | `tmp/proof/a14-check.log` EXIT=0, `tmp/proof/a14-e2e.log` EXIT=0 (55 bestanden: barrierefreiheit, konfigurator, fotos, dienste) |
+| A15 | `Fotos` bekommt `level` (Standard 3 wie bisher im Konfigurator unter dem h2 des Schritts); die Entrümpelung übergibt 2, weil die Karte dort direkt unter dem h1 steht | `tmp/proof/a15-check.log` EXIT=0, `tmp/proof/a15-e2e.log` EXIT=0 (44 bestanden: barrierefreiheit, dienste, fotos) |
 
 ## Phase 3 · Tempo
 
