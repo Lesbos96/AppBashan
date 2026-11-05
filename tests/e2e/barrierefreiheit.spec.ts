@@ -274,3 +274,15 @@ test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', () => {
     expect(button).toContain((await status.innerText()).replace('Richtpreis ', ''))
   })
 })
+
+test.describe('Sichtbarer Text im Namen (2.5.3)', () => {
+  test('Fotoknöpfe: Name beginnt mit „Kamera" bzw. „Galerie"', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/transport')
+    for (const visible of ['Kamera', 'Galerie']) {
+      const button = page.getByRole('button', { name: new RegExp(`^${visible}\\b`) })
+      await expect(button).toHaveCount(1)
+      await expect(button).toContainText(visible)
+    }
+  })
+})

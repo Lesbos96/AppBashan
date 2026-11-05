@@ -32,11 +32,12 @@ export function Fotos({ storeKey }: { storeKey: string }) {
           </span>
         </div>
         <div className="grid grid-cols-5 gap-[7px]">
-          <button type="button" aria-label="Foto aufnehmen" disabled={full || busy} onClick={() => camera.current?.click()} className={pick}>
+          {/* Der Name beginnt mit dem sichtbaren Text, damit Sprachsteuerung „Kamera" bzw. „Galerie" trifft (WCAG 2.5.3) */}
+          <button type="button" aria-label="Kamera, Foto aufnehmen" disabled={full || busy} onClick={() => camera.current?.click()} className={pick}>
             <Icon name="camera" width={22} height={22} />
             Kamera
           </button>
-          <button type="button" aria-label="Fotos aus der Galerie wählen" disabled={full || busy} onClick={() => gallery.current?.click()} className={pick}>
+          <button type="button" aria-label="Galerie, Fotos auswählen" disabled={full || busy} onClick={() => gallery.current?.click()} className={pick}>
             <Icon name="gallery" width={22} height={22} />
             Galerie
           </button>
