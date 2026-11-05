@@ -157,16 +157,19 @@ describe('clientRef', () => {
 
 describe('buildBody', () => {
   const tariffs = { 'min_hours.transport': 2, 'min_hours.move': 3 }
-  const confirmed = { priceVersion: 1, termsHash: 'a'.repeat(64), shown: { kind: 'price' as const, totalCents: 1, lowCents: 1, highCents: 1 }, contact: { name: 'Anna', phone: '+43 660 1234567', email: 'a@b.at', stairsDoor: '' } }
+  const confirmed = { priceVersion: 1, termsHash: 'a'.repeat(64), contact: { name: 'Anna', phone: '+43 660 1234567', email: 'a@b.at', stairsDoor: '' } }
+  const stored = { kind: 'price' as const, totalCents: 1, lowCents: 1, highCents: 1 }
 
   it('Montage: nur Kundenwahl, kein Preis, kein Status, keine Strecke', () => {
     montageDraft()
+    rememberShown('montage', stored)
     const body = buildBody('montage', tariffs, confirmed)!
     expect(Object.keys(body).sort()).toEqual(['contact', 'from', 'inputs', 'preferredDate', 'priceVersion', 'service', 'shown', 'termsHash', 'timeWindow'])
-    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }, priceVersion: 1, shown: confirmed.shown, contact: { name: 'Anna' }, timeWindow: 'morning' })
+    expect(body).toMatchObject({ service: 'assembly', inputs: { kind: 'standard', lm: 2 }, from: { label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.35 } }, priceVersion: 1, shown: stored, contact: { name: 'Anna' }, timeWindow: 'morning' })
   })
 
   it('ohne Termin oder Ort kein Aufruf', () => {
+    rememberShown('montage', stored)
     expect(buildBody('montage', tariffs, confirmed)).toBeNull()
     montageDraft()
     session.setItem('movenow.termin.montage', JSON.stringify({ date: null, window: 'morning', place: 'x y z', point: null, consent: false }))
@@ -175,14 +178,16 @@ describe('buildBody', () => {
 
   it('ohne gemerkten Preis kein Aufruf: shown wird nie beim Senden neu gerechnet', () => {
     montageDraft()
-    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toBeNull()
+    expect(buildBody('montage', tariffs, confirmed)).toBeNull()
   })
 
-  it('ohne bestätigten Preis geht der gemerkte Preis als shown mit', () => {
+  it('shown kommt nur aus dem gemerkten Preis; ein Feld `shown` im Bestätigten wird nicht übernommen (A-N1)', () => {
     montageDraft()
-    const stored = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
-    rememberShown('montage', stored)
-    expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toMatchObject({ shown: stored })
+    const memo = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
+    rememberShown('montage', memo)
+    const sneaky = { ...confirmed, shown: { kind: 'price', totalCents: 1, lowCents: 1, highCents: 1 } } as typeof confirmed
+    expect(buildBody('montage', tariffs, sneaky)).toMatchObject({ shown: memo })
+    expect(buildBody('montage', tariffs, confirmed)).toMatchObject({ shown: memo })
   })
 
   it('Anzeige: Festpreis mit Cent, Spanne in ganzen Euro, Angebot als „Preis nach Prüfung“', () => {
@@ -210,6 +215,7 @@ describe('buildBody', () => {
       }),
     )
     session.setItem('movenow.termin.umzug', JSON.stringify({ date: '2026-11-15', window: 'flexible', place: '', point: null, consent: false }))
+    rememberShown('umzug', stored)
     const body = buildBody('umzug', tariffs, confirmed)!
     expect(body).toMatchObject({ service: 'move', from: { label: 'A 1, 1010 Wien', point: { lat: 48.2, lon: 16.37 } }, to: { label: 'B 2, 1020 Wien' }, returnTrip: true, volume: 12 })
     expect((body['to'] as object) && 'point' in (body['to'] as object)).toBe(false)
