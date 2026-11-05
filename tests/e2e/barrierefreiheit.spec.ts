@@ -184,3 +184,38 @@ test.describe('Seitentitel (2.4.2)', () => {
     await expect(page).toHaveTitle('Entrümpelung · MoveNow')
   })
 })
+
+test.describe('Fokus nach Seitenwechsel (2.4.3, 4.1.3)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+  })
+
+  test('Fokus liegt nach dem Wechsel auf der Überschrift der neuen Seite, nicht auf body', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: /Umzug/ }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Umzug', level: 1 })).toBeFocused()
+    // Tab geht von der Überschrift aus weiter in die Seite
+    await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => document.activeElement?.closest('main') !== null)).toBe(true)
+    // Zurück: wieder die Überschrift der Startseite (die vorige Startseite kann noch im Übergang stehen, daher das fokussierte Element)
+    await page.getByRole('link', { name: 'Start' }).press('Enter')
+    await expect(page.locator('h1:focus')).toHaveText('Start')
+  })
+
+  test('Seite mit nachgeladener Überschrift (Entrümpelung, Richtwert): Fokus kommt nach dem Laden', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: /Entrümpelung/ }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Was soll geräumt werden?', level: 1 })).toBeFocused()
+    await page.getByRole('radio', { name: /^Wohnung/ }).click()
+    for (let i = 0; i < 5; i++) await weiter(page).click()
+    // Die Ergebnisseite lädt erst die Tarife und zeigt dann ihre Überschrift; sie setzt den Fokus nicht selbst
+    await page.getByRole('button', { name: 'Richtwert anzeigen' }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Dein erster Preisrahmen.', level: 1 })).toBeFocused()
+  })
+
+  test('Erster Aufruf: Fokus bleibt beim Browser (keine Überschrift fokussiert)', async ({ page }) => {
+    await page.goto('/profil')
+    await expect(page.getByRole('heading', { name: 'Profil', level: 1 })).toBeVisible()
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+  })
+})

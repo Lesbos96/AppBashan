@@ -241,6 +241,10 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  /* Überschrift, die nach einem Seitenwechsel den Fokus bekommt (Shell): kein Bedienelement, daher ohne Rahmen */
+  [data-page] h1[tabindex='-1']:focus {
+    outline: none;
+  }
 }
 
 @utility press {

@@ -43,6 +43,31 @@ export function Shell() {
     document.title = documentTitle(handle.title)
   }, [handle.title])
 
+  // Nach einem Seitenwechsel (nicht beim ersten Laden) Fokus auf die Überschrift der neuen Seite: Bildschirmleser sagen die Seite an,
+  // Tab geht von dort weiter. Sonst fiele der Fokus mit der ausblendenden Seite auf body. Lädt die Seite ihre Überschrift erst nach,
+  // wartet ein Observer (höchstens 5 s); hat der Nutzer oder die Seite den Fokus schon in die neue Seite gesetzt, bleibt er dort.
+  useEffect(() => {
+    if (nav.seq === 0) return
+    const container = document.querySelector<HTMLElement>(`[data-page="${nav.seq}"]`)
+    if (!container) return
+    const focusHeading = () => {
+      const h1 = container.querySelector<HTMLElement>('h1')
+      if (!h1) return false
+      if (container.contains(document.activeElement)) return true
+      if (!h1.hasAttribute('tabindex')) h1.tabIndex = -1
+      h1.focus({ preventScroll: true })
+      return true
+    }
+    if (focusHeading()) return
+    const observer = new MutationObserver(() => focusHeading() && observer.disconnect())
+    observer.observe(container, { childList: true, subtree: true })
+    const timer = setTimeout(() => observer.disconnect(), 5000)
+    return () => {
+      observer.disconnect()
+      clearTimeout(timer)
+    }
+  }, [nav.seq])
+
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-(--content-max-width) overflow-x-clip">
       {!online && (
@@ -53,6 +78,7 @@ export function Shell() {
       <AnimatePresence mode="popLayout" initial={false} custom={nav.direction}>
         <motion.div
           key={`${handle.key}:${nav.seq}`}
+          data-page={nav.seq}
           custom={nav.direction}
           variants={pages}
           initial="enter"
