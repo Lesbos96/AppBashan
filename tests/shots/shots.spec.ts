@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from '../e2e/backend'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price, range, toSummary, type Reply } from '../e2e/anfrage-helpers'
@@ -345,9 +346,11 @@ const anfrageRoutes: (typeof routes)[number][] = [
     path: '/',
     steps: async (page) => {
       await page.goto('/')
-      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
+      await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'umzug', id: 'x', status: 'requested', needsQuote: false, snapshot, date: '2026-11-13', route: 'Neubaugasse 12 → Praterstraße 30' })), price(68961))
       await page.goto('/umzug/gesendet')
       await expect(page.getByText('689,61 €')).toBeVisible()
+      // Festpreis ist „Angefragt“, nicht „Wartet auf Angebot“ (wie quote: needsQuote nur bei Angebot oder Spanne)
+      await expect(page.getByText('Angefragt', { exact: true })).toBeVisible()
     },
   },
   { name: 'zusammenfassung-angemeldet', path: '/', steps: async (page) => { await summary(undefined, false)(page); await expect(page.getByText('Anfrage als')).toBeVisible() } },
@@ -371,7 +374,7 @@ const anfrageRoutes: (typeof routes)[number][] = [
   { name: 'zusammenfassung-offline', path: '/', expectedError: errored, steps: async (page) => { await summary({ abort: true })(page); await expect(page.getByRole('alert')).toBeVisible() } },
   { name: 'zusammenfassung-wird-gesendet', path: '/', steps: async (page) => { await summary({ json: answer(price(77040)), delay: 20_000 })(page); await expect(page.getByRole('button', { name: 'Wird gesendet …' })).toBeVisible() } },
   { name: 'gesendet-preis', path: '/', steps: async (page) => { await summary()(page); await expect(page.getByRole('heading', { name: 'Anfrage gesendet.' })).toBeVisible() } },
-  { name: 'gesendet-preis-aktualisiert', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot, shownCents: 77040, date: '2026-11-13', route: 'Neubaugasse 12' })), price(79000)); await page.goto('/montage/gesendet'); await expect(page.getByText('Der Preis wurde aktualisiert.')).toBeVisible() } },
+  { name: 'gesendet-preis-aktualisiert', path: '/', steps: async (page) => { await page.goto('/'); await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot, shown: { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 }, date: '2026-11-13', route: 'Neubaugasse 12' })), price(79000)); await page.goto('/montage/gesendet'); await expect(page.getByText('Der Preis wurde aktualisiert.')).toBeVisible() } },
   { name: 'fotos-zusammenfassung', path: '/', steps: async (page) => { await mockPhotos(page); await prepareSummary(page); await expect(page.getByText('Nach dem Senden lassen sich die Fotos nicht mehr ändern.')).toBeVisible() } },
   { name: 'fotos-wird-hochgeladen', path: '/', steps: async (page) => { await mockPhotos(page, { upload: () => ({ delay: 30_000 }) }); await sendWithPhotos(page, { sent: false }); await expect(page.getByText('0 von 2 hochgeladen')).toBeVisible() } },
   { name: 'fotos-offline', path: '/', expectedError: errored, steps: async (page) => { await mockPhotos(page, { upload: () => ({ abort: true }) }); await sendWithPhotos(page, { sent: false }); await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible() } },

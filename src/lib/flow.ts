@@ -62,10 +62,17 @@ export const initialFlow: TransportFlow = {
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const within = (v: unknown, [min, max]: readonly [number, number]) => finite(v) && v >= min && v <= max
+/** Felder, die das Preismodul mit `int()` liest: nur ganze Zahlen, sonst bliebe die Vorschau im Fehlerzustand. */
+const whole = (v: unknown, range: readonly [number, number]) => within(v, range) && Number.isInteger(v)
+// Grenzen beim Laden aus dem sessionStorage (OPEN_ISSUES S6 „Kleinigkeiten“): Label und Beschreibung wie `quote` (parse.ts), die Routenlinie mit
+// großzügiger Obergrenze (Wien–Graz hat rund 2.100 Punkte), damit ein manipulierter Speicher die Karte nicht mit Millionen Punkten lahmlegt.
+const MAX_LABEL = 200
+const MAX_DESCRIPTION = 500
+const MAX_GEOMETRY_POINTS = 50_000
 const place = (v: unknown) => {
   if (v === null) return true
   const p = v as { label?: unknown; point?: { lat?: unknown; lon?: unknown } | null } | undefined
-  return typeof p?.label === 'string' && (p.point === null || (!!p.point && finite(p.point.lat) && finite(p.point.lon)))
+  return typeof p?.label === 'string' && p.label.length <= MAX_LABEL && (p.point === null || (!!p.point && finite(p.point.lat) && finite(p.point.lon)))
 }
 /** Jedes Feld hat den Typ des Anfangswerts; `skip` sind Felder mit eigener Prüfung. */
 const typed = (r: Record<string, unknown>, initial: object, skip: string[] = []) => Object.entries(initial).every(([k, v]) => skip.includes(k) || typeof r[k] === typeof v)
@@ -80,14 +87,15 @@ function validTransport(raw: unknown): raw is TransportFlow {
     ['van', 'truck', 'large'].includes(r.vehicleType as string) &&
     place(r.from) &&
     place(r.to) &&
-    (r.route === null || (isRouteResult(r.route) && r.routeConsent === true && !!r.from && !!r.to)) &&
+    (r.route === null || (isRouteResult(r.route) && r.route.geometry.length <= MAX_GEOMETRY_POINTS && r.routeConsent === true && !!r.from && !!r.to)) &&
+    (r.description as string).length <= MAX_DESCRIPTION &&
     (r.hours === null || within(r.hours, LIMITS.hours)) &&
-    within(r.crew, LIMITS.crew) &&
-    within(r.vehicles, LIMITS.vehicles) &&
-    within(r.fromFloor, LIMITS.floor) &&
-    within(r.toFloor, LIMITS.floor) &&
-    within(r.boxes, LIMITS.boxes) &&
-    within(r.parking, LIMITS.parking) &&
+    whole(r.crew, LIMITS.crew) &&
+    whole(r.vehicles, LIMITS.vehicles) &&
+    whole(r.fromFloor, LIMITS.floor) &&
+    whole(r.toFloor, LIMITS.floor) &&
+    whole(r.boxes, LIMITS.boxes) &&
+    whole(r.parking, LIMITS.parking) &&
     within(r.assemblyLm, LIMITS.assemblyLm) &&
     within(r.volume, [1, 100])
   )
@@ -149,7 +157,7 @@ function validClearance(raw: unknown): raw is ClearanceFlow {
     ['', 'flat', 'house', 'attic', 'cellar', 'office', 'heavy'].includes(r.object as string) &&
     ['light', 'normal', 'full'].includes(r.fill as string) &&
     within(r.area, LIMITS.clearanceArea) &&
-    within(r.floor, LIMITS.floor) &&
+    whole(r.floor, LIMITS.floor) &&
     (r.description as string).length <= 800 &&
     validDraft(r.draft)
   )

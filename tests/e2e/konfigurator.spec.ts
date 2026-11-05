@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
 import { addPhotos, clickTimes, fillUmzugBeispiel, mockRoute, setAddress } from './konfigurator-helpers'
 

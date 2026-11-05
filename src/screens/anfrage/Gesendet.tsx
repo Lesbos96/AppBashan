@@ -3,8 +3,7 @@ import { ActionBar } from '../../components/Bars'
 import { StatusChip } from '../../components/Controls'
 import { Icon } from '../../components/Icon'
 import { type Path, readSent, services } from '../../lib/draft'
-import { formatEuro, formatEuroRounded } from '../../lib/money'
-import { parseSnapshot, priceLabel } from '../../lib/quote'
+import { parseSnapshot, priceLabel, shownLabel } from '../../lib/quote'
 import { shortDayText } from './format'
 
 const icons = { transport: 'sofa', umzug: 'boxes', entruempelung: 'basket', montage: 'drill' }
@@ -17,8 +16,8 @@ export function Gesendet({ path }: { path: Path }) {
   const price = snapshot?.kind === 'price' ? priceLabel(snapshot) : null
   const awaiting = sent.status === 'awaiting_offer'
   // Der Serverpreis ist maßgeblich. Weicht er vom zuletzt angezeigten Richtpreis ab (auch zu „Angebot nötig“), steht das sichtbar da, nie still.
-  const estimate = path === 'entruempelung' && !(snapshot?.kind === 'price' && snapshot.totalCents !== null)
-  const shown = sent.shownCents === null ? null : estimate ? `ca. ${formatEuroRounded(sent.shownCents)}` : formatEuro(sent.shownCents)
+  // Verglichen wird die Anzeige (Festpreis mit Cent, Spanne „X bis Y“) aus dem vollständigen `shown` (OPEN_ISSUES Plan-M-1).
+  const shown = sent.shown?.kind === 'price' ? shownLabel(sent.shown) : null
   const updated = shown !== null && snapshot !== null && (price === null || price.main !== shown)
 
   return (

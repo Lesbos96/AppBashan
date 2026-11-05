@@ -218,7 +218,7 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
       </div>
 
       <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from?.point && !!flow.to?.point && !calc.loading} onContinue={() => {
-        rememberShown(copy[service].path, price ? price.totalCents : null, shownOf(preview))
+        rememberShown(copy[service].path, shownOf(preview))
         void navigate(`/${copy[service].path}/termin`)
       }} />
       <PreisSheet note="Richtwert auf Basis deiner Angaben. Dauer, Team und Fahrzeug bestätigt der Partner." open={sheet === 'price'} onClose={() => setSheet(null)} preview={preview} describe={(key) => (price ? lineText(key as Parameters<typeof lineText>[0], price, flow, tariffs) : { label: key })} />

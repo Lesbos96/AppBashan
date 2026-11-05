@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './backend'
 import { EMAIL, HASH, mockAuth, signInWithCode } from './auth-helpers'
 import { anonymousPrices, answer, cors, mockQuote, price, range, toSummary, UUID } from './anfrage-helpers'
 import { collectErrors } from './console'
@@ -78,6 +79,17 @@ test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Tok
   void _shown
   void _version
   expect(JSON.stringify(rest)).not.toMatch(/cents|fee|price|total|status/i)
+})
+
+test('Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)', async ({ page }) => {
+  const calls = await mockQuote(page, () => ({ json: answer(price(77040)), delay: 1500 }))
+  await signedInSummary(page)
+  await send(page).click()
+  const other = page.getByRole('button', { name: 'Anderes Konto' })
+  await expect(other).toBeDisabled()
+  await other.click({ force: true })
+  await expect(page).toHaveURL(/\/montage\/gesendet$/)
+  expect(calls).toHaveLength(1)
 })
 
 test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur', async ({ page }) => {

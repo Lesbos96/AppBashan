@@ -1,0 +1,199 @@
+
+Running 72 tests using 2 workers
+
+  ✓   1 [e2e] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (14.7s)
+  ✓   2 [e2e] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (14.9s)
+  ✓   3 [e2e] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (15.5s)
+  ✓   4 [e2e] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (15.9s)
+  ✓   5 [e2e] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (12.5s)
+  ✓   6 [e2e] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (14.1s)
+  ✓   7 [e2e] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (10.3s)
+  ✓   8 [e2e] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (11.1s)
+  ✓   9 [e2e] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (11.2s)
+  ✓  10 [e2e] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (11.1s)
+  ✓  11 [e2e] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (9.4s)
+  ✓  13 [e2e] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.1s)
+  ✓  12 [e2e] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (9.4s)
+  ✓  15 [e2e] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.2s)
+  ✓  14 [e2e] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (9.0s)
+  ✓  17 [e2e] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.2s)
+  ✓  18 [e2e] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.1s)
+  ✓  16 [e2e] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (10.0s)
+  ✓  20 [e2e] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.6s)
+  ✓  21 [e2e] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.2s)
+  ✘  22 [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (1.5s)
+  ✓  19 [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (6.9s)
+  ✓  23 [e2e] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (1.9s)
+  ✓  24 [e2e] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (2.4s)
+  ✓  25 [e2e] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (14.6s)
+  ✓  26 [e2e-desktop] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (15.2s)
+  ✓  27 [e2e] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (15.3s)
+  ✓  28 [e2e-desktop] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (14.3s)
+  ✓  29 [e2e] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (12.5s)
+  ✓  30 [e2e-desktop] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (13.0s)
+  ✓  31 [e2e] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (10.3s)
+  ✓  32 [e2e-desktop] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (11.4s)
+  ✓  33 [e2e] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (10.2s)
+  ✓  34 [e2e-desktop] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (9.9s)
+  ✓  35 [e2e] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (8.2s)
+  ✓  36 [e2e-desktop] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (7.3s)
+  ✓  37 [e2e] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.3s)
+  ✓  38 [e2e-desktop] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.5s)
+  ✓  39 [e2e] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (9.9s)
+  ✓  40 [e2e-desktop] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (9.4s)
+  ✓  41 [e2e] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.6s)
+  ✓  42 [e2e-desktop] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.6s)
+  ✓  43 [e2e] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.6s)
+  ✓  44 [e2e-desktop] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.4s)
+  ✘  45 [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (1.9s)
+  ✓  47 [e2e] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (2.4s)
+  ✓  46 [e2e-desktop] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (8.0s)
+  ✓  49 [e2e-desktop] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (2.2s)
+  ✓  48 [e2e-desktop] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (15.6s)
+  ✓  50 [e2e-desktop] › tests/e2e/wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis (14.6s)
+  ✓  51 [e2e-desktop] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (15.4s)
+  ✓  52 [e2e-desktop] › tests/e2e/wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts (15.3s)
+  ✓  53 [e2e-desktop] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (12.8s)
+  ✓  54 [e2e-desktop] › tests/e2e/wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef (12.2s)
+  ✓  55 [e2e-desktop] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (10.4s)
+  ✓  56 [e2e-desktop] › tests/e2e/wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis (10.3s)
+  ✓  57 [e2e-desktop] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (11.2s)
+  ✓  58 [e2e-desktop] › tests/e2e/wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt (11.1s)
+  ✓  59 [e2e-desktop] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (8.6s)
+  ✓  61 [e2e-desktop] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.1s)
+  ✓  60 [e2e-desktop] › tests/e2e/wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert (8.6s)
+  ✓  63 [e2e-desktop] › tests/e2e/wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt (1.5s)
+  ✓  62 [e2e-desktop] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (8.7s)
+  ✓  65 [e2e-desktop] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.4s)
+  ✓  66 [e2e-desktop] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.4s)
+  ✓  64 [e2e-desktop] › tests/e2e/wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung (9.0s)
+  ✓  68 [e2e-desktop] › tests/e2e/wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend (1.6s)
+  ✘  67 [e2e-desktop] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (1.9s)
+  ✓  69 [e2e-desktop] › tests/e2e/wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil (2.2s)
+  ✓  70 [e2e-desktop] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (2.6s)
+  ✓  71 [e2e-desktop] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung (7.1s)
+  ✓  72 [e2e-desktop] › tests/e2e/wege.spec.ts:337:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge (2.0s)
+
+
+  1) [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+
+    Error: locator.check: Element is outside of the viewport
+    Call log:
+      - waiting for getByRole('radio', { name: 'Küche' })
+        - locator resolved to <input type="radio" name="_r_5_" class="sr-only" value="kitchen"/>
+      - attempting click action
+        - scrolling into view if needed
+        - done scrolling
+
+
+       at e2e/dienste-helpers.ts:25
+
+      23 | /** Küche aus dem README: 3,2 lfm unten, 2,4 oben, 0,6 hoch = 770,40 €. Startwert unten ist 2 lfm. Erwartet die Seite /montage. */
+      24 | export async function fillKuecheBeispiel(page: Page) {
+    > 25 |   await page.getByRole('radio', { name: 'Küche' }).check({ force: true })
+         |                                                    ^
+      26 |   await clickTimes(page, 'Unterschränke erhöhen', 12)
+      27 |   await clickTimes(page, 'Oberschränke erhöhen', 24)
+      28 |   await clickTimes(page, 'Hochschränke erhöhen', 6)
+        at fillKuecheBeispiel (/home/user/movenow/tests/e2e/dienste-helpers.ts:25:52)
+        at /home/user/movenow/tests/e2e/wege.spec.ts:319:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+
+    Error: locator.check: Element is outside of the viewport
+    Call log:
+      - waiting for getByRole('radio', { name: 'Küche' })
+        - locator resolved to <input type="radio" name="_r_5_" class="sr-only" value="kitchen"/>
+      - attempting click action
+        - scrolling into view if needed
+        - done scrolling
+
+
+       at e2e/dienste-helpers.ts:25
+
+      23 | /** Küche aus dem README: 3,2 lfm unten, 2,4 oben, 0,6 hoch = 770,40 €. Startwert unten ist 2 lfm. Erwartet die Seite /montage. */
+      24 | export async function fillKuecheBeispiel(page: Page) {
+    > 25 |   await page.getByRole('radio', { name: 'Küche' }).check({ force: true })
+         |                                                    ^
+      26 |   await clickTimes(page, 'Unterschränke erhöhen', 12)
+      27 |   await clickTimes(page, 'Oberschränke erhöhen', 24)
+      28 |   await clickTimes(page, 'Hochschränke erhöhen', 6)
+        at fillKuecheBeispiel (/home/user/movenow/tests/e2e/dienste-helpers.ts:25:52)
+        at /home/user/movenow/tests/e2e/wege.spec.ts:319:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-repeat2/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-repeat2/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-repeat2/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-repeat2/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [e2e-desktop] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+
+    Error: locator.check: Clicking the checkbox did not change its state
+    Call log:
+      - waiting for getByRole('radio', { name: 'Küche' })
+        - locator resolved to <input type="radio" name="_r_5_" class="sr-only" value="kitchen"/>
+      - attempting click action
+        - scrolling into view if needed
+        - done scrolling
+        - forcing action
+        - performing click action
+        - click action done
+        - waiting for scheduled navigations to finish
+        - navigations have finished
+
+
+       at e2e/dienste-helpers.ts:25
+
+      23 | /** Küche aus dem README: 3,2 lfm unten, 2,4 oben, 0,6 hoch = 770,40 €. Startwert unten ist 2 lfm. Erwartet die Seite /montage. */
+      24 | export async function fillKuecheBeispiel(page: Page) {
+    > 25 |   await page.getByRole('radio', { name: 'Küche' }).check({ force: true })
+         |                                                    ^
+      26 |   await clickTimes(page, 'Unterschränke erhöhen', 12)
+      27 |   await clickTimes(page, 'Oberschränke erhöhen', 24)
+      28 |   await clickTimes(page, 'Hochschränke erhöhen', 6)
+        at fillKuecheBeispiel (/home/user/movenow/tests/e2e/dienste-helpers.ts:25:52)
+        at /home/user/movenow/tests/e2e/wege.spec.ts:319:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-desktop-repeat1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-desktop-repeat1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-desktop-repeat1/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-wege-F-Fehlerfälle-que-86d99-“-zeigt-die-Zusammenfassung-e2e-desktop-repeat1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+    [e2e] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+    [e2e-desktop] › tests/e2e/wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung 
+  69 passed (4.9m)
+EXIT=1

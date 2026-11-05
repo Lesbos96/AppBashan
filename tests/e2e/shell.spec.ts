@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
 
 // Hauptflow nur mit der Tastatur: Onboarding, Tabs, Info-Sheet.
@@ -34,8 +34,14 @@ test.describe('App-Shell', () => {
   test('Tab-Bar erreicht alle Tabs mit der Tastatur', async ({ page }) => {
     await page.goto('/')
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
+    // Phase 1: genau drei Tabs, kein „Miete“ (OPEN_ISSUES S9a-2/S9a-3 „Tab Miete“)
+    await expect(nav.getByRole('link')).toHaveText([/Start/, /Aufträge/, /Profil/])
+    // gleich verteilt über die ganze Leiste (gemessen, nicht aus dem Bild): gleiche Breiten, der letzte Tab endet am rechten Rand
+    const bar = (await nav.boundingBox())!
+    const boxes = await Promise.all((await nav.getByRole('link').all()).map(async (l) => (await l.boundingBox())!))
+    for (const b of boxes) expect(Math.abs(b.width - boxes[0]!.width)).toBeLessThan(1)
+    expect(bar.x + bar.width - (boxes[2]!.x + boxes[2]!.width)).toBeLessThan(16)
     for (const [label, heading] of [
-      ['Miete', 'Dieser Bereich ist noch nicht verfügbar'],
       ['Profil', 'Noch kein Konto'],
       ['Start', 'Was hast du vor?'],
     ]) {
@@ -55,7 +61,7 @@ test.describe('App-Shell', () => {
     await expect(page).toHaveURL(/\/$/)
   })
 
-  test('Info-Sheet zeigt Tarife aus der Datenbank, ohne Gebühr', async ({ page }) => {
+  test('Info-Sheet zeigt die Tarife (Mock aus seed.sql), ohne Gebühr', async ({ page }) => {
     await page.goto('/profil')
     await page.getByRole('link', { name: 'Wie rechnet MoveNow?' }).press('Enter')
     const sheet = page.getByRole('dialog', { name: 'Wie rechnet MoveNow?' })

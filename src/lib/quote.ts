@@ -11,8 +11,11 @@ type Place = { label: string; point?: { lat: number; lon: number } }
 export type Contact = { name: string; phone: string; email: string; stairsDoor: string }
 /** Bedingungen aus `booking_terms()`; `termsHash` bestätigt der Kunde mit dem Absenden. */
 export type Terms = { termsHash: string } & Record<string, unknown>
-/** Was der Kunde bestätigt hat bzw. gerade bestätigt: Preisversion, Bedingungen, gezeigter Preis (sonst die Vorschau aus dem Konfigurator), Kontakt. */
-export type Confirmed = { priceVersion: number; termsHash: string; shown?: Shown; contact: Contact }
+/**
+ * Was der Kunde bestätigt hat bzw. gerade bestätigt: Preisversion, Bedingungen, Kontakt. Der gezeigte Preis kommt nur aus dem
+ * sessionStorage (`readShownFull`), derselben Quelle wie die Preiskarte; ein zweiter Weg daran vorbei entfällt (OPEN_ISSUES A-N1).
+ */
+export type Confirmed = { priceVersion: number; termsHash: string; contact: Contact }
 
 const place = (p: { label: string; point: { lat: number; lon: number } | null } | null): Place | undefined => (p ? { label: p.label, ...(p.point && { point: p.point }) } : undefined)
 const text = (s: string) => s.trim() || undefined
@@ -24,7 +27,7 @@ const text = (s: string) => s.trim() || undefined
  */
 export function buildBody(path: Path, tariffs: Tariffs, confirmed: Confirmed): Body | null {
   const termin = readTermin(path)
-  const shown = confirmed.shown ?? readShownFull(path)
+  const shown = readShownFull(path)
   if (!termin.date || !shown) return null
   const { stairsDoor, ...contact } = confirmed.contact
   const base = { service: services[path].service, preferredDate: termin.date, priceVersion: confirmed.priceVersion, termsHash: confirmed.termsHash, shown, contact: { ...contact, ...(stairsDoor.trim() && { stairsDoor: stairsDoor.trim() }) } }

@@ -14,10 +14,11 @@ export type Photo = { id: string; blob: Blob; url: string }
  * die Ausrichtung ist vorher angewandt. Das Original bleibt nie erhalten.
  */
 export async function preparePhoto(file: File): Promise<Blob> {
-  if (!file.type.startsWith('image/')) throw new PhotoError('Das ist kein Bild.')
+  // HEIC zuerst: ohne Systemzuordnung (z. B. Chrome unter Windows) ist `type` leer, dann hilft nur der Dateiname
   if (/^image\/hei[cf]/.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
     throw new PhotoError('HEIC-Fotos gehen hier nicht. Stelle die Kamera auf „Maximale Kompatibilität“ oder wähle ein JPEG, PNG oder WebP.')
   }
+  if (!file.type.startsWith('image/')) throw new PhotoError('Das ist kein Bild.')
   if (!ACCEPTED.includes(file.type)) throw new PhotoError('Dieses Format geht nicht. Nimm ein JPEG, PNG oder WebP.')
   if (file.size > MAX_BYTES) throw new PhotoError('Das Foto ist größer als 10 MB.')
   let bitmap: ImageBitmap
