@@ -18,7 +18,7 @@ CLAUDE.md, `docs/PROGRESS.md`, `docs/OPEN_ISSUES.md`, `docs/S9b_PLAN.md` (Kopf, 
 
 ### S-4 Branch und PR
 - Branch `nacht-e2e` von `main` (16306687). Die Umgebung nennt als Arbeitsbranch `claude/charming-einstein-xalm6m`; der Auftrag verlangt ausdrücklich `nacht-e2e`. Entscheidung: `nacht-e2e`.
-- Draft-PR gegen `main`, nach jedem Teilziel aktualisiert, nie gemergt.
+- Draft-PR gegen `main`, nach jedem Teilziel aktualisiert, in der Nacht nicht gemergt. Am 2026-11-05 nach der Freigabe durch Beks („übernimm das alles") gemergt.
 
 ### S-5 Abweichungen von CLAUDE.md, bewusst
 - **Modell:** Die Session läuft mit Opus 5.5; CLAUDE.md sieht Sonnet 5.5 vor und sagt „sag es mir und warte". Warten geht heute Nacht nicht. Entscheidung: weiterarbeiten, hier vermerkt.
@@ -156,4 +156,5 @@ Keiner gefunden, deshalb kein Fix-Commit. Die Beobachtung zur Anmeldung (sehr sc
 - **F-1:** Die Cloud-Session hat einen Supabase-Connector (MCP) mit Schreibrechten (Migrationen, SQL, Deploy). Soll er für Nachtläufe abgeschaltet werden? Ich habe ihn nicht benutzt.
 - **F-3:** Soll `/anmelden` das Entfernen von `?next=` robust gegen sehr schnelles Zurück machen (z. B. `rememberNext` und `replaceState` vor dem ersten Render statt im Effekt)? Betrifft die sicherheitsgeprüfte Anmeldung, deshalb nicht in der Nacht geändert.
 - **F-4:** `npm run test:e2e` läuft jetzt auf Handy und Desktop (etwa doppelte Laufzeit). Lieber Desktop nur im Abschluss einer Session (`test:e2e:mobile` in den Runden)? Und soll das Handy-Projekt echte Touch-Emulation (`isMobile`, `hasTouch`) bekommen?
+  - **Antwort Beks (2026-11-05, „übernimm das alles"):** alles übernommen, `test:e2e` bleibt mit beiden Größen. Touch-Emulation ist damit nicht entschieden und bleibt offen.
 - **F-2:** Partner-Wege (Angebot annehmen, Auftrag sehen) gibt es in der App noch nicht (Partner-Portal ab S9b, nur nach Freigabe). Die Suite testet nur den Platzhalter „Für Vermieter". Sollen E2E-Tests für das Partner-Portal gleich mit S9b-Teilschritten entstehen?

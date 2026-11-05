@@ -3,6 +3,11 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-11-05 · Übernahme Nachtauftrag E2E
+- Beks hat am 2026-11-05 „übernimm das alles" geantwortet: bekhanidrisov74-hub/movenow#8 komplett nach `main` gemergt (Merge-Commit, die Hashes in `docs/nacht/e2e.md` bleiben gültig), einschließlich `test:e2e` mit Handy und Desktop (F-4 damit für den Standardbefehl entschieden; Touch-Emulation bleibt offen). Keine neuen Tests nach dem letzten grünen Lauf (17940eb), nur diese Doku.
+- bekhanidrisov74-hub/movenow#5 (Design) bleibt Draft: dort gab es nichts zu übernehmen. Offen: F-1, F-2, F-3 (`docs/nacht/e2e.md`) und F-2 in `docs/nacht/design.md` (Umfang „Apple-Niveau" gegenüber der Referenz).
+- Weiter bei: S9b-1 oder Neustart des Design-Auftrags auf Basis von `main` (Beks startet die Session).
+
 ## 2026-11-05 · Nachtauftrag E2E (Branch `nacht-e2e`, Draft-PR bekhanidrisov74-hub/movenow#8) · kein ROADMAP-Abschnitt
 - Mock-Schicht `tests/e2e/backend.ts` (Fixture auf Kontext-Ebene, Tarife und Bedingungen aus `supabase/seed.sql`, Sperre für jeden ungemockten Aufruf); vorher kamen Tarife und Bedingungen aus dem Dev-Projekt (`anonymousPrices` mit `continue()`). Neu `wege.spec.ts` (12 Tests: Umzug und Möbeltransport bis zum Senden, Miete und Vermieter als Platzhalter, Ladefehler), `backend.spec.ts` (Selbsttest, Rot-Beweis mit `E2E_REDPROOF=1`), Projekt `e2e-desktop`. Kein `src/`, kein `supabase/` geändert.
 - Abschluss: check EXIT=0 (368), `test:e2e` EXIT=0 (je Projekt 116, 1 übersprungen), shots EXIT=0 (134), `scan:proof` EXIT=0. Nachweise `docs/proof/nacht-e2e/`; `nacht-e2e-r2-rotbeweis.log` nennt `backend.spec.ts:30`, der Test steht heute zwei Zeilen tiefer (Kommentar nachträglich eingefügt), Log unverändert.
