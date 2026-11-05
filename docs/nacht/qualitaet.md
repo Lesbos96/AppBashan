@@ -131,7 +131,32 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 - **Bilder:** keine Rasterbilder im Ladepfad (Illustrationen und Icons sind SVG-Komponenten). Die PNG-Icons (`icon-512.png` 160 kB, `icon-maskable-512.png` 140 kB, `apple-touch-icon.png` 20 kB, `icon-192.png` 27 kB) lädt nur die Installation (Manifest, iOS-Startbildschirm), nicht der Seitenaufruf.
 - **Neuberechnungen:** messen statt vermuten (siehe unten).
 
-(Ergebnisse folgen)
+### Umgesetzt
+| Nr. | Änderung | Prüfung |
+|---|---|---|
+| P1 | `src/lib/motion.ts`: `import { motion } from …tokens.json` statt Default-Import (Commit `618dd9e`). Im Analyse-Build taucht `motion.ts` danach nicht mehr unter den Modulen auf (vorher 5,4 kB roh) | `tmp/proof/a1c-p1-check.log` EXIT=0, `tmp/proof/a1c-p1-e2e.log` EXIT=0 (50 bestanden) |
+| P2 | `src/app/router.tsx`: Flows über `lazy` (Konfigurator für Transport und Umzug, Entrümpelung samt Richtwert, Montage, Termin, Zusammenfassung, Bestätigung, Anmelden, Aufträge). Start, Profil mit Info-Sheet, Onboarding, Rechtstexte, Fehler- und Platzhalterseiten bleiben im Einstieg. `handle` bleibt statisch, Shell-Übergänge, Seitentitel und Fokus nach dem Wechsel arbeiten unverändert (der Router wartet vor dem Wechsel auf den Chunk). 1,5 s nach `load` holt die App alle Flow-Chunks im Hintergrund | `tmp/proof/p2l-check.log` EXIT=0, `tmp/proof/p2l-build.log` EXIT=0 (keine Warnung „larger than 500 kB" mehr), `tmp/proof/p2l-e2e.log` EXIT=0 (**voller Lauf, 128 bestanden**) |
+
+### Messung nachher (gleiches Werkzeug und gleiche Drosselung wie vorher; `tmp/nacht/messung-nachher-p2.md`, zweiter Lauf `messung-nachher-p2-lauf2.md` mit denselben Ergebnissen ± 30 ms)
+
+| | vorher | nachher |
+|---|---:|---:|
+| JS-Dateien | 1 (896,4 kB roh) | 23: Einstieg `index` 343,3 kB + gemeinsamer Chunk 474,8 kB (zusammen 818 kB roh), 21 Flow-Chunks 0,3–17 kB |
+| JS beim Aufruf von `/` übertragen (gzip) | 255,5 kB | 228,8 kB (−10 %) |
+
+| Route (Direktaufruf) | FCP vorher → nachher | LCP vorher → nachher | h1 sichtbar vorher → nachher |
+|---|---:|---:|---:|
+| `/` | 2028 → 1808 ms | 2028 → 1808 ms | 2029 → 1805 ms |
+| `/profil` | 1984 → 1768 ms | 1984 → 1768 ms | 2011 → 1797 ms |
+| `/anmelden` | 1960 → 1864 ms | 1960 → 1864 ms | 1995 → 1897 ms |
+| `/montage` | 1952 → 1948 ms | 2380 → 2372 ms | 2001 → 1962 ms |
+| `/umzug` | 1948 → 2048 ms | 2428 → 2516 ms | 1990 → 2519 ms |
+
+- **Nachteil, bewusst in Kauf genommen:** Wer `/umzug` (bzw. `/transport`) direkt aufruft (Neuladen mitten im Flow, geteilter Link), wartet ~0,5 s länger, weil der Flow-Chunk erst nach dem Auswerten des Einstiegs angefordert wird (Zeitachse: Einstieg fertig bei 1515 ms, Flow-Chunks 1633–1994 ms). Der übliche Weg Start → Flow ist nicht langsamer: Wechsel per Tipp nach dem Vorladen, Median aus 5 (`tmp/nacht/nav.mjs`): Umzug 228 → 246 ms, Montage 219 → 237 ms, Entrümpelung 1009 → 995 ms (wartet auf die Tarife), also im Rauschen. Frage F8.
+- **Offline:** Ist die Verbindung in den ersten 1,5 s nach dem Start weg und der Nutzer öffnet einen Flow, zeigt die Fehlerseite „Neu laden" statt des Flows. Danach sind alle Chunks geladen. In der Capacitor-App liegen alle Dateien lokal, dort entfällt das.
+- **Leerlauf (unnötige Neuberechnungen):** 5 s ohne Eingabe nach dem Laden, CPU ×4 (`tmp/nacht/leerlauf-vorher.md`): Start 19 ms Hauptthread (0,4 %), Onboarding 51 ms (1 %, 15 Layouts durch die Illustrations-Animation), Profil und Umzug 2–3 ms; mit „Bewegung reduzieren" überall ≈ 0. Kein Handlungsbedarf, keine Änderung.
+- **Nicht umgesetzt (Empfehlung):** Illustrationen liegen per `import.meta.glob(…, { eager: true })` alle im Einstieg (62,7 kB roh, 19 % des Einstiegs-Chunks). Nur in Flows gebraucht: 25,2 kB roh / ≈ 8 kB gzip; davon werden `van-cargo`, `van-city`, `van-landlord` derzeit nirgends verwendet (Miete, Phase 2). Herauslösen ginge nur über eine Registrierung je Flow-Chunk; eine vergessene Registrierung wäre ein Laufzeitfehler. Gewinn ≈ 3,5 % beim Start, deshalb nicht in dieser Nacht. Ebenso die Supabase-Teile Realtime (`realtime-js`, `phoenix`, 55 kB roh) und `iceberg-js`, die die App nicht nutzt, `createClient` aber immer einbindet; das ginge nur mit Einzelclients statt `supabase-js`.
+- **Bilder:** keine Rasterbilder im Ladepfad. Die App-Icons (PNG) lädt nur die Installation; ohne Optimierungswerkzeug (keine neuen Abhängigkeiten) lassen sie sich nicht verlustfrei verkleinern. Keine Änderung.
 
 ## Abgebrochen
 
