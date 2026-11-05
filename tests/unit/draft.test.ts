@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const invoke = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
 
-const { attemptKey, draftKeys, purgeHandover, readSent, readShown, rememberShown, shownKey, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
+const { attemptKey, draftKeys, purgeHandover, readSent, readShownFull, rememberShown, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
 const { QuoteError, buildBody, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
 
 const store = () => {
@@ -88,21 +88,24 @@ describe('Übergabe über die Anmeldung', () => {
 
   it('Nach dem Senden verschwindet der Entwurf, die Bestätigung bleibt', () => {
     montageDraft()
-    finishDraft('montage', { path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot: null, shownCents: 77040, date: '2026-11-15', route: 'Neubaugasse 12' })
+    const shown = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
+    finishDraft('montage', { path: 'montage', id: 'x', status: 'requested', needsQuote: false, snapshot: null, shown, date: '2026-11-15', route: 'Neubaugasse 12' })
     for (const key of draftKeys('montage')) expect(session.getItem(key)).toBeNull()
     expect(readSent()?.id).toBe('x')
-    expect(readSent()?.shownCents).toBe(77040)
+    expect(readSent()?.shown).toEqual(shown)
   })
 
-  it('Der zuletzt angezeigte Vorschaupreis wird gemerkt, ein Angebot löscht ihn, Ungültiges ist null', () => {
-    rememberShown('montage', 77040, { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
-    expect(readShown('montage')).toBe(77040)
-    rememberShown('montage', null, { kind: 'offer', reasons: ['special_case'] })
-    expect(readShown('montage')).toBeNull()
-    session.setItem(shownKey('montage'), 'abc')
-    expect(readShown('montage')).toBeNull()
-    session.setItem(shownKey('montage'), '-5')
-    expect(readShown('montage')).toBeNull()
+  it('Die zuletzt angezeigte Vorschau wird vollständig gemerkt (auch Spanne und Angebot), Ungültiges ist null', () => {
+    rememberShown('montage', { kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
+    expect(readShownFull('montage')).toEqual({ kind: 'price', totalCents: 77040, lowCents: 77040, highCents: 77040 })
+    rememberShown('entruempelung', { kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
+    expect(readShownFull('entruempelung')).toEqual({ kind: 'price', totalCents: null, lowCents: 95000, highCents: 155000 })
+    rememberShown('montage', { kind: 'offer', reasons: ['special_case'] })
+    expect(readShownFull('montage')).toEqual({ kind: 'offer', reasons: ['special_case'] })
+    session.setItem('movenow.shownfull.montage', 'abc')
+    expect(readShownFull('montage')).toBeNull()
+    session.setItem('movenow.shownfull.montage', JSON.stringify({ kind: 'price', totalCents: -5, lowCents: 0, highCents: 0 }))
+    expect(readShownFull('montage')).toBeNull()
   })
 })
 
@@ -162,7 +165,7 @@ describe('buildBody', () => {
   it('ohne bestätigten Preis geht der gemerkte Preis als shown mit', () => {
     montageDraft()
     const stored = { kind: 'price' as const, totalCents: 77040, lowCents: 77040, highCents: 77040 }
-    rememberShown('montage', 77040, stored)
+    rememberShown('montage', stored)
     expect(buildBody('montage', tariffs, { ...confirmed, shown: undefined })).toMatchObject({ shown: stored })
   })
 

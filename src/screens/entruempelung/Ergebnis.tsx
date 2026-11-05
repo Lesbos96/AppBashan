@@ -151,7 +151,7 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
       <ActionBar>
         <Button
           onClick={() => {
-            rememberShown('entruempelung', price ? price.totalCents : null, shownOf(preview))
+            rememberShown('entruempelung', shownOf(preview))
             void navigate('/entruempelung/termin')
           }}
         >{price ? 'Ort & Wunschtermin' : 'Besichtigung anfragen'}</Button>

@@ -7,7 +7,7 @@ import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
-import { type Path, finishDraft, readContact, writeContact, readShown, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
+import { type Path, finishDraft, readContact, writeContact, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
 import { readClearanceFlow, readFlow, readMontageFlow } from '../../lib/flow'
 import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/photos'
 import { loadPrices, useLoad } from '../../lib/prices'
@@ -260,7 +260,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
       forgetStaging()
       sentRef.current = true // geleert wird beim Verlassen: ein Re-Render vor der Navigation fände den Entwurf schon gelöscht
       if (!mounted.current) clearPhotos(photoKey) // Seite während des Sendens verlassen: der Cleanup lief schon
-      finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shownCents: readShown(path), date: termin.date, route: summary!.route })
+      finishDraft(path, { path, id: quote.id, status: quote.status, needsQuote: quote.needsQuote, snapshot: quote.snapshot, shown: readShownFull(path), date: termin.date, route: summary!.route })
       void navigate(`/${path}/gesendet`, { replace: true })
     } catch (e) {
       const error = e instanceof QuoteError ? e : new QuoteError('unavailable')
@@ -291,7 +291,7 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
       const { snapshot, priceVersion } = conflict
       if (!snapshot || priceVersion === undefined) return
       const shown = shownFromSnapshot(snapshot)
-      rememberShown(path, snapshot.kind === 'price' ? snapshot.totalCents : null, shown)
+      rememberShown(path, shown)
       // Ohne gespeicherten Wert würde die Karte einen anderen Preis zeigen, als gesendet wird: dann nichts senden
       if (JSON.stringify(readShownFull(path)) !== JSON.stringify(shown)) {
         setStatus({ kind: 'error', error: new QuoteError('unavailable') })
