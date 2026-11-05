@@ -27,6 +27,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - **E12 · Ansprache.** Kunden- und Partner-Datenschutz sowie Kunden-AGB per Du wie die App (`CLAUDE.md`, UI). Partner-AGB und Partnervertrag in dritter Person („der Partner“), wie bei Verträgen zwischen Unternehmern üblich. [Frage an Beks: F7]
 - **E13 · Stand der Rechtsentwürfe.** Sie beschreiben den Stand zum Livegang von Phase 1, also auch den noch nicht gebauten Partnerteil (S9b ff.). Solche Stellen tragen **[noch nicht gebaut]** bzw. verweisen auf `docs/S9_KONZEPT.md`. Keine Firmendaten, keine Nummern, keine erfundenen Fristen: Werte stammen aus dem Konzept (Abschnitt 5.10, 10) und sind dort selbst als vorläufig bis zur Rechtsprüfung markiert.
 
+- **E14 · Kontextgrenze überschritten, weitergearbeitet.** Nach Phase 3 meldete `get_session` rund 220.000 Tokens Kontext. `CLAUDE.md` verlangt ab etwa 150.000: committen, Stand festhalten, Stopp, Fortsetzung in einer neuen Session. Der Nachtauftrag verlangt aber ausdrücklich Prüfdurchgänge, „bis ein weiterer Durchgang nichts Sinnvolles mehr findet“, und niemand kann über Nacht eine neue Session starten (Sessions startet nur Beks). Entscheidung: Alles ist committet und gepusht; die Prüfdurchgänge laufen über `reviewer`-Agenten mit eigenem Kontext, der Hauptkontext nimmt nur deren Befunde und kleine Edits auf. Frage F8.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -35,9 +37,11 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **F4 · Miete per direktem UPDATE:** `rental_bookings` lässt den Kunden `requested → withdrawn` per UPDATE setzen (Grant M01:383, Policy und Trigger M17:114-132), ohne `status_events`. Bewusst so belassen bis Phase 2, oder beim Umbau der Miete auf eine Funktion wie `withdraw()` umstellen?
 - **F5 · `docs/ARCHITECTURE.md`:** Sollen die drei veralteten Stellen (`quote` schreibt `fee_splits`, „Anfrage bearbeiten“, Tab-Bar mit „Miete“) in der nächsten Session korrigiert werden, oder ersetzt `docs/ARCHITEKTUR.md` künftig den Ist-Teil?
-- **F6 · Produktivprojekt einrichten:** M17 und M19 enthalten DELETE-Anweisungen für Dev-Daten. Auf einem leeren Projekt wirkungslos. Bitte beim Aufsetzen des Produktivprojekts alle Migrationen vor den ersten echten Daten einspielen.
+- ~~F6 · Produktivprojekt einrichten (DELETE in M17 und M19)~~: zurückgezogen, steht schon als Punkt 5a in `docs/GOLIVE.md:23`; beim Lesen von `GOLIVE.md` in Phase 3 gefunden.
 
 - **F7 · Ansprache der Rechtstexte:** Kunden-Texte per Du, Partner-Verträge in dritter Person. Passt das, oder sollen die Partner-Texte ebenfalls per Du sein?
+
+- **F8 · Kontextgrenze bei Nachtaufträgen:** Soll die 150.000-Token-Regel aus `CLAUDE.md` auch für unbeaufsichtigte Aufträge gelten (dann endet die Nacht dort), oder ist Weiterarbeiten über Subagents wie hier (E14) in Ordnung?
 
 ## Stand
 

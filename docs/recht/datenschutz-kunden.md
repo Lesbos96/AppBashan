@@ -69,6 +69,10 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. f DSGVO (Sicherheit und Funktionsfähigkeit des Dienstes).
 - **Speicherdauer:** Ein stündlicher Job löscht Zähler, deren Zeitfenster mehr als 2 Tage zurückliegt.
 
+### 9a. Schutz vor automatisierten Zugriffen [noch nicht gebaut]
+
+Vor dem Livegang sollen Adresssuche, Routenberechnung und Anmeldung zusätzlich durch eine Prüfung gegen automatisierte Zugriffe geschützt werden (Turnstile, `docs/GOLIVE.md:35`, `:45`). Dabei verarbeitet der Anbieter technische Daten deines Browsers. [OFFEN: Anbieter (Cloudflare), verarbeitete Daten, Rechtsgrundlage (Art. 6 Abs. 1 lit. f DSGVO?), Drittlandbezug, Auftragsverarbeitungsvertrag; prüfen, ob dafür eine Einwilligung nach § 165 Abs. 3 TKG 2021 nötig ist.]
+
 ## 10. Speicherung in deinem Browser
 
 Die App legt in deinem Browser nur ab, was für den Ablauf nötig ist:
@@ -87,6 +91,7 @@ Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlic
 | HeiGIT (openrouteservice) | Adresssuche, Routen | Deutschland | [OFFEN: Auftragsverarbeitungsvertrag] |
 | Mail-Anbieter | Anmelde- und Auftragsmails | [OFFEN] | [OFFEN] |
 | Hosting der App | Auslieferung der App | [OFFEN] | [OFFEN: Anbieter, Protokolle] |
+| Bot-Schutz (Turnstile) | Prüfung gegen automatisierte Zugriffe | [OFFEN] | [noch nicht gebaut], Abschnitt 9a |
 | Partnerbetriebe | Durchführung deines Auftrags | Österreich | [noch nicht gebaut], Abschnitt 8 |
 
 ## 12. Deine Rechte
