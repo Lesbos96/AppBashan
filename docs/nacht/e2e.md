@@ -73,7 +73,30 @@ Aufbau, jeweils mit Begründung:
 
 Ergebnis Runde 1 (bestehende Suite, nur Mock-Schicht): `npm run check` EXIT=0 (368 Unit-Tests), `npm run test:e2e` EXIT=0, 102 von 102, **keine Meldung „Aufruf ohne Mock"**: die bestehenden Tests brauchten außer Tarifen und Bedingungen nichts vom echten Backend (`tmp/proof/nacht-e2e-r1-*.log`).
 
+### Phase 3 · Wege-Tests (`tests/e2e/wege.spec.ts`)
+
+| Weg | Erfolg | Abbruch | Fehler |
+|---|---|---|---|
+| W2 Umzug | Start-Karte → Konfigurator (689,61 €) → Termin (Strecke 4,8 km) → Zusammenfassung → Anmeldung → Senden → Gesendet → Aufträge; Aufruf enthält Strecke, Tag, Kontakt und genau den angezeigten Preis, keine Gebührenfelder | Zurück aus Zusammenfassung und Termin: Tag ausgewählt, Preis 689,61 €, Kontakt bleibt, kein Aufruf | 503 (Adressprüfung): Meldung, Entwurf bleibt, „Erneut senden" mit derselben `clientRef` |
+| W3 Möbeltransport | Klavier → persönliches Angebot → Gesendet ohne Preis („Wartet auf Angebot"), `shown` = Angebot; zweiter Test mit Festpreis | Zurück aus der Anmeldung: Angaben bleiben, kein Code angefordert, nichts gesendet | Tarife nicht ladbar: Fehlerzustand im Konfigurator, „Erneut versuchen" |
+| W4 Entrümpelung | Besichtigung (Gewerbe) bis Gesendet, `shown` = Angebot | (bestehend: „Ändern" im Ergebnis) | (bestehend: Foto- und `quote`-Fehler) |
+| W6 Miete | Start-Karte → Platzhalter, kein Aufruf an `rest`/`functions`/`auth`/`storage`, kein Senden-Knopf | – | – |
+| W7 Vermieter | Profil → Platzhalter → Zurück zum Profil | – | – |
+| W9 Aufträge | (bestehend) | – | Liste nicht ladbar: Fehlerzustand, „Erneut versuchen" zeigt die Liste |
+
+Gefundene Testfallen (keine App-Fehler), mit Begründung gelöst:
+- **Zwei `main` im Seitenübergang:** Während die alte Seite ausblendet (AnimatePresence in `Shell.tsx`), stehen Texte doppelt im DOM; strikte Locators scheitern. Lösung wie in `anfrage.spec.ts`: nach jeder Navigation auf genau ein `main` warten (`oneMain`).
+- **React StrictMode lädt im Dev-Modus doppelt** und verwirft das erste Ergebnis: Ein Mock „nur der erste Aufruf scheitert" erreicht die Oberfläche nie. Lösung: der Fehler bleibt, bis der Test ihn abschaltet, dann „Erneut versuchen".
+- **Beobachtung (nicht behoben, kein realistischer Nutzerfall):** `/anmelden?next=…` ersetzt beim Öffnen die eigene URL (`navigate('/anmelden', { replace: true })`, `Anmelden.tsx:52-56`). Springt man zurück, bevor dieser Effekt gelaufen ist (in Playwright wenige Millisekunden nach dem Öffnen), ersetzt er den Eintrag, auf den zurückgesprungen wurde: Die URL bleibt `/anmelden`. Ein Mensch tippt nicht so schnell; der Test wartet deshalb auf `/anmelden$`. Nicht geändert, weil die Anmeldung sicherheitsgeprüft ist (Login-CSRF, Berater S8b-1) und der Fall praktisch nicht vorkommt (Frage F-3).
+
+### Phase 4 · Handy und Desktop
+- Neues Projekt `e2e-desktop` (1280×800, Faktor 1) neben `e2e` (390×844, Faktor 2, wie die Referenz). `npm run test:e2e` läuft jetzt mit beiden; `npm run test:e2e:mobile` nur Handy (für schnelle Runden). Entscheidung: beide im Standardbefehl, weil der Auftrag beide Größen verlangt; die Laufzeit verdoppelt sich etwa (Frage F-4).
+- Screenshot und Trace bei Fehlschlag waren schon gesetzt (`screenshot: 'only-on-failure'`, `trace: 'retain-on-failure'`, Ablage `tmp/playwright/`) und gelten für beide Projekte. Belegt durch den Rot-Beweis der Mock-Schicht (Runde 2): Screenshot `tmp/playwright/e2e-backend-Rot-Beweis-…/test-failed-1.png`.
+- Das Handy-Projekt bleibt „Desktop Chrome mit 390 px" (ohne `isMobile`/`hasTouch`), wie bisher und wie die Shots. Echte Touch-Emulation hätte das Verhalten von 102 bestehenden Tests verändert; nicht ohne Freigabe (Frage F-4).
+
 ## Fragen an Beks
 
 - **F-1:** Die Cloud-Session hat einen Supabase-Connector (MCP) mit Schreibrechten (Migrationen, SQL, Deploy). Soll er für Nachtläufe abgeschaltet werden? Ich habe ihn nicht benutzt.
+- **F-3:** Soll `/anmelden` das Entfernen von `?next=` robust gegen sehr schnelles Zurück machen (z. B. `rememberNext` und `replaceState` vor dem ersten Render statt im Effekt)? Betrifft die sicherheitsgeprüfte Anmeldung, deshalb nicht in der Nacht geändert.
+- **F-4:** `npm run test:e2e` läuft jetzt auf Handy und Desktop (etwa doppelte Laufzeit). Lieber Desktop nur im Abschluss einer Session (`test:e2e:mobile` in den Runden)? Und soll das Handy-Projekt echte Touch-Emulation (`isMobile`, `hasTouch`) bekommen?
 - **F-2:** Partner-Wege (Angebot annehmen, Auftrag sehen) gibt es in der App noch nicht (Partner-Portal ab S9b, nur nach Freigabe). Die Suite testet nur den Platzhalter „Für Vermieter". Sollen E2E-Tests für das Partner-Portal gleich mit S9b-Teilschritten entstehen?
