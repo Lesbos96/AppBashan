@@ -81,7 +81,8 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], children }:
             </span>
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(var(--safe-bottom),16px)]">{children}</div>
+        {/* scroll-py: fokussierte Elemente landen nicht am Rand des Scrollbereichs, der Fokusrahmen bleibt ganz sichtbar */}
+        <div className="min-h-0 flex-1 scroll-py-4 overflow-y-auto px-4 pb-[max(var(--safe-bottom),16px)]">{children}</div>
       </motion.div>
     </dialog>
   )

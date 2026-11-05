@@ -131,4 +131,12 @@ Je Fund ein Commit; vor jedem Commit `npm run check` und die betroffenen E2E-Spe
 
 ## Fragen an Beks
 
-(folgt)
+| Nr. | Frage | Hintergrund |
+|---|---|---|
+| F1 | Sollen unbeaufsichtigte Sessions den Supabase-MCP-Connector haben? | Er stand in der Werkzeugliste (u. a. `execute_sql`, `apply_migration`, `deploy_edge_function`), ist keine Umgebungsvariable und fiel daher nicht unter den Stopp aus Schritt 2. Ich habe ihn nicht benutzt. |
+| F2 | Schalter „aus" und ausgewähltes Segment unter 3:1 (A17): Tokens anpassen? | Spur `--switch-off` `rgba(16,47,53,.14)` auf Weiß ≈ 1,3:1; ausgewähltes Segment nur weiße Fläche (≈ 1,1:1) plus Fettschrift. Beides stammt aus `tokens.json` (iOS-Optik). Möglich wären eine dunklere Spur bzw. ein Rand am Knopf und am Segment. WCAG 1.4.11 ist hier auslegbar (Zustand auch über Knopfposition und Fettschrift erkennbar). |
+| F3 | Adresskarte und Segmente bei großen Textabständen (A12, Rest): Umbruch erlauben? | Adressen in der Adresskarte enden mit Auslassungspunkten (auch ohne geänderte Abstände bei langen Adressen; im Namen des Knopfs steht die volle Adresse), „Nachmittag" im Zeitfenster ebenso. Umbruch würde die Karte wachsen lassen; die gestrichelte Linie zwischen A und B ist auf feste 64-px-Zeilen gesetzt und müsste mitwachsen. |
+| F4 | Eigene Radiogruppen mit Pfeiltasten (A16)? | Objektart, Füllgrad und Fahrzeugart sind Knöpfe mit `role="radio"`; jede Option ist ein Tab-Stopp. Mit Tastatur bedienbar (2.1.1 erfüllt), aber nicht nach ARIA-Muster. Fahrzeugart schließt das Sheet bei Auswahl; mit Pfeiltasten würde jeder Schritt schließen. Lösung: Pfeiltasten wählen, Enter schließt. |
+| F5 | Endlos-Animationen auf Start und Onboarding (A18) | Hero-Verlauf (32 s), Wagen und Linien laufen ohne Ende; bei „Bewegung reduzieren" sind sie aus. WCAG 2.2.2 verlangt für bewegte Inhalte über 5 s einen Weg zum Anhalten, rein dekorative Bewegung ist strittig. Möglich: nach einem Durchlauf anhalten. |
+| F6 | Fokus springt nach jedem Seitenwechsel auf die Überschrift (A5): so gewollt? | Für Bildschirmleser und Tastatur üblich; wer per Tab-Leiste wechselt, muss danach durch die Seite zurück zur Tab-Leiste. Sichtbar ändert sich nichts (die Überschrift zeigt keinen Rahmen). |
+| F7 | Fokusrahmen 2 px in voller Akzentfarbe (A1): Optik in Ordnung? | Vorher 3 px mit 45 % Deckkraft (unter 3:1). Die Referenz-Screens zeigen keinen Fokuszustand. |
