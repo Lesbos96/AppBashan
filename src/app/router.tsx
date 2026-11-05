@@ -83,6 +83,11 @@ export const router = createBrowserRouter([
 
 // Nach dem ersten Laden die Flow-Chunks im Hintergrund holen: spätere Seitenwechsel warten dann nicht aufs Netz,
 // und nach kurzem Verbindungsverlust bleibt die App bedienbar. Fehler (offline) sind hier egal, der Router lädt beim Aufruf erneut.
-const prefetch = () => setTimeout(() => Object.values(screens).forEach((load) => void load().catch(() => undefined)), 1500)
+// Im Leerlauf (nicht gleichzeitig mit dem ersten Tarifabruf) und nicht im Datensparmodus.
+const prefetch = () => {
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return
+  const run = () => Object.values(screens).forEach((load) => void load().catch(() => undefined))
+  setTimeout(() => ('requestIdleCallback' in window ? window.requestIdleCallback(run, { timeout: 3000 }) : run()), 1500)
+}
 if (document.readyState === 'complete') prefetch()
 else window.addEventListener('load', prefetch, { once: true })
