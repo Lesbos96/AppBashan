@@ -33,6 +33,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E16 · Prüfdurchgang 2.** Drei weitere `reviewer`-Läufe mit anderem Blick: Vollständigkeit von ARCHITEKTUR (ergänzt: Umgebungen und `dev-guard`, Tests, Build-Prüfung, Fehlercodes, Grenzen, Inhalts-Hash), Stimmigkeit aller neun Dateien (3 hoch, 5 mittel, 4 niedrig; behoben u. a. Fristbeginn „7 Tage nach dem Termin“, Datenumfang vor der Annahme im Investoren-Dokument, falscher Abschnittsverweis, Nummerierung) und Checkliste der Pflichtinhalte (DSGVO Art. 13, ECG/UGB/MedienG, Verbraucher-AGB, P2B Art. 3–12): fehlende Themen als [OFFEN] ergänzt, nichts erfunden. Nicht übernommen: Befund „SMTP ist keine Handy-Test-Vorgabe“ (falsch, `docs/OPEN_ISSUES.md:32` sagt „PFLICHT vor dem ersten Test auf einem Handy“).
 
+- **E17 · Prüfdurchgang 3.** Zwei `reviewer`-Läufe nur auf Befunde hoch/mittel: Rechts- und Investoren-Dokumente „Keine Befunde hoch oder mittel“; ARCHITEKTUR 4 × mittel in den neuen Abschnitten (fehlende Codes 405/413 bei `quote`, Beleg „nur JPEG“, Guard-Lücke auch bei `setup-photo-cleanup.mjs`, Trigger setzt nur den Hash), alle am Code bestätigt und korrigiert (4fd5c83). Danach ein letzter Lauf über die ganze ARCHITEKTUR (E18).
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -61,6 +63,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
   - Partnervertrag online in der App oder mit Unterschrift (`partnervertrag.md`, Kopf).
   - Löschfristen (Vorschläge 12 Monate, 3 Jahre, 90 Tage für Fotos; `datenschutz-kunden.md`, 6 und 7).
   - Anbieter für Mail, Hosting, Bot-Schutz und die Region der Supabase-Projekte (`docs/ARCHITEKTUR.md`, 2.3; `docs/GOLIVE.md`).
+
+- **F12 · `scripts/live-auth.mjs` ohne `dev-guard`:** Das Skript legt einen Testnutzer an und löscht ihn (`:28`, `:63`), importiert den Guard aber nicht; `CLAUDE.md` verlangt ihn für Skripte, die Daten löschen. In der nächsten Code-Session nachrüsten? (Code-Änderung, deshalb hier nicht gemacht.)
 
 ## Stand
 
