@@ -23,10 +23,11 @@ export function Loading({ label = 'Lädt' }: { label?: string }) {
   )
 }
 
-export function ErrorState({ title = 'Das hat nicht geklappt', text, onRetry }: { title?: string; text: string; onRetry?: () => void }) {
+/** `heading`: h2 innerhalb einer Seite mit eigenem h1, h1 auf der Fehlerseite (dort ist der Fehler die Seite). */
+export function ErrorState({ title = 'Das hat nicht geklappt', text, onRetry, heading: Heading = 'h2' }: { title?: string; text: string; onRetry?: () => void; heading?: 'h1' | 'h2' }) {
   return (
     <div role="alert" className="flex flex-col items-center gap-2 px-8 py-12 text-center">
-      <h2 className="m-0 text-title3">{title}</h2>
+      <Heading className="m-0 text-title3">{title}</Heading>
       <p className="m-0 mb-3 max-w-[32ch] text-body text-text-secondary">{text}</p>
       {onRetry && (
         <Button variant="tinted" onClick={onRetry} className="w-auto">

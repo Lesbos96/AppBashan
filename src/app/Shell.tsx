@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, type Variants } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ScrollRestoration, useMatches, useNavigationType, useOutlet } from 'react-router'
 import { TabBar } from '../components/Bars'
 import { spring } from '../lib/motion'
@@ -12,8 +12,10 @@ const tabs = [
   { to: '/profil', label: 'Profil', icon: 'profile' },
 ]
 
-/** `key` bestimmt, wann die Seite wechselt (Profil und Info-Sheet teilen sich eine); `root` = Tab-Wurzel; `bar: false` blendet die Tab-Bar aus. */
-export type Handle = { key: string; root?: true; bar?: false }
+/** `key` bestimmt, wann die Seite wechselt (Profil und Info-Sheet teilen sich eine); `title` ist der Seitentitel (WCAG 2.4.2); `root` = Tab-Wurzel; `bar: false` blendet die Tab-Bar aus. */
+export type Handle = { key: string; title: string; root?: true; bar?: false }
+
+const documentTitle = (title: string) => `${title} · MoveNow`
 
 type Direction = 'push' | 'pop' | 'tab'
 
@@ -37,6 +39,40 @@ export function Shell() {
     setNav({ handle, direction: nav.handle.root && handle.root ? 'tab' : type === 'POP' ? 'pop' : 'push', seq: nav.seq + 1 })
   }
 
+  useEffect(() => {
+    document.title = documentTitle(handle.title)
+  }, [handle.title])
+
+  // Nach einem Seitenwechsel (nicht beim ersten Laden) Fokus auf die Überschrift der neuen Seite: Bildschirmleser sagen die Seite an,
+  // Tab geht von dort weiter. Sonst fiele der Fokus mit der ausblendenden Seite auf body. Lädt die Seite ihre Überschrift erst nach,
+  // wartet ein Observer (höchstens 5 s); hat der Nutzer oder die Seite den Fokus schon in die neue Seite gesetzt, bleibt er dort.
+  useEffect(() => {
+    if (nav.seq === 0) return
+    const container = document.querySelector<HTMLElement>(`[data-page="${nav.seq}"]`)
+    if (!container) return
+    // Fokus beim Wechsel: meist der angetippte Link der alten Seite, der mit ihr verschwindet (dann body)
+    const before = document.activeElement
+    const focusHeading = () => {
+      const h1 = container.querySelector<HTMLElement>('h1')
+      if (!h1) return false
+      const active = document.activeElement
+      if (container.contains(active)) return true
+      // Hat der Nutzer den Fokus inzwischen woandershin gesetzt, nicht wegziehen
+      if (active && active !== document.body && active !== before) return true
+      if (!h1.hasAttribute('tabindex')) h1.tabIndex = -1
+      h1.focus({ preventScroll: true })
+      return true
+    }
+    if (focusHeading()) return
+    const observer = new MutationObserver(() => focusHeading() && observer.disconnect())
+    observer.observe(container, { childList: true, subtree: true })
+    const timer = setTimeout(() => observer.disconnect(), 5000)
+    return () => {
+      observer.disconnect()
+      clearTimeout(timer)
+    }
+  }, [nav.seq])
+
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-(--content-max-width) overflow-x-clip">
       {!online && (
@@ -47,6 +83,7 @@ export function Shell() {
       <AnimatePresence mode="popLayout" initial={false} custom={nav.direction}>
         <motion.div
           key={`${handle.key}:${nav.seq}`}
+          data-page={nav.seq}
           custom={nav.direction}
           variants={pages}
           initial="enter"

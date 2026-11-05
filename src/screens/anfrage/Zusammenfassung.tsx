@@ -199,6 +199,15 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   const mail = email || session?.user.email || ''
   const contact = { name: name.trim(), phone: phone.trim(), email: mail.trim(), stairsDoor }
   const contactOk = contact.name.length > 0 && PHONE.test(contact.phone) && digits(contact.phone) >= 5 && EMAIL.test(contact.email)
+  // Ohne Hinweis bliebe „Anfrage senden" ohne Erklärung gesperrt (WCAG 3.3.1). Der Hinweis erscheint beim Verlassen eines ungültigen Feldes
+  // und verschwindet beim Tippen, sobald der Wert gültig ist; er kommt beim Tippen nicht neu dazu (keine Ansage je Tastendruck).
+  const validField = { name: (v: string) => v.trim().length > 0, phone: (v: string) => PHONE.test(v.trim()) && digits(v.trim()) >= 5, email: (v: string) => EMAIL.test(v.trim()) }
+  const [hints, setHints] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({})
+  const leave = (field: keyof typeof validField, value: string) => setHints((h) => ({ ...h, [field]: !validField[field](value) }))
+  const edit = (field: keyof typeof validField, value: string) => validField[field](value) && setHints((h) => (h[field] ? { ...h, [field]: false } : h))
+  const hintText = { name: 'Gib deinen Namen an.', phone: 'Prüfe die Telefonnummer, sie braucht mindestens 5 Ziffern.', email: 'Prüfe die Mailadresse.' }
+  // Der Hinweis steht direkt unter der Eingabe in der Zeile des Feldes (`Field` mit `hintId`), damit er beim Verlassen im Blick bleibt
+  const hint = (field: keyof typeof validField) => ({ hint: hints[field] ? hintText[field] : null, hintId: `kontakt-${field}-hinweis` })
 
   useEffect(() => {
     if (wait <= 0) return
@@ -338,10 +347,10 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         <section className="flex flex-col gap-2">
           <h2 className="m-0 mx-4 text-section-header font-normal text-text-secondary">Dein Kontakt</h2>
           <GroupedList>
-            <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" value={name} onChange={(e) => setName(e.target.value)} />
-            <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" value={mail} onChange={(e) => setEmail(e.target.value)} />
-            <Field label="Stiege / Tür" name="stairs" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
+            <Field label="Name" name="name" autoComplete="name" maxLength={120} placeholder="Vor- und Nachname" aria-required value={name} onChange={(e) => { setName(e.target.value); edit('name', e.target.value) }} onBlur={(e) => leave('name', e.target.value)} {...hint('name')} />
+            <Field label="Telefon" name="tel" type="tel" autoComplete="tel" maxLength={40} placeholder="+43 660 1234567" aria-required value={phone} onChange={(e) => { setPhone(e.target.value); edit('phone', e.target.value) }} onBlur={(e) => leave('phone', e.target.value)} {...hint('phone')} />
+            <Field label="Mailadresse" name="email" type="email" autoComplete="email" maxLength={200} placeholder="name@beispiel.at" aria-required value={mail} onChange={(e) => { setEmail(e.target.value); edit('email', e.target.value || session?.user.email || '') }} onBlur={(e) => leave('email', e.target.value)} {...hint('email')} />
+            <Field label="Stiege / Tür" name="stairs" autoComplete="address-line2" maxLength={60} placeholder="optional" value={stairsDoor} onChange={(e) => setStairsDoor(e.target.value)} />
           </GroupedList>
           <p className="m-0 px-4 text-footnote text-text-secondary">Der Partner bekommt deinen Kontakt erst, wenn er die Anfrage annimmt.</p>
         </section>
@@ -450,8 +459,12 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         )}
 
         {text && (
-          <div role="alert" className="flex flex-col gap-2 rounded-grouped-list border border-destructive/40 bg-surface p-4 shadow-card">
-            <p className="m-0 text-body">{wait > 0 ? `${text} Noch ${wait} s.` : text}</p>
+          <div className="flex flex-col gap-2 rounded-grouped-list border border-destructive/40 bg-surface p-4 shadow-card">
+            {/* Nur die Meldung ist Live-Region; die Wartezeit zählt daneben, sonst läse ein Bildschirmleser sie jede Sekunde neu vor */}
+            <p className="m-0 text-body">
+              <span role="alert">{text}</span>
+              {wait > 0 && ` Noch ${wait} s.`}
+            </p>
             {error?.kind === 'unauthorized' && (
               <Button variant="tinted" onClick={() => void otherAccount()}>
                 Neu anmelden

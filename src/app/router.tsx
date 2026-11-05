@@ -1,36 +1,46 @@
+import type { ReactElement } from 'react'
 import { createBrowserRouter, redirect, type LoaderFunctionArgs, type RouteObject } from 'react-router'
-import { paths } from '../lib/draft'
+import { paths, services } from '../lib/draft'
 import { hasOnboarded } from '../lib/onboarding'
 import { supabase } from '../lib/supabase'
-import { Anmelden } from '../screens/Anmelden'
-import { Gesendet } from '../screens/anfrage/Gesendet'
-import { Termin } from '../screens/anfrage/Termin'
-import { Zusammenfassung } from '../screens/anfrage/Zusammenfassung'
-import { Auftraege } from '../screens/Auftraege'
-import { Entruempelung } from '../screens/entruempelung/Wizard'
-import { EntruempelungErgebnis } from '../screens/entruempelung/Ergebnis'
-import { Konfigurator } from '../screens/Konfigurator'
-import { Montage } from '../screens/Montage'
 import { Onboarding } from '../screens/Onboarding'
 import { Profil } from '../screens/Profil'
 import { Datenschutz, Fehler, Folgt, Impressum } from '../screens/Seiten'
 import { Start } from '../screens/Start'
 import { Shell, type Handle } from './Shell'
 
+// Flows laden erst beim ersten Aufruf (eigene Chunks); Start, Profil, Info-Sheet, Onboarding und Rechtstexte bleiben im Einstiegs-Chunk.
+// Vite teilt gemeinsame Module (Preismodul, Entwurf, Anfrage) selbst auf. Der Router wartet vor dem Seitenwechsel auf den Chunk,
+// die Seitenübergänge der Shell bleiben deshalb unverändert.
+const screens = {
+  konfigurator: () => import('../screens/Konfigurator'),
+  entruempelung: () => import('../screens/entruempelung/Wizard'),
+  ergebnis: () => import('../screens/entruempelung/Ergebnis'),
+  montage: () => import('../screens/Montage'),
+  termin: () => import('../screens/anfrage/Termin'),
+  zusammenfassung: () => import('../screens/anfrage/Zusammenfassung'),
+  gesendet: () => import('../screens/anfrage/Gesendet'),
+  anmelden: () => import('../screens/Anmelden'),
+  auftraege: () => import('../screens/Auftraege'),
+}
+
 const page = (path: string, element: RouteObject['element'], handle: Handle, extra?: Partial<RouteObject>): RouteObject => ({ path, element, handle, ...extra })
+
+/** Wie `page`, das Element entsteht aber erst nach dem Laden seines Chunks. `handle` bleibt statisch (Shell, Titel). */
+const lazyPage = (path: string, element: () => Promise<ReactElement>, handle: Handle, extra?: Partial<RouteObject>): RouteObject => ({ path, handle, lazy: async () => ({ element: await element() }), ...extra })
 
 const backTo = (path: string) =>
   path.startsWith('profil') ? { to: '/profil', label: 'Profil' } : path.includes('/') ? { to: `/${path.split('/')[0]}`, label: 'Zurück' } : { to: '/', label: 'Start' }
 
 // Ablauf nach dem Konfigurator: Termin, Zusammenfassung, Bestätigung. Ohne Tab-Bar.
 const anfrage = paths.flatMap((path) => [
-  page(`${path}/termin`, <Termin path={path} />, { key: `${path}/termin`, bar: false }),
-  page(`${path}/zusammenfassung`, <Zusammenfassung path={path} />, { key: `${path}/zusammenfassung`, bar: false }),
-  page(`${path}/gesendet`, <Gesendet path={path} />, { key: `${path}/gesendet`, bar: false }),
+  lazyPage(`${path}/termin`, async () => { const { Termin } = await screens.termin(); return <Termin path={path} /> }, { key: `${path}/termin`, title: `${services[path].title}: Termin`, bar: false }),
+  lazyPage(`${path}/zusammenfassung`, async () => { const { Zusammenfassung } = await screens.zusammenfassung(); return <Zusammenfassung path={path} /> }, { key: `${path}/zusammenfassung`, title: `${services[path].title}: Zusammenfassung`, bar: false }),
+  lazyPage(`${path}/gesendet`, async () => { const { Gesendet } = await screens.gesendet(); return <Gesendet path={path} /> }, { key: `${path}/gesendet`, title: `${services[path].title}: Anfrage gesendet`, bar: false }),
 ])
 
 // Noch nicht gebaut (S9): „Folgt“.
-const flows = [{ path: 'profil/vermieter', title: 'Für Vermieter' }].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, bar: false }))
+const flows = [{ path: 'profil/vermieter', title: 'Für Vermieter' }].map(({ path, title }) => page(path, <Folgt title={title} back={backTo(path)} />, { key: path, title, bar: false }))
 
 /** Geschützter Bereich: ohne Sitzung zur Anmeldung, danach zurück hierher. Ein Loader läuft einmal je Navigation (kein Render-Guard, der beim Ausblenden die neue URL sähe). */
 async function requireSession({ request }: LoaderFunctionArgs) {
@@ -46,21 +56,21 @@ export const router = createBrowserRouter([
     errorElement: <Fehler />,
     HydrateFallback: () => null,
     children: [
-      page('/', <Start />, { key: 'start', root: true }, { loader: () => (hasOnboarded() ? null : redirect('/willkommen')) }),
-      page('miete', <Folgt title="Transporter mieten" />, { key: 'miete', root: true }),
-      page('auftraege', <Auftraege />, { key: 'auftraege', root: true }, { loader: requireSession }),
-      page('anmelden', <Anmelden />, { key: 'anmelden', bar: false }),
+      page('/', <Start />, { key: 'start', title: 'Start', root: true }, { loader: () => (hasOnboarded() ? null : redirect('/willkommen')) }),
+      page('miete', <Folgt title="Transporter mieten" />, { key: 'miete', title: 'Transporter mieten', root: true }),
+      lazyPage('auftraege', async () => { const { Auftraege } = await screens.auftraege(); return <Auftraege /> }, { key: 'auftraege', title: 'Aufträge', root: true }, { loader: requireSession }),
+      lazyPage('anmelden', async () => { const { Anmelden } = await screens.anmelden(); return <Anmelden /> }, { key: 'anmelden', title: 'Anmelden', bar: false }),
       // Info-Sheet „Wie rechnet MoveNow?" liegt über dem Profil und teilt dessen Seite
-      page('profil', <Profil />, { key: 'profil', root: true }),
-      page('profil/preise', <Profil />, { key: 'profil', root: true }),
-      page('profil/datenschutz', <Datenschutz />, { key: 'datenschutz' }),
-      page('profil/impressum', <Impressum />, { key: 'impressum' }),
-      page('willkommen', <Onboarding />, { key: 'willkommen', bar: false }),
-      page('transport', <Konfigurator service="transport" />, { key: 'transport', bar: false }),
-      page('umzug', <Konfigurator service="move" />, { key: 'umzug', bar: false }),
-      page('entruempelung', <Entruempelung />, { key: 'entruempelung', bar: false }),
-      page('entruempelung/ergebnis', <EntruempelungErgebnis />, { key: 'entruempelung/ergebnis', bar: false }),
-      page('montage', <Montage />, { key: 'montage', bar: false }),
+      page('profil', <Profil />, { key: 'profil', title: 'Profil', root: true }),
+      page('profil/preise', <Profil />, { key: 'profil', title: 'Wie rechnet MoveNow?', root: true }),
+      page('profil/datenschutz', <Datenschutz />, { key: 'datenschutz', title: 'Datenschutz' }),
+      page('profil/impressum', <Impressum />, { key: 'impressum', title: 'Impressum & AGB' }),
+      page('willkommen', <Onboarding />, { key: 'willkommen', title: 'Willkommen', bar: false }),
+      lazyPage('transport', async () => { const { Konfigurator } = await screens.konfigurator(); return <Konfigurator service="transport" /> }, { key: 'transport', title: 'Möbeltransport', bar: false }),
+      lazyPage('umzug', async () => { const { Konfigurator } = await screens.konfigurator(); return <Konfigurator service="move" /> }, { key: 'umzug', title: 'Umzug', bar: false }),
+      lazyPage('entruempelung', async () => { const { Entruempelung } = await screens.entruempelung(); return <Entruempelung /> }, { key: 'entruempelung', title: 'Entrümpelung', bar: false }),
+      lazyPage('entruempelung/ergebnis', async () => { const { EntruempelungErgebnis } = await screens.ergebnis(); return <EntruempelungErgebnis /> }, { key: 'entruempelung/ergebnis', title: 'Entrümpelung: Richtwert', bar: false }),
+      lazyPage('montage', async () => { const { Montage } = await screens.montage(); return <Montage /> }, { key: 'montage', title: 'Montage', bar: false }),
       ...anfrage,
       ...flows,
     ],
@@ -70,3 +80,14 @@ export const router = createBrowserRouter([
     ? [{ path: '/dev/fundament', HydrateFallback: () => null, lazy: async () => ({ Component: (await import('../dev/Fundament')).Fundament }) }]
     : []),
 ])
+
+// Nach dem ersten Laden die Flow-Chunks im Hintergrund holen: spätere Seitenwechsel warten dann nicht aufs Netz,
+// und nach kurzem Verbindungsverlust bleibt die App bedienbar. Fehler (offline) sind hier egal, der Router lädt beim Aufruf erneut.
+// Im Leerlauf (nicht gleichzeitig mit dem ersten Tarifabruf) und nicht im Datensparmodus.
+const prefetch = () => {
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return
+  const run = () => Object.values(screens).forEach((load) => void load().catch(() => undefined))
+  setTimeout(() => ('requestIdleCallback' in window ? window.requestIdleCallback(run, { timeout: 3000 }) : run()), 1500)
+}
+if (document.readyState === 'complete') prefetch()
+else window.addEventListener('load', prefetch, { once: true })

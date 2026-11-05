@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useRouteError } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
@@ -61,10 +62,15 @@ export function Folgt({ title, back: backTo }: { title: string; back?: typeof ba
 export function Fehler() {
   const error = useRouteError()
   const notFound = error === undefined || (typeof error === 'object' && error !== null && 'status' in error && error.status === 404)
+  // Die Fehlerseite liegt außerhalb der Shell und setzt ihren Titel selbst (WCAG 2.4.2)
+  useEffect(() => {
+    document.title = `${notFound ? 'Seite nicht gefunden' : 'Fehler'} · MoveNow`
+  }, [notFound])
   return (
     <main className="mx-auto flex min-h-dvh max-w-(--content-max-width) flex-col justify-center">
       <Illustration name="empty-orders" width={200} className="mx-auto h-auto" />
       <ErrorState
+        heading="h1"
         title={notFound ? 'Seite nicht gefunden' : 'Da ist etwas schiefgelaufen'}
         text={notFound ? 'Diesen Link gibt es nicht.' : 'Lade die Seite neu. Besteht das Problem weiter, versuche es später noch einmal.'}
       />

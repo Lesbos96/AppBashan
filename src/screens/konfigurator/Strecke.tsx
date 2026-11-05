@@ -14,11 +14,12 @@ const oneDecimal = (n: number) => n.toFixed(1).replace('.', ',')
 
 // Adresskarte --------------------------------------------------------------------------------------------------
 
+// Dark: Primärfarbe auf der Kartenfläche hat nur 2,6:1, daher Akzent (Mint) für Rand und Buchstaben (WCAG 1.4.3)
 function Marker({ letter, filled }: { letter: 'A' | 'B'; filled?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${filled ? 'bg-primary text-white' : 'border-2 border-primary bg-surface text-primary'}`}
+      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${filled ? 'bg-primary text-white' : 'border-2 border-primary bg-surface text-primary dark:border-accent dark:text-accent'}`}
     >
       {letter}
     </span>
@@ -38,7 +39,7 @@ export function Adressen({ from, to, onOpen }: { from: Place | null; to: Place |
           key={r.which}
           type="button"
           onClick={() => onOpen(r.which)}
-          className="press relative flex h-16 w-full items-center gap-3.5 px-4 text-left not-first:before:absolute not-first:before:top-0 not-first:before:right-0 not-first:before:left-[54px] not-first:before:h-[0.5px] not-first:before:bg-separator"
+          className="press relative flex h-16 w-full items-center gap-3.5 px-4 text-left focus-visible:-outline-offset-2 not-first:before:absolute not-first:before:top-0 not-first:before:right-0 not-first:before:left-[54px] not-first:before:h-[0.5px] not-first:before:bg-separator"
         >
           {r.marker}
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -78,7 +79,7 @@ export function Suche({ title, place, consent, onConsent, onPick }: { title: str
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3 pt-2">
       <GroupedList>
         <li>
-          <label className="flex flex-col gap-1 px-4 py-3 has-[:focus-visible]:outline-3 has-[:focus-visible]:-outline-offset-3 has-[:focus-visible]:outline-accent/45">
+          <label className="flex flex-col gap-1 px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
             <span className="text-[13px]/[18px] text-text-secondary">{title}: Straße, Hausnummer, PLZ und Ort</span>
             <input
               value={q}
@@ -128,7 +129,7 @@ export function Suche({ title, place, consent, onConsent, onPick }: { title: str
               <ul className="m-0 flex list-none flex-col overflow-hidden rounded-grouped-list bg-surface p-0 shadow-card">
                 {precise.map((c) => (
                   <li key={`${c.lat},${c.lon}`} className="not-first:border-t-[0.5px] not-first:border-separator">
-                    <button type="button" onClick={() => onPick({ label: c.label, point: { lat: c.lat, lon: c.lon } })} className="press flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-body">
+                    <button type="button" onClick={() => onPick({ label: c.label, point: { lat: c.lat, lon: c.lon } })} className="press flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left text-body focus-visible:-outline-offset-2">
                       <Icon name="pin" width={20} height={20} className="shrink-0 text-primary" />
                       <span className="min-w-0 flex-1">{c.label}</span>
                     </button>

@@ -3,6 +3,12 @@
 Je Session 3–5 Zeilen: Datum, Session, was fertig ist, offene Punkte, Entscheidungen.
 Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter bei:" mit der genauen Stelle. Die nächste Session setzt dort fort.
 
+## 2026-11-05 · Nachtauftrag Barrierefreiheit und Tempo (Branch `nacht-qualitaet`, PR #4, auf Anweisung von Beks gemergt)
+- Unbeaufsichtigt, keine Rückfragen möglich; alle Entscheidungen, Messwerte, Fragen F1–F9 und die Fundliste A1–A23: `docs/nacht/qualitaet.md`. Kein S9b, keine Migration, kein DB-Zugriff, kein Deploy, keine neue Abhängigkeit (nur `npm ci`).
+- Barrierefreiheit: Fokusrahmen 3:1, Fokus nicht unter fixierten Leisten (2.4.11), Seitentitel je Route, Fokus auf die Überschrift nach Seitenwechsel, Live-Regionen (Richtpreis, Fotos, Onboarding, Wartezeit), Pflichtfeld-Hinweise im Kontakt, Marker-Kontrast Dark u. a.; 30 neue E2E-Tests in `tests/e2e/barrierefreiheit.spec.ts`. Tempo: Flows per Lazy Loading mit Vorladen (Start JS 255,5 → 228,8 kB gzip, FCP gedrosselt 2028 → 1808 ms; Direktaufruf `/umzug` ≈ 0,5 s langsamer, Frage F8), `tokens.json` nur noch mit `motion`.
+- Tests lokal ohne Dev-Projekt: Tarif-Endpunkte über einen lokalen Ersatz aus `supabase/seed.sql` (nur `tmp/`); `test:rls` lief nicht (kein DB-Zugang). Letzte Läufe auf dem Branch: check EXIT=0 (368 Unit), build EXIT=0, test:e2e EXIT=0 (132), shots EXIT=0 (134), shots:all EXIT=0 (536); Läufe nach dem Zusammenführen mit `main` in der Nachtdatei („Ende").
+- Weiter bei: Beks beantwortet F1–F9 (Nachtdatei); danach S9b-1 wie geplant.
+
 ## 2026-11-05 · Übernahme Nachtauftrag E2E
 - Beks hat am 2026-11-05 „übernimm das alles" geantwortet: bekhanidrisov74-hub/movenow#8 komplett nach `main` gemergt (Merge-Commit, die Hashes in `docs/nacht/e2e.md` bleiben gültig), einschließlich `test:e2e` mit Handy und Desktop (F-4 damit für den Standardbefehl entschieden; Touch-Emulation bleibt offen). Keine neuen Tests nach dem letzten grünen Lauf (17940eb), nur diese Doku.
 - bekhanidrisov74-hub/movenow#5 (Design) bleibt Draft: dort gab es nichts zu übernehmen. Offen: F-1, F-2, F-3 (`docs/nacht/e2e.md`) und F-2 in `docs/nacht/design.md` (Umfang „Apple-Niveau" gegenüber der Referenz).

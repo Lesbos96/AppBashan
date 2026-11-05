@@ -42,19 +42,24 @@ export function PreisLeiste({ preview, onOpen, canContinue, onContinue }: { prev
         type="button"
         onClick={onOpen}
         aria-label={price ? `Richtpreis ${formatEuro(preview.price.totalCents)}, alle Positionen anzeigen` : missing ? 'Strecke fehlt, Details anzeigen' : 'Persönliches Angebot, Details anzeigen'}
-        className="press flex h-[54px] min-w-0 flex-1 flex-col justify-center gap-px px-1 text-left"
+        // Mindesthöhe statt fester Höhe und Umbruch für Text (nicht für Beträge): bei größeren Textabständen wird nichts abgeschnitten (WCAG 1.4.12)
+        className="press flex min-h-[54px] min-w-0 flex-1 flex-col justify-center gap-px px-1 text-left"
       >
         <span className="flex items-center gap-1 text-[12.5px]/4 text-text-secondary">
           {price ? 'Richtpreis · inkl. USt.' : 'Noch kein Richtpreis'}
           <Icon name="chevron-up" width={14} height={14} />
         </span>
-        <span className={`truncate whitespace-nowrap tracking-[-0.5px] tabular-nums ${price ? 'text-price-bar' : 'text-headline'}`}>
+        <span className={`tracking-[-0.5px] tabular-nums ${price ? 'truncate whitespace-nowrap text-price-bar' : 'break-words text-headline'}`}>
           {price ? <CountUp cents={preview.price.totalCents} /> : missing ? 'Strecke fehlt' : 'Persönliches Angebot'}
         </span>
       </button>
       <Button disabled={!canContinue} onClick={onContinue} className="w-[152px]! shrink-0">
         Weiter
       </Button>
+      {/* Statusmeldung mit dem Endbetrag (WCAG 4.1.3): sichtbar zählt der Betrag hoch, angesagt wird nur das Ergebnis jeder Änderung */}
+      <p role="status" className="sr-only">
+        {price ? `Richtpreis ${formatEuro(preview.price.totalCents)}` : missing ? 'Strecke fehlt, noch kein Richtpreis' : 'Persönliches Angebot, kein Richtpreis'}
+      </p>
     </ActionBar>
   )
 }

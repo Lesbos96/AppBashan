@@ -216,6 +216,12 @@
 }
 
 @layer base {
+  /* Fokus und Sprungziele landen nicht unter den fixierten Leisten (WCAG 2.4.11): oben die Navigationsleiste (44 px),
+     unten die höchste Leiste (Aktionsleiste der Bestätigung mit zwei Knöpfen, 126 px); Preis- und Tab-Leiste sind niedriger. */
+  html {
+    scroll-padding-top: calc(44px + var(--safe-top) + 8px);
+    scroll-padding-bottom: calc(126px + var(--safe-bottom) + 8px);
+  }
   body {
     margin: 0;
     background: var(--background);
@@ -228,10 +234,16 @@
     color: var(--accent);
     text-decoration: none;
   }
+  /* Volle Akzentfarbe: mindestens 3:1 zur Umgebung (WCAG 1.4.11); auf dunklem Grund `focus-visible:outline-mint`,
+     in Listen mit overflow-hidden nach innen (`focus-visible:-outline-offset-2`), sonst schneidet die Liste den Rahmen ab. */
   a:focus-visible,
   button:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  /* Überschrift, die nach einem Seitenwechsel den Fokus bekommt (Shell): kein Bedienelement, daher ohne Rahmen */
+  [data-page] h1[tabindex='-1']:focus {
+    outline: none;
   }
 }
 

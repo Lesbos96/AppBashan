@@ -59,7 +59,7 @@ export function Onboarding() {
             MoveNow
           </span>
           {!last && (
-            <button type="button" onClick={done} className="press -mr-2 flex h-11 items-center px-2 text-body text-white/80">
+            <button type="button" onClick={done} className="press -mr-2 flex h-11 items-center rounded-lg px-2 text-body text-white/80 focus-visible:outline-mint">
               Überspringen
             </button>
           )}
@@ -67,17 +67,20 @@ export function Onboarding() {
       </div>
 
       <section className="relative -mt-8 flex flex-1 flex-col rounded-t-sheet-top bg-background px-6 pt-6 pb-[max(var(--safe-bottom),24px)]">
-        <div role="progressbar" aria-label="Seite" aria-valuemin={1} aria-valuemax={pages.length} aria-valuenow={index + 1} className="flex gap-1.5">
+        <div role="progressbar" aria-label="Seite" aria-valuemin={1} aria-valuemax={pages.length} aria-valuenow={index + 1} aria-valuetext={`Seite ${index + 1} von ${pages.length}`} className="flex gap-1.5">
           {pages.map((_, i) => (
             <span key={i} className={`h-1.5 rounded-[3px] transition-all ${i === index ? 'w-[22px] bg-primary' : 'w-1.5 bg-fill'}`} />
           ))}
         </div>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={index} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3 pt-6">
-            <h1 className="m-0 whitespace-pre-line text-title1">{page.title}</h1>
-            <p className="m-0 text-body text-text-secondary">{page.text}</p>
-          </motion.div>
-        </AnimatePresence>
+        {/* Der Fokus bleibt auf „Weiter"; die neue Seite wird daher als höfliche Live-Region angesagt (WCAG 4.1.3) */}
+        <div aria-live="polite">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={index} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3 pt-6">
+              <h1 className="m-0 whitespace-pre-line text-title1">{page.title}</h1>
+              <p className="m-0 text-body text-text-secondary">{page.text}</p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
         <div className="mt-auto pt-6">
           <Button onClick={() => (last ? done() : setIndex(index + 1))}>{last ? 'Los geht’s' : 'Weiter'}</Button>
         </div>

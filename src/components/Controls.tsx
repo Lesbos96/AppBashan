@@ -29,7 +29,7 @@ export function Segmented({
         <label
           key={o.value}
           // Das Segment bleibt 32 px hoch wie in der Referenz, die Klickfläche reicht per ::before auf 44 px.
-          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] has-[:checked]:font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent/45"
+          className="relative flex min-w-0 cursor-pointer items-center justify-center rounded-segment text-[13px] before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] has-[:checked]:font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
         >
           <input
             type="radio"
@@ -55,7 +55,8 @@ export function Segmented({
 
 /** Nur die Pille (− | +) wie in den Konfiguratoren; der Wert steht links daneben. */
 export function StepPill({ labelDown, labelUp, canDown, canUp, onDown, onUp }: { labelDown: string; labelUp: string; canDown: boolean; canUp: boolean; onDown: () => void; onUp: () => void }) {
-  const button = 'press -my-1.5 flex h-11 w-11 items-center justify-center text-accent disabled:text-text/30'
+  // rounded-full: der Fokusrahmen folgt der runden Pille statt als Quadrat herauszuragen
+  const button = 'press -my-1.5 flex h-11 w-11 items-center justify-center rounded-full text-accent disabled:text-text/30'
   return (
     <div className="flex h-[34px] items-center rounded-full bg-fill">
       <button type="button" aria-label={labelDown} disabled={!canDown} onClick={onDown} className={button}>
@@ -83,7 +84,7 @@ export function Stepper({
   onChange: (value: number) => void
 }) {
   // Die Pille ist 36 px hoch, die Tasten reichen mit 44 px Touch-Ziel darüber hinaus.
-  const button = 'press -my-1 flex h-11 w-11 items-center justify-center text-accent disabled:opacity-40'
+  const button = 'press -my-1 flex h-11 w-11 items-center justify-center rounded-full text-accent disabled:opacity-40'
   return (
     <div role="group" aria-label={label} className="flex h-9 items-center gap-0.5 rounded-full bg-fill px-0.5">
       <button type="button" aria-label="Weniger" disabled={value <= min} onClick={() => onChange(value - 1)} className={button}>

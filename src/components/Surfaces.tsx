@@ -74,7 +74,7 @@ export function ListRow({
   return (
     <li className={separator(icon ? 'not-first:before:left-[58px]' : 'not-first:before:left-4')}>
       {to ? (
-        <Link to={to} className={`press ${rowBase} ${detail ? 'py-2.5' : ''} text-text`}>
+        <Link to={to} className={`press ${rowBase} ${detail ? 'py-2.5' : ''} text-text focus-visible:-outline-offset-2`}>
           {content}
         </Link>
       ) : (
@@ -84,17 +84,32 @@ export function ListRow({
   )
 }
 
-/** Feld in einer Liste: Label links, Eingabe rechtsbündig; jedes Feld hat ein sichtbares Label. */
-export function Field({ label, className = '', ...props }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
+/**
+ * Feld in einer Liste: Label links, Eingabe rechtsbündig; jedes Feld hat ein sichtbares Label.
+ * `hintId` macht das Feld hinweisfähig: `hint` steht dann direkt unter der Eingabe in derselben Zeile (höfliche Live-Region),
+ * verknüpft über `aria-invalid` und `aria-describedby` (WCAG 3.3.1).
+ */
+export function Field({ label, className = '', hint, hintId, ...props }: { label: string; hint?: string | null; hintId?: string } & InputHTMLAttributes<HTMLInputElement>) {
+  const invalid = hintId && hint ? { 'aria-invalid': true, 'aria-describedby': hintId } : {}
   return (
     <li className={separator('not-first:before:left-4')}>
-      <label className="flex min-h-12 items-center gap-3 px-4 has-[:focus-visible]:outline-3 has-[:focus-visible]:-outline-offset-3 has-[:focus-visible]:outline-accent/45">
+      <label className="flex min-h-12 items-center gap-3 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
         <span className="shrink-0 text-body">{label}</span>
         <input
           className={`min-w-0 flex-1 border-0 bg-transparent p-0 text-right text-body text-text-tertiary outline-none placeholder:text-text-secondary ${className}`}
           {...props}
+          {...invalid}
         />
       </label>
+      {hintId && (
+        <div aria-live="polite">
+          {hint && (
+            <p id={hintId} className="m-0 px-4 pb-2.5 text-footnote text-pretty text-destructive">
+              {hint}
+            </p>
+          )}
+        </div>
+      )}
     </li>
   )
 }
@@ -174,7 +189,7 @@ export function SwitchRow({ checked, onChange, switchLabel, ...text }: RowLabel 
 export function ValueRow({ label, sub, value, onClick, icon }: RowLabel & { value?: string; onClick: () => void }) {
   return (
     <li className={rowInset(icon)}>
-      <button type="button" onClick={onClick} className={`press flex w-full items-center gap-3 pr-3 pl-4 text-left ${sub ? 'min-h-[64px]' : 'min-h-[52px]'}`}>
+      <button type="button" onClick={onClick} className={`press flex w-full items-center gap-3 pr-3 pl-4 text-left focus-visible:-outline-offset-2 ${sub ? 'min-h-[64px]' : 'min-h-[52px]'}`}>
         {tile(icon)}
         {rowText({ label, sub })}
         {value && <span className="min-w-0 truncate whitespace-nowrap text-body text-text-secondary tabular-nums">{value}</span>}
