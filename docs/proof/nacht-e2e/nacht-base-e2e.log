@@ -1,0 +1,2459 @@
+
+> movenow@0.1.0 test:e2e
+> playwright test --project=e2e
+
+
+Running 102 tests using 2 workers
+
+  ✘    1 [e2e] › tests/e2e/anmelden.spec.ts:11:1 › Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden (4ms)
+  ✘    2 [e2e] › tests/e2e/anfrage.spec.ts:29:1 › Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge (3ms)
+  ✘    3 [e2e] › tests/e2e/anfrage.spec.ts:44:1 › Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter (2ms)
+  ✘    4 [e2e] › tests/e2e/anmelden.spec.ts:44:1 › Link-Weg: Token verschwindet sofort aus der URL, Prüfung erst nach Tipp, danach E-Mail sichtbar (2ms)
+  ✘    5 [e2e] › tests/e2e/anmelden.spec.ts:62:1 › Link bei bestehender Sitzung meldet nicht ohne Tipp in einem anderen Konto an (3ms)
+  ✘    6 [e2e] › tests/e2e/anfrage.spec.ts:63:1 › Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung (4ms)
+  ✘    7 [e2e] › tests/e2e/anmelden.spec.ts:74:1 › Rücksprung überlebt einen neuen Tab (Link aus dem Mailprogramm) (2ms)
+  ✘    8 [e2e] › tests/e2e/anfrage.spec.ts:83:1 › Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur (2ms)
+  ✘    9 [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: //evil.com (1ms)
+  ✘   10 [e2e] › tests/e2e/anfrage.spec.ts:94:1 › Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen (1ms)
+  ✘   11 [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: https://evil.com (2ms)
+  ✘   12 [e2e] › tests/e2e/anfrage.spec.ts:104:1 › Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt (2ms)
+  ✘   13 [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: javascript:alert(1) (1ms)
+  ✘   14 [e2e] › tests/e2e/anfrage.spec.ts:116:1 › Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf (2ms)
+  ✘   15 [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: /\evil.com (3ms)
+  ✘   16 [e2e] › tests/e2e/anfrage.spec.ts:126:1 › Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis (2ms)
+  ✘   17 [e2e] › tests/e2e/anmelden.spec.ts:98:1 › Fehler beim Code: eigener Text statt Dienstmeldung, Erneut senden erst nach Countdown (2ms)
+  ✘   18 [e2e] › tests/e2e/anfrage.spec.ts:141:1 › Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef (3ms)
+  ✘   19 [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: zu viele Versuche (2ms)
+  ✘   20 [e2e] › tests/e2e/anfrage.spec.ts:157:1 › Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“ (2ms)
+  ✘   21 [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: offline (2ms)
+  ✘   22 [e2e] › tests/e2e/anfrage.spec.ts:167:1 › Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent (1ms)
+  ✘   23 [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: Dienst gestört (2ms)
+  ✘   24 [e2e] › tests/e2e/anfrage.spec.ts:174:1 › Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis (2ms)
+  ✘   25 [e2e] › tests/e2e/anmelden.spec.ts:133:1 › Fehler beim Anfordern: Adresse, 429, offline (1ms)
+  ✘   26 [e2e] › tests/e2e/anfrage.spec.ts:182:1 › Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet (2ms)
+  ✘   27 [e2e] › tests/e2e/anmelden.spec.ts:153:1 › Abgelaufener oder benutzter Link: eigener Text und Weg zum neuen Code (2ms)
+  ✘   28 [e2e] › tests/e2e/anfrage.spec.ts:196:1 › „Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt (2ms)
+  ✘   29 [e2e] › tests/e2e/anmelden.spec.ts:164:1 › Standard-Link von Supabase mit Fehler im Fragment zeigt denselben Text (2ms)
+  ✘   30 [e2e] › tests/e2e/anfrage.spec.ts:205:1 › Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet (2ms)
+  ✘   31 [e2e] › tests/e2e/anmelden.spec.ts:171:1 › Präparierter Link mit fremder Sitzung im Fragment wird nicht übernommen (Login-CSRF) (2ms)
+  ✘   32 [e2e] › tests/e2e/anfrage.spec.ts:214:1 › Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit (2ms)
+  ✘   33 [e2e] › tests/e2e/dienste.spec.ts:13:1 › Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Gebührenzeile (2ms)
+  ✘   34 [e2e] › tests/e2e/anfrage.spec.ts:236:1 › Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash (2ms)
+  ✘   35 [e2e] › tests/e2e/dienste.spec.ts:42:1 › Entrümpelung nur mit der Tastatur: alle Schritte bis zum Ergebnis (2ms)
+  ✘   36 [e2e] › tests/e2e/anfrage.spec.ts:255:1 › ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts (2ms)
+  ✘   37 [e2e] › tests/e2e/dienste.spec.ts:60:1 › Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis (2ms)
+  ✘   38 [e2e] › tests/e2e/anfrage.spec.ts:265:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich (2ms)
+  ✘   39 [e2e] › tests/e2e/dienste.spec.ts:73:1 › Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis (2ms)
+  ✘   40 [e2e] › tests/e2e/anfrage.spec.ts:284:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen (2ms)
+  ✘   41 [e2e] › tests/e2e/dienste.spec.ts:93:1 › Ergebnis ohne Angaben führt zurück zum Wizard (2ms)
+  ✘   42 [e2e] › tests/e2e/anfrage.spec.ts:303:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn (1ms)
+  ✘   43 [e2e] › tests/e2e/dienste.spec.ts:98:1 › Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile (2ms)
+  ✘   44 [e2e] › tests/e2e/anfrage.spec.ts:321:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash (2ms)
+  ✘   45 [e2e] › tests/e2e/dienste.spec.ts:114:1 › Standardmontage: Mindestmenge 2 lfm, Weiter per Tastatur (1ms)
+  ✘   46 [e2e] › tests/e2e/anfrage.spec.ts:343:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte (2ms)
+  ✘   47 [e2e] › tests/e2e/dienste.spec.ts:125:1 › Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt den Fehlerzustand (2ms)
+  ✘   48 [e2e] › tests/e2e/anfrage.spec.ts:353:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt (1ms)
+  ✘   49 [e2e] › tests/e2e/dienste.spec.ts:138:1 › Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten (2ms)
+  ✘   50 [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf (2ms)
+  ✘   51 [e2e] › tests/e2e/fotos.spec.ts:14:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber (2ms)
+  ✘   52 [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf (3ms)
+  ✘   53 [e2e] › tests/e2e/fotos.spec.ts:57:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen (2ms)
+  ✘   54 [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf (2ms)
+  ✘   55 [e2e] › tests/e2e/fotos.spec.ts:65:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging (2ms)
+  ✘   56 [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf (2ms)
+  ✘   57 [e2e] › tests/e2e/fotos.spec.ts:80:1 › Fortschritt: x von 2 hochgeladen, dann gesendet (1ms)
+  ✘   58 [e2e] › tests/e2e/anfrage.spec.ts:397:1 › 422 pickup_outside_vienna: klare Meldung, Link zu den Angaben (2ms)
+  ✘   59 [e2e] › tests/e2e/fotos.spec.ts:88:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet (2ms)
+  ✘   60 [e2e] › tests/e2e/anfrage.spec.ts:405:1 › Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise (2ms)
+  ✘   61 [e2e] › tests/e2e/fotos.spec.ts:101:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild (2ms)
+  ✘   62 [e2e] › tests/e2e/anfrage.spec.ts:434:1 › Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält Gebührenfelder (1ms)
+  ✘   63 [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › offline (2ms)
+  ✘   64 [e2e] › tests/e2e/anfrage.spec.ts:463:1 › Kontowechsel in einem anderen Tab hebt die Einwilligung auf (1ms)
+  ✘   65 [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy) (3ms)
+  ✘   66 [e2e] › tests/e2e/anfrage.spec.ts:481:1 › Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px (1ms)
+  ✘   67 [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 413 (zu groß) (2ms)
+  ✘   68 [e2e] › tests/e2e/anfrage.spec.ts:492:1 › Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag (1ms)
+  ✘   69 [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing (2ms)
+  ✘   70 [e2e] › tests/e2e/anfrage.spec.ts:503:1 › Serverpreis gleich der Vorschau: kein Hinweis (2ms)
+  ✘   71 [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired (3ms)
+  ✘   72 [e2e] › tests/e2e/anfrage.spec.ts:513:1 › Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel (2ms)
+  ✘   73 [e2e] › tests/e2e/fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt (1ms)
+  ✘   74 [e2e] › tests/e2e/komponenten.spec.ts:4:1 › Komponenten per Tastatur bedienbar (1ms)
+  ✘   75 [e2e] › tests/e2e/fotos.spec.ts:184:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben (1ms)
+  ✘   76 [e2e] › tests/e2e/komponenten.spec.ts:32:1 › Touch-Ziele, Beträge und Tab-Bar (1ms)
+  ✘   77 [e2e] › tests/e2e/fotos.spec.ts:191:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt (1ms)
+  ✘   78 [e2e] › tests/e2e/konfigurator.spec.ts:17:1 › Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile (3ms)
+  ✘   79 [e2e] › tests/e2e/fotos.spec.ts:201:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert (1ms)
+  ✘   80 [e2e] › tests/e2e/konfigurator.spec.ts:44:1 › Hauptflow nur mit der Tastatur: Adressen bestätigen, Preis, Weiter (1ms)
+  ✘   81 [e2e] › tests/e2e/shell.spec.ts:5:1 › Erster Start: Onboarding per Tastatur, danach direkt Start (1ms)
+  ✘   82 [e2e] › tests/e2e/konfigurator.spec.ts:73:1 › Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis (2ms)
+  ✘   83 [e2e] › tests/e2e/shell.spec.ts:23:1 › Überspringen beendet das Onboarding (2ms)
+  ✘   84 [e2e] › tests/e2e/konfigurator.spec.ts:87:1 › Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt (2ms)
+  ✘   85 [e2e] › tests/e2e/shell.spec.ts:34:3 › App-Shell › Tab-Bar erreicht alle Tabs mit der Tastatur (2ms)
+  ✘   86 [e2e] › tests/e2e/konfigurator.spec.ts:98:1 › Treffer ohne Hausnummer sind nicht wählbar (2ms)
+  ✘   87 [e2e] › tests/e2e/shell.spec.ts:49:3 › App-Shell › Service-Karte öffnet den Flow ohne Tab-Bar, Zurück führt zum Start (2ms)
+  ✘   88 [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 429: verständliche Meldung, keine Kilometer, kein Preis (2ms)
+  ✘   89 [e2e] › tests/e2e/shell.spec.ts:58:3 › App-Shell › Info-Sheet zeigt Tarife aus der Datenbank, ohne Gebühr (2ms)
+  ✘   90 [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 500: verständliche Meldung, keine Kilometer, kein Preis (2ms)
+  ✘   91 [e2e] › tests/e2e/shell.spec.ts:75:3 › App-Shell › Info-Sheet: Ladefehler zeigt Fehlerzustand mit erneutem Versuch (2ms)
+  ✘   92 [e2e] › tests/e2e/konfigurator.spec.ts:123:1 › Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer (2ms)
+  ✘   93 [e2e] › tests/e2e/shell.spec.ts:85:3 › App-Shell › Offline-Hinweis erscheint und verschwindet (2ms)
+  ✘   94 [e2e] › tests/e2e/konfigurator.spec.ts:134:1 › Fotos: Standort-EXIF ist nach der Aufbereitung entfernt, Entfernen und Limit funktionieren (2ms)
+  ✘   95 [e2e] › tests/e2e/shell.spec.ts:93:3 › App-Shell › Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf (2ms)
+  ✘   96 [e2e] › tests/e2e/konfigurator.spec.ts:165:1 › Änderung von Adresse oder Rückfahrt verwirft die Route (1ms)
+  ✘   97 [e2e] › tests/e2e/shell.spec.ts:103:3 › App-Shell › Unbekannte Adresse zeigt die Fehlerseite (2ms)
+  ✘   98 [e2e] › tests/e2e/konfigurator.spec.ts:179:1 › Mehr als 8 Fotos werden abgelehnt, 8 bleiben (2ms)
+  ✘   99 [e2e] › tests/e2e/shell.spec.ts:110:3 › App-Shell › Datenschutz und Impressum sind als Platzhalter markiert (2ms)
+  ✘  100 [e2e] › tests/e2e/konfigurator.spec.ts:189:1 › Kaputter gespeicherter Zustand wird verworfen, der Konfigurator lädt leer (2ms)
+  ✘  101 [e2e] › tests/e2e/smoke.spec.ts:4:1 › Start lädt ohne Konsolenfehler (1ms)
+  ✘  102 [e2e] › tests/e2e/smoke.spec.ts:13:1 › Erfassung sieht console.error und nicht abgefangene Fehler (2ms)
+
+
+  1) [e2e] › tests/e2e/anfrage.spec.ts:29:1 › Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Hauptfluss-per-dbe95-Senden-Bestätigung-Aufträge-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Hauptfluss-per-dbe95-Senden-Bestätigung-Aufträge-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Hauptfluss-per-dbe95-Senden-Bestätigung-Aufträge-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests/e2e/anfrage.spec.ts:44:1 › Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Termin-Tastatu-8530b-ne-Tag-geht-es-nicht-weiter-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Termin-Tastatu-8530b-ne-Tag-geht-es-nicht-weiter-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Termin-Tastatu-8530b-ne-Tag-geht-es-nicht-weiter-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [e2e] › tests/e2e/anfrage.spec.ts:63:1 › Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Doppeltipp-auf-90141-ken-der-angezeigten-Sitzung-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Doppeltipp-auf-90141-ken-der-angezeigten-Sitzung-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Doppeltipp-auf-90141-ken-der-angezeigten-Sitzung-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [e2e] › tests/e2e/anfrage.spec.ts:83:1 › Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Fehler-400-Hin-bf36f-gesperrt-Link-zur-Korrektur-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Fehler-400-Hin-bf36f-gesperrt-Link-zur-Korrektur-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Fehler-400-Hin-bf36f-gesperrt-Link-zur-Korrektur-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [e2e] › tests/e2e/anfrage.spec.ts:94:1 › Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Fehler-422-Ter-f285c-ur-kein-Verlust-Versprechen-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Fehler-422-Ter-f285c-ur-kein-Verlust-Versprechen-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Fehler-422-Ter-f285c-ur-kein-Verlust-Versprechen-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [e2e] › tests/e2e/anfrage.spec.ts:104:1 › Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Fehler-401-bei-56cd6-Schleife-der-Entwurf-bleibt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Fehler-401-bei-56cd6-Schleife-der-Entwurf-bleibt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Fehler-401-bei-56cd6-Schleife-der-Entwurf-bleibt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [e2e] › tests/e2e/anfrage.spec.ts:116:1 › Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Fehler-429-War-94d7e-utomatischer-zweiter-Aufruf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Fehler-429-War-94d7e-utomatischer-zweiter-Aufruf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Fehler-429-War-94d7e-utomatischer-zweiter-Aufruf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [e2e] › tests/e2e/anfrage.spec.ts:126:1 › Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Fehler-500-und-27e0c-ientRef-nie-ein-Serverpreis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Fehler-500-und-27e0c-ientRef-nie-ein-Serverpreis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Fehler-500-und-27e0c-ientRef-nie-ein-Serverpreis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [e2e] › tests/e2e/anfrage.spec.ts:141:1 › Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Geänderte-Eing-88ab2-ekommen-eine-neue-clientRef-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Geänderte-Eing-88ab2-ekommen-eine-neue-clientRef-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Geänderte-Eing-88ab2-ekommen-eine-neue-clientRef-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [e2e] › tests/e2e/anfrage.spec.ts:157:1 › Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“ 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Angebot-nötig--a37c5-lden-uns-mit-einem-Angebot“-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Angebot-nötig--a37c5-lden-uns-mit-einem-Angebot“-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Angebot-nötig--a37c5-lden-uns-mit-einem-Angebot“-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [e2e] › tests/e2e/anfrage.spec.ts:167:1 › Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Spanne-Entrümp-cec00-zen-Euro-Festpreis-mit-Cent-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Spanne-Entrümp-cec00-zen-Euro-Festpreis-mit-Cent-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Spanne-Entrümp-cec00-zen-Euro-Festpreis-mit-Cent-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [e2e] › tests/e2e/anfrage.spec.ts:174:1 › Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Unplausible-An-e04ed-gespeichert-aber-kein-Preis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Unplausible-An-e04ed-gespeichert-aber-kein-Preis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Unplausible-An-e04ed-gespeichert-aber-kein-Preis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [e2e] › tests/e2e/anfrage.spec.ts:182:1 › Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Kontowechsel-z-9bcb5-den-es-wird-nichts-gesendet-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Kontowechsel-z-9bcb5-den-es-wird-nichts-gesendet-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Kontowechsel-z-9bcb5-den-es-wird-nichts-gesendet-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [e2e] › tests/e2e/anfrage.spec.ts:196:1 › „Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-„Anderes-Konto-f1d91-g-ab-und-der-Entwurf-bleibt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-„Anderes-Konto-f1d91-g-ab-und-der-Entwurf-bleibt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-„Anderes-Konto-f1d91-g-ab-und-der-Entwurf-bleibt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [e2e] › tests/e2e/anfrage.spec.ts:205:1 › Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Ohne-Anmeldung-e0226-eldung-nichts-wird-gesendet-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Ohne-Anmeldung-e0226-eldung-nichts-wird-gesendet-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Ohne-Anmeldung-e0226-eldung-nichts-wird-gesendet-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [e2e] › tests/e2e/anfrage.spec.ts:214:1 › Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Magic-Link-in--572f8-kommt-über-die-Übergabe-mit-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Magic-Link-in--572f8-kommt-über-die-Übergabe-mit-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Magic-Link-in--572f8-kommt-über-die-Übergabe-mit-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  17) [e2e] › tests/e2e/anfrage.spec.ts:236:1 › Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Zusammenfassun-7acf9-eser-Betrag-und-dieser-Hash-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Zusammenfassun-7acf9-eser-Betrag-und-dieser-Hash-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Zusammenfassun-7acf9-eser-Betrag-und-dieser-Hash-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  18) [e2e] › tests/e2e/anfrage.spec.ts:255:1 › ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-ohne-gemerkten-533fa-chritt-gesendet-wird-nichts-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-ohne-gemerkten-533fa-chritt-gesendet-wird-nichts-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-ohne-gemerkten-533fa-chritt-gesendet-wird-nichts-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  19) [e2e] › tests/e2e/anfrage.spec.ts:265:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-price-chan-fe9c6-ung-clientRef-bleibt-gleich-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-price-chan-fe9c6-ung-clientRef-bleibt-gleich-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-price-chan-fe9c6-ung-clientRef-bleibt-gleich-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  20) [e2e] › tests/e2e/anfrage.spec.ts:284:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-terms-chan-dcce4-msHash-und-clientRef-passen-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-terms-chan-dcce4-msHash-und-clientRef-passen-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-terms-chan-dcce4-msHash-und-clientRef-passen-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  21) [e2e] › tests/e2e/anfrage.spec.ts:303:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-price-chan-324ad-ut-senden“-sendet-genau-ihn-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  22) [e2e] › tests/e2e/anfrage.spec.ts:321:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-terms-chan-8935e-t-senden“-sendet-deren-Hash-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  23) [e2e] › tests/e2e/anfrage.spec.ts:343:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-price-chan-f2fc0-det-wird-nur-über-die-Karte-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  24) [e2e] › tests/e2e/anfrage.spec.ts:353:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-terms-chan-30452-h-der-Karten-Knopf-gesperrt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  25) [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-unvollstän-2c9a9-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  26) [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-unvollstän-b585b-handelt-kein-zweiter-Aufruf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-unvollstän-b585b-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-unvollstän-b585b-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  27) [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-unvollstän-127ea-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  28) [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-409-unvollstän-33ea8-handelt-kein-zweiter-Aufruf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  29) [e2e] › tests/e2e/anfrage.spec.ts:397:1 › 422 pickup_outside_vienna: klare Meldung, Link zu den Angaben 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-422-pickup-out-0a977-Meldung-Link-zu-den-Angaben-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-422-pickup-out-0a977-Meldung-Link-zu-den-Angaben-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-422-pickup-out-0a977-Meldung-Link-zu-den-Angaben-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  30) [e2e] › tests/e2e/anfrage.spec.ts:405:1 › Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Aufträge-nur-e-3ab47-nd-Spalten-Chips-und-Preise-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Aufträge-nur-e-3ab47-nd-Spalten-Chips-und-Preise-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Aufträge-nur-e-3ab47-nd-Spalten-Chips-und-Preise-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  31) [e2e] › tests/e2e/anfrage.spec.ts:434:1 › Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält Gebührenfelder 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Die-App-liest--4d113-wort-enthält-Gebührenfelder-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Die-App-liest--4d113-wort-enthält-Gebührenfelder-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Die-App-liest--4d113-wort-enthält-Gebührenfelder-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  32) [e2e] › tests/e2e/anfrage.spec.ts:463:1 › Kontowechsel in einem anderen Tab hebt die Einwilligung auf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Kontowechsel-i-dab1a-b-hebt-die-Einwilligung-auf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Kontowechsel-i-dab1a-b-hebt-die-Einwilligung-auf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Kontowechsel-i-dab1a-b-hebt-die-Einwilligung-auf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  33) [e2e] › tests/e2e/anfrage.spec.ts:481:1 › Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Zusammenfassun-ac3e6-und-Knöpfe-mindestens-44-px-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Zusammenfassun-ac3e6-und-Knöpfe-mindestens-44-px-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Zusammenfassun-ac3e6-und-Knöpfe-mindestens-44-px-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  34) [e2e] › tests/e2e/anfrage.spec.ts:492:1 › Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Serverpreis-we-9f1e2-inweis-mit-dem-alten-Betrag-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Serverpreis-we-9f1e2-inweis-mit-dem-alten-Betrag-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Serverpreis-we-9f1e2-inweis-mit-dem-alten-Betrag-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  35) [e2e] › tests/e2e/anfrage.spec.ts:503:1 › Serverpreis gleich der Vorschau: kein Hinweis ──────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Serverpreis-gleich-der-Vorschau-kein-Hinweis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Serverpreis-gleich-der-Vorschau-kein-Hinweis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Serverpreis-gleich-der-Vorschau-kein-Hinweis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  36) [e2e] › tests/e2e/anfrage.spec.ts:513:1 › Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anfrage-Vorschau-mit-P-4636c-nweis-statt-stillem-Wechsel-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anfrage-Vorschau-mit-P-4636c-nweis-statt-stillem-Wechsel-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anfrage-Vorschau-mit-P-4636c-nweis-statt-stillem-Wechsel-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  37) [e2e] › tests/e2e/anmelden.spec.ts:11:1 › Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Code-Weg-per--a4297-behält-die-Sitzung-Abmelden-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Code-Weg-per--a4297-behält-die-Sitzung-Abmelden-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Code-Weg-per--a4297-behält-die-Sitzung-Abmelden-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  38) [e2e] › tests/e2e/anmelden.spec.ts:44:1 › Link-Weg: Token verschwindet sofort aus der URL, Prüfung erst nach Tipp, danach E-Mail sichtbar 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Link-Weg-Toke-18ede-Tipp-danach-E-Mail-sichtbar-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Link-Weg-Toke-18ede-Tipp-danach-E-Mail-sichtbar-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Link-Weg-Toke-18ede-Tipp-danach-E-Mail-sichtbar-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  39) [e2e] › tests/e2e/anmelden.spec.ts:62:1 › Link bei bestehender Sitzung meldet nicht ohne Tipp in einem anderen Konto an 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Link-bei-best-a8e00-p-in-einem-anderen-Konto-an-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Link-bei-best-a8e00-p-in-einem-anderen-Konto-an-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Link-bei-best-a8e00-p-in-einem-anderen-Konto-an-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  40) [e2e] › tests/e2e/anmelden.spec.ts:74:1 › Rücksprung überlebt einen neuen Tab (Link aus dem Mailprogramm) 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Rücksprung-üb-275b0--Link-aus-dem-Mailprogramm--e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Rücksprung-üb-275b0--Link-aus-dem-Mailprogramm--e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Rücksprung-üb-275b0--Link-aus-dem-Mailprogramm--e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  41) [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: //evil.com ─────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  42) [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: https://evil.com ───
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-https-evil-com-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-https-evil-com-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-https-evil-com-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  43) [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: javascript:alert(1) 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Offene-Weiter-e5869-rworfen-javascript-alert-1--e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Offene-Weiter-e5869-rworfen-javascript-alert-1--e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Offene-Weiter-e5869-rworfen-javascript-alert-1--e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  44) [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: /\evil.com ─────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Offene-Weiterleitung-verworfen-evil-com-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  45) [e2e] › tests/e2e/anmelden.spec.ts:98:1 › Fehler beim Code: eigener Text statt Dienstmeldung, Erneut senden erst nach Countdown 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Fehler-beim-C-48d2f--senden-erst-nach-Countdown-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Fehler-beim-C-48d2f--senden-erst-nach-Countdown-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Fehler-beim-C-48d2f--senden-erst-nach-Countdown-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  46) [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: zu viele Versuche ─────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-zu-viele-Versuche-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-zu-viele-Versuche-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-zu-viele-Versuche-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  47) [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: offline ───────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-offline-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-offline-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-offline-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  48) [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: Dienst gestört ────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-Dienst-gestört-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-Dienst-gestört-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Fehler-beim-Prüfen-Dienst-gestört-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  49) [e2e] › tests/e2e/anmelden.spec.ts:133:1 › Fehler beim Anfordern: Adresse, 429, offline ──────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Fehler-beim-Anfordern-Adresse-429-offline-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Fehler-beim-Anfordern-Adresse-429-offline-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Fehler-beim-Anfordern-Adresse-429-offline-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  50) [e2e] › tests/e2e/anmelden.spec.ts:153:1 › Abgelaufener oder benutzter Link: eigener Text und Weg zum neuen Code 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Abgelaufener--cecc6-Text-und-Weg-zum-neuen-Code-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Abgelaufener--cecc6-Text-und-Weg-zum-neuen-Code-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Abgelaufener--cecc6-Text-und-Weg-zum-neuen-Code-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  51) [e2e] › tests/e2e/anmelden.spec.ts:164:1 › Standard-Link von Supabase mit Fehler im Fragment zeigt denselben Text 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Standard-Link-d504b-agment-zeigt-denselben-Text-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Standard-Link-d504b-agment-zeigt-denselben-Text-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Standard-Link-d504b-agment-zeigt-denselben-Text-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  52) [e2e] › tests/e2e/anmelden.spec.ts:171:1 › Präparierter Link mit fremder Sitzung im Fragment wird nicht übernommen (Login-CSRF) 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-anmelden-Präparierter--8241a-icht-übernommen-Login-CSRF--e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-anmelden-Präparierter--8241a-icht-übernommen-Login-CSRF--e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-anmelden-Präparierter--8241a-icht-übernommen-Login-CSRF--e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  53) [e2e] › tests/e2e/dienste.spec.ts:13:1 › Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Gebührenzeile 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Entrümpelung-B-62458-–1-550-€-ohne-Gebührenzeile-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Entrümpelung-B-62458-–1-550-€-ohne-Gebührenzeile-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Entrümpelung-B-62458-–1-550-€-ohne-Gebührenzeile-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  54) [e2e] › tests/e2e/dienste.spec.ts:42:1 › Entrümpelung nur mit der Tastatur: alle Schritte bis zum Ergebnis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Entrümpelung-n-d3be5-e-Schritte-bis-zum-Ergebnis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Entrümpelung-n-d3be5-e-Schritte-bis-zum-Ergebnis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Entrümpelung-n-d3be5-e-Schritte-bis-zum-Ergebnis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  55) [e2e] › tests/e2e/dienste.spec.ts:60:1 › Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Mindestpreis-k-bf420-echnet-mit-dem-Mindestpreis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Mindestpreis-k-bf420-echnet-mit-dem-Mindestpreis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Mindestpreis-k-bf420-echnet-mit-dem-Mindestpreis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  56) [e2e] › tests/e2e/dienste.spec.ts:73:1 › Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Gewerbe-und-So-ce490-tigung-statt-zu-einem-Preis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Gewerbe-und-So-ce490-tigung-statt-zu-einem-Preis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Gewerbe-und-So-ce490-tigung-statt-zu-einem-Preis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  57) [e2e] › tests/e2e/dienste.spec.ts:93:1 › Ergebnis ohne Angaben führt zurück zum Wizard ───────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Ergebnis-ohne-Angaben-führt-zurück-zum-Wizard-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Ergebnis-ohne-Angaben-führt-zurück-zum-Wizard-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Ergebnis-ohne-Angaben-führt-zurück-zum-Wizard-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  58) [e2e] › tests/e2e/dienste.spec.ts:98:1 › Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Küche-Beispiel-9adbb-ndbetrag-ohne-Gebührenzeile-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Küche-Beispiel-9adbb-ndbetrag-ohne-Gebührenzeile-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Küche-Beispiel-9adbb-ndbetrag-ohne-Gebührenzeile-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  59) [e2e] › tests/e2e/dienste.spec.ts:114:1 › Standardmontage: Mindestmenge 2 lfm, Weiter per Tastatur 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Standardmontag-47154-e-2-lfm-Weiter-per-Tastatur-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Standardmontag-47154-e-2-lfm-Weiter-per-Tastatur-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Standardmontag-47154-e-2-lfm-Weiter-per-Tastatur-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  60) [e2e] › tests/e2e/dienste.spec.ts:125:1 › Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt den Fehlerzustand 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Kaputter-gespe-7fcc5-age-zeigt-den-Fehlerzustand-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Kaputter-gespe-7fcc5-age-zeigt-den-Fehlerzustand-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Kaputter-gespe-7fcc5-age-zeigt-den-Fehlerzustand-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  61) [e2e] › tests/e2e/dienste.spec.ts:138:1 › Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-dienste-Ändern-im-Erge-2e44d-ie-Angaben-bleiben-erhalten-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-dienste-Ändern-im-Erge-2e44d-ie-Angaben-bleiben-erhalten-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-dienste-Ändern-im-Erge-2e44d-ie-Angaben-bleiben-erhalten-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  62) [e2e] › tests/e2e/fotos.spec.ts:14:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fotos-gehen-vor--90653-ds-im-Aufruf-Konsole-sauber-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fotos-gehen-vor--90653-ds-im-Aufruf-Konsole-sauber-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fotos-gehen-vor--90653-ds-im-Aufruf-Konsole-sauber-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  63) [e2e] › tests/e2e/fotos.spec.ts:57:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Hinweis-vor-dem--ac738-ern-die-Fotos-sind-zu-sehen-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Hinweis-vor-dem--ac738-ern-die-Fotos-sind-zu-sehen-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Hinweis-vor-dem--ac738-ern-die-Fotos-sind-zu-sehen-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  64) [e2e] › tests/e2e/fotos.spec.ts:65:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Hauptflow-per-Ta-e1488--mit-Enter-Fotos-im-Staging-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Hauptflow-per-Ta-e1488--mit-Enter-Fotos-im-Staging-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Hauptflow-per-Ta-e1488--mit-Enter-Fotos-im-Staging-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  65) [e2e] › tests/e2e/fotos.spec.ts:80:1 › Fortschritt: x von 2 hochgeladen, dann gesendet ───────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fortschritt-x-von-2-hochgeladen-dann-gesendet-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fortschritt-x-von-2-hochgeladen-dann-gesendet-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fortschritt-x-von-2-hochgeladen-dann-gesendet-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  66) [e2e] › tests/e2e/fotos.spec.ts:88:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fehler-beim-Hoch-c6abc-senden-holt-nach-und-sendet-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fehler-beim-Hoch-c6abc-senden-holt-nach-und-sendet-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fehler-beim-Hoch-c6abc-senden-holt-nach-und-sendet-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  67) [e2e] › tests/e2e/fotos.spec.ts:101:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Maße-der-Zusamme-ad4b9-Knopf-≥-44-px-Karte-im-Bild-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Maße-der-Zusamme-ad4b9-Knopf-≥-44-px-Karte-im-Bild-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Maße-der-Zusamme-ad4b9-Knopf-≥-44-px-Karte-im-Bild-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  68) [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › offline ─────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-offline-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-offline-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-offline-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  69) [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy) 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fehlertexte-beim-a65a2-403-Kontingent-oder-Policy--e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fehlertexte-beim-a65a2-403-Kontingent-oder-Policy--e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fehlertexte-beim-a65a2-403-Kontingent-oder-Policy--e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  70) [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 413 (zu groß) ───────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-413-zu-groß--e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-413-zu-groß--e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Fehlertexte-beim-Hochladen-413-zu-groß--e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  71) [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-422-der-Fotos-ne-36998-rden-entfernt-photo-missing-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  72) [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-422-der-Fotos-ne-d6fdd-rden-entfernt-photo-expired-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  73) [e2e] › tests/e2e/fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Verlorene-Antwor-d6435-te-Staging-Dateien-entfernt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  74) [e2e] › tests/e2e/fotos.spec.ts:184:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-422-too-many-pho-b31af-t-Weg-zurück-zu-den-Angaben-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-422-too-many-pho-b31af-t-Weg-zurück-zu-den-Angaben-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-422-too-many-pho-b31af-t-Weg-zurück-zu-den-Angaben-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  75) [e2e] › tests/e2e/fotos.spec.ts:191:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Falsche-Dateityp-2d94f-dung-GIF-und-Text-abgelehnt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Falsche-Dateityp-2d94f-dung-GIF-und-Text-abgelehnt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Falsche-Dateityp-2d94f-dung-GIF-und-Text-abgelehnt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  76) [e2e] › tests/e2e/fotos.spec.ts:201:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-fotos-Große-Fotos-werd-eb777-er-langen-Kante-verkleinert-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-fotos-Große-Fotos-werd-eb777-er-langen-Kante-verkleinert-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-fotos-Große-Fotos-werd-eb777-er-langen-Kante-verkleinert-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  77) [e2e] › tests/e2e/komponenten.spec.ts:4:1 › Komponenten per Tastatur bedienbar ───────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-komponenten-Komponenten-per-Tastatur-bedienbar-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-komponenten-Komponenten-per-Tastatur-bedienbar-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-komponenten-Komponenten-per-Tastatur-bedienbar-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  78) [e2e] › tests/e2e/komponenten.spec.ts:32:1 › Touch-Ziele, Beträge und Tab-Bar ────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-komponenten-Touch-Ziele-Beträge-und-Tab-Bar-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-komponenten-Touch-Ziele-Beträge-und-Tab-Bar-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-komponenten-Touch-Ziele-Beträge-und-Tab-Bar-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  79) [e2e] › tests/e2e/konfigurator.spec.ts:17:1 › Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Umzug-Bei-3a364-sitionen-ohne-Gebührenzeile-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Umzug-Bei-3a364-sitionen-ohne-Gebührenzeile-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Umzug-Bei-3a364-sitionen-ohne-Gebührenzeile-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  80) [e2e] › tests/e2e/konfigurator.spec.ts:44:1 › Hauptflow nur mit der Tastatur: Adressen bestätigen, Preis, Weiter 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Hauptflow-12878-sen-bestätigen-Preis-Weiter-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Hauptflow-12878-sen-bestätigen-Preis-Weiter-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Hauptflow-12878-sen-bestätigen-Preis-Weiter-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  81) [e2e] › tests/e2e/konfigurator.spec.ts:73:1 › Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Klavier-f-05b12--Grund-nicht-zu-einem-Preis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Klavier-f-05b12--Grund-nicht-zu-einem-Preis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Klavier-f-05b12--Grund-nicht-zu-einem-Preis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  82) [e2e] › tests/e2e/konfigurator.spec.ts:87:1 › Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Ohne-Einw-d234d-n-die-Suche-bleibt-gesperrt-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Ohne-Einw-d234d-n-die-Suche-bleibt-gesperrt-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Ohne-Einw-d234d-n-die-Suche-bleibt-gesperrt-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  83) [e2e] › tests/e2e/konfigurator.spec.ts:98:1 › Treffer ohne Hausnummer sind nicht wählbar ─────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Treffer-ohne-Hausnummer-sind-nicht-wählbar-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Treffer-ohne-Hausnummer-sind-nicht-wählbar-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Treffer-ohne-Hausnummer-sind-nicht-wählbar-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  84) [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 429: verständliche Meldung, keine Kilometer, kein Preis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Routenfun-afdd3--keine-Kilometer-kein-Preis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Routenfun-afdd3--keine-Kilometer-kein-Preis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Routenfun-afdd3--keine-Kilometer-kein-Preis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  85) [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 500: verständliche Meldung, keine Kilometer, kein Preis 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Routenfun-6ecaa--keine-Kilometer-kein-Preis-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Routenfun-6ecaa--keine-Kilometer-kein-Preis-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Routenfun-6ecaa--keine-Kilometer-kein-Preis-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  86) [e2e] › tests/e2e/konfigurator.spec.ts:123:1 › Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Funktion--1b779-Fehlermeldung-statt-Treffer-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Funktion--1b779-Fehlermeldung-statt-Treffer-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Funktion--1b779-Fehlermeldung-statt-Treffer-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  87) [e2e] › tests/e2e/konfigurator.spec.ts:134:1 › Fotos: Standort-EXIF ist nach der Aufbereitung entfernt, Entfernen und Limit funktionieren 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Fotos-Sta-ed575-nen-und-Limit-funktionieren-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Fotos-Sta-ed575-nen-und-Limit-funktionieren-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Fotos-Sta-ed575-nen-und-Limit-funktionieren-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  88) [e2e] › tests/e2e/konfigurator.spec.ts:165:1 › Änderung von Adresse oder Rückfahrt verwirft die Route 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Änderung--20332-ückfahrt-verwirft-die-Route-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Änderung--20332-ückfahrt-verwirft-die-Route-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Änderung--20332-ückfahrt-verwirft-die-Route-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  89) [e2e] › tests/e2e/konfigurator.spec.ts:179:1 › Mehr als 8 Fotos werden abgelehnt, 8 bleiben ──
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Mehr-als-8-Fotos-werden-abgelehnt-8-bleiben-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Mehr-als-8-Fotos-werden-abgelehnt-8-bleiben-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Mehr-als-8-Fotos-werden-abgelehnt-8-bleiben-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  90) [e2e] › tests/e2e/konfigurator.spec.ts:189:1 › Kaputter gespeicherter Zustand wird verworfen, der Konfigurator lädt leer 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-konfigurator-Kaputter--7ec99--der-Konfigurator-lädt-leer-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-konfigurator-Kaputter--7ec99--der-Konfigurator-lädt-leer-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-konfigurator-Kaputter--7ec99--der-Konfigurator-lädt-leer-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  91) [e2e] › tests/e2e/shell.spec.ts:5:1 › Erster Start: Onboarding per Tastatur, danach direkt Start 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-Erster-Start-Onb-da320-astatur-danach-direkt-Start-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-Erster-Start-Onb-da320-astatur-danach-direkt-Start-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-Erster-Start-Onb-da320-astatur-danach-direkt-Start-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  92) [e2e] › tests/e2e/shell.spec.ts:23:1 › Überspringen beendet das Onboarding ───────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-Überspringen-beendet-das-Onboarding-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-Überspringen-beendet-das-Onboarding-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-Überspringen-beendet-das-Onboarding-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  93) [e2e] › tests/e2e/shell.spec.ts:34:3 › App-Shell › Tab-Bar erreicht alle Tabs mit der Tastatur 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Tab-Ba-22af3--alle-Tabs-mit-der-Tastatur-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Tab-Ba-22af3--alle-Tabs-mit-der-Tastatur-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Tab-Ba-22af3--alle-Tabs-mit-der-Tastatur-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  94) [e2e] › tests/e2e/shell.spec.ts:49:3 › App-Shell › Service-Karte öffnet den Flow ohne Tab-Bar, Zurück führt zum Start 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Servic-6a63a--Bar-Zurück-führt-zum-Start-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Servic-6a63a--Bar-Zurück-führt-zum-Start-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Servic-6a63a--Bar-Zurück-führt-zum-Start-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  95) [e2e] › tests/e2e/shell.spec.ts:58:3 › App-Shell › Info-Sheet zeigt Tarife aus der Datenbank, ohne Gebühr 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Info-S-718ef-s-der-Datenbank-ohne-Gebühr-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Info-S-718ef-s-der-Datenbank-ohne-Gebühr-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Info-S-718ef-s-der-Datenbank-ohne-Gebühr-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  96) [e2e] › tests/e2e/shell.spec.ts:75:3 › App-Shell › Info-Sheet: Ladefehler zeigt Fehlerzustand mit erneutem Versuch 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Info-S-14170-ustand-mit-erneutem-Versuch-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Info-S-14170-ustand-mit-erneutem-Versuch-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Info-S-14170-ustand-mit-erneutem-Versuch-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  97) [e2e] › tests/e2e/shell.spec.ts:85:3 › App-Shell › Offline-Hinweis erscheint und verschwindet 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Offlin-966d0--erscheint-und-verschwindet-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Offlin-966d0--erscheint-und-verschwindet-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Offlin-966d0--erscheint-und-verschwindet-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  98) [e2e] › tests/e2e/shell.spec.ts:93:3 › App-Shell › Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Alle-S-d529f--kein-horizontaler-Überlauf-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Alle-S-d529f--kein-horizontaler-Überlauf-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Alle-S-d529f--kein-horizontaler-Überlauf-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  99) [e2e] › tests/e2e/shell.spec.ts:103:3 › App-Shell › Unbekannte Adresse zeigt die Fehlerseite ─
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Unbekannte-Adresse-zeigt-die-Fehlerseite-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Unbekannte-Adresse-zeigt-die-Fehlerseite-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Unbekannte-Adresse-zeigt-die-Fehlerseite-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  100) [e2e] › tests/e2e/shell.spec.ts:110:3 › App-Shell › Datenschutz und Impressum sind als Platzhalter markiert 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-shell-App-Shell-Datens-ab6f9-nd-als-Platzhalter-markiert-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-shell-App-Shell-Datens-ab6f9-nd-als-Platzhalter-markiert-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-shell-App-Shell-Datens-ab6f9-nd-als-Platzhalter-markiert-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  101) [e2e] › tests/e2e/smoke.spec.ts:4:1 › Start lädt ohne Konsolenfehler ────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-smoke-Start-lädt-ohne-Konsolenfehler-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-smoke-Start-lädt-ohne-Konsolenfehler-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-smoke-Start-lädt-ohne-Konsolenfehler-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  102) [e2e] › tests/e2e/smoke.spec.ts:13:1 › Erfassung sieht console.error und nicht abgefangene Fehler 
+
+    Error: browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: tmp/playwright/e2e-smoke-Erfassung-sieht--aab13-nd-nicht-abgefangene-Fehler-e2e/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-smoke-Erfassung-sieht--aab13-nd-nicht-abgefangene-Fehler-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-smoke-Erfassung-sieht--aab13-nd-nicht-abgefangene-Fehler-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  102 failed
+    [e2e] › tests/e2e/anfrage.spec.ts:29:1 › Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge 
+    [e2e] › tests/e2e/anfrage.spec.ts:44:1 › Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter 
+    [e2e] › tests/e2e/anfrage.spec.ts:63:1 › Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung 
+    [e2e] › tests/e2e/anfrage.spec.ts:83:1 › Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur 
+    [e2e] › tests/e2e/anfrage.spec.ts:94:1 › Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen 
+    [e2e] › tests/e2e/anfrage.spec.ts:104:1 › Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt 
+    [e2e] › tests/e2e/anfrage.spec.ts:116:1 › Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf 
+    [e2e] › tests/e2e/anfrage.spec.ts:126:1 › Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis 
+    [e2e] › tests/e2e/anfrage.spec.ts:141:1 › Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef 
+    [e2e] › tests/e2e/anfrage.spec.ts:157:1 › Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“ 
+    [e2e] › tests/e2e/anfrage.spec.ts:167:1 › Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent 
+    [e2e] › tests/e2e/anfrage.spec.ts:174:1 › Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis 
+    [e2e] › tests/e2e/anfrage.spec.ts:182:1 › Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet 
+    [e2e] › tests/e2e/anfrage.spec.ts:196:1 › „Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt 
+    [e2e] › tests/e2e/anfrage.spec.ts:205:1 › Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet 
+    [e2e] › tests/e2e/anfrage.spec.ts:214:1 › Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit 
+    [e2e] › tests/e2e/anfrage.spec.ts:236:1 › Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash 
+    [e2e] › tests/e2e/anfrage.spec.ts:255:1 › ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts 
+    [e2e] › tests/e2e/anfrage.spec.ts:265:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich 
+    [e2e] › tests/e2e/anfrage.spec.ts:284:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen 
+    [e2e] › tests/e2e/anfrage.spec.ts:303:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn 
+    [e2e] › tests/e2e/anfrage.spec.ts:321:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash 
+    [e2e] › tests/e2e/anfrage.spec.ts:343:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte 
+    [e2e] › tests/e2e/anfrage.spec.ts:353:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt 
+    [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests/e2e/anfrage.spec.ts:386:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf 
+    [e2e] › tests/e2e/anfrage.spec.ts:397:1 › 422 pickup_outside_vienna: klare Meldung, Link zu den Angaben 
+    [e2e] › tests/e2e/anfrage.spec.ts:405:1 › Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise 
+    [e2e] › tests/e2e/anfrage.spec.ts:434:1 › Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält Gebührenfelder 
+    [e2e] › tests/e2e/anfrage.spec.ts:463:1 › Kontowechsel in einem anderen Tab hebt die Einwilligung auf 
+    [e2e] › tests/e2e/anfrage.spec.ts:481:1 › Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px 
+    [e2e] › tests/e2e/anfrage.spec.ts:492:1 › Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag 
+    [e2e] › tests/e2e/anfrage.spec.ts:503:1 › Serverpreis gleich der Vorschau: kein Hinweis ────────
+    [e2e] › tests/e2e/anfrage.spec.ts:513:1 › Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel 
+    [e2e] › tests/e2e/anmelden.spec.ts:11:1 › Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden 
+    [e2e] › tests/e2e/anmelden.spec.ts:44:1 › Link-Weg: Token verschwindet sofort aus der URL, Prüfung erst nach Tipp, danach E-Mail sichtbar 
+    [e2e] › tests/e2e/anmelden.spec.ts:62:1 › Link bei bestehender Sitzung meldet nicht ohne Tipp in einem anderen Konto an 
+    [e2e] › tests/e2e/anmelden.spec.ts:74:1 › Rücksprung überlebt einen neuen Tab (Link aus dem Mailprogramm) 
+    [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: //evil.com ───────────
+    [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: https://evil.com ─────
+    [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: javascript:alert(1) ──
+    [e2e] › tests/e2e/anmelden.spec.ts:90:3 › Offene Weiterleitung verworfen: /\evil.com ───────────
+    [e2e] › tests/e2e/anmelden.spec.ts:98:1 › Fehler beim Code: eigener Text statt Dienstmeldung, Erneut senden erst nach Countdown 
+    [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: zu viele Versuche ───────────────
+    [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: offline ─────────────────────────
+    [e2e] › tests/e2e/anmelden.spec.ts:121:3 › Fehler beim Prüfen: Dienst gestört ──────────────────
+    [e2e] › tests/e2e/anmelden.spec.ts:133:1 › Fehler beim Anfordern: Adresse, 429, offline ────────
+    [e2e] › tests/e2e/anmelden.spec.ts:153:1 › Abgelaufener oder benutzter Link: eigener Text und Weg zum neuen Code 
+    [e2e] › tests/e2e/anmelden.spec.ts:164:1 › Standard-Link von Supabase mit Fehler im Fragment zeigt denselben Text 
+    [e2e] › tests/e2e/anmelden.spec.ts:171:1 › Präparierter Link mit fremder Sitzung im Fragment wird nicht übernommen (Login-CSRF) 
+    [e2e] › tests/e2e/dienste.spec.ts:13:1 › Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Gebührenzeile 
+    [e2e] › tests/e2e/dienste.spec.ts:42:1 › Entrümpelung nur mit der Tastatur: alle Schritte bis zum Ergebnis 
+    [e2e] › tests/e2e/dienste.spec.ts:60:1 › Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis 
+    [e2e] › tests/e2e/dienste.spec.ts:73:1 › Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis 
+    [e2e] › tests/e2e/dienste.spec.ts:93:1 › Ergebnis ohne Angaben führt zurück zum Wizard ─────────
+    [e2e] › tests/e2e/dienste.spec.ts:98:1 › Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile 
+    [e2e] › tests/e2e/dienste.spec.ts:114:1 › Standardmontage: Mindestmenge 2 lfm, Weiter per Tastatur 
+    [e2e] › tests/e2e/dienste.spec.ts:125:1 › Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt den Fehlerzustand 
+    [e2e] › tests/e2e/dienste.spec.ts:138:1 › Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten 
+    [e2e] › tests/e2e/fotos.spec.ts:14:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber 
+    [e2e] › tests/e2e/fotos.spec.ts:57:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen 
+    [e2e] › tests/e2e/fotos.spec.ts:65:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging 
+    [e2e] › tests/e2e/fotos.spec.ts:80:1 › Fortschritt: x von 2 hochgeladen, dann gesendet ─────────
+    [e2e] › tests/e2e/fotos.spec.ts:88:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet 
+    [e2e] › tests/e2e/fotos.spec.ts:101:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild 
+    [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › offline ───────────────────
+    [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy) 
+    [e2e] › tests/e2e/fotos.spec.ts:125:5 › Fehlertexte beim Hochladen › 413 (zu groß) ─────────────
+    [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing 
+    [e2e] › tests/e2e/fotos.spec.ts:140:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired 
+    [e2e] › tests/e2e/fotos.spec.ts:158:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt 
+    [e2e] › tests/e2e/fotos.spec.ts:184:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben 
+    [e2e] › tests/e2e/fotos.spec.ts:191:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt 
+    [e2e] › tests/e2e/fotos.spec.ts:201:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert 
+    [e2e] › tests/e2e/komponenten.spec.ts:4:1 › Komponenten per Tastatur bedienbar ─────────────────
+    [e2e] › tests/e2e/komponenten.spec.ts:32:1 › Touch-Ziele, Beträge und Tab-Bar ──────────────────
+    [e2e] › tests/e2e/konfigurator.spec.ts:17:1 › Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile 
+    [e2e] › tests/e2e/konfigurator.spec.ts:44:1 › Hauptflow nur mit der Tastatur: Adressen bestätigen, Preis, Weiter 
+    [e2e] › tests/e2e/konfigurator.spec.ts:73:1 › Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis 
+    [e2e] › tests/e2e/konfigurator.spec.ts:87:1 › Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt 
+    [e2e] › tests/e2e/konfigurator.spec.ts:98:1 › Treffer ohne Hausnummer sind nicht wählbar ───────
+    [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 429: verständliche Meldung, keine Kilometer, kein Preis 
+    [e2e] › tests/e2e/konfigurator.spec.ts:111:3 › Routenfunktion antwortet 500: verständliche Meldung, keine Kilometer, kein Preis 
+    [e2e] › tests/e2e/konfigurator.spec.ts:123:1 › Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer 
+    [e2e] › tests/e2e/konfigurator.spec.ts:134:1 › Fotos: Standort-EXIF ist nach der Aufbereitung entfernt, Entfernen und Limit funktionieren 
+    [e2e] › tests/e2e/konfigurator.spec.ts:165:1 › Änderung von Adresse oder Rückfahrt verwirft die Route 
+    [e2e] › tests/e2e/konfigurator.spec.ts:179:1 › Mehr als 8 Fotos werden abgelehnt, 8 bleiben ────
+    [e2e] › tests/e2e/konfigurator.spec.ts:189:1 › Kaputter gespeicherter Zustand wird verworfen, der Konfigurator lädt leer 
+    [e2e] › tests/e2e/shell.spec.ts:5:1 › Erster Start: Onboarding per Tastatur, danach direkt Start 
+    [e2e] › tests/e2e/shell.spec.ts:23:1 › Überspringen beendet das Onboarding ─────────────────────
+    [e2e] › tests/e2e/shell.spec.ts:34:3 › App-Shell › Tab-Bar erreicht alle Tabs mit der Tastatur ─
+    [e2e] › tests/e2e/shell.spec.ts:49:3 › App-Shell › Service-Karte öffnet den Flow ohne Tab-Bar, Zurück führt zum Start 
+    [e2e] › tests/e2e/shell.spec.ts:58:3 › App-Shell › Info-Sheet zeigt Tarife aus der Datenbank, ohne Gebühr 
+    [e2e] › tests/e2e/shell.spec.ts:75:3 › App-Shell › Info-Sheet: Ladefehler zeigt Fehlerzustand mit erneutem Versuch 
+    [e2e] › tests/e2e/shell.spec.ts:85:3 › App-Shell › Offline-Hinweis erscheint und verschwindet ──
+    [e2e] › tests/e2e/shell.spec.ts:93:3 › App-Shell › Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf 
+    [e2e] › tests/e2e/shell.spec.ts:103:3 › App-Shell › Unbekannte Adresse zeigt die Fehlerseite ───
+    [e2e] › tests/e2e/shell.spec.ts:110:3 › App-Shell › Datenschutz und Impressum sind als Platzhalter markiert 
+    [e2e] › tests/e2e/smoke.spec.ts:4:1 › Start lädt ohne Konsolenfehler ───────────────────────────
+    [e2e] › tests/e2e/smoke.spec.ts:13:1 › Erfassung sieht console.error und nicht abgefangene Fehler 
+EXIT=1

@@ -1,0 +1,48 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [e2e] › tests/e2e/backend.spec.ts:30:1 › Rot-Beweis: ungemockter Aufruf lässt den Test scheitern (1.1s)
+
+
+  1) [e2e] › tests/e2e/backend.spec.ts:30:1 › Rot-Beweis: ungemockter Aufruf lässt den Test scheitern 
+
+    Error: Aufruf ohne Mock: E2E-Tests erreichen nie ein echtes Backend
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "GET https://e2e.supabase.invalid/rest/v1/request_contacts",
+    + ]
+
+       at e2e/backend.ts:91
+
+      89 |       const backend = await installBackend(context, new URL(baseURL!).origin)
+      90 |       await use(backend)
+    > 91 |       expect(backend.unmocked, 'Aufruf ohne Mock: E2E-Tests erreichen nie ein echtes Backend').toEqual([])
+         |                                                                                                ^
+      92 |     },
+      93 |     { auto: true },
+      94 |   ],
+        at Object.base.extend.backend.auto (/home/user/movenow/tests/e2e/backend.ts:91:96)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp/playwright/e2e-backend-Rot-Beweis-ung-6a6b5-uf-lässt-den-Test-scheitern-e2e/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp/playwright/e2e-backend-Rot-Beweis-ung-6a6b5-uf-lässt-den-Test-scheitern-e2e/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp/playwright/e2e-backend-Rot-Beweis-ung-6a6b5-uf-lässt-den-Test-scheitern-e2e/trace.zip
+    Usage:
+
+        npx playwright show-trace tmp/playwright/e2e-backend-Rot-Beweis-ung-6a6b5-uf-lässt-den-Test-scheitern-e2e/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [e2e] › tests/e2e/backend.spec.ts:30:1 › Rot-Beweis: ungemockter Aufruf lässt den Test scheitern 
+EXIT=1
