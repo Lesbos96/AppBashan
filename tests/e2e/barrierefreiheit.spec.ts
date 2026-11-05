@@ -343,3 +343,36 @@ test.describe('Textkontrast der Adressmarker (1.4.3)', () => {
     })
   }
 })
+
+test.describe('Textabstände (1.4.12)', () => {
+  const spacing = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }'
+  /** Elemente in der Preisleiste, deren Text abgeschnitten ist (overflow ≠ visible und Inhalt größer als die Box). */
+  const clipped = (page: Page) =>
+    page.getByRole('button', { name: /anzeigen$/ }).evaluate((bar) =>
+      [bar, ...bar.querySelectorAll('*')]
+        .filter((e) => {
+          const cs = getComputedStyle(e)
+          return (cs.overflowX !== 'visible' && e.scrollWidth > e.clientWidth + 1) || (cs.overflowY !== 'visible' && e.scrollHeight > e.clientHeight + 1)
+        })
+        .map((e) => (e as HTMLElement).innerText),
+    )
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+  })
+
+  test('Preisleiste: Betrag nicht abgeschnitten (Montage)', async ({ page }) => {
+    await page.goto('/montage')
+    await expect(page.getByRole('button', { name: /^Richtpreis/ })).toBeVisible()
+    await page.addStyleTag({ content: spacing })
+    expect(await clipped(page)).toEqual([])
+  })
+
+  test('Preisleiste: „Persönliches Angebot" nicht abgeschnitten (Umzug mit Klavier)', async ({ page }) => {
+    await page.goto('/umzug')
+    await page.getByRole('radio', { name: 'Klavier' }).check({ force: true })
+    await expect(page.getByRole('button', { name: 'Persönliches Angebot, Details anzeigen' })).toBeVisible()
+    await page.addStyleTag({ content: spacing })
+    expect(await clipped(page)).toEqual([])
+  })
+})
