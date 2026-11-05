@@ -217,7 +217,21 @@ Kein Teilziel abgebrochen. Bewusst nicht umgesetzt (mit Begründung oben): A16 P
 | `npm run test:rls` | nicht gelaufen: kein Zugang zum Dev-Projekt; die Nacht ändert nichts an `supabase/`, Datenbank oder Edge Functions | – |
 
 ### Zusammenführen mit `main` (Freigabe von Beks in der Nacht)
-Beks hat um ca. 03:00 Uhr geschrieben: „erledige jetzt alles ohne mich zu fragen. Speichere und merge dann alles. du darfst alles machen nur nicht mein projekt kaputt machen". Damit gilt das ursprüngliche Verbot „Merge auf main, PR bleibt draft" nicht mehr. Während der Nacht hatten vier andere Nacht-Sessions `main` verändert (bis `86b123e`). Vorgehen: `main` in den Branch mergen (keine Umschreibung der Geschichte), Konflikte lösen, alle Prüfungen auf dem zusammengeführten Stand, erst dann den PR nach `main` mergen. Ergebnis siehe unten.
+Beks hat um ca. 03:00 Uhr geschrieben: „erledige jetzt alles ohne mich zu fragen. Speichere und merge dann alles. du darfst alles machen nur nicht mein projekt kaputt machen". Damit gilt das ursprüngliche Verbot „Merge auf main, PR bleibt draft" nicht mehr. Während der Nacht hatten vier andere Nacht-Sessions `main` verändert (bis `86b123e`). Vorgehen: `main` in den Branch mergen (keine Umschreibung der Geschichte), Konflikte lösen, alle Prüfungen auf dem zusammengeführten Stand, erst dann den PR nach `main` mergen.
+
+Ergebnis: Merge-Commit `3a96b91` (Konflikt nur in `docs/PROGRESS.md`, beide Einträge behalten; Code automatisch zusammengeführt: `main` hatte in Shell, Bars, Konfigurator und Zusammenfassung andere Stellen geändert, u. a. Tab „Miete" entfernt). `main` bringt eine Mock-Schicht für E2E (`tests/e2e/backend.ts`) und das Projekt `e2e-desktop`; `barrierefreiheit.spec.ts` nutzt sie jetzt (Commit `d313c69`), der lokale Tarif-Ersatz ist dafür nicht mehr nötig. Prüfung auf dem zusammengeführten Stand ohne lokalen Ersatz:
+
+| Lauf | Ergebnis | Log |
+|---|---|---|
+| `npm run check` | EXIT=0 | `docs/proof/nacht-qualitaet/merge-check.log` |
+| `npm run build` | EXIT=0 | `docs/proof/nacht-qualitaet/merge-build.log` |
+| `npm run test:e2e` (e2e und e2e-desktop) | EXIT=0, 294 bestanden, 2 übersprungen (Rot-Beweis-Test von `main`, läuft nur mit `E2E_REDPROOF=1`) | `docs/proof/nacht-qualitaet/merge-e2e.log` |
+| `npm run shots` | EXIT=0, 134 bestanden | `docs/proof/nacht-qualitaet/merge-shots.log` |
+
+Danach PR #4 nach `main` gemergt (Merge-Commit, die Einzel-Commits je Fund bleiben einzeln zurücknehmbar).
+
+### Empfehlung, was übernommen werden soll
+Alles ist übernommen (Anweisung von Beks). Falls etwas zurück soll: P2 (`3a0a339`, `b284985`) einzeln zurücknehmen, wenn der langsamere Direktaufruf von Flows stört (F8); A5/A5b (`61ef4b2`, `a9483d7`), wenn der Fokus nach Seitenwechsel nicht auf die Überschrift springen soll (F6). Die übrigen Funde sind unabhängig und klein.
 
 ## Fragen an Beks
 
