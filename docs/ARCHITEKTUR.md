@@ -54,7 +54,7 @@ MoveNow ist eine reine Client-App (statischer Build) mit Supabase als Backend. A
 |---|---|---|---|
 | `route` | Geocoding-Kandidaten und Routenfakten (km gesamt, km außerhalb Wiens, Fahrzeit, Region) | nur `apikey` = Publishable Key, kein Nutzer nötig (RH:40) | `SUPABASE_URL`, `SECRET_KEY`, `RATE_LIMIT_SECRET`, `PUBLISHABLE_KEY`, `ALLOWED_ORIGINS`, `ORS_API_KEY` (`supabase/functions/route/index.ts:17-21`) |
 | `quote` | einziger Schreibweg für Anfragen: prüft Eingaben, rechnet den Preis, speichert Anfrage, Revision, Kontakt, Fotos | Bearer-JWT, geprüft mit `auth.getUser` (QH:210-213) | `SUPABASE_URL`, `SECRET_KEY`, `RATE_LIMIT_SECRET`, `ALLOWED_ORIGINS`, `ORS_API_KEY` (`supabase/functions/quote/index.ts:18-21`) |
-| `photo-cleanup` | löscht Storage-Dateien ohne Datenbankzeile | Header `x-cleanup-secret`, Vergleich in konstanter Zeit; nur von pg_cron aufgerufen | `SUPABASE_URL`, `SECRET_KEY`, `CLEANUP_SECRET` (`supabase/functions/photo-cleanup/index.ts:13-29`) |
+| `photo-cleanup` | löscht Storage-Dateien ohne Datenbankzeile | Header `x-cleanup-secret`, Vergleich in konstanter Zeit; nur von pg_cron aufgerufen, das den Wert aus dem Vault-Secret `cleanup_secret` sendet (beide Werte müssen gleich sein, Einrichtung `scripts/setup-photo-cleanup.mjs`) | `SUPABASE_URL`, `SECRET_KEY`, `CLEANUP_SECRET` (`supabase/functions/photo-cleanup/index.ts:13-29`) |
 
 CORS-Header bekommen nur Origins aus `ALLOWED_ORIGINS` (`supabase/functions/_shared/http.ts:7-15`); das schützt nur im Browser, serverseitig wird eine fremde Origin nicht abgewiesen. Logs der Functions enthalten nur Modus, Status, Dauer und Fehlercode, keine Adressen oder IPs (`supabase/functions/route/index.ts:29`, `quote/index.ts:31`).
 
@@ -66,6 +66,25 @@ CORS-Header bekommen nur Origins aus `ALLOWED_ORIGINS` (`supabase/functions/_sha
 - **Mailversand:** heute der Standard-Mailer von Supabase; ein eigener SMTP-Anbieter ist Pflicht vor dem ersten Test auf einem Handy (`docs/OPEN_ISSUES.md:32`). [OFFEN: Anbieter]
 - **Hosting der App:** [OFFEN: Anbieter, laut `CLAUDE.md` vor dem Launch festzulegen].
 - **Region der Supabase-Projekte:** steht nicht im Repository (`config.toml` hat keinen Regionswert). [OFFEN: Region des Dev- und des Produktivprojekts bestätigen; `CLAUDE.md` verlangt EU]
+
+### 2.4 Umgebungen und Schutz vor dem falschen Projekt
+
+- Es gibt ein Dev-Projekt (Ref fest in `scripts/dev-guard.mjs:6`) und ein noch nicht angelegtes Produktivprojekt (`docs/GOLIVE.md`, Abschnitt 1). `supabase/config.toml` beschreibt nur die lokale bzw. Dev-Konfiguration (z. B. `site_url` 127.0.0.1); Site URL, Redirect-URLs (`<Domain>/anmelden`, `capacitor://localhost/anmelden`), OTP-Werte und Mail-Vorlagen werden im Produktivprojekt im Dashboard gesetzt, nicht per `config push` (`docs/GOLIVE.md:42-44`).
+- `scripts/dev-guard.mjs` vergleicht `SUPABASE_PROJECT_REF`, die Ref aus `NEXT_PUBLIC_SUPABASE_URL` und `supabase/.temp/project-ref` mit der Dev-Ref und bricht sonst mit Exit 2 ab; ebenso bei gesetztem `SUPABASE_WORKDIR` oder fremder `SUPABASE_PROJECT_ID` (`:6-22`). Eingebunden in `live-test`, `live-uploads`, `live-quote-app`, `redproof-s9a1` bis `-s9a4`, `storage-reset`, `db-seed-dev`, `import-districts` und über `tests/support/dev-guard-setup.ts` in alle RLS-Tests (`vite.config.ts:24`). `scripts/live-auth.mjs` legt einen Testnutzer an und löscht ihn wieder (`:63`), hat den Guard aber nicht (Abschnitt 9).
+- `npm run db:push`, `geo:import` und `setup:photo-cleanup` lesen fest `.env.local` (Dev); gegen Produktion laufen sie nur mit eigener Env-Datei über `npx dotenv -e <prod-env>` (`docs/GOLIVE.md:5`, `:22-25`, `:36`).
+- **Build-Prüfung:** `npm run build` endet mit `scripts/scan-dist.mjs` und schlägt fehl, wenn `dist/` einen Secret Key (`sb_secret_…`), ein JWT-förmiges Token oder die Namen `fee_splits`, `platform_settings`, `current_fee_rates` enthält (`scripts/scan-dist.mjs:1-21`, `package.json:42`).
+
+### 2.5 Tests
+
+| Art | Ort | Ziel |
+|---|---|---|
+| Unit | `tests/unit/` (13 Dateien), Preismodul zusätzlich unter Deno (`npm run check`) | lokal, ohne Datenbank |
+| RLS und Integration | `tests/rls/` (8 Dateien), sequenziell, 30 s Timeout | Dev-Projekt mit echten Konten, Guard vorgeschaltet (`vite.config.ts:17-30`) |
+| E2E | `tests/e2e/` (8 Spezifikationen), 390 × 844 | lokaler Vite-Server (`playwright.config.ts:19-29`) |
+| Screenshots | `tests/shots/`, 390, 430, 768, 1280 px, Light und Dark | lokaler Vite-Server (`playwright.config.ts:31-37`) |
+| Live-Skripte, Rot-Beweise | `scripts/live-*.mjs`, `scripts/redproof-*.mjs` | Dev-Projekt |
+
+Gegen ein Produktivprojekt läuft kein Test (`docs/GOLIVE.md:26`).
 
 ## 3. Datenmodell (Endstand nach M22)
 
@@ -126,14 +145,42 @@ Löschen: `profiles` hängt mit `on delete cascade` an `auth.users` (M01:29), An
 2. Eingaben je Leistung über `parse*Input`; der Client liefert nur die Kundenwahl, Adressen (Label und Punkt), Kontakt, Termin, Foto-IDs, `termsHash`, `priceVersion` und den angezeigten Betrag.
 3. Idempotenz: gibt es zu `clientRef` schon eine Anfrage des Nutzers, kommt sie zurück (QH:239-242).
 4. Bedingungen: `termsHash` muss zu `booking_terms()` passen, sonst 409 `terms_changed` (QH:275-276).
-5. Preisversion: die angezeigte, solange ihr Haltefenster (`price_hold_minutes`) trägt, sonst die aktuelle (QH:268-271); `verify_price_version` prüft den Hash, die Tarife müssen vollständig sein.
+5. Preisversion: die angezeigte, solange ihr Haltefenster (`price_hold_minutes`, Seed 30 min) trägt, sonst die aktuelle (QH:268-271); `verify_price_version` vergleicht den Inhalts-Hash, der beim Veröffentlichen entsteht (M15:78-125), die Tarife müssen vollständig sein. Die Revision übernimmt Version und Hash per Trigger (M18:36-80), sodass jede Anfrage belegt, mit welchen Tarifen sie gerechnet wurde.
 6. Adressen: Das Label wird serverseitig geocodiert (Cache 24 h, eigene Zähler: global 25/min und 150/Tag, je Nutzer 10/Tag; QH:32) und muss zum Punkt des Clients passen, sonst 422 `address_mismatch` bzw. `address_imprecise` (`_shared/quote/address.ts:19-24`). Abholung muss in Wien liegen (422 `pickup_outside_vienna`, QH:284), ein Ziel außerhalb Österreichs ist nicht buchbar (422 `offer_not_bookable`, QH:290). Der Bezirk kommt aus `geo_districts` (`quote_district`, M19:68-79).
 7. Strecke wie in 4.2 (dieselben Zähler); keine Route ergibt ein Angebot statt eines Preises.
 8. Preis mit `@pricing`; weicht er vom angezeigten Betrag oder der Version ab: 409 `price_changed`, nichts wird gespeichert (QH:323, `:378`).
-9. `quote_save_request` (SECURITY INVOKER, nur `service_role`, M20:150-298) schreibt in einer Transaktion: Anfrage (Status `requested` bei Preis, `awaiting_offer` bei Spanne oder Angebot), Revision 1 (`submit`), Kontakt, Fotos und einen `audit_log`-Eintrag `price_confirmed`. `termin_at` (Wunschdatum plus Beginn des Zeitfensters, ohne Zeitfenster 00:00, Wiener Zeit) und die Annahmefrist `accept_deadline` rechnet die Datenbank (M20:212-235): `greatest(Mindestfrist, least(Höchstfrist, Anteil × Vorlauf))`, mit den Werten aus `platform_settings` (Seed: 2 h, 24 h, 50 %; `supabase/seed.sql:90-92`). Ein Termin näher als die Mindestfrist wird abgelehnt (`too_late`).
+9. `quote_save_request` (SECURITY INVOKER, nur `service_role`, M20:150-298) schreibt in einer Transaktion: Anfrage (Status `requested` bei Preis, `awaiting_offer` bei Spanne oder Angebot), Revision 1 (`submit`), Kontakt, Fotos und einen `audit_log`-Eintrag `price_confirmed`. `termin_at` (Wunschdatum plus Beginn des Zeitfensters, Seed: Vormittag 08:00, Mittag 11:00, Nachmittag 14:00, Flexibel 08:00, `supabase/seed.sql:109-112`; ohne Zeitfenster, also bei Transport und Umzug, 00:00; Wiener Zeit) und die Annahmefrist `accept_deadline` rechnet die Datenbank (M20:212-235): `greatest(Mindestfrist, least(Höchstfrist, Anteil × Vorlauf))`, mit den Werten aus `platform_settings` (Seed: 2 h, 24 h, 50 %; `supabase/seed.sql:90-92`). Ein Termin näher als die Mindestfrist wird abgelehnt (`too_late`).
 10. Antwort: nur Kundenfelder (ID, Status, Preis-Snapshot, Version), keine Gebühr, kein Partneranteil (QH:84-85, `_shared/quote/snapshot.ts:1`).
 
 Die Mietbuchung (`kind = rental`) läuft im Code über denselben Endpunkt und `quote_save_booking` (M18:326-373), hat aber in der App keine Oberfläche (Phase 2).
+
+### 4.5a Fehlercodes und Grenzen
+
+| Function | HTTP | Codes |
+|---|---|---|
+| `route` | 400 / 401 / 405 / 413 | `invalid_json`, `invalid_mode`, `invalid_query`, `invalid_point` / `unauthorized` / Methode / `body_too_large` |
+| `route` | 422 / 429 / 500 / 502 / 503 | `no_route` / `rate_limited` (mit `Retry-After: 60`) / `internal:<PG-Code>` / `provider_unavailable`, `provider_invalid` / `limiter_unavailable` |
+| `quote` | 400 / 401 / 404 | `invalid_json`, `invalid_input`, `preferred_date_required` / `unauthorized` / `offer_not_found` |
+| `quote` | 409 | `terms_changed`, `price_changed` |
+| `quote` | 422 | `address_point_required`, `address_mismatch`, `address_imprecise`, `pickup_outside_vienna`, `offer_not_bookable`, `district_required`, `contact_required`, `too_late`, `too_many_photos`, `photo_missing`, `photo_expired` |
+| `quote` | 429 / 500 / 503 | `rate_limited` / `tariff_incomplete`, `setting_missing`, `terms_missing`, `confirmed_required`, `internal:<PG-Code>` / `limiter_unavailable`, `provider_unavailable` |
+| SQL-Funktionen, Trigger | SQLSTATE `P0001` | Meldung = Code, z. B. `invalid_transition`, `not_found`, `append_only`, `fee_rate_immutable`, `fee_rate_notice` |
+
+Belege: `supabase/functions/_shared/route/handler.ts`, `…/route/facts.ts`, `…/route/provider.ts`, QH:152-162 (Zuordnung der Datenbankfehler), `…/quote/address.ts:19-24`, M16:42-56, M17:1-7.
+
+| Grenze | Wert | Beleg |
+|---|---|---|
+| Body `route` / `quote` | 4 KB / 16 KB | RH:16, QH:27 |
+| `route` je IP | 10/min; 80 (Geocoding) bzw. 160 (Route) pro Tag | RH:21-24 |
+| `route` global | 35/min; 800 bzw. 1.600 pro Tag | RH:21-24 |
+| `quote` je Nutzer | 6/min, 30/Tag | QH:35 |
+| Geocoding in `quote` | global 25/min, 150/Tag; je Nutzer 10/Tag | QH:32 |
+| Fotos | 8 je Anfrage, 10 MB, nur JPEG; 40 nicht übernommene Dateien je Nutzer | M20:209, M01:408-409, M21:46-57 |
+| Signierte URL | 10 min | `src/lib/uploads.ts:9` |
+| Haltefenster | Seed 30 min, erlaubt 0–120 | `supabase/seed.sql:89`, M19:33 |
+| Staging-Frist | Seed 24 h, erlaubt 1–168 | `supabase/seed.sql:108`, M20:25 |
+| Annahmefrist | Seed 2 h bis 24 h, 50 % des Vorlaufs | `supabase/seed.sql:90-92` |
+| Caches | Route und Geocoding je 24 h, stündlich bereinigt | `…/route/compute.ts:7`, QH:33, M09:16, M19:27 |
 
 ### 4.6 Aufträge und Zurückziehen
 - Die Liste liest `service_requests` mit der verknüpften `price_revisions`-Zeile, gefiltert auf das eigene Konto (`src/screens/Auftraege.tsx:13`, `:37`); RLS erzwingt dasselbe.
@@ -160,7 +207,7 @@ Alle App-Rollen sind dieselbe Datenbankrolle `authenticated`; Unterschiede entst
 2. **Schreiben nur serverseitig:** Nutzer haben auf keiner Tabelle mit Kundendaten INSERT oder DELETE. Ausnahmen: Vermieter legen eigene `rental_offers` an und ändern sie (Spaltenlisten, M01:355-379); Kunden legen Dateien im eigenen Staging-Ordner des Buckets an und löschen sie (M20:79-101). UPDATE sonst nur auf `profiles (display_name, phone)` und (Phase 2) `rental_bookings (status)`.
 3. **Auch `service_role` ist begrenzt:** Revoke von UPDATE/DELETE/TRUNCATE auf Revisionen, Kontakten, Fotos, Journalen, Mietanfragen; auf `service_requests` nur `update (current_revision)` (M18:122-125, M20:38, M19:5, M15:47, M17:171).
 4. **Statuswechsel nur über Funktionen:** Der Trigger `guard_request_status` prüft das Paar „von → nach“ und einen an die Zeile gebundenen Marker `app.mv_transition = '<id>:<status>'`, ohne Ausnahme für Rolle, admin oder `service_role` (M17:1-6, `:219-239`).
-5. **Funktionen:** SECURITY DEFINER nur mit `search_path = ''`; Supabase vergibt EXECUTE per Default an `anon`/`authenticated`, deshalb `revoke all … from public, anon, authenticated` und danach gezielter Grant (M15:249-260, M18:356).
+5. **Funktionen:** SECURITY DEFINER nur mit `search_path = ''`; Supabase vergibt EXECUTE per Default an `anon`/`authenticated`, deshalb `revoke all … from public, anon, authenticated` und danach gezielter Grant (M15:249-260, M18:356). Ausnahme: `withdraw()` aus M17 entzieht nur `public` und `anon` und gewährt `authenticated` (M17:278-279).
 6. **Unveränderlich:** veröffentlichte Preisversionen und ihre Tarifzeilen, Revisionen, Fotozeilen, `status_events` (Trigger `immutable_row`, auch gegen TRUNCATE; Löschen nur als Kaskade einer Anfrage, M17:138-147) und `audit_log` (Trigger `append_only`, ohne Kaskade, M15:40-43). In `platform_settings` sind nur die Gebührenschlüssel `fee_rate`, `fee_vat_rate` und `fee_notice_days` geschützt: nie ändern, nur künftige Zeilen löschen, neue Zeilen nur mit dem Vorlauf `fee_notice_days` (Datenbank: mindestens 15, Seed: 30) (M16:34-65). Alle anderen Schlüssel (Fristen, Stornostufen, Pauschale, Haltefenster) prüft der Trigger nicht (M16:42-45); dass sie nur über neue Versionen geändert werden, ist Konvention von `admin_set_setting`.
 7. **Admin ohne Nutzer-JWT:** Alle `admin_*`-Funktionen außer `admin_grant_role` nehmen `p_actor` als ersten Parameter, prüfen die Rolle mit `private.assert_admin` (M15:55-63) und schreiben `audit_log`; ausführbar nur für `service_role` bzw. den Eigentümer, nie aus Anfragedaten. `admin_grant_role(p_user, p_role)` hat keinen Akteur-Parameter, ist nur für den Eigentümer ausführbar und schreibt `audit_log` mit Akteur `owner` (M16:166-181).
 
@@ -183,11 +230,12 @@ Alle App-Rollen sind dieselbe Datenbankrolle `authenticated`; Unterschiede entst
 | Geo-Tabellen, Caches, Zähler | – | – | – | alles (keine Policy) |
 | Storage `request-photos` | – | S im eigenen Ordner (auch übernommene Fotos, M20:103-104); I/D nur im eigenen Staging-Ordner (Bedingungen 4.4) | – | alles |
 | `booking_terms()` | ausführen | ausführen | ausführen | ausführen |
-| `withdraw()` | – | ausführen (wirkt nur auf eigene Anfragen) | ausführen wie Kunde | – |
+| `withdraw()` | – | ausführen (wirkt nur auf eigene Anfragen) | ausführen wie Kunde | ausführbar (Default-Grant nicht entzogen, M17:278), ohne Nutzer wirkungslos (`not_found`) |
 
 Belege: Policies M01:266-267, M15:50-51, `:276-283`, M16:185-207, M17:114-116, `:174-175`, M18:93-97, `:221-225`, M20:40-41, `:79-104`, M21:46-70.
 
 ### 6.3 Geld und Gebühr
+- Begriffe: Was Datenbank und Code „Gebühr“ nennen (`fee_rate`, `fee_cents`, `splitFee`), heißt in den Verträgen mit Partnern „Provision“ (`docs/recht/agb-partner.md`).
 - Beträge als ganze Cent in allen Tabellen (M01:151-207, M18:19-30).
 - Der Gebührensatz steht nur in `platform_settings` (`fee_rate`, `fee_vat_rate`, Version 1 aus dem Seed, `supabase/seed.sql:86-87`). Kunden lesen ihn weder direkt noch über `current_fee_rates`; `booking_terms()` liefert Kunden nur Stornostufen, Anfahrtspauschale und `termsHash`, keinen `fee_*`-Schlüssel (M16:81-104).
 - `splitFee(total, {feeRate, vatRate})` (`supabase/functions/_shared/pricing/fee.ts:17-25`) rechnet wie `platform()` im Prototyp, wird heute aber **nirgends aufgerufen**: Seit S9a-2 entsteht beim Absenden keine Gebührenzeile mehr; das Journal `commission_entries` entsteht bei der Annahme und ist noch nicht gebaut (S9b-4).
@@ -236,4 +284,5 @@ Gefunden beim Abgleich von Code, Migrationen und Doku. Keine davon ist im Rahmen
 10. **Origin nicht erzwungen:** `route` und `quote` setzen CORS-Header nur für erlaubte Origins, lehnen fremde Origins aber nicht ab (`supabase/functions/_shared/http.ts:7-15`). Für Aufrufe außerhalb des Browsers (Skripte, Bots) ist das keine Sperre; dort wirken nur `apikey` bzw. JWT und die Zähler. Deshalb ist der Bot-Schutz vor dem Livegang Pflicht (`docs/GOLIVE.md:35`).
 11. **`withdraw()` ohne Oberfläche:** Die Funktion ist gebaut und getestet, die App ruft sie nicht auf; Kunden können eine Anfrage heute nicht selbst zurückziehen (`docs/ROADMAP.md:103`, offen).
 12. **`service_role` schreibt Tarife und Einstellungen direkt:** Außer TRUNCATE sind die Rechte auf `price_versions`, `price_config` und `platform_settings` nicht entzogen. Veröffentlichte Versionen und die Gebührenschlüssel schützen Trigger; unveröffentlichte Tarife und alle übrigen Einstellungen (Stornostufen, Fristen, Pauschale) kann jede Stelle mit dem Secret Key ändern oder löschen. Nach `CLAUDE.md` soll der Weg über `admin_*` laufen; die Datenbank erzwingt es für diese Schlüssel nicht.
+14. **`scripts/live-auth.mjs` ohne `dev-guard`:** Das Skript legt einen Testnutzer an und löscht ihn wieder (`:18`, `:63`), importiert aber nicht `scripts/dev-guard.mjs`. `CLAUDE.md` verlangt den Guard für Skripte, die Daten löschen. Es löscht nur den selbst angelegten Nutzer; gegen ein falsch gesetztes Projekt liefe es trotzdem.
 13. **Demo-Mietangebote anonym lesbar:** freigegebene `rental_offers` sind für `anon` lesbar (M01:365-366); im Dev-Projekt sind das die drei Demo-Angebote aus `supabase/seed.sql:118-138`. In Produktion entfällt das, weil `seed.prod.sql` keine Angebote enthält (`docs/GOLIVE.md:24`).
