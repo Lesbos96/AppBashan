@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { expect, test } from '@playwright/test'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from './dienste-helpers'
 import { clickTimes } from './konfigurator-helpers'

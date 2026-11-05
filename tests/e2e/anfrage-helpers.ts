@@ -64,11 +64,14 @@ export async function fillContact(page: Page) {
   await page.getByLabel('Mailadresse').fill('anna@movenow.test')
 }
 
-/** Nach der gemockten Anmeldung trägt der Client ein Test-JWT; die öffentlichen Tarife lädt der Test daher ohne Authorization (wie anonym). */
+/**
+ * Nach der gemockten Anmeldung trägt der Client ein Test-JWT; die öffentlichen Tarife gehen daher ohne Authorization (wie anonym)
+ * weiter an die Mock-Schicht (`backend.ts`), nie ans Netz (vorher `continue()`: Tarife kamen aus dem Dev-Projekt).
+ */
 export async function anonymousPrices(page: Page) {
   await page.route(/\/rest\/v1\/(current_price_version|price_config|rpc\/booking_terms)/, (r) => {
     const { authorization: _unused, ...headers } = r.request().headers()
     void _unused
-    return r.continue({ headers })
+    return r.fallback({ headers })
   })
 }

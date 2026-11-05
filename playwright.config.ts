@@ -16,11 +16,20 @@ export default defineConfig({
   // Der Umzug-Test klickt über 30 Mal und braucht 17–29 s; 30 s Standard lassen unter Last keinen Puffer
   timeout: 60_000,
   reporter: [['list'], ['json', { outputFile: 'tmp/reports/playwright.json' }]],
-  use: { baseURL: 'http://localhost:5173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    // Nur wenn gesetzt: ein vorinstalliertes Chromium statt des von Playwright verwalteten (z. B. Cloud-Container mit anderer Browserversion).
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
+  },
   webServer: {
     command: 'npx vite --port 5173 --strictPort',
     url: 'http://localhost:5173',
     reuseExistingServer: true,
+    // Tests laufen nur gegen die Mock-Schicht (tests/e2e/backend.ts): Platzhalter statt echter Werte, `.invalid` löst nie auf.
+    // Umgebungsvariablen gehen in Vite vor `.env.local`; ein wiederverwendeter Dev-Server behält seine Werte, die Mock-Schicht fängt trotzdem alles ab.
+    env: { NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter' },
   },
   projects: [
     {

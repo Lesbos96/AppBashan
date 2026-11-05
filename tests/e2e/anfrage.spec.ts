@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './backend'
 import { EMAIL, HASH, mockAuth, signInWithCode } from './auth-helpers'
 import { anonymousPrices, answer, cors, mockQuote, price, range, toSummary, UUID } from './anfrage-helpers'
 import { collectErrors } from './console'

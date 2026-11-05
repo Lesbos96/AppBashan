@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
 
 // Hauptflow nur mit der Tastatur: Onboarding, Tabs, Info-Sheet.
@@ -55,7 +55,7 @@ test.describe('App-Shell', () => {
     await expect(page).toHaveURL(/\/$/)
   })
 
-  test('Info-Sheet zeigt Tarife aus der Datenbank, ohne Gebühr', async ({ page }) => {
+  test('Info-Sheet zeigt die Tarife (Mock aus seed.sql), ohne Gebühr', async ({ page }) => {
     await page.goto('/profil')
     await page.getByRole('link', { name: 'Wie rechnet MoveNow?' }).press('Enter')
     const sheet = page.getByRole('dialog', { name: 'Wie rechnet MoveNow?' })

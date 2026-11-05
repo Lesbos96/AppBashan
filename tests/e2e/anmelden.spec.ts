@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './backend'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from './auth-helpers'
 import { collectErrors } from './console'
 
