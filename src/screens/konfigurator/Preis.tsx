@@ -55,6 +55,10 @@ export function PreisLeiste({ preview, onOpen, canContinue, onContinue }: { prev
       <Button disabled={!canContinue} onClick={onContinue} className="w-[152px]! shrink-0">
         Weiter
       </Button>
+      {/* Statusmeldung mit dem Endbetrag (WCAG 4.1.3): sichtbar zählt der Betrag hoch, angesagt wird nur das Ergebnis jeder Änderung */}
+      <p role="status" className="sr-only">
+        {price ? `Richtpreis ${formatEuro(preview.price.totalCents)}` : missing ? 'Strecke fehlt, noch kein Richtpreis' : 'Persönliches Angebot, kein Richtpreis'}
+      </p>
     </ActionBar>
   )
 }

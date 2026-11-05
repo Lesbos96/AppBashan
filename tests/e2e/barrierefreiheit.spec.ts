@@ -259,3 +259,18 @@ test.describe('Wartezeit nach 429 (4.1.3)', () => {
     expect(before).not.toMatch(/Noch \d+ s/)
   })
 })
+
+test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', () => {
+  test('Montage: Statusmeldung trägt den neuen Endbetrag', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/montage')
+    const status = page.getByRole('status').filter({ hasText: 'Richtpreis' })
+    await expect(status).toHaveText('Richtpreis 95,74 €')
+    await page.getByRole('button', { name: 'Laufmeter erhöhen' }).click()
+    await expect(status).not.toHaveText('Richtpreis 95,74 €')
+    await expect(status).toHaveText(/^Richtpreis \d{1,3}(\.\d{3})*,\d{2}\s€$/)
+    // Die Meldung entspricht dem Betrag im Knopf der Preisleiste
+    const button = await page.getByRole('button', { name: /^Richtpreis .*, alle Positionen anzeigen$/ }).getAttribute('aria-label')
+    expect(button).toContain((await status.innerText()).replace('Richtpreis ', ''))
+  })
+})
