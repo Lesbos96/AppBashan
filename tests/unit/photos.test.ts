@@ -16,7 +16,6 @@ describe('Fotos', () => {
     ['image/heif', 'a.heif'],
     ['', 'IMG_1.HEIC'],
   ])('HEIC (%s, %s) bekommt eine eigene Meldung', async (type, name) => {
-    if (!type) return // ohne Typ greift schon „kein Bild“
     await expect(preparePhoto(new File(['x'], name, { type }))).rejects.toThrow('HEIC-Fotos gehen hier nicht')
   })
   it.each(['image/gif', 'image/svg+xml', 'image/bmp', 'image/tiff'])('lehnt %s ab', async (type) => {
