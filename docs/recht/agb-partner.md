@@ -22,9 +22,9 @@
 
 2.3 MoveNow prüft Angaben und Unterlagen und gibt den Partner frei oder lehnt den Antrag mit Begründung ab. Bei der Freigabe legt MoveNow die Leistungen und die Wiener Bezirke (1 bis 23) fest, für die der Partner Anfragen erhält. Ein Anspruch auf Freigabe besteht nicht. Eine Ablehnung ist endgültig; ein neuer Antrag mit demselben Konto ist nicht möglich (Entscheidung Beks, `docs/S9b_PLAN.md:5`). [OFFEN: Prüfkriterien schriftlich festlegen; prüfen, ob die endgültige Ablehnung ohne neuen Antrag zulässig ist.]
 
-2.5 [OFFEN: Pflichten nach dem Digital Services Act für Online-Marktplätze, insbesondere Nachverfolgbarkeit der Unternehmer (Angaben und ihre Prüfung vor der Freigabe); prüfen, ob die Ausnahme für Klein- und Kleinstunternehmen gilt.]
+2.4 [OFFEN: Pflichten nach dem Digital Services Act für Online-Marktplätze, insbesondere Nachverfolgbarkeit der Unternehmer (Angaben und ihre Prüfung vor der Freigabe); prüfen, ob die Ausnahme für Klein- und Kleinstunternehmen gilt.]
 
-2.4 Firmenname, Rechtsform, UID, Kleinunternehmer-Status und Anschrift ändert nach der Freigabe nur MoveNow auf Antrag des Partners; die Kontaktdaten ändert der Partner selbst. Phase 1 kennt je Partner ein Konto (Inhaberin oder Inhaber).
+2.5 Firmenname, Rechtsform, UID, Kleinunternehmer-Status und Anschrift ändert nach der Freigabe nur MoveNow auf Antrag des Partners; die Kontaktdaten ändert der Partner selbst. Phase 1 kennt je Partner ein Konto (Inhaberin oder Inhaber).
 
 ## 3. Leistungen von MoveNow
 

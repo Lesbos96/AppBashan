@@ -7,6 +7,9 @@
 ## 1. Wer verantwortlich ist
 
 [OFFEN: Name bzw. Firma, Anschrift, E-Mail für Datenschutzanfragen, siehe Impressum.]
+Datenschutzbeauftragter: [OFFEN: benannt oder nicht erforderlich].
+
+Für Nutzung der App, Browser-Speicher und Missbrauchsschutz gelten die Abschnitte 3, 9, 9a und 10 von `docs/recht/datenschutz-kunden.md` entsprechend. [OFFEN: prüfen, ob für Partnerkonten Abweichungen gelten]
 
 ## 2. Konto, Anmeldung und zweiter Faktor [noch nicht gebaut]
 
@@ -14,6 +17,7 @@
 - **Zweck:** sicherer Zugang zu Aufträgen und Kundendaten.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO; für den zweiten Faktor zusätzlich Art. 32 DSGVO (Sicherheit der Verarbeitung) und Art. 6 Abs. 1 lit. f.
 - **Hinweis:** Ein verlorener Faktor lässt sich nur durch MoveNow zurücksetzen, nach Prüfung der Identität; Wiederherstellungscodes gibt es nicht.
+- **Speicherdauer:** [OFFEN: bis zur Löschung des Partnerkontos? Verhältnis zur Aufbewahrung nach Abschnitt 6.]
 
 ## 3. Registrierung und Prüfung [noch nicht gebaut]
 
@@ -23,6 +27,7 @@
 - **Zweck:** Nur geprüfte Betriebe erhalten Anfragen; Nachweis der Berechtigungen.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO (Vertrag), Art. 6 Abs. 1 lit. c (gesetzliche Pflichten, z. B. Aufzeichnungen nach der BAO) [OFFEN: prüfen, ob Meldepflichten für Plattformbetreiber nach dem Digitale Plattformen-Meldepflichtgesetz (DPMG) bestehen und welche Daten dafür nötig sind (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 7)], Art. 6 Abs. 1 lit. f (Schutz der Kundinnen und Kunden vor unseriösen Anbietern).
 - **Speicherdauer:** solange das Partnerverhältnis besteht; danach nach den gesetzlichen Aufbewahrungsfristen. [OFFEN: Löschfrist für Unterlagen abgelehnter Anträge; im Plan steht „90 Tage nach Ablehnung, Rechtsfrage“, Umsetzung mit S9h (`docs/S9b_PLAN.md`, 5.1).]
+- **Pflicht zur Bereitstellung:** Ohne die Angaben dieses Abschnitts und ohne den zweiten Faktor kann MoveNow ein Partnerkonto nicht freigeben.
 
 ## 4. Status, Begründungen und Qualität [noch nicht gebaut]
 
@@ -30,6 +35,8 @@
 - **Zweck:** verlässliche Vermittlung, Schutz der Kundinnen und Kunden, Transparenz nach der P2B-Verordnung (EU) 2019/1150 (Begründung bei Einschränkung oder Sperre).
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO.
 - **Wer sieht was:** Die Begründung einer Statusänderung sieht der Partner. Den Qualitätszähler sieht nur MoveNow; Zahlungssperre und Sperre setzt in Phase 1 nur ein Mensch bei MoveNow mit Begründung, kein Automatismus (`docs/S9_KONZEPT.md`, 10.2, 10.4; eine Automatik ist erst für Phase 2 vorgesehen).
+- **Speicherdauer:** [OFFEN: Statusverläufe, Begründungen und Qualitätszähler.]
+- **Automatisierte Entscheidung:** Freigabe, Zahlungssperre und Sperre entscheidet ein Mensch. Automatisch laufen die Verteilung der Anfragen (Leistung, Bezirk, Termin, erste Annahme) und die Grenze von 5 offenen Aufträgen. [OFFEN: Aussage zu Art. 22 DSGVO prüfen.]
 
 ## 5. Anfragen, Annahme und Auftragsabwicklung [noch nicht gebaut]
 
@@ -37,6 +44,7 @@
 - **Zweck:** Vermittlung, Nachweis der Vertragsschlüsse und Zustimmungen, Abrechnung, Streitbeilegung.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b und lit. f DSGVO.
 - **Beleg-Fotos des Partners:** Der Server prüft sie, erzeugt sie neu ohne eingebettete Daten und zeigt sie der Kundin oder dem Kunden des Auftrags.
+- **Speicherdauer:** [OFFEN: Vorschlag im Projekt für abgeschlossene Aufträge 3 Jahre, nicht entschieden (`docs/ARCHITECTURE.md:62`).]
 
 ## 6. Abrechnung der Vermittlung [noch nicht gebaut]
 
@@ -48,19 +56,19 @@
 
 ## 7. Kundendaten beim Partner [noch nicht gebaut]
 
-Nach der Annahme erhält der Partner Adresse und Kontakt der Kundin oder des Kunden für diesen Auftrag; vorher nur den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Preis und Foto-Kopien ohne eingebettete Daten. Der Zugriff endet 30 Tage nach Abschluss oder Storno. [OFFEN: Rolle des Partners (eigener Verantwortlicher oder Auftragsverarbeiter) und die daraus folgende Vereinbarung, `docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10; Regelung im Partnervertrag, § 7.]
+Nach der Annahme erhält der Partner Adresse und Kontakt der Kundin oder des Kunden für diesen Auftrag; vorher nur den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Preis und Foto-Kopien ohne eingebettete Daten. Der Zugriff endet 30 Tage nach Abschluss oder Storno. Rechtsgrundlage der Übermittlung an den Partner: [OFFEN: Art. 6 Abs. 1 lit. b DSGVO gegenüber den Kundinnen und Kunden; hängt an der Rolle des Partners]. [OFFEN: Rolle des Partners (eigener Verantwortlicher oder Auftragsverarbeiter) und die daraus folgende Vereinbarung, `docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10; Regelung im Partnervertrag, § 7.]
 
 ## 8. Mails [noch nicht gebaut]
 
-Über neue Anfragen, Annahmen, Fristen und Statusänderungen informiert MoveNow per Mail und in der App. Mails an Partner enthalten nie die Adresse der Kundin oder des Kunden (`docs/S9_KONZEPT.md`, R14). [OFFEN: Mail-Anbieter mit Auftragsverarbeitungsvertrag]
+Über neue Anfragen, Annahmen, Fristen und Statusänderungen informiert MoveNow per Mail und in der App. Mails an Partner enthalten nie die Adresse der Kundin oder des Kunden (`docs/S9_KONZEPT.md`, R14). Zweck: Information über Anfragen, Fristen und Entscheidungen; Rechtsgrundlage Art. 6 Abs. 1 lit. b DSGVO. [OFFEN: Mail-Anbieter mit Auftragsverarbeitungsvertrag; Speicherdauer der Benachrichtigungen]
 
 ## 9. Empfänger und Auftragsverarbeiter
 
-Supabase (Datenbank, Anmeldung, Dateispeicher, Serverfunktionen; [OFFEN: Region und Auftragsverarbeitungsvertrag]), Mail-Anbieter [OFFEN], Steuerberatung für die Buchhaltung [OFFEN], bei Zahlungsverzug ein Inkassobüro [OFFEN: nur aufnehmen, wenn beauftragt]. Kundinnen und Kunden erhalten nach der Annahme Firmenname und Kontakt des Partners.
+Supabase (Datenbank, Anmeldung, Dateispeicher, Serverfunktionen; [OFFEN: Region und Auftragsverarbeitungsvertrag]), Mail-Anbieter [OFFEN], Steuerberatung für die Buchhaltung [OFFEN], bei Zahlungsverzug ein Inkassobüro [OFFEN: nur aufnehmen, wenn beauftragt]. Kundinnen und Kunden erhalten nach der Annahme Firmenname und Kontakt des Partners. [OFFEN: Übermittlung außerhalb des EWR und Garantien, wie `docs/recht/datenschutz-kunden.md`, Abschnitt 11a.]
 
 ## 10. Rechte und Beschwerde
 
-Wie in `docs/recht/datenschutz-kunden.md`, Abschnitt 12: Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch; Beschwerde bei der Österreichischen Datenschutzbehörde. Gesetzliche Aufbewahrungspflichten (Abschnitt 6) gehen dem Löschrecht vor.
+Wie in `docs/recht/datenschutz-kunden.md`, Abschnitt 12: Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch; Beschwerde bei der Österreichischen Datenschutzbehörde. Gesetzliche Aufbewahrungspflichten (Abschnitt 6) gehen dem Löschrecht vor. Der Partnerteil holt nach heutigem Plan keine Einwilligungen ein. [OFFEN: bestätigen]
 
 ## 11. Grundlage im Projekt
 

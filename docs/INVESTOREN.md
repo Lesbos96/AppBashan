@@ -5,7 +5,7 @@ Stand: 2026-11-05. Quelle sind ausschließlich Code und Dokumente dieses Reposit
 ## 1. Kurzfassung
 
 - **Was:** eine App, die in Wien Möbeltransport, Umzug, Entrümpelung sowie Montage und Demontage von Möbeln vermittelt. Kundinnen und Kunden sehen sofort einen Preis und senden eine verbindliche Buchungsanfrage; ein von MoveNow geprüfter Partnerbetrieb soll sie in der App annehmen (Partnerteil geplant, siehe Stand).
-- **Geld:** MoveNow erhält vom Partner eine Provision von 15 % des Gesamtpreises (inklusive 20 % USt.). Kundinnen und Kunden zahlen keine Zusatzgebühr und zahlen direkt an den Partner; über MoveNow läuft in Phase 1 kein Zahlungsfluss.
+- **Geld:** MoveNow soll vom Partner eine Provision von 15 % des Gesamtpreises (inklusive 20 % USt.) erhalten (Konzept; heute berechnet das System noch keine Provision). Kundinnen und Kunden zahlen keine Zusatzgebühr und zahlen direkt an den Partner; über MoveNow läuft in Phase 1 kein Zahlungsfluss.
 - **Stand:** Der Kundenteil ist bis zum Senden gebaut (Preis, Adressprüfung, Strecke, Fotos, Anmeldung, Anfrage senden, Aufträge-Liste; Zurückziehen nur in der Datenbank, noch ohne Oberfläche) und läuft gegen ein Entwicklungsprojekt. Der Partnerteil (Registrierung, Annahme, Angebote, Storno, Abrechnung) ist geplant und freigegeben, aber noch nicht gebaut. Es gibt kein Produktivsystem, keine echten Nutzer und keine Partner.
 - **Bis zum Start fehlen** vor allem: der Partnerteil (Schritte S9b bis S9i), eine Rechtsprüfung (Buchungsbutton, Storno, Rücktritt, Partner-AGB), Verträge mit Mail-, Routen- und Hosting-Anbietern und die Einrichtung des Produktivprojekts (Abschnitt 7).
 
@@ -15,7 +15,7 @@ Stand: 2026-11-05. Quelle sind ausschließlich Code und Dokumente dieses Reposit
 - **Preis sofort:** Konfigurator für Transport und Umzug, Wizard für Entrümpelung, Auswahl für Montage. Der Preis entsteht aus veröffentlichten Tarifen mit Quellenangabe („Wie rechnet MoveNow?“ im Profil) und aus der berechneten Strecke, inklusive der Kilometer außerhalb Wiens. Wo ein fester Preis nicht seriös ist (z. B. Klavier, Spezialgut, fehlende Strecke), gibt es eine Spanne oder ein persönliches Angebot.
 - **Preisgarantie:** Der angezeigte Preis wird beim Absenden eingefroren, mit Tarifversion und Bedingungen. Ändern sich die Tarife, sieht der Kunde den neuen Preis und muss ihn erneut bestätigen; stillschweigend ändert sich nichts.
 - **Verbindlich buchen, ohne Telefonate** *(geplant)*: Ein Partner nimmt in der App an; Mehraufwand gibt es nur über einen Nachtrag mit Fotobeleg, dem der Kunde zustimmt. Gebaut ist heute: Die Storno-Stufen stehen im Preis-Stand jeder Anfrage.
-- **Datensparsam:** Keine Werbe- oder Tracking-Dienste, keine Cookies (gebaut). *(Geplant:)* Partner sehen vor der Annahme nur Bezirk, Umfang, Termin und Foto-Kopien ohne eingebettete Daten, keine Adresse und keinen Namen.
+- **Datensparsam:** Keine Werbe- oder Tracking-Dienste, keine Cookies (gebaut). *(Geplant:)* Partner sehen vor der Annahme nur den Bezirk der Abholadresse, bei Transport und Umzug die Postleitzahl des Ziels, Umfang, Termin, Preis und Foto-Kopien ohne eingebettete Daten, aber keine Straße, keine Hausnummer, keinen Namen und keine Kontaktdaten.
 
 ### Für Partnerbetriebe *(alles geplant, Partnerteil S9b bis S9i)*
 - Aufträge aus ihrem Gebiet (Wiener Bezirke) und ihren Leistungen, ohne eigene Akquise.

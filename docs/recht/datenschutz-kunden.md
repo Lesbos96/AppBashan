@@ -2,7 +2,7 @@
 
 # Datenschutzerklärung für Kundinnen und Kunden
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05, abgeleitet aus Code und Migrationen (Commit `1630668`, Migrationen 0001–0022) und aus dem Konzept für den Partnerteil (`docs/S9_KONZEPT.md`). Was heute noch nicht gebaut ist, steht als **[noch nicht gebaut]** im Text; vor dem Livegang gegen den dann gebauten Stand prüfen. Belege in Abschnitt 11. Die Erklärung für Partnerbetriebe steht getrennt in `docs/recht/datenschutz-partner.md` (Begründung: `docs/nacht/doku.md`, E11). Vorgänger: `docs/legal/datenschutz.md` (Stand S8b-3).
+> Entwurf aus dem Nachtauftrag vom 2026-11-05, abgeleitet aus Code und Migrationen (Commit `1630668`, Migrationen 0001–0022) und aus dem Konzept für den Partnerteil (`docs/S9_KONZEPT.md`). Was heute noch nicht gebaut ist, steht als **[noch nicht gebaut]** im Text; vor dem Livegang gegen den dann gebauten Stand prüfen. Belege in Abschnitt 14. Die Erklärung für Partnerbetriebe steht getrennt in `docs/recht/datenschutz-partner.md` (Begründung: `docs/nacht/doku.md`, E11). Vorgänger: `docs/legal/datenschutz.md` (Stand S8b-3).
 
 ## 1. Wer verantwortlich ist
 
@@ -17,8 +17,8 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 
 ## 3. Preise ansehen, ohne Konto
 
-- **Daten:** keine Angaben von dir. Beim Laden der App und der Tarife fallen technische Verbindungsdaten an (IP-Adresse, Zeitpunkt, angefragte Adresse), die unsere Dienstleister protokollieren.
-- **Zweck und Rechtsgrundlage:** Auslieferung und Sicherheit der App, Art. 6 Abs. 1 lit. f DSGVO.
+- **Daten:** keine Angaben von dir. Beim Laden der App und der Tarife fallen technische Verbindungsdaten an (IP-Adresse, Zeitpunkt, angefragte Internetadresse), die unsere Dienstleister protokollieren.
+- **Zweck und Rechtsgrundlage:** Auslieferung und Sicherheit der App, Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist ein sicherer, erreichbarer Dienst. Du kannst dieser Verarbeitung nach Art. 21 DSGVO widersprechen. [OFFEN: Interessenabwägung prüfen]
 - **Speicherdauer:** [OFFEN: Protokolldauer des Hosting-Anbieters und der Supabase-Plattformprotokolle je Tarif].
 
 ## 4. Konto und Anmeldung
@@ -41,7 +41,7 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 
 - **Daten:** gewählte Leistung und deine Angaben zum Umfang (z. B. Personen, Fahrzeuge, Stunden, Gegenstände, Volumen, Etagen), Abhol- und Zieladresse mit Koordinaten, Wiener Bezirk der Abholadresse, berechnete Strecke und Region, Wunschtermin und Zeitfenster, Freitext (bis 800 Zeichen), Kontakt für den Auftrag (Name, Telefon, E-Mail, Stiege/Tür), Fotos (Abschnitt 7), der Preis-Stand zum Zeitpunkt des Absendens (Betrag oder Spanne, Tarifversion, Bedingungen) und ein Beleg, welchen Betrag und welche Bedingungen du bestätigt hast. Jede Statusänderung (z. B. „zurückgezogen“) wird mit Zeitpunkt und auslösendem Konto protokolliert.
 - **Zweck:** Vermittlung an passende Partnerbetriebe, Zustandekommen und Abwicklung des Vertrags mit dem Partner, Nachweis deiner Zustimmung zum Preis.
-- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO; für die Protokolle zusätzlich Art. 6 Abs. 1 lit. f DSGVO (Nachweis und Streitbeilegung).
+- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO; für die Protokolle zusätzlich Art. 6 Abs. 1 lit. f DSGVO (Nachweis und Streitbeilegung). [OFFEN: Art. 6 Abs. 1 lit. c DSGVO für Daten, die aufbewahrt werden müssen; Umfang klären.]
 - **Speicherdauer:** [OFFEN: Im Code ist keine automatische Löschfrist umgesetzt. Vorschlag aus dem Projekt, nicht entschieden: zurückgezogene und abgelaufene Anfragen 12 Monate, abgeschlossene Aufträge 3 Jahre, Buchhaltungsunterlagen 7 Jahre (§ 132 BAO) (`docs/ARCHITECTURE.md:62`).] Eine Funktion „Konto löschen“ ist **[noch nicht gebaut]**; geplant ist, Konten mit Aufträgen, für die ein Vertrag zustande kam, zu anonymisieren statt zu löschen, weil Abrechnungsdaten aufbewahrt werden müssen (`docs/S9_KONZEPT.md`, R11 und S9h). Technisch gilt heute: Wird ein Konto gelöscht, werden Profil, Anfragen, Preis-Stände, Kontakte, Fotoeinträge und Statusprotokolle mitgelöscht, die Fotodateien entfernt der stündliche Aufräumjob; der Beleg deiner Preisbestätigung bleibt mit der Konto-Kennung (ohne Name, Adresse oder E-Mail) bestehen [OFFEN: Frist für diesen Beleg festlegen].
 - **Empfänger:** Supabase (Datenbank); Partnerbetriebe nach Abschnitt 8.
 
@@ -60,13 +60,17 @@ Wir setzen keine Werbe-, Analyse- oder Tracking-Dienste ein, keine Cookies und k
 - **Nach der Annahme:** Nur der Partner, der angenommen hat, erhält Adresse und Kontakt für den Auftrag. Sein Zugriff endet 30 Tage nach Abschluss oder Storno des Auftrags; danach löschen wir die Foto-Kopien.
 - **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO (Vermittlung und Erfüllung des Vertrags, den du mit dem Partner schließt).
 - **Rolle des Partners:** [OFFEN: Ist der Partner für die Daten nach der Annahme eigener Verantwortlicher oder Auftragsverarbeiter von MoveNow? (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10). Der Text hier geht von eigener Verantwortung des Partners für die Durchführung aus.]
-- **Mails:** Über Annahme, Ablauf, Angebote, Nachträge und Storno informieren wir dich per Mail und in der App. [OFFEN: Mail-Anbieter, siehe Abschnitt 4.]
+- **Mails:** Über Annahme, Ablauf, Angebote, Nachträge und Storno informieren wir dich per Mail und in der App. [OFFEN: Mail-Anbieter, siehe Abschnitt 4; Speicherdauer der Benachrichtigungen und Zustellprotokolle.]
+
+### 8a. Support, Beschwerden und Streitfälle
+
+[OFFEN: Verarbeitung bei Anfragen an den Support, Beschwerden, Widerspruch gegen eine Anfahrtspauschale und der Meldung „Auftrag hat nicht stattgefunden“ (Prüfung durch MoveNow): Daten, Zweck, Rechtsgrundlage (Art. 6 Abs. 1 lit. b bzw. f DSGVO), Speicherdauer. Teile davon sind **[noch nicht gebaut]**.]
 
 ## 9. Missbrauchsschutz
 
 - **Daten:** Zähler je Zeitfenster, zugeordnet über eine Prüfsumme (HMAC mit Server-Geheimnis) deiner IP-Adresse bzw. deiner Konto-Kennung. Die IP-Adresse selbst speichern wir nicht; die Prüfsumme ist trotzdem ein personenbezogenes Pseudonym.
 - **Zweck:** Schutz vor Überlastung und Missbrauch, Einhaltung der Kontingente des Routendienstes.
-- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. f DSGVO (Sicherheit und Funktionsfähigkeit des Dienstes).
+- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. f DSGVO (Sicherheit und Funktionsfähigkeit des Dienstes). Du kannst nach Art. 21 DSGVO widersprechen. [OFFEN: Interessenabwägung prüfen]
 - **Speicherdauer:** Ein stündlicher Job löscht Zähler, deren Zeitfenster mehr als 2 Tage zurückliegt.
 
 ### 9a. Schutz vor automatisierten Zugriffen [noch nicht gebaut]

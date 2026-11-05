@@ -18,7 +18,7 @@
 
 2.2 Vertragspartner für die Leistung ist der Partner, der deine Anfrage in der App annimmt bzw. dessen Festangebot du bestätigst. Bei einem Festangebot siehst du den Partner schon mit dem Angebot; Kontakt und Bestätigung erhältst du mit dem Vertragsschluss in der App und per Mail. [OFFEN: welche Angaben zum Partner das Angebot zeigt; das Konzept nennt „Betrag und Partner“ (`docs/S9_KONZEPT.md`, 8.2).]
 
-2.3 Die Nutzung der App ist für dich kostenlos. Du zahlst nur den Preis des Auftrags an den Partner. [OFFEN: prüfen, ob und wie offenzulegen ist, dass MoveNow von den Partnern vergütet wird, und dass diese Vergütung die Auswahl der Partner nicht beeinflusst.]
+2.3 Die Nutzung der App ist für dich kostenlos. Du zahlst nur den Preis des Auftrags an den Partner. [OFFEN: Offenlegungspflichten zur Finanzierung der Plattform prüfen, siehe Hinweis im Kopf.]
 
 2.4 [OFFEN: Pflichtinformationen für Verträge über Online-Marktplätze (§ 4 FAGG, insbesondere die Angaben für Online-Marktplätze nach dem Modernisierungsrichtlinie-Umsetzungsgesetz): Hauptparameter der Auswahl der Partner (Leistung, Bezirk der Abholadresse, Termin, erste Annahme), Hinweis, dass alle Partner Unternehmer sind, und wie die Pflichten zwischen Partner und MoveNow verteilt sind. Vgl. `docs/S9_KONZEPT.md`, Abschnitt 11, Punkte 1 und 6.]
 
@@ -58,7 +58,7 @@
 
 ## 6. Deine Angaben und Mitwirkung
 
-6.1 Deine Angaben zu Umfang, Gegenständen, Etagen, Zugang und Adressen müssen zutreffen und vollständig sein; Fotos helfen dem Partner, den Auftrag einzuschätzen. Nach dem Absenden kannst du die Anfrage nicht mehr ändern; zieh sie zurück und sende sie neu.
+6.1 Deine Angaben zu Umfang, Gegenständen, Etagen, Zugang und Adressen müssen zutreffen und vollständig sein; Fotos helfen dem Partner, den Auftrag einzuschätzen. Nach dem Absenden kannst du die Anfrage nicht mehr ändern; zieh sie zurück und sende sie neu [noch nicht gebaut: Zurückziehen hat in der App noch keinen Knopf].
 
 6.2 [OFFEN: weitere Mitwirkungspflichten (z. B. Zugang, Parkmöglichkeit, Halteverbotszone, Aufzug, Sicherung von Wertsachen, Entleerung von Möbeln), soweit die Partner sie verlangen dürfen; im Projekt nicht festgelegt.]
 
@@ -72,7 +72,7 @@
 
 ## 8. Zurückziehen und Storno
 
-8.1 **Vor dem Vertragsschluss** kannst du deine Anfrage jederzeit kostenlos zurückziehen.
+8.1 **Vor dem Vertragsschluss** kannst du deine Anfrage jederzeit kostenlos zurückziehen [noch nicht gebaut: in der Datenbank vorhanden, in der App noch ohne Knopf].
 
 8.2 **Nach dem Vertragsschluss** kannst du in der App stornieren:
 - bis 48 Stunden vor dem Termin kostenlos,
@@ -99,7 +99,7 @@ Maßgeblich sind die Stufen, die du vor dem Absenden gesehen hast; sie stehen im
 
 ## 11. Nach dem Termin
 
-Nach dem Termin fragt dich die App, ob der Auftrag stattgefunden hat. Antwortest du nicht innerhalb von 7 Tagen, gilt der Auftrag als durchgeführt. Meldest du, dass er nicht stattgefunden hat, prüft MoveNow den Fall. [OFFEN: Wirkung dieser Rückfrage gegenüber dem Partner (keine Abnahme im Rechtssinn), Rechtsprüfung.]
+Nach dem Termin fragt dich die App, ob der Auftrag stattgefunden hat. Antwortest du nicht bis 7 Tage nach dem Termin, gilt der Auftrag als durchgeführt. Meldest du, dass er nicht stattgefunden hat, prüft MoveNow den Fall. [OFFEN: Wirkung dieser Rückfrage gegenüber dem Partner (keine Abnahme im Rechtssinn), Rechtsprüfung.]
 
 ## 12. Gewährleistung und Haftung
 
