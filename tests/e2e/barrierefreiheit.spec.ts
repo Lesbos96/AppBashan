@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { anonymousPrices, toSummary } from './anfrage-helpers'
+import { EMAIL, mockAuth } from './auth-helpers'
 import { weiter } from './dienste-helpers'
 
 // Barrierefreiheit (WCAG 2.2 AA): Prüfungen, die das Prüfskript der Nacht vom 2026-11-05 als Funde gemeldet hat (docs/nacht/qualitaet.md).
@@ -217,5 +218,23 @@ test.describe('Fokus nach Seitenwechsel (2.4.3, 4.1.3)', () => {
     await page.goto('/profil')
     await expect(page.getByRole('heading', { name: 'Profil', level: 1 })).toBeVisible()
     expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+  })
+})
+
+test.describe('Anmeldung: Fokus beim Schrittwechsel (2.4.3)', () => {
+  test('nach „Code senden" im Codefeld, nach „Andere Adresse" wieder im E-Mail-Feld', async ({ page }) => {
+    await mockAuth(page)
+    await page.goto('/anmelden')
+    await page.getByLabel('E-Mail').fill(EMAIL)
+    await page.getByRole('button', { name: 'Code senden' }).press('Enter')
+    await expect(page.getByLabel('Code')).toBeFocused()
+    await page.getByRole('button', { name: 'Andere Adresse' }).press('Enter')
+    await expect(page.getByLabel('E-Mail')).toBeFocused()
+  })
+
+  test('erster Aufruf: kein automatischer Fokus im E-Mail-Feld', async ({ page }) => {
+    await page.goto('/anmelden')
+    await expect(page.getByLabel('E-Mail')).toBeVisible()
+    await expect(page.getByLabel('E-Mail')).not.toBeFocused()
   })
 })

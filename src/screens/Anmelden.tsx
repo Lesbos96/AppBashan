@@ -47,6 +47,8 @@ export function Anmelden() {
   const [error, setError] = useState<string | null>(url.expired && !url.token ? linkText : null)
   const [busy, setBusy] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  // Zurück zum E-Mail-Schritt: Fokus ins Feld (WCAG 2.4.3), beim ersten Öffnen nicht
+  const [backToEmail, setBackToEmail] = useState(false)
   const redirected = useRef(false)
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export function Anmelden() {
           <form noValidate onSubmit={send} className="flex flex-col gap-4">
             <p className={intro}>Wir schicken dir einen Code und einen Link per E-Mail. Ein Passwort brauchst du nicht.</p>
             <GroupedList>
-              <Field label="E-Mail" type="email" name="email" autoComplete="email" inputMode="email" placeholder="name@beispiel.at" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Field label="E-Mail" type="email" name="email" autoComplete="email" inputMode="email" placeholder="name@beispiel.at" autoFocus={backToEmail} value={email} onChange={(e) => setEmail(e.target.value)} />
             </GroupedList>
             {err}
             <Button type="submit" disabled={busy || !email.trim()}>
@@ -139,6 +141,8 @@ export function Anmelden() {
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 placeholder="Ziffern"
+                // Der Knopf „Code senden" verschwindet mit dem Schrittwechsel; ohne autoFocus fiele der Fokus auf body (WCAG 2.4.3)
+                autoFocus
                 className="tabular-nums tracking-widest"
                 value={code}
                 onChange={(e) => setCode(digitsOnly(e.target.value))}
@@ -156,7 +160,7 @@ export function Anmelden() {
                   Code erneut senden
                 </Button>
               )}
-              <Button variant="plain" onClick={() => { setError(null); setStep('email') }}>
+              <Button variant="plain" onClick={() => { setError(null); setBackToEmail(true); setStep('email') }}>
                 Andere Adresse
               </Button>
             </div>
@@ -172,7 +176,7 @@ export function Anmelden() {
             )}
             {err}
             {error ? (
-              <Button onClick={() => { setError(null); setStep('email') }}>Neuen Code anfordern</Button>
+              <Button onClick={() => { setError(null); setBackToEmail(true); setStep('email') }}>Neuen Code anfordern</Button>
             ) : (
               <>
                 <Button disabled={busy || session === undefined} onClick={confirmLink}>
