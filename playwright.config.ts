@@ -20,6 +20,8 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // Anfragen eines Service Workers sähe die Mock-Schicht (tests/e2e/backend.ts) nicht; die App registriert heute keinen
+    serviceWorkers: 'block',
     // Nur wenn gesetzt: ein vorinstalliertes Chromium statt des von Playwright verwalteten (z. B. Cloud-Container mit anderer Browserversion).
     ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },

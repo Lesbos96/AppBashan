@@ -7,6 +7,7 @@ const BLOCKED = ['https://e2e.supabase.invalid/rest/v1/request_contacts', 'https
 test('Ungemockte Aufrufe werden abgebrochen und gemeldet, auch an einen echten Supabase-Host', async ({ page, backend }) => {
   await page.goto('/profil')
   const results = await page.evaluate((urls) => Promise.all(urls.map((u) => fetch(u).then(() => 'erreicht', () => 'abgebrochen'))), BLOCKED)
+  // „abgebrochen“ käme bei diesen Hosts auch ohne Sperre (DNS); beweisend ist die Meldung in `unmocked` (die Sperre hat den Aufruf gesehen)
   expect(results).toEqual(['abgebrochen', 'abgebrochen'])
   expect([...backend.unmocked].sort()).toEqual(BLOCKED.map((u) => `GET ${u}`).sort())
   // Hier erwartet: nicht dem Test anlasten (die Fixture prüft am Ende auf eine leere Liste)

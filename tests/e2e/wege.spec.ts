@@ -47,8 +47,12 @@ async function umzugToSummary(page: Page) {
   await fillContact(page)
 }
 
-/** Möbeltransport über die Start-Karte; mit `piano` als Klavier (persönliches Angebot). Endet auf der Zusammenfassung (nicht angemeldet, Kontakt ausgefüllt). */
-async function transportToSummary(page: Page, piano: boolean) {
+/**
+ * Möbeltransport über die Start-Karte; mit `piano` als Klavier (persönliches Angebot). Endet auf der Zusammenfassung (nicht angemeldet, Kontakt ausgefüllt).
+ * Gibt den im Konfigurator angezeigten Richtpreis zurück (Text wie angezeigt und in Cent), beim Angebot `null`.
+ */
+async function transportToSummary(page: Page, piano: boolean): Promise<{ text: string; cents: number } | null> {
+  let displayed: { text: string; cents: number } | null = null
   await page.goto('/')
   await page.getByRole('link', { name: /^Möbeltransport/ }).click()
   await expect(page).toHaveURL(/\/transport$/)
@@ -58,7 +62,12 @@ async function transportToSummary(page: Page, piano: boolean) {
     await page.getByRole('radio', { name: 'Klavier' }).check({ force: true })
     await expect(page.getByRole('button', { name: 'Persönliches Angebot, Details anzeigen' })).toBeVisible()
   } else {
-    await expect(page.getByRole('button', { name: /Richtpreis .*€, alle Positionen/ })).toBeVisible()
+    const button = page.getByRole('button', { name: /Richtpreis .*€, alle Positionen/ })
+    await expect(button).toBeVisible()
+    // aria-label „Richtpreis 1.234,56 €, alle Positionen anzeigen“ (Preis.tsx, formatEuro)
+    const m = /Richtpreis (\d{1,3}(?:\.\d{3})*),(\d{2})\s€/.exec((await button.getAttribute('aria-label')) ?? '')
+    expect(m, 'Richtpreis im aria-label').not.toBeNull()
+    displayed = { text: `${m![1]},${m![2]} €`, cents: Number(m![1]!.replaceAll('.', '')) * 100 + Number(m![2]) }
   }
   await weiter(page).click()
   await expect(page).toHaveURL(/\/transport\/termin$/)
@@ -66,6 +75,7 @@ async function transportToSummary(page: Page, piano: boolean) {
   await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
   await expect(page).toHaveURL(/\/transport\/zusammenfassung$/)
   await fillContact(page)
+  return displayed
 }
 
 /**
@@ -79,6 +89,8 @@ async function mockOrders(page: Page, rows: object[], failure: { reply?: Reply }
 }
 
 const noFeeKeys = (body: unknown) => expect(JSON.stringify(body)).not.toMatch(/fee|commission|provision|platform/i)
+/** Kunden-Screens nennen die Gebühr nirgends (CLAUDE.md, UI); gleiches Muster wie `konfigurator.spec.ts`. */
+const noFeeText = (page: Page) => expect(page.locator('main')).not.toContainText(/15 ?%|Gebühr|Provision|Plattform/)
 
 /** Seitenübergang abgeschlossen: Während die alte Seite ausblendet, stehen kurz zwei `main` im DOM (Shell, AnimatePresence). */
 const oneMain = (page: Page) => expect(page.locator('main')).toHaveCount(1)
@@ -90,8 +102,10 @@ test.describe('W2 Umzug', () => {
     await mockAuth(page)
     const calls = await mockQuote(page, () => ({ json: answer(price(68961)) }))
     await umzugToSummary(page)
+    await oneMain(page)
     await expect(page.getByText('Einfache Strecke')).toBeVisible()
     await expect(page.getByText(euro('689,61 €')).first()).toBeVisible()
+    await noFeeText(page)
     await signInFromSummary(page, 'umzug')
     await page.getByRole('button', { name: 'Anfrage senden' }).click()
 
@@ -100,11 +114,14 @@ test.describe('W2 Umzug', () => {
     await expect(page.getByRole('heading', { name: 'Anfrage gesendet.' })).toBeVisible()
     await expect(page.getByText('Angefragt')).toBeVisible()
     await expect(page.getByText(euro('689,61 €'))).toBeVisible()
+    await noFeeText(page)
     expect(calls).toHaveLength(1)
     const body = calls[0]!.body as Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any -- Aufruf-JSON
     expect(body.service).toBe('move')
-    expect(body.from?.label).toBe('Neubaugasse 12, 1070 Wien')
-    expect(body.to?.label).toBe('Praterstraße 30, 1020 Wien')
+    // Strecke: bestätigte Adressen mit den Punkten aus der Suche (mockRoute) und die Rückfahrt (Standard an)
+    expect(body.from).toEqual({ label: 'Neubaugasse 12, 1070 Wien', point: { lat: 48.2, lon: 16.352 } })
+    expect(body.to).toEqual({ label: 'Praterstraße 30, 1020 Wien', point: { lat: 48.217, lon: 16.396 } })
+    expect(body.returnTrip).toBe(true)
     expect(body.preferredDate).toMatch(DAY_15)
     expect(body.shown).toEqual({ kind: 'price', totalCents: 68961, lowCents: 68961, highCents: 68961 })
     expect(body.contact).toMatchObject({ name: 'Anna Muster', phone: '+43 660 1234567', email: 'anna@movenow.test' })
@@ -123,7 +140,17 @@ test.describe('W2 Umzug', () => {
     await mockRoute(page)
     const calls = await mockQuote(page, () => ({ json: answer(price(68961)) }))
     await umzugToSummary(page)
+    // Zurück in der App (Leiste oben)
     await page.getByRole('link', { name: 'Termin', exact: true }).click()
+    await expect(page).toHaveURL(/\/umzug\/termin$/)
+    await oneMain(page)
+    await expect(page.getByRole('button', { name: /, 15\. .*ausgewählt/ })).toBeVisible()
+    // Zurück im Browser: wieder die Zusammenfassung mit dem Kontakt, dann der erste Termin-Eintrag
+    await page.goBack()
+    await expect(page).toHaveURL(/\/umzug\/zusammenfassung$/)
+    await oneMain(page)
+    await expect(page.getByLabel('Name')).toHaveValue('Anna Muster')
+    await page.goBack()
     await expect(page).toHaveURL(/\/umzug\/termin$/)
     await oneMain(page)
     await expect(page.getByRole('button', { name: /, 15\. .*ausgewählt/ })).toBeVisible()
@@ -134,6 +161,8 @@ test.describe('W2 Umzug', () => {
     // Wieder vor: Kontakt ist noch da
     await weiter(page).click()
     await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
+    await expect(page).toHaveURL(/\/umzug\/zusammenfassung$/)
+    await oneMain(page)
     await expect(page.getByLabel('Name')).toHaveValue('Anna Muster')
     expect(calls).toHaveLength(0)
   })
@@ -178,17 +207,23 @@ test.describe('W3 Möbeltransport', () => {
     expect(errors).toEqual([])
   })
 
-  test('Erfolg mit Richtpreis: gesendet wird der angezeigte Festpreis', async ({ page }) => {
+  test('Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt', async ({ page }) => {
     await mockRoute(page)
     await mockAuth(page)
-    const calls = await mockQuote(page, () => ({ json: answer(price(30000)) }))
-    await transportToSummary(page, false)
+    // Der Server bestätigt in diesem Mock genau den gesendeten Preis (wie `quote` bei gleichem Ergebnis)
+    const calls = await mockQuote(page, (n) => {
+      const shown = calls[n - 1]!.body.shown as { totalCents: number }
+      return { json: answer(price(shown.totalCents)) }
+    })
+    const displayed = await transportToSummary(page, false)
+    expect(displayed).not.toBeNull()
     await signInFromSummary(page, 'transport')
     await page.getByRole('button', { name: 'Anfrage senden' }).click()
     await expect(page).toHaveURL(/\/transport\/gesendet$/)
-    const shown = calls[0]!.body.shown as { kind: string; totalCents: number }
-    expect(shown.kind).toBe('price')
-    expect(Number.isSafeInteger(shown.totalCents) && shown.totalCents > 0).toBe(true)
+    await oneMain(page)
+    expect(calls[0]!.body.shown).toEqual({ kind: 'price', totalCents: displayed!.cents, lowCents: displayed!.cents, highCents: displayed!.cents })
+    await expect(page.getByText(euro(displayed!.text))).toBeVisible()
+    await expect(page.getByText('Der Preis wurde aktualisiert.')).toHaveCount(0)
   })
 
   test('Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert', async ({ page }) => {

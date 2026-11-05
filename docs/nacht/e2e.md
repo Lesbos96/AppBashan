@@ -77,8 +77,8 @@ Ergebnis Runde 1 (bestehende Suite, nur Mock-Schicht): `npm run check` EXIT=0 (3
 
 | Weg | Erfolg | Abbruch | Fehler |
 |---|---|---|---|
-| W2 Umzug | Start-Karte → Konfigurator (689,61 €) → Termin (Strecke 4,8 km) → Zusammenfassung → Anmeldung → Senden → Gesendet → Aufträge; Aufruf enthält Strecke, Tag, Kontakt und genau den angezeigten Preis, keine Gebührenfelder | Zurück aus Zusammenfassung und Termin: Tag ausgewählt, Preis 689,61 €, Kontakt bleibt, kein Aufruf | 503 (Adressprüfung): Meldung, Entwurf bleibt, „Erneut senden" mit derselben `clientRef` |
-| W3 Möbeltransport | Klavier → persönliches Angebot → Gesendet ohne Preis („Wartet auf Angebot"), `shown` = Angebot; zweiter Test mit Festpreis | Zurück aus der Anmeldung: Angaben bleiben, kein Code angefordert, nichts gesendet | Tarife nicht ladbar: Fehlerzustand im Konfigurator, „Erneut versuchen" |
+| W2 Umzug | Start-Karte → Konfigurator (689,61 €) → Termin (Strecke 4,8 km) → Zusammenfassung → Anmeldung → Senden → Gesendet → Aufträge; Aufruf enthält Strecke (bestätigte Adressen mit Punkten, Rückfahrt), Tag, Kontakt und genau den angezeigten Preis, keine Gebührenfelder; Zusammenfassung und Bestätigung ohne Gebührentext | Zurück in der App und im Browser aus Zusammenfassung und Termin: Tag ausgewählt, Preis 689,61 €, Kontakt bleibt, kein Aufruf | 503 (Adressprüfung): Meldung, Entwurf bleibt, „Erneut senden" mit derselben `clientRef` |
+| W3 Möbeltransport | Klavier → persönliches Angebot → Gesendet ohne Preis („Wartet auf Angebot"), `shown` = Angebot; zweiter Test mit Festpreis: der im Konfigurator angezeigte Betrag (aus dem `aria-label`) wird gesendet und bestätigt | Zurück aus der Anmeldung: Angaben bleiben, kein Code angefordert, nichts gesendet | Tarife nicht ladbar: Fehlerzustand im Konfigurator, „Erneut versuchen" |
 | W4 Entrümpelung | Besichtigung (Gewerbe) bis Gesendet, `shown` = Angebot | (bestehend: „Ändern" im Ergebnis) | (bestehend: Foto- und `quote`-Fehler) |
 | W6 Miete | Start-Karte → Platzhalter, kein Aufruf an `rest`/`functions`/`auth`/`storage`, kein Senden-Knopf | – | – |
 | W7 Vermieter | Profil → Platzhalter → Zurück zum Profil | – | – |
@@ -93,6 +93,18 @@ Gefundene Testfallen (keine App-Fehler), mit Begründung gelöst:
 - Neues Projekt `e2e-desktop` (1280×800, Faktor 1) neben `e2e` (390×844, Faktor 2, wie die Referenz). `npm run test:e2e` läuft jetzt mit beiden; `npm run test:e2e:mobile` nur Handy (für schnelle Runden). Entscheidung: beide im Standardbefehl, weil der Auftrag beide Größen verlangt; die Laufzeit verdoppelt sich etwa (Frage F-4).
 - Screenshot und Trace bei Fehlschlag waren schon gesetzt (`screenshot: 'only-on-failure'`, `trace: 'retain-on-failure'`, Ablage `tmp/playwright/`) und gelten für beide Projekte. Belegt durch den Rot-Beweis der Mock-Schicht (Runde 2): Screenshot `tmp/playwright/e2e-backend-Rot-Beweis-…/test-failed-1.png`.
 - Das Handy-Projekt bleibt „Desktop Chrome mit 390 px" (ohne `isMobile`/`hasTouch`), wie bisher und wie die Shots. Echte Touch-Emulation hätte das Verhalten von 102 bestehenden Tests verändert; nicht ohne Freigabe (Frage F-4).
+
+### Selbstprüfung (Reviewer, Abnahme ohne UI, `tmp/proof/nacht-e2e-review.md`)
+Ergebnis: hoch 0, mittel 2, niedrig 5. Alle umgesetzt:
+- M: Transport-Festpreis prüfte nur „> 0" → jetzt angezeigter Betrag = gesendetes `shown` = bestätigter Betrag (der Mock antwortet mit dem gesendeten Preis).
+- M: Doku sagte „Strecke im Aufruf", der Test prüfte sie nicht → Punkte beider Adressen und `returnTrip` geprüft.
+- N: Gebührentext in Kunden-Screens → `noFeeText` auf Zusammenfassung und Bestätigung (Umzug).
+- N: Service Worker an der Mock-Schicht vorbei → `serviceWorkers: 'block'` in `playwright.config.ts` (die App registriert heute keinen; WebSockets nutzt sie nicht).
+- N: `backend.spec.ts` „abgebrochen" träte auch ohne Sperre ein (DNS) → Kommentar; beweisend ist die Meldung in `unmocked`.
+- N: Abbruch W2 ohne echtes Browser-Zurück → zweimal `page.goBack()` ergänzt, vor der Negativprüfung `oneMain`.
+- N: `docs/proof/nacht-e2e/nacht-e2e-r2-rotbeweis.log` nennt `backend.spec.ts:30`; durch einen späteren Kommentar steht der Test eine Zeile tiefer. Das Log bleibt unverändert (Nachweise werden nicht geändert).
+
+Eigener Fund: Die Shots nutzen jetzt dieselbe Mock-Schicht, liefen in dieser Nacht aber noch nicht → eigener Lauf (siehe unten).
 
 ## Fragen an Beks
 
