@@ -39,6 +39,8 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 
 - **E19 · Prüfdurchgang 6 nach „weiter“.** Beks schrieb am Morgen „weiter“. Ich habe das als Fortsetzung der Prüfschleife gelesen, weil Durchgang 5 noch einen mittleren Befund hatte und das Abbruchkriterium des Auftrags damit nicht wörtlich erfüllt war; keine neue Aufgabe, keine S9b-Arbeit. Seit Durchgang 3 geändert waren nur `docs/ARCHITEKTUR.md` und diese Datei, deshalb prüfte Durchgang 6 genau diese beiden vollständig. Ergebnis: 3 × mittel (Verweis `docs/ARCHITECTURE.md:62` statt `:63`, auch in beiden Datenschutzerklärungen; überholter Beleg zum Foto-Limit; Commit-Zuordnung im Stand). Alle bestätigt und korrigiert.
 
+- **E20 · Prüfdurchgang 7, Abbruchkriterium erfüllt.** Mechanische Prüfung aller rund 170 Verweise auf andere Dokumente in den neun Dateien: „Keine Befunde hoch oder mittel.“ Ein Hinweis unterhalb der Meldeschwelle (Verweis in `docs/INVESTOREN.md` um Abschnitt 7 ergänzt) ist übernommen. Damit hat ein weiterer Durchgang nichts Sinnvolles mehr gefunden; Ende der Prüfschleife.
+
 ## Fragen an Beks
 
 - **F1 · Modell:** Soll ein Nachtauftrag dieser Art künftig mit Sonnet 5.5 laufen (Regel in `CLAUDE.md`), oder war Opus gewollt?
@@ -80,5 +82,7 @@ Diese Datei hält jede Entscheidung mit Begründung fest, dazu Fragen an Beks un
 - Prüfdurchgang 1 (E15): 60c97cf, 02bd4dd, 3d66aa6, cd1a966.
 - Prüfdurchgang 2 (E16): 5aca674, a99f6f5, abad9c9.
 - Prüfdurchgang 3 (E17): 4fd5c83, bbff3ae.
-- Prüfdurchgänge 4 und 5 (E18): d589bf9, 97baffd und der Commit mit diesem Eintrag.
+- Prüfdurchgänge 4 und 5 (E18): d589bf9, 97baffd, 37e7fc9.
+- Prüfdurchgang 6 (E19): 7b0b994.
+- Prüfdurchgang 7 (E20): der Commit mit diesem Eintrag.
 - Ende: Alle Phasen fertig, PR bleibt Entwurf. Kein Code, keine Migration, kein Deploy, keine Datei außerhalb von `docs/` geändert, keine Datei gelöscht, kein Supabase-Werkzeug benutzt.
