@@ -448,8 +448,12 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         )}
 
         {text && (
-          <div role="alert" className="flex flex-col gap-2 rounded-grouped-list border border-destructive/40 bg-surface p-4 shadow-card">
-            <p className="m-0 text-body">{wait > 0 ? `${text} Noch ${wait} s.` : text}</p>
+          <div className="flex flex-col gap-2 rounded-grouped-list border border-destructive/40 bg-surface p-4 shadow-card">
+            {/* Nur die Meldung ist Live-Region; die Wartezeit zählt daneben, sonst läse ein Bildschirmleser sie jede Sekunde neu vor */}
+            <p className="m-0 text-body">
+              <span role="alert">{text}</span>
+              {wait > 0 && ` Noch ${wait} s.`}
+            </p>
             {error?.kind === 'unauthorized' && (
               <Button variant="tinted" onClick={() => void otherAccount()}>
                 Neu anmelden

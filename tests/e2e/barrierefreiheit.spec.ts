@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
-import { anonymousPrices, toSummary } from './anfrage-helpers'
-import { EMAIL, mockAuth } from './auth-helpers'
+import { anonymousPrices, mockQuote, toSummary } from './anfrage-helpers'
+import { EMAIL, mockAuth, signInWithCode } from './auth-helpers'
 import { weiter } from './dienste-helpers'
 
 // Barrierefreiheit (WCAG 2.2 AA): Prüfungen, die das Prüfskript der Nacht vom 2026-11-05 als Funde gemeldet hat (docs/nacht/qualitaet.md).
@@ -236,5 +236,26 @@ test.describe('Anmeldung: Fokus beim Schrittwechsel (2.4.3)', () => {
     await page.goto('/anmelden')
     await expect(page.getByLabel('E-Mail')).toBeVisible()
     await expect(page.getByLabel('E-Mail')).not.toBeFocused()
+  })
+})
+
+test.describe('Wartezeit nach 429 (4.1.3)', () => {
+  test('die Live-Region enthält nur die Meldung, der Zähler läuft daneben', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await anonymousPrices(page)
+    await mockAuth(page)
+    await mockQuote(page, () => ({ status: 429, json: { error: 'rate_limited' } }))
+    await page.goto('/anmelden')
+    await signInWithCode(page)
+    await toSummary(page)
+    await page.getByRole('checkbox').check()
+    await page.getByRole('button', { name: 'Anfrage senden' }).click()
+    const alert = page.getByRole('alert')
+    await expect(alert).toContainText('zu viele Anfragen')
+    const before = await alert.innerText()
+    await expect(page.getByText(/Noch \d+ s\./)).toBeVisible()
+    await page.waitForTimeout(2200)
+    expect(await alert.innerText()).toBe(before)
+    expect(before).not.toMatch(/Noch \d+ s/)
   })
 })
