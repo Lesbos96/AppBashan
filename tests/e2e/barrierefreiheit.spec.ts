@@ -316,3 +316,11 @@ test.describe('Überschriften ohne Sprung (1.3.1)', () => {
     await expect(page.getByRole('heading', { name: 'Fotos', level: 3 })).toBeVisible()
   })
 })
+
+test.describe('Fehlerseite (1.3.1, 2.4.6)', () => {
+  test('hat genau eine h1 mit dem Fehler', async ({ page }) => {
+    await page.goto('/gibt-es-nicht')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Seite nicht gefunden')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+  })
+})
