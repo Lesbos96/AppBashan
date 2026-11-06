@@ -29,7 +29,7 @@ Zustände und Übergänge mit Akteur: `docs/S9_KONZEPT.md`, Abschnitt 4. Überg�
 
 ## Geldfluss
 1. App: Vorschau mit `@pricing` und den öffentlichen `price_config`-Werten. Keine Gebühr, kein Satz im Client.
-2. Absenden und „Anfrage bearbeiten": nur über die Edge Function `quote` (service_role). Sie prüft `inputs` je Service gegen das Schema des Preismoduls, lädt die aktuelle `price_version`, rechnet neu, speichert Anfrage bzw. Mietanfrage mit Snapshot und schreibt `fee_splits` mit dem Satz aus `platform_settings`. Kunden haben kein INSERT auf `service_requests`/`rental_bookings`; ein Client-Preis wird nie übernommen. Details: Abschnitt „quote (S8a)".
+2. Absenden und „Anfrage bearbeiten": nur über die Edge Function `quote` (service_role). Sie prüft `inputs` je Service gegen das Schema des Preismoduls, lädt die aktuelle `price_version`, rechnet neu, und speichert Anfrage bzw. Mietanfrage mit Snapshot. Seit 0018 liest `quote` keinen Gebührensatz und schreibt keine `fee_splits`-Zeile; die Aufteilung entsteht ab S9b-4 bei der Annahme im Journal `commission_entries`. Kunden haben kein INSERT auf `service_requests`/`rental_bookings`; ein Client-Preis wird nie übernommen. Details: Abschnitt „quote (S8a)".
 3. Aufteilung wie `platform()` im Prototyp: fee = cents(total × rate), netto = cents(fee / (1 + vat)), USt. = fee − netto, payout = total − fee; erst am Ende in Integer-Cent.
 4. Die Provision schreibt die Annahme ins Journal `commission_entries` (`docs/S9_KONZEPT.md`, 5.8, 9). Die Beispielabrechnung der Vermieter (18) rechnet mit `fee_rate` aus `platform_settings`.
 5. Später: Partnerangebot (`quotes`) ersetzt den Richtpreis, Zahlung über Stripe Connect mit der Gebühr als Application Fee.
@@ -42,18 +42,20 @@ S/I/U/D = select/insert/update/delete. „Eigene" = Eigentum per `auth.uid()`. S
 | profiles | – | S eigene; U (display_name, phone) eigene | – | S alle |
 | price_versions, price_config | S | S | – | S I U D |
 | current_price_version (View, `security_invoker`) | S | S | – | S |
-| platform_settings | – | – | S | S I U D |
-| service_requests | – | S eigene; U (status) nur → withdrawn | – | S, U (status) |
+| platform_settings | – | – | S | S; Schreiben nur über `admin_set_setting` (nur `service_role`, Migration 0016); keine Schreib-Grants und -Policies für Nutzer |
+| service_requests | – | S eigene; kein UPDATE (Rücknahme nur über `withdraw()`, 0017) | – | S |
 | request_photos | – | S eigene (ohne admin); I/U/D nie für den Kunden und nie für `service_role` (Zeilen legt nur `quote_save_request` an: Marker, Pfadpräfix, ≤ 8; Trigger `photo_immutable` auch gegen den Eigentümer) | – | – |
 | Storage `request-photos` | – | S eigener Ordner (ohne admin); I/D nur im eigenen Staging-Ordner `{uid}/{client_ref}/{uuid}.jpg`, solange es zu `client_ref` keine Anfrage und zum Namen keine Zeile gibt, höchstens 40 eigene nicht übernommene Dateien (`private.staging_photo_count()`); kein Überschreiben, kein Update | – | – |
 | rental_offers | S approved | S approved | S eigene; I/U eigene ohne status, is_demo, provider_id (neu = pending) | S alle |
 | rental_bookings | – | S eigene; U (status) nur requested → withdrawn | – | S, U (status) |
-| fee_splits | – | – | S mit payee_id = ich | S |
+| fee_splits (leer; seit 0018 schreibt niemand mehr, auch `service_role` nicht) | – | – | S mit payee_id = ich | S |
 | geo_boundaries, route_cache, route_rate_limits | – | – | – | – |
 | RPC `route_geo_facts`, `take_rate_tokens`, `quote_save_request`, `quote_save_booking` | – | – | – | – |
 | current_fee_rates (View, `security_invoker`) | – | S (nur NULL) | S (Satz) | S |
 
 Die drei Tabellen und die Funktionen `route_geo_facts`, `take_rate_tokens`, `route_cleanup` (Migration 0006, 0009) nutzt nur die Edge Function `route` über service_role; Tests in `tests/rls/route.test.ts`.
+
+Stand: Endzustand nach Migration 0022. Nicht in der Matrix (Rechte siehe Migrationen 0016 bis 0020, Vervollständigung mit S9b-1): `audit_log`, `status_events`, `price_revisions`, `request_contacts`, `geocode_cache`, `geo_districts`, RPC `withdraw`.
 
 Abgesichert in `tests/rls/rls.test.ts` (`npm run test:rls`, gegen das Dev-Projekt, Nutzer je Lauf neu und danach gelöscht).
 
@@ -94,10 +96,10 @@ Edge Function `route` (`supabase/functions/route`, Logik in `_shared/route/`), a
 ## quote (S8a)
 Edge Function `quote` (`supabase/functions/quote`, Logik in `_shared/quote/`), `verify_jwt = false`, das Nutzer-JWT prüft die Function selbst (`auth.getUser`); der Secret-Key-Client bekommt nie den Authorization-Header des Nutzers. Secrets: `SECRET_KEY` (neuer Secret Key, kein Rückgriff auf die Legacy-Variable; `route` liest ihn ebenso), `ORS_API_KEY`, `RATE_LIMIT_SECRET`, `ALLOWED_ORIGINS`.
 - **Aufruf:** `{service, inputs, from?, to?, returnTrip?, description?, volume?, preferredDate?, timeWindow?, requestId?, clientRef}` bzw. `{service: 'rental', offerId, inputs, clientRef}`. Top-Level-Schlüssel außerhalb der Liste werden verworfen; `inputs` nur über `parse*Input`; `to` und `volume` nur bei Transport/Umzug, `timeWindow` nur bei Entrümpelung/Montage. Der Aufruf kennt keinen Preis, keine Kilometer, keine Region, keinen Status. `clientRef` (UUID je Absendeversuch) macht das Anlegen idempotent, `requestId` bearbeitet.
-- **Ablauf:** JWT → Nutzerlimit (6/min, 30/Tag, gehashte Kennung) → Body (16 KB) → Prüfung → vorhandene `clientRef` liefert die gespeicherte Antwort → Tarife (`current_price_version`, `ref`-Zeilen raus, alle `REQUIRED_TARIFF_KEYS` vorhanden, sonst Abbruch) → Gebührensätze (`current_fee_rates`, fehlt einer: Abbruch) → Strecke → Preis (`compute*`) → Schreiben über RPC.
+- **Ablauf:** JWT → Nutzerlimit (6/min, 30/Tag, gehashte Kennung) → Body (16 KB) → Prüfung → vorhandene `clientRef` liefert die gespeicherte Antwort → Tarife (`current_price_version`, `ref`-Zeilen raus, alle `REQUIRED_TARIFF_KEYS` vorhanden, sonst Abbruch) → Strecke → Preis (`compute*`) → Schreiben über RPC.
 - **Strecke:** nur Transport/Umzug mit beiden Koordinaten, über `computeRouteFacts`; Anbieter-Aufrufe zählen gegen dieselben `route`-Zähler (IP, global). Fehler des Anbieters, `no_route` und erschöpfte Zähler ergeben ein gespeichertes Angebot `route_missing` (kein Preis, keine Gebühr); Ausfall des Limiters (503) und alle anderen Fehler brechen ab.
 - **Status:** Angebotspflicht bei Entrümpelung → `inspection_requested`, sonst `requested` (Transport/Umzug-Angebot: `requested` mit `needs_quote`). Bearbeiten nur im Status `requested` und im selben Service; danach gilt dieselbe Regel (ein Angebot wird zur Besichtigung und ist nicht mehr bearbeitbar).
-- **Schreiben:** `public.quote_save_request` / `quote_save_booking` (Migration 0010, `security invoker`, `search_path = ''`, Execute nur für `service_role`): Anfrage und `fee_splits` in einer Transaktion; bei Angebot entfällt die `fee_splits`-Zeile. Fehler: `55000` nicht bearbeitbar (409), `P0002` nicht gefunden oder fremd (404).
+- **Schreiben:** `public.quote_save_request` / `quote_save_booking` (Migration 0010, `security invoker`, `search_path = ''`, Execute nur für `service_role`): Anfrage in einer Transaktion, seit 0018 ohne `fee_splits`. Fehler: `55000` nicht bearbeitbar (409), `P0002` nicht gefunden oder fremd (404).
 - **Snapshot:** nur Felder des Preismoduls (`kind`, Gesamtpreis, Spanne, Zeilen, Zusatzfelder je Service, Gründe), keine Tarife (die `price_version` genügt, Versionen sind unveränderlich), nie Gebühr. Mietanfragen enthalten zusätzlich eine Kopie der Angebotswerte (ohne Vermieter-ID). Antwort an den Kunden: `id`, `status`, `needsQuote`, `priceVersion`, `snapshot`.
 - **Miete:** Eingabe ist Wiener Ortszeit ohne Zone (`YYYY-MM-DDTHH:mm`); ISO-Zeitpunkte mit Z oder Offset lehnt `quote` mit 400 `invalid_input` ab (Feldpräfix `pickupAt:`/`returnAt:`). Die Spalten `pickup_at`/`return_at` bekommen den daraus berechneten Zeitpunkt (nicht existierende Uhrzeit beim Vorstellen: abgelehnt, doppelte Stunde im Herbst: die frühere). Abholung nicht in der Vergangenheit, höchstens 365 Tage voraus. Das Angebot wird per id mit `status = approved` geladen; `payee_id` ist der Vermieter (Demo: null).
 - **Anmelde-Mail:** Vorlage `supabase/templates/magic_link.html` (und `confirmation.html`) mit Code (`{{ .Token }}`) und Link (`/anmelden#token_hash=…&type=email (im Fragment, damit der Token nicht in Zugriffsprotokolle gelangt; der Client hat `detectSessionInUrl: false`)`); die App prüft beides mit `verifyOtp` (`src/lib/auth.ts`). Der Link funktioniert damit in jedem Browser, nicht nur im anfragenden.
@@ -110,22 +112,22 @@ Edge Function `quote` (`supabase/functions/quote`, Logik in `_shared/quote/`), `
 4. `price_versions` als eigene Tabelle: Fremdschlüssel für Snapshots und das Datum für „Tarifstand".
 5. `sources` jsonb statt `source_label`/`source_url`: gemittelte Tarife haben bis zu vier Quellen (Info-Sheet 17).
 6. Geldwerte in `price_config` in Cent: `value / 100` ergibt dieselben Doubles wie die Literale im Prototyp, die Ergebnisse bleiben centgenau.
-7. `fee_splits` mit `payee_id` und gespeicherten Sätzen: Leserecht ohne Joins, Abrechnung reproduzierbar bei späteren Satzänderungen, Partner ohne Umbau.
+7. Überholt durch 0018: `fee_splits` (mit `payee_id` und gespeicherten Sätzen) bleibt bis S9b-4 als leere Tabelle bestehen; die Aufteilung kommt ins Journal `commission_entries` (`docs/S9_KONZEPT.md`, 5.8).
 8. Ein Status-Enum für beide Anfragearten: gleiche Chips und Timeline.
 9. Demo-Angebote ohne `provider_id` (Check `provider_or_demo`): keine erfundenen Vermieter-Konten.
 10. `provider_name` am Angebot: `offerFields` führt den Firmennamen je Fahrzeug, Demo-Angebote brauchen ihn ohne Profil.
 11. `one_way` boolean statt `return_station`: der Prototyp kennt nur „gleiche" oder „andere Station".
-12. Vermieter sehen keine Mietanfragen bis Phase 2 (`docs/S9_KONZEPT.md`, 5.3, 6); `fee_splits` lesen sie über `payee_id`.
+12. Vermieter sehen keine Mietanfragen bis Phase 2 (`docs/S9_KONZEPT.md`, 5.3, 6).
 13. PostGIS im Schema `extensions`: `spatial_ref_sys` liegt außerhalb der Data API.
 14. RLS-Tests gegen das Dev-Projekt statt lokalem Docker: dasselbe Schema wie die App, keine weitere Infrastruktur.
 15. TypeScript 6.0 statt 7: typescript-eslint unterstützt 7 noch nicht.
 16. Tarifversionen gelten als unveränderlich: admin ändert Tarife über eine neue `price_version`, nicht in bestehenden Versionen (Konvention bis zur Admin-Oberfläche). „Aktuell" ist die höchste Version mit `effective_on` ≤ heute (Wiener Datum), gelesen über die View `current_price_version` (`security_invoker`, Migration 0004); App und `quote` lesen die gültige Version nur über sie. Neue Versionen mit künftigem `effective_on` anlegen, erst die Zeilen eintragen, dann gilt sie ab dem Datum. `price_config.value >= 0` ist ein DB-Check.
-17. Wer über „Für Vermieter" Vermieter wird, liest den Gebührensatz; er steht ohnehin in seiner Abrechnung (18).
+17. Die Vermieterrolle setzt nur `admin_grant_role` (Datenbank-Eigentümer, mit Journal; Migration 0016). `become_rental_provider()` entfiel in 0022: Jedes Konto konnte sich damit hochstufen und den Gebührensatz lesen.
 18. Freigegebene Angebote ändert der Vermieter ohne erneute Freigabe („Gespeicherte Werte erscheinen direkt im Mietrechner", 18). Offen zur Entscheidung, siehe OPEN_ISSUES.
 19. anon sieht `provider_id` freigegebener Angebote; die UUID führt zu keinem lesbaren Profil.
 20. Policies lesen nie die eigene Tabelle (Postgres 42P17): Das Limit von 8 je Anfrage zählt der BEFORE-INSERT-Trigger `guard_photo_insert` (nur mit Marker aus `quote_save_request`); das Kontingent von 40 Staging-Dateien je Konto zählt eine SECURITY-DEFINER-Funktion (`private.staging_photo_count()`), weil eine Policy auf `storage.objects` die Tabelle nicht selbst lesen darf. Foto-Zeilen legt nur `quote_save_request` an.
 21. App-Variablen mit Präfix `NEXT_PUBLIC_` (Vite `envPrefix`): passt zur vorhandenen `.env.local`. Nur dieses Präfix landet im Bundle, nie `SUPABASE_*`.
-22. Gebührensatz je Schlüssel aus der höchsten Version (View `current_fee_rates`), unabhängig von der `price_version`: Die Gebühr hat einen anderen Lebenszyklus als die Kundentarife. Fehlt ein Schlüssel, bricht `quote` ab.
+22. Gebührensatz je Schlüssel aus der höchsten Version (View `current_fee_rates`), unabhängig von der `price_version`: Die Gebühr hat einen anderen Lebenszyklus als die Kundentarife. `quote` liest die View seit 0018 nicht mehr.
 23. Schreiben über RPCs statt zweier Inserts: Anfrage und Gebührenaufteilung sind atomar, das Bearbeiten prüft Eigentümer, Status und Service im selben Statement.
 24. Freitext (`description`) und Volumen sind eigene Spalten, nicht Teil von `inputs`: `inputs` bleibt exakt das Ergebnis von `parse*Input`, und der Freitext ist von der späteren Partner-Sicht trennbar.
 25. Ein Routenfehler macht aus der Anfrage ein Angebot statt einer Ablehnung: Eine erschöpfte Quote darf nicht alle Kunden aussperren, und ein Angebot ist geldlich unschädlich (kein Preis, keine Gebühr).
