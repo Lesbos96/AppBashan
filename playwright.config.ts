@@ -17,7 +17,7 @@ export default defineConfig({
   timeout: 60_000,
   reporter: [['list'], ['json', { outputFile: 'tmp/reports/playwright.json' }]],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // Anfragen eines Service Workers sähe die Mock-Schicht (tests/e2e/backend.ts) nicht; die App registriert heute keinen
@@ -26,8 +26,8 @@ export default defineConfig({
     ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   webServer: {
-    command: 'npx vite --port 5173 --strictPort',
-    url: 'http://localhost:5173',
+    command: 'npx vite --host 127.0.0.1 --port 5173 --strictPort',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: true,
     // Tests laufen nur gegen die Mock-Schicht (tests/e2e/backend.ts): Platzhalter statt echter Werte, `.invalid` löst nie auf.
     // Umgebungsvariablen gehen in Vite vor `.env.local`; ein wiederverwendeter Dev-Server behält seine Werte, die Mock-Schicht fängt trotzdem alles ab.

@@ -92,7 +92,7 @@ for (const target of ['//evil.com', 'https://evil.com', 'javascript:alert(1)', '
     await mockAuth(page)
     await page.goto(`/anmelden?next=${encodeURIComponent(target)}`)
     await signInWithCode(page)
-    await expect(page).toHaveURL('http://localhost:5173/')
+    await expect(page).toHaveURL('/')
   })
 }
 
