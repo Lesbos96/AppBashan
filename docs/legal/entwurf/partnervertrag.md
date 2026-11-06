@@ -1,8 +1,10 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Partnervertrag (Vermittlungsvertrag)
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05. Er ergänzt die Partner-AGB (`docs/recht/agb-partner.md`) um die Angaben, die je Partner verschieden sind, und um die Datenschutzvereinbarung. Der Partnerteil ist **noch nicht gebaut** (S9b ff.). In der App sind Leistungen, Bezirke und Umsatzsteuer-Regel Parameter der Freigabe durch admin (`admin_approve_partner`, `docs/S9_KONZEPT.md`, Abschnitt 3; `docs/S9b_PLAN.md`, 4.2 und 5.1). [OFFEN: Abschluss online durch Annahme in der App bei der Registrierung oder schriftlich mit Unterschrift; das Datenmodell speichert die angenommene AGB-Version mit Zeitpunkt (`docs/S9b_PLAN.md:69`).]
+> Entwurf aus dem Nachtauftrag vom 2026-11-05. Er ergänzt die Partner-AGB (`docs/legal/entwurf/agb-partner.md`) um die Angaben, die je Partner verschieden sind, und um die Datenschutzvereinbarung. Der Partnerteil ist **noch nicht gebaut** (S9b ff.). In der App sind Leistungen, Bezirke und Umsatzsteuer-Regel Parameter der Freigabe durch admin (`admin_approve_partner`, `docs/S9_KONZEPT.md`, Abschnitt 3; `docs/S9b_PLAN.md`, 4.2 und 5.1). [OFFEN: Abschluss online durch Annahme in der App bei der Registrierung oder schriftlich mit Unterschrift; das Datenmodell speichert die angenommene AGB-Version mit Zeitpunkt (`docs/S9b_PLAN.md:69`).]
 
 ## Vertragsparteien
 
@@ -69,7 +71,7 @@
 
 7.1 MoveNow übermittelt dem Partner Kundendaten nur nach Punkt 11 der Partner-AGB: vor der Annahme ohne Name, Hausnummer und Kontakt, nach der Annahme Adresse und Kontakt für den Auftrag; der Zugriff endet 30 Tage nach Abschluss oder Storno.
 
-7.2 [OFFEN: Rolle der Parteien (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10). Variante A, getrennte Verantwortliche: Der Partner ist für die Daten ab der Annahme selbst verantwortlich, verarbeitet sie nur für den Auftrag und die gesetzlichen Pflichten (z. B. Rechnung) und informiert die Kundin oder den Kunden selbst. Variante B, Auftragsverarbeitung: Vereinbarung nach Art. 28 DSGVO als Anlage. Die Rechtsprüfung wählt die Variante; der Text der Kunden-Datenschutzerklärung (`docs/recht/datenschutz-kunden.md`, Abschnitt 8) geht von Variante A aus.]
+7.2 [OFFEN: Rolle der Parteien (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 10). Variante A, getrennte Verantwortliche: Der Partner ist für die Daten ab der Annahme selbst verantwortlich, verarbeitet sie nur für den Auftrag und die gesetzlichen Pflichten (z. B. Rechnung) und informiert die Kundin oder den Kunden selbst. Variante B, Auftragsverarbeitung: Vereinbarung nach Art. 28 DSGVO als Anlage. Die Rechtsprüfung wählt die Variante; der Text der Kunden-Datenschutzerklärung (`docs/legal/entwurf/datenschutz-kunden.md`, Abschnitt 8) geht von Variante A aus.]
 
 7.3 Der Partner nutzt die Daten nicht für Werbung und gibt sie nicht weiter, außer an Beschäftigte und Erfüllungsgehilfen, die sie für den Auftrag brauchen und zur Vertraulichkeit verpflichtet sind.
 

@@ -1,15 +1,17 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Datenschutzerklärung für Partnerbetriebe
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05. Der Partnerteil ist **noch nicht gebaut**: Grundlage sind `docs/S9_KONZEPT.md` (Abschnitte 3, 5.2, 7, 9, 10) und `docs/S9b_PLAN.md` (Abschnitte 4–7, von Beks am 2026-11-04 freigegeben). Vor dem Livegang gegen die gebauten Migrationen ab 0023 prüfen. Diese Erklärung richtet sich an die Personen, deren Daten bei Registrierung und Betrieb eines Partnerkontos anfallen (Inhaberin oder Inhaber, Kontaktperson). Für die Daten der Kundinnen und Kunden, die ein Partner nach der Annahme erhält, gilt `docs/recht/datenschutz-kunden.md` und der Partnervertrag.
+> Entwurf aus dem Nachtauftrag vom 2026-11-05. Der Partnerteil ist **noch nicht gebaut**: Grundlage sind `docs/S9_KONZEPT.md` (Abschnitte 3, 5.2, 7, 9, 10) und `docs/S9b_PLAN.md` (Abschnitte 4–7, von Beks am 2026-11-04 freigegeben). Vor dem Livegang gegen die gebauten Migrationen ab 0023 prüfen. Diese Erklärung richtet sich an die Personen, deren Daten bei Registrierung und Betrieb eines Partnerkontos anfallen (Inhaberin oder Inhaber, Kontaktperson). Für die Daten der Kundinnen und Kunden, die ein Partner nach der Annahme erhält, gilt `docs/legal/entwurf/datenschutz-kunden.md` und der Partnervertrag.
 
 ## 1. Wer verantwortlich ist
 
 [OFFEN: Name bzw. Firma, Anschrift, E-Mail für Datenschutzanfragen, siehe Impressum.]
 Datenschutzbeauftragter: [OFFEN: benannt oder nicht erforderlich].
 
-Für Nutzung der App, Browser-Speicher und Missbrauchsschutz gelten die Abschnitte 3, 9, 9a und 10 von `docs/recht/datenschutz-kunden.md` entsprechend. [OFFEN: prüfen, ob für Partnerkonten Abweichungen gelten]
+Für Nutzung der App, Browser-Speicher und Missbrauchsschutz gelten die Abschnitte 3, 9, 9a und 10 von `docs/legal/entwurf/datenschutz-kunden.md` entsprechend. [OFFEN: prüfen, ob für Partnerkonten Abweichungen gelten]
 
 ## 2. Konto, Anmeldung und zweiter Faktor [noch nicht gebaut]
 
@@ -64,11 +66,11 @@ Nach der Annahme erhält der Partner Adresse und Kontakt der Kundin oder des Kun
 
 ## 9. Empfänger und Auftragsverarbeiter
 
-Supabase (Datenbank, Anmeldung, Dateispeicher, Serverfunktionen; [OFFEN: Region und Auftragsverarbeitungsvertrag]), Mail-Anbieter [OFFEN], Steuerberatung für die Buchhaltung [OFFEN], bei Zahlungsverzug ein Inkassobüro [OFFEN: nur aufnehmen, wenn beauftragt]. Kundinnen und Kunden erhalten nach der Annahme Firmenname und Kontakt des Partners. [OFFEN: Übermittlung außerhalb des EWR und Garantien, wie `docs/recht/datenschutz-kunden.md`, Abschnitt 11a.]
+Supabase (Datenbank, Anmeldung, Dateispeicher, Serverfunktionen; [OFFEN: Region und Auftragsverarbeitungsvertrag]), Mail-Anbieter [OFFEN], Steuerberatung für die Buchhaltung [OFFEN], bei Zahlungsverzug ein Inkassobüro [OFFEN: nur aufnehmen, wenn beauftragt]. Kundinnen und Kunden erhalten nach der Annahme Firmenname und Kontakt des Partners. [OFFEN: Übermittlung außerhalb des EWR und Garantien, wie `docs/legal/entwurf/datenschutz-kunden.md`, Abschnitt 11a.]
 
 ## 10. Rechte und Beschwerde
 
-Wie in `docs/recht/datenschutz-kunden.md`, Abschnitt 12: Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch; Beschwerde bei der Österreichischen Datenschutzbehörde. Gesetzliche Aufbewahrungspflichten (Abschnitt 6) gehen dem Löschrecht vor. Der Partnerteil holt nach heutigem Plan keine Einwilligungen ein. [OFFEN: bestätigen]
+Wie in `docs/legal/entwurf/datenschutz-kunden.md`, Abschnitt 12: Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch; Beschwerde bei der Österreichischen Datenschutzbehörde. Gesetzliche Aufbewahrungspflichten (Abschnitt 6) gehen dem Löschrecht vor. Der Partnerteil holt nach heutigem Plan keine Einwilligungen ein. [OFFEN: bestätigen]
 
 ## 11. Grundlage im Projekt
 

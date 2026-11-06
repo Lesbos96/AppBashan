@@ -1,8 +1,10 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Allgemeine Geschäftsbedingungen für Partnerbetriebe
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05. Der Partnerteil ist **noch nicht gebaut** (S9b ff.). Grundlage: `docs/S9_KONZEPT.md` (Abschnitte 1, 3, 5.2, 5.10, 7–10), `docs/S9b_PLAN.md` (Abschnitte 4–7) und `CLAUDE.md` („Geld“). Werte sind einstellbare Schlüssel in `platform_settings` und im Konzept vorläufig bis zur Rechtsprüfung. Gliederung nach der P2B-Verordnung (EU) 2019/1150; die Artikelangaben in Klammern sind Prüfhinweise für die Rechtsberatung. Der individuelle Vertrag steht in `docs/recht/partnervertrag.md`.
+> Entwurf aus dem Nachtauftrag vom 2026-11-05. Der Partnerteil ist **noch nicht gebaut** (S9b ff.). Grundlage: `docs/S9_KONZEPT.md` (Abschnitte 1, 3, 5.2, 5.10, 7–10), `docs/S9b_PLAN.md` (Abschnitte 4–7) und `CLAUDE.md` („Geld“). Werte sind einstellbare Schlüssel in `platform_settings` und im Konzept vorläufig bis zur Rechtsprüfung. Gliederung nach der P2B-Verordnung (EU) 2019/1150; die Artikelangaben in Klammern sind Prüfhinweise für die Rechtsberatung. Der individuelle Vertrag steht in `docs/legal/entwurf/partnervertrag.md`.
 
 ## 1. Geltung und Begriffe
 
@@ -52,7 +54,7 @@
 
 5.3 **Festangebot:** Bei einer Spanne oder einer Anfrage ohne Preis kann der Partner ein Festangebot senden, bei einer Spanne nur innerhalb der Spanne, ohne Spanne höchstens [OFFEN: Obergrenze; im Projekt 8.000,00 € (`offer_max_cents`)]. Je Anfrage gibt es höchstens 3 offene Angebote und je Partner eines. Ein Angebot gilt 48 Stunden, höchstens bis zum Termin, und ist nach dem Senden unveränderlich. Der Vertrag kommt zustande, wenn die Kundin oder der Kunde das Angebot bestätigt und der Partner zu diesem Zeitpunkt aktiv ist.
 
-5.4 Der Partner ist Vertragspartner der Kundin oder des Kunden und erbringt die Leistung im eigenen Namen, auf eigene Rechnung und in eigener Verantwortung. Für das Verhältnis zur Kundin oder zum Kunden gelten die Bedingungen in `docs/recht/agb-kunden.md` (Preis, Nachtrag, Storno, Zahlung). [OFFEN: rechtliche Konstruktion, siehe dort Punkt 1.2.]
+5.4 Der Partner ist Vertragspartner der Kundin oder des Kunden und erbringt die Leistung im eigenen Namen, auf eigene Rechnung und in eigener Verantwortung. Für das Verhältnis zur Kundin oder zum Kunden gelten die Bedingungen in `docs/legal/entwurf/agb-kunden.md` (Preis, Nachtrag, Storno, Zahlung). [OFFEN: rechtliche Konstruktion, siehe dort Punkt 1.2.]
 
 ## 6. Pflichten des Partners
 
@@ -76,7 +78,7 @@
 
 7.3 **Anfahrtspauschale:** Ist der gebuchte Umfang wegen falscher Angaben der Kundin oder des Kunden nicht ausführbar, storniert der Partner mit dem Grund „Umfang nicht ausführbar“ und Fotobeleg. Dann darf er eine feste Anfahrtspauschale verlangen ([OFFEN: Betrag; im Projekt vorläufig 69,00 €]). Widerspricht die Kundin oder der Kunde, entscheidet MoveNow. Waren die Angaben richtig, ist der Abbruch für beide Seiten kostenlos.
 
-7.4 **Storno durch die Kundin oder den Kunden:** nach den Stufen in `docs/recht/agb-kunden.md`, Punkt 8.2. Die Stornogebühr stellt der Partner in Rechnung.
+7.4 **Storno durch die Kundin oder den Kunden:** nach den Stufen in `docs/legal/entwurf/agb-kunden.md`, Punkt 8.2. Die Stornogebühr stellt der Partner in Rechnung.
 
 ## 8. Provision und Abrechnung
 
@@ -116,7 +118,7 @@
 
 11.2 MoveNow speichert die Daten der Vermittlung (Anfragen, Annahmen, Angebote, Nachträge, Stornos, Journal) und nutzt sie für Vermittlung, Abrechnung, Qualitätssicherung und Streitbeilegung. Der Partner hat Zugang zu den Daten seiner eigenen Aufträge und seines Journals; aggregierte Daten anderer Partner erhält er nicht. [OFFEN: Zugang nach Vertragsende (Art. 8 P2B-VO, Buchstabe prüfen); Weitergabe von Plattformdaten an Dritte und Zugang zu personenbezogenen Daten (Art. 9 P2B-VO).]
 
-11.3 [OFFEN: Rolle des Partners für Kundendaten (eigener Verantwortlicher oder Auftragsverarbeiter) und die daraus folgende Vereinbarung; Regelung im Partnervertrag.] Die Datenschutzerklärung für Partnerbetriebe steht in `docs/recht/datenschutz-partner.md`.
+11.3 [OFFEN: Rolle des Partners für Kundendaten (eigener Verantwortlicher oder Auftragsverarbeiter) und die daraus folgende Vereinbarung; Regelung im Partnervertrag.] Die Datenschutzerklärung für Partnerbetriebe steht in `docs/legal/entwurf/datenschutz-partner.md`.
 
 ## 12. Gleichbehandlung (Art. 7 P2B-VO), andere Vertriebswege (Art. 10 P2B-VO)
 

@@ -1,3 +1,5 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Allgemeine Geschäftsbedingungen für Kundinnen und Kunden
@@ -123,7 +125,7 @@ Nach dem Termin fragt dich die App, ob der Auftrag stattgefunden hat. Antwortest
 
 ## 13. Datenschutz
 
-Wie MoveNow deine Daten verarbeitet und wann Partner sie erhalten, steht in der Datenschutzerklärung (`docs/recht/datenschutz-kunden.md`).
+Wie MoveNow deine Daten verarbeitet und wann Partner sie erhalten, steht in der Datenschutzerklärung (`docs/legal/entwurf/datenschutz-kunden.md`).
 
 ## 14. Änderungen dieser Bedingungen
 

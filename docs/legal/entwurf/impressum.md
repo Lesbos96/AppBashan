@@ -1,3 +1,5 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Impressum
@@ -16,7 +18,7 @@ Informationen nach § 5 Abs. 1 E-Commerce-Gesetz (ECG) und § 14 Unternehmensges
 | Telefon | [OFFEN: Nummer, falls angegeben] |
 | Unternehmensgegenstand | Online-Vermittlung von Möbeltransport, Umzug, Entrümpelung sowie Montage und Demontage von Möbeln in Wien. [OFFEN: Transportermiete erst ab Phase 2 aufnehmen, `docs/ROADMAP.md:124`] |
 | Firmenbuchnummer, Firmenbuchgericht, Sitz laut Firmenbuch | [OFFEN: falls eingetragen; Hinweis auf Liquidation nur falls zutreffend] |
-| Preisangaben | [OFFEN: Hinweis, ob Preise einschließlich Umsatzsteuer angegeben sind (ECG); siehe `docs/recht/agb-kunden.md`, Punkt 4.1] |
+| Preisangaben | [OFFEN: Hinweis, ob Preise einschließlich Umsatzsteuer angegeben sind (ECG); siehe `docs/legal/entwurf/agb-kunden.md`, Punkt 4.1] |
 | UID-Nummer | [OFFEN: falls vorhanden] |
 | Gewerbeberechtigung | [OFFEN: Wortlaut der Gewerbeberechtigung für die Vermittlung; ob und welche Berechtigung nötig ist, klärt die Rechtsprüfung (`docs/S9_KONZEPT.md`, Abschnitt 11, Punkt 8)] |
 | Gewerbebehörde | [OFFEN: zuständige Behörde] |
@@ -52,4 +54,4 @@ Grenzen von Wien und Österreich: © OpenStreetMap-Mitwirkende, Open Database Li
 
 ## Haftung für Links
 
-[OFFEN: nur aufnehmen, wenn die App auf fremde Inhalte verlinkt; heute lädt sie keine externen Inhalte (`docs/ARCHITEKTUR.md`, 2.1).]
+[OFFEN: nur aufnehmen, wenn die App auf fremde Inhalte verlinkt; heute lädt sie keine externen Inhalte (`docs/nacht/architektur-iststand.md`, 2.1).]

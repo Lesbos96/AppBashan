@@ -1,3 +1,5 @@
+> Nur Referenz (Nacht 05.11., ungeprüft). Maßgeblich ist docs/ARCHITECTURE.md.
+
 # MoveNow · Architektur (Ist-Stand)
 
 Stand: 2026-11-05, Commit `1630668` (main), Migrationen 0001–0022. Abgeleitet nur aus Code, Migrationen und Konfiguration im Repository (gelesen, nichts ausgeführt). Der Zustand der gehosteten Supabase-Projekte (Dashboard-Einstellungen, Secrets, Region) ist darin nicht sichtbar und hier als [OFFEN] markiert.
@@ -236,7 +238,7 @@ Alle App-Rollen sind dieselbe Datenbankrolle `authenticated`; Unterschiede entst
 Belege: Policies M01:266-267, M15:50-51, `:276-283`, M16:185-207, M17:114-116, `:174-175`, M18:93-97, `:221-225`, M20:40-41, `:79-104`, M21:46-70.
 
 ### 6.3 Geld und Gebühr
-- Begriffe: Was Datenbank und Code „Gebühr“ nennen (`fee_rate`, `fee_cents`, `splitFee`), heißt in den Verträgen mit Partnern „Provision“ (`docs/recht/agb-partner.md`).
+- Begriffe: Was Datenbank und Code „Gebühr“ nennen (`fee_rate`, `fee_cents`, `splitFee`), heißt in den Verträgen mit Partnern „Provision“ (`docs/legal/entwurf/agb-partner.md`).
 - Beträge als ganze Cent (`int`; in `price_config` `numeric` mit Ganzzahl-Check für Cent-Zeilen, M02:40-41; in `platform_settings` `numeric` ohne Ganzzahl-Check für `call_out_fee_cents`, siehe Abschnitt 3; Belege M01:151-207, M18:19-30).
 - Der geltende Gebührensatz steht nur in `platform_settings` (`fee_rate`, `fee_vat_rate`, Version 1 aus dem Seed, `supabase/seed.sql:86-87`). Die leere Altlast `fee_splits` trägt je Zeile eine Kopie der Sätze (M01:202-203) und ist nur für `payee_id` = eigenes Konto und admin lesbar. Kunden lesen ihn weder direkt noch über `current_fee_rates`; `booking_terms()` liefert Kunden nur Stornostufen, Anfahrtspauschale und `termsHash`, keinen `fee_*`-Schlüssel (M16:81-104).
 - `splitFee(total, {feeRate, vatRate})` (`supabase/functions/_shared/pricing/fee.ts:17-25`) rechnet wie `platform()` im Prototyp, wird heute aber **nirgends aufgerufen**: Seit S9a-2 entsteht beim Absenden keine Gebührenzeile mehr; das Journal `commission_entries` entsteht bei der Annahme und ist noch nicht gebaut (S9b-4).

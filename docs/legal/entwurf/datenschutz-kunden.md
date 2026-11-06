@@ -1,8 +1,10 @@
+> KI-Entwurf, nicht anwaltlich geprüft. Nicht veröffentlichen.
+
 **ENTWURF – nicht rechtsgeprüft**
 
 # Datenschutzerklärung für Kundinnen und Kunden
 
-> Entwurf aus dem Nachtauftrag vom 2026-11-05, abgeleitet aus Code und Migrationen (Commit `1630668`, Migrationen 0001–0022) und aus dem Konzept für den Partnerteil (`docs/S9_KONZEPT.md`). Was heute noch nicht gebaut ist, steht als **[noch nicht gebaut]** im Text; vor dem Livegang gegen den dann gebauten Stand prüfen. Belege in Abschnitt 14. Die Erklärung für Partnerbetriebe steht getrennt in `docs/recht/datenschutz-partner.md` (Begründung: `docs/nacht/doku.md`, E11). Vorgänger: `docs/legal/datenschutz.md` (Stand S8b-3).
+> Entwurf aus dem Nachtauftrag vom 2026-11-05, abgeleitet aus Code und Migrationen (Commit `1630668`, Migrationen 0001–0022) und aus dem Konzept für den Partnerteil (`docs/S9_KONZEPT.md`). Was heute noch nicht gebaut ist, steht als **[noch nicht gebaut]** im Text; vor dem Livegang gegen den dann gebauten Stand prüfen. Belege in Abschnitt 14. Die Erklärung für Partnerbetriebe steht getrennt in `docs/legal/entwurf/datenschutz-partner.md` (Begründung: `docs/nacht/doku.md`, E11). Vorgänger: `docs/legal/datenschutz.md` (Stand S8b-3).
 
 ## 1. Wer verantwortlich ist
 

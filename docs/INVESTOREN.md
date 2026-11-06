@@ -1,6 +1,8 @@
+> Entwurf (Nacht 05.11.), vor Weitergabe mit Beks gegenlesen.
+
 # MoveNow · Überblick für Investorinnen und Investoren
 
-Stand: 2026-11-05. Quelle sind ausschließlich Code und Dokumente dieses Repositorys (Code-Stand: Commit `1630668` auf `main`, Migrationen 0001–0022; dieses Dokument kam danach hinzu und ändert keinen Code). Marktzahlen, Kundenzahlen, Umsätze oder Partnerverträge stehen nicht im Repository und kommen deshalb hier nicht vor; wo sie fehlen, steht [OFFEN: …]. Technische Einzelheiten: `docs/ARCHITEKTUR.md`.
+Stand: 2026-11-05. Quelle sind ausschließlich Code und Dokumente dieses Repositorys (Code-Stand: Commit `1630668` auf `main`, Migrationen 0001–0022; dieses Dokument kam danach hinzu und ändert keinen Code). Marktzahlen, Kundenzahlen, Umsätze oder Partnerverträge stehen nicht im Repository und kommen deshalb hier nicht vor; wo sie fehlen, steht [OFFEN: …]. Technische Einzelheiten: `docs/nacht/architektur-iststand.md`.
 
 ## 1. Kurzfassung
 
@@ -55,7 +57,7 @@ Design und Bedienung orientieren sich an iOS (Referenz in `docs/reference/design
   - **Preis-Engine** als ein Modul für App und Server, centgenau, gegen den Prototyp mit 60 Golden-Fällen geprüft (`docs/PRICING.md:66`).
   - **Routing** über openrouteservice hinter einem austauschbaren Adapter; Kilometer außerhalb Wiens per Geometrie-Schnitt mit der Wiener Stadtgrenze; Wiener Bezirk aus den Bezirksgrenzen; Cache und Rate-Limits.
   - **Anfrage speichern** nur serverseitig: Neuberechnung, Preisabgleich, Adressprüfung, unveränderlicher Preis-Stand mit Tarifversion und Hash, Beleg der Kundenbestätigung, Fotos mit festem Ablauf.
-  - **Statusmaschine** in der Datenbank: Statuswechsel nur über Funktionen, jeder Wechsel protokolliert; Preisversionen und Gebührensätze gegen Änderungen über die Anwendung gesperrt, neue Sätze nur mit Vorlauf. Grenze: Der Datenbank-Eigentümer kann diese Sperren abschalten; ein Inhalts-Hash macht versehentliche Änderungen sichtbar (`docs/ARCHITEKTUR.md`, 6.4).
+  - **Statusmaschine** in der Datenbank: Statuswechsel nur über Funktionen, jeder Wechsel protokolliert; Preisversionen und Gebührensätze gegen Änderungen über die Anwendung gesperrt, neue Sätze nur mit Vorlauf. Grenze: Der Datenbank-Eigentümer kann diese Sperren abschalten; ein Inhalts-Hash macht versehentliche Änderungen sichtbar (`docs/nacht/architektur-iststand.md`, 6.4).
 - **Sicherheit:** Zeilenrechte auf allen 18 Tabellen; Kunden lesen nur Eigenes und über die gebauten Wege keine Gebühren; Schreiben nur über geprüfte Serverfunktionen; Admin-Lesen über die API verlangt den zweiten Faktor (`aal2`), der zweite Faktor ist in der Projektkonfiguration aber noch aus und erst ab S9b-3 echt getestet; keine Geheimnisse in der App (Build-Prüfung `scripts/scan-dist.mjs`).
 - **Tests** (letzter belegter Lauf 2026-11-03, `docs/PROGRESS.md:16`): 368 Unit-Tests, 176 Rechte-Tests und Live-Tests gegen das Entwicklungsprojekt, 102 End-to-End-Tests gegen die lokale App. Dazu „Rot-Beweise“, die prüfen, ob ein Test bei gelockerter Sperre fehlschlägt; 17 der 23 frühen Rot-Beweise (S9a-1) messen noch nicht die tatsächliche Wirkung, die Umstellung ist vor dem Livegang offen (`docs/OPEN_ISSUES.md:77`).
 - **Entwicklung:** in einzelnen, dokumentierten Sessions mit Claude Code nach festen Regeln (`CLAUDE.md`): Prüfläufe mit Exit-Codes, Nachweisdateien in `docs/proof/`, Zweitprüfung von Geld- und Sicherheitslogik durch separate KI-Prüf-Agenten. Eine externe Sicherheitsprüfung oder ein Penetrationstest hat nicht stattgefunden.
@@ -79,7 +81,7 @@ Design und Bedienung orientieren sich an iOS (Referenz in `docs/reference/design
 5. P2B-Verordnung für die Partner-AGB, DSA-Pflichten, Rolle der Partner im Datenschutz.
 6. Ob MoveNow eine Gewerbeberechtigung für die Vermittlung braucht; Berechtigungen der Partner (Güterbeförderung, Abfall).
 7. Umsatzsteuer bei Kleinunternehmer-Partnern; Risiko einer Leistungskommission; Meldepflichten für Plattformen (DAC7); keine Zahlungsdienst-Konzession nötig, solange kein Geld über MoveNow läuft (zu bestätigen).
-8. Rechtstexte liegen nur als ungeprüfte Entwürfe vor (`docs/recht/`); die App zeigt heute Platzhalter.
+8. Rechtstexte liegen nur als ungeprüfte Entwürfe vor (`docs/legal/entwurf/`); die App zeigt heute Platzhalter.
 
 ### Betrieb (Livegang-Liste `docs/GOLIVE.md`)
 9. Produktivprojekt in der EU-Region anlegen, eigene Schlüssel, Migrationen und Tarife einspielen.
@@ -92,9 +94,9 @@ Design und Bedienung orientieren sich an iOS (Referenz in `docs/reference/design
 ### Technik
 14. Partnerteil vollständig offen (S9b bis S9i); ohne ihn ist keine echte Buchung möglich.
 15. Konto löschen, Anonymisierung und Aufbewahrungsfristen fehlen (`docs/OPEN_ISSUES.md:7`).
-16. Kleinere Punkte: Tab „Miete“ noch sichtbar, App-Bundle über 500 kB, kein Offline-Cache, Capacitor- und Apple-Anmeldung noch nicht eingebunden (`docs/OPEN_ISSUES.md:16`, `:100`; `docs/ARCHITEKTUR.md`, Abschnitt 9).
+16. Kleinere Punkte: Tab „Miete“ noch sichtbar, App-Bundle über 500 kB, kein Offline-Cache, Capacitor- und Apple-Anmeldung noch nicht eingebunden (`docs/OPEN_ISSUES.md:16`, `:100`; `docs/nacht/architektur-iststand.md`, Abschnitt 9).
 17. Zweiter Faktor für Admin und Partner ist in der Projektkonfiguration noch nicht aktiviert (`supabase/config.toml:304-306`).
-18. Dokumentierte Sicherheitsgrenzen (`docs/ARCHITEKTUR.md`, 6.4, 7 und 9): Der Datenbank-Eigentümer kann Sperren abschalten; admin liest Adressen und Freitext, der Speicher-Browser des Dashboards zeigt Originalfotos ohne Protokoll; die Admin-Prüfung in SQL-Funktionen prüft den zweiten Faktor nicht selbst; die Miete (Phase 2) setzt ihren Status noch per direktem Update; ein Ablauf-Job für die Annahmefrist fehlt noch.
+18. Dokumentierte Sicherheitsgrenzen (`docs/nacht/architektur-iststand.md`, 6.4, 7 und 9): Der Datenbank-Eigentümer kann Sperren abschalten; admin liest Adressen und Freitext, der Speicher-Browser des Dashboards zeigt Originalfotos ohne Protokoll; die Admin-Prüfung in SQL-Funktionen prüft den zweiten Faktor nicht selbst; die Miete (Phase 2) setzt ihren Status noch per direktem Update; ein Ablauf-Job für die Annahmefrist fehlt noch.
 19. Keine externe Sicherheitsprüfung, kein Penetrationstest; Prüfungen bisher nur durch automatisierte Tests und KI-Prüf-Agenten.
 20. Rot-Beweise: 17 der 23 frühen Beweise messen noch nicht die tatsächliche Wirkung (`docs/OPEN_ISSUES.md:77`).
 21. Bekannte Abweichungen der Oberfläche von der Design-Referenz, Maße bisher nicht nachgemessen (`docs/OPEN_ISSUES.md:100-109`); offene Auflagen R11-1 bis R11-7 aus der Konzeptabnahme gelten für die nächsten Pläne (`docs/OPEN_ISSUES.md:10`).
