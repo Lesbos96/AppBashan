@@ -1,0 +1,137 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: shots\shots.spec.ts >> umzug-preis
+- Location: tests\shots\shots.spec.ts:419:3
+
+# Error details
+
+```
+Test timeout of 60000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 60000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Mehr Personen' })
+
+```
+
+# Test source
+
+```ts
+  1   | import { expect, type Page } from '@playwright/test'
+  2   | 
+  3   | // FESTE BEISPIELANTWORT für `route`: Sie stammt aus keiner echten Berechnung und sagt nichts über echte Kilometer.
+  4   | // Die Edge Function ist noch nicht live getestet (OPEN_ISSUES „S5b"); alle Tests und Screenshots laufen gegen diese Fixture.
+  5   | export const routeFixture = {
+  6   |   region: 'vienna',
+  7   |   outsideKm: 0,
+  8   |   driveHours: 0.2,
+  9   |   distanceKm: 4.8,
+  10  |   totalKm: 9.6,
+  11  |   geometry: [
+  12  |     [16.352, 48.2],
+  13  |     [16.36, 48.206],
+  14  |     [16.371, 48.208],
+  15  |     [16.384, 48.214],
+  16  |     [16.396, 48.217],
+  17  |   ],
+  18  | }
+  19  | 
+  20  | const candidates: Record<string, object> = {
+  21  |   Neubaugasse: { label: 'Neubaugasse 12, 1070 Wien', lat: 48.2, lon: 16.352, postcode: '1070', country: 'AT', layer: 'address', street: 'Neubaugasse', housenumber: '12', locality: 'Wien' },
+  22  |   Praterstraße: { label: 'Praterstraße 30, 1020 Wien', lat: 48.217, lon: 16.396, postcode: '1020', country: 'AT', layer: 'address', street: 'Praterstraße', housenumber: '30', locality: 'Wien' },
+  23  |   Kärntner: { label: 'Kärntner Straße, 1010 Wien', lat: 48.205, lon: 16.37, postcode: '1010', country: 'AT', layer: 'street', street: 'Kärntner Straße', housenumber: null, locality: 'Wien' },
+  24  | }
+  25  | 
+  26  | type Mock = { routeStatus?: number; calls?: { geocode: number; route: number } }
+  27  | 
+  28  | /** Fängt `route` ab (auch die CORS-Vorabfrage) und zählt die Aufrufe. Mit `routeStatus` antwortet der Modus „route" mit diesem Fehlercode. */
+  29  | export async function mockRoute(page: Page, mock: Mock = {}) {
+  30  |   const calls = mock.calls ?? { geocode: 0, route: 0 }
+  31  |   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST, OPTIONS' }
+  32  |   await page.route('**/functions/v1/route', async (r) => {
+  33  |     if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
+  34  |     const body = r.request().postDataJSON() as { mode: 'geocode' | 'route'; q?: string }
+  35  |     calls[body.mode]++
+  36  |     if (body.mode === 'geocode') {
+  37  |       const hit = Object.entries(candidates).find(([k]) => body.q?.includes(k))
+  38  |       return r.fulfill({ status: 200, headers: cors, json: { candidates: hit ? [hit[1]] : [] } })
+  39  |     }
+  40  |     if (mock.routeStatus) return r.fulfill({ status: mock.routeStatus, headers: cors, json: { error: 'rate_limited' } })
+  41  |     return r.fulfill({ status: 200, headers: cors, json: routeFixture })
+  42  |   })
+  43  |   return calls
+  44  | }
+  45  | 
+  46  | /** Adresse über das Sheet suchen und den Treffer bestätigen (mit Einwilligung). */
+  47  | export async function setAddress(page: Page, which: 'Abholung' | 'Ziel', text: string) {
+  48  |   await page.getByRole('button', { name: new RegExp(`^${which}`) }).click()
+  49  |   const sheet = page.locator('dialog[open]')
+  50  |   const consent = sheet.getByRole('switch', { name: /Routenberechnung/ })
+  51  |   if ((await consent.getAttribute('aria-checked')) === 'false') await consent.click()
+  52  |   await sheet.getByLabel(/Straße, Hausnummer/).fill(text)
+  53  |   await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
+  54  |   await sheet.getByRole('button', { name: text }).click()
+  55  |   await expect(page.locator('dialog[open]')).toHaveCount(0)
+  56  | }
+  57  | 
+  58  | /** Adresse im Termin-Schritt (Entrümpelung, Montage): Suche mit Einwilligung, Treffer bestätigen. */
+  59  | export async function setTerminAddress(page: Page, text: string) {
+  60  |   await mockRoute(page)
+  61  |   await page.getByRole('button', { name: /^Adresse/ }).click()
+  62  |   const sheet = page.locator('dialog[open]')
+  63  |   const consent = sheet.getByRole('switch', { name: /Routenberechnung/ })
+  64  |   if ((await consent.getAttribute('aria-checked')) === 'false') await consent.click()
+  65  |   await sheet.getByLabel(/Straße, Hausnummer/).fill(text)
+  66  |   await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
+  67  |   await sheet.getByRole('button', { name: text }).click()
+  68  |   await expect(page.locator('dialog[open]')).toHaveCount(0)
+  69  | }
+  70  | 
+  71  | export async function clickTimes(page: Page, name: string, times: number) {
+  72  |   const button = page.getByRole('button', { name })
+> 73  |   for (let i = 0; i < times; i++) await button.click()
+      |                                                ^ Error: locator.click: Test timeout of 60000ms exceeded.
+  74  | }
+  75  | 
+  76  | /** Umzug-Beispiel aus dem README: 3 Personen, 1 Fahrzeug, 5 h, Wien, Montage 3 lfm, 20 Kartons, 1 Halteverbot = 689,61 €. Erwartet die Seite /umzug. */
+  77  | export async function fillUmzugBeispiel(page: Page) {
+  78  |   await clickTimes(page, 'Mehr Personen', 1)
+  79  |   await clickTimes(page, 'Dauer erhöhen', 4)
+  80  |   await page.getByRole('switch', { name: 'Montage oder Demontage dazubuchen' }).click()
+  81  |   await page.getByRole('button', { name: /^Standardmöbel/ }).click()
+  82  |   await clickTimes(page, 'Laufmeter erhöhen', 2)
+  83  |   await page.getByRole('button', { name: 'Schließen' }).click()
+  84  |   await clickTimes(page, 'Mehr Kartons', 20)
+  85  |   await clickTimes(page, 'Mehr Halteverbotszonen', 1)
+  86  |   await setAddress(page, 'Abholung', 'Neubaugasse 12, 1070 Wien')
+  87  |   await setAddress(page, 'Ziel', 'Praterstraße 30, 1020 Wien')
+  88  | }
+  89  | 
+  90  | /** Kleines gültiges JPEG, im Browser erzeugt. */
+  91  | export async function makeJpeg(page: Page): Promise<Buffer> {
+  92  |   const bytes = await page.evaluate(async () => {
+  93  |     const c = document.createElement('canvas')
+  94  |     c.width = c.height = 64
+  95  |     const ctx = c.getContext('2d')!
+  96  |     ctx.fillStyle = '#b08d57'
+  97  |     ctx.fillRect(0, 0, 64, 64)
+  98  |     const blob = await new Promise<Blob>((r) => c.toBlob((b) => r(b!), 'image/jpeg')!)
+  99  |     return Array.from(new Uint8Array(await blob.arrayBuffer()))
+  100 |   })
+  101 |   return Buffer.from(bytes)
+  102 | }
+  103 | 
+  104 | export async function addPhotos(page: Page, count: number, photo?: Buffer) {
+  105 |   const buffer = photo ?? (await makeJpeg(page))
+  106 |   await page.locator('input[type=file][multiple]').setInputFiles(Array.from({ length: count }, (_, i) => ({ name: `foto${i}.jpg`, mimeType: 'image/jpeg', buffer })))
+  107 | }
+  108 | 
+```

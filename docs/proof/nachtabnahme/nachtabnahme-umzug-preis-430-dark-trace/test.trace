@@ -1,0 +1,103 @@
+{"version":10,"type":"context-options","origin":"testRunner","browserName":"","playwrightVersion":"1.64.1","options":{},"platform":"win32","wallTime":1793976048249,"monotonicTime":431635.294,"sdkLanguage":"javascript","testTimeout":60000,"annotations":[]}
+{"type":"before","callId":"loyw@9538","startTime":431636.065,"class":"Test","method":"hook","title":"Before Hooks","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9560","parentId":"loyw@9538","startTime":431640.347,"class":"Test","method":"fixture","title":"Fixture \"context\"","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9561","parentId":"loyw@9560","startTime":431640.751,"class":"Test","method":"pw:api","title":"Create context","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9561","endTime":431643.256,"annotations":[]}
+{"type":"after","callId":"loyw@9560","endTime":431645.942,"annotations":[]}
+{"type":"before","callId":"loyw@9568","parentId":"loyw@9538","startTime":431646.031,"class":"Test","method":"fixture","title":"Fixture \"backend\"","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":86,"column":26}]}
+{"type":"before","callId":"loyw@9569","parentId":"loyw@9568","startTime":431646.595,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":66,"column":17,"function":"installBackend"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":89,"column":29,"function":"Object.base.extend.backend.auto"}],"group":"route"}
+{"type":"after","callId":"loyw@9569","endTime":431647.155,"annotations":[]}
+{"type":"before","callId":"loyw@9571","parentId":"loyw@9568","startTime":431647.437,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":73,"column":17,"function":"installBackend"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":89,"column":23,"function":"Object.base.extend.backend.auto"}],"group":"route"}
+{"type":"after","callId":"loyw@9571","endTime":431647.833,"annotations":[]}
+{"type":"before","callId":"loyw@9573","parentId":"loyw@9568","startTime":431648.053,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":74,"column":17,"function":"installBackend"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":89,"column":23,"function":"Object.base.extend.backend.auto"}],"group":"route"}
+{"type":"after","callId":"loyw@9573","endTime":431648.458,"annotations":[]}
+{"type":"before","callId":"loyw@9575","parentId":"loyw@9568","startTime":431648.663,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":79,"column":17,"function":"installBackend"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":89,"column":23,"function":"Object.base.extend.backend.auto"}],"group":"route"}
+{"type":"after","callId":"loyw@9575","endTime":431649.052,"annotations":[]}
+{"type":"before","callId":"loyw@9577","parentId":"loyw@9568","startTime":431649.377,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":81,"column":17,"function":"installBackend"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":89,"column":23,"function":"Object.base.extend.backend.auto"}],"group":"route"}
+{"type":"after","callId":"loyw@9577","endTime":431649.789,"annotations":[]}
+{"type":"after","callId":"loyw@9568","endTime":431649.85,"annotations":[]}
+{"type":"before","callId":"loyw@9579","parentId":"loyw@9538","startTime":431650.088,"class":"Test","method":"fixture","title":"Fixture \"page\"","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9580","parentId":"loyw@9579","startTime":431650.339,"class":"Test","method":"pw:api","title":"Create page","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9580","endTime":431701.361,"annotations":[]}
+{"type":"after","callId":"loyw@9579","endTime":431701.413,"annotations":[]}
+{"type":"after","callId":"loyw@9538","endTime":431701.449,"annotations":[]}
+{"type":"before","callId":"loyw@9583","startTime":431702.348,"class":"Test","method":"pw:api","title":"Add init script","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":425,"column":30}],"group":"configuration"}
+{"type":"after","callId":"loyw@9583","endTime":431704.298,"annotations":[]}
+{"type":"before","callId":"loyw@9585","startTime":431704.551,"class":"Test","method":"pw:api","title":"Route requests","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts","line":32,"column":14,"function":"mockRoute"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":426,"column":21}],"group":"route"}
+{"type":"after","callId":"loyw@9585","endTime":431704.802,"annotations":[]}
+{"type":"before","callId":"loyw@9587","startTime":431705.143,"class":"Test","method":"pw:api","title":"Navigate","subtitle":"/umzug","params":{"url":"/umzug"},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":427,"column":16}]}
+{"type":"before","callId":"loyw@9589","startTime":431710.376,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"after","callId":"loyw@9589","endTime":431711.338,"annotations":[]}
+{"type":"before","callId":"loyw@9591","startTime":431724.177,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9593","startTime":431725.677,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9595","startTime":431726.598,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"after","callId":"loyw@9591","endTime":431727.383,"annotations":[]}
+{"type":"after","callId":"loyw@9593","endTime":431727.554,"annotations":[]}
+{"type":"after","callId":"loyw@9595","endTime":431727.624,"annotations":[]}
+{"type":"before","callId":"loyw@9597","startTime":431736.691,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9599","startTime":431738.304,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9601","startTime":431738.704,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9603","startTime":431740.449,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9605","startTime":431740.85,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9607","startTime":431741.252,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9609","startTime":431741.62,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9611","startTime":431742.046,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9613","startTime":431742.466,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9615","startTime":431742.941,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"before","callId":"loyw@9617","startTime":431743.391,"class":"Test","method":"pw:api","title":"Continue request","params":{},"stack":[],"group":"route"}
+{"type":"after","callId":"loyw@9597","endTime":431746.813,"annotations":[]}
+{"type":"after","callId":"loyw@9599","endTime":431748.354,"annotations":[]}
+{"type":"after","callId":"loyw@9601","endTime":431748.384,"annotations":[]}
+{"type":"after","callId":"loyw@9603","endTime":431748.41,"annotations":[]}
+{"type":"after","callId":"loyw@9605","endTime":431748.429,"annotations":[]}
+{"type":"after","callId":"loyw@9607","endTime":431748.447,"annotations":[]}
+{"type":"after","callId":"loyw@9609","endTime":431748.464,"annotations":[]}
+{"type":"after","callId":"loyw@9611","endTime":431748.482,"annotations":[]}
+{"type":"after","callId":"loyw@9613","endTime":431748.5,"annotations":[]}
+{"type":"after","callId":"loyw@9615","endTime":431748.518,"annotations":[]}
+{"type":"after","callId":"loyw@9617","endTime":431748.533,"annotations":[]}
+{"type":"after","callId":"loyw@9587","endTime":432377.584,"annotations":[]}
+{"type":"before","callId":"loyw@9619","startTime":432378.924,"class":"Test","method":"pw:api","title":"Click","subtitle":"getByRole('button', { name: 'Mehr Personen' })","params":{"locator":"getByRole('button', { name: 'Mehr Personen' })"},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts","line":73,"column":48,"function":"clickTimes"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts","line":78,"column":9,"function":"fillUmzugBeispiel"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":115,"column":13,"function":"steps"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":429,"column":11}]}
+{"type":"error","message":"\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m","stack":[]}
+{"type":"before","callId":"loyw@9621","startTime":491655.913,"class":"Test","method":"hook","title":"After Hooks","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9623","parentId":"loyw@9621","startTime":491700.553,"class":"Test","method":"fixture","title":"Fixture \"page\"","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9623","endTime":491700.613,"annotations":[]}
+{"type":"before","callId":"loyw@9624","parentId":"loyw@9621","startTime":491700.633,"class":"Test","method":"fixture","title":"Fixture \"backend\"","params":{},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":86,"column":26}]}
+{"type":"before","callId":"loyw@9625","parentId":"loyw@9624","startTime":491701.07,"class":"Test","method":"expect","title":"Aufruf ohne Mock: E2E-Tests erreichen nie ein echtes Backend","params":{"expected":"[]"},"stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\backend.ts","line":91,"column":96,"function":"Object.base.extend.backend.auto"}]}
+{"type":"after","callId":"loyw@9625","endTime":491701.128,"annotations":[]}
+{"type":"after","callId":"loyw@9624","endTime":491701.148,"annotations":[]}
+{"type":"before","callId":"loyw@9626","parentId":"loyw@9621","startTime":491701.656,"class":"Test","method":"fixture","title":"Fixture \"context\"","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9633","parentId":"loyw@9626","startTime":491746.209,"class":"Test","method":"pw:api","title":"Close context","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9619","endTime":491748.843,"annotations":[],"error":{"name":"","message":"Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Mehr Personen' })\u001b[22m\n","stack":"Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Mehr Personen' })\u001b[22m\n\n    at clickTimes (C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts:73:48)\n    at fillUmzugBeispiel (C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts:78:9)\n    at steps (C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts:115:13)\n    at C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts:429:11"}}
+{"type":"error","message":"Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Mehr Personen' })\u001b[22m\n","stack":[{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts","line":73,"column":48,"function":"clickTimes"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\e2e\\konfigurator-helpers.ts","line":78,"column":9,"function":"fillUmzugBeispiel"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":115,"column":13,"function":"steps"},{"file":"C:\\Users\\gesch\\Music\\MoveNow\\tests\\shots\\shots.spec.ts","line":429,"column":11}]}
+{"type":"after","callId":"loyw@9633","endTime":491749.467,"annotations":[]}
+{"type":"after","callId":"loyw@9626","endTime":491749.498,"annotations":[]}
+{"type":"before","callId":"loyw@9640","startTime":491753.1,"class":"Test","method":"test.attach","title":"Attach \"error-context\"","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9640","endTime":491753.111,"attachments":[{"name":"error-context","contentType":"text/markdown","file":"attachments/66f41c665a5d99933eb409a43d8866bc26432dc4"}]}
+{"type":"before","callId":"loyw@9642","parentId":"loyw@9621","startTime":491753.533,"class":"Test","method":"fixture","title":"Fixture \"serviceWorkers\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9642","endTime":491753.547,"annotations":[]}
+{"type":"before","callId":"loyw@9643","parentId":"loyw@9621","startTime":491753.554,"class":"Test","method":"fixture","title":"Fixture \"baseURL\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9643","endTime":491753.562,"annotations":[]}
+{"type":"before","callId":"loyw@9644","parentId":"loyw@9621","startTime":491753.565,"class":"Test","method":"fixture","title":"Fixture \"userAgent\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9644","endTime":491753.572,"annotations":[]}
+{"type":"before","callId":"loyw@9646","parentId":"loyw@9621","startTime":491753.676,"class":"Test","method":"fixture","title":"Fixture \"viewport\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9646","endTime":491753.683,"annotations":[]}
+{"type":"before","callId":"loyw@9648","parentId":"loyw@9621","startTime":491753.765,"class":"Test","method":"fixture","title":"Fixture \"screen\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9648","endTime":491753.772,"annotations":[]}
+{"type":"before","callId":"loyw@9655","parentId":"loyw@9621","startTime":491754.512,"class":"Test","method":"fixture","title":"Fixture \"isMobile\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9655","endTime":491754.52,"annotations":[]}
+{"type":"before","callId":"loyw@9659","parentId":"loyw@9621","startTime":491754.841,"class":"Test","method":"fixture","title":"Fixture \"hasTouch\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9659","endTime":491754.853,"annotations":[]}
+{"type":"before","callId":"loyw@9662","parentId":"loyw@9621","startTime":491755.088,"class":"Test","method":"fixture","title":"Fixture \"deviceScaleFactor\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9662","endTime":491755.095,"annotations":[]}
+{"type":"before","callId":"loyw@9664","parentId":"loyw@9621","startTime":491755.178,"class":"Test","method":"fixture","title":"Fixture \"colorScheme\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9664","endTime":491755.184,"annotations":[]}
+{"type":"after","callId":"loyw@9621","endTime":491755.829,"attachments":[{"name":"screenshot","contentType":"image/png","file":"attachments/217c065971b398e8b1f03ddf21aacbe83acca404"}],"annotations":[]}
+{"type":"before","callId":"loyw@9669","startTime":491755.968,"class":"Test","method":"hook","title":"Worker Cleanup","params":{},"stack":[]}
+{"type":"before","callId":"loyw@9674","parentId":"loyw@9669","startTime":491756.577,"class":"Test","method":"fixture","title":"Fixture \"browser\"","params":{},"stack":[]}
+{"type":"after","callId":"loyw@9674","endTime":491812.029,"annotations":[]}
+{"type":"before","callId":"loyw@9679","parentId":"loyw@9669","startTime":491812.615,"class":"Test","method":"fixture","title":"Fixture \"defaultBrowserType\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9679","endTime":491812.634,"annotations":[]}
+{"type":"before","callId":"loyw@9680","parentId":"loyw@9669","startTime":491812.644,"class":"Test","method":"fixture","title":"Fixture \"screenshot\"","params":{},"stack":[{"file":"project#shots-430-dark","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"loyw@9680","endTime":491812.658,"annotations":[]}
+{"type":"after","callId":"loyw@9669","endTime":491813.8,"annotations":[]}
