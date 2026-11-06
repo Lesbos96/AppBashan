@@ -1,0 +1,444 @@
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/uploads.test.ts (29 tests | 7 failed) 168946ms
+   ❯ Staging hochladen (storage.objects) (6)
+     ✓ erlaubt: der Eigentümer lädt in den eigenen Ordner ohne Anfrage, liest per signiertem Link; der Bucket ist privat 3430ms
+     ✓ verweigert: fremder Ordner (b lädt in den Ordner von a), anon 578ms
+     ✓ verweigert: falsche Pfadform (Großbuchstaben, andere Endung, ohne client_ref-Ordner, kein UUID, Pfadtrick) 1143ms
+     ✓ verweigert: fremder Nutzer liest, überschreibt, löscht, verschiebt nicht; anon bekommt nichts; die Datei bleibt unverändert 2224ms
+     × erlaubt: der Eigentümer löscht sein Staging-Foto; verweigert: Überschreiben der eigenen Datei (kein UPDATE-Recht) 10713ms
+     × zu groß: der Bucket lehnt ab (413); falscher Typ: PNG, WebP, HEIC, Text (415) 13723ms
+   ❯ Übernahme beim Absenden (quote_save_request) (9)
+     × erlaubt: eigene, frische Fotos werden atomar als request_photos übernommen; nur der Eigentümer liest sie 10710ms
+     × doppelte IDs ergeben ein Foto; ohne Fotos geht es auch (Gegenfall) 10688ms
+     × verweigert: fremde Foto-ID (Datei von b) → photo_missing, keine Anfrage, keine Zeile 10713ms
+     × verweigert: Foto aus einem anderen eigenen Ordner und nie hochgeladene ID → photo_missing 13278ms
+     × verweigert: abgelaufenes Staging-Foto → photo_expired, nichts gespeichert; Gegenfall kurz vor Ablauf wird übernommen 10720ms
+     ✓ Grenze: 8 Fotos gehen, 9 → too_many_photos ohne Anfrage 14299ms
+     ✓ Wiederholung derselben client_ref liefert die vorhandene Anfrage und fügt keine Fotos hinzu 1212ms
+     ✓ Handler: photoIds werden übernommen (200), fremde ID → 422 photo_missing, 9 → 422 too_many_photos, kein Array → 400, nichts gespeichert 14420ms
+     ✓ photo_staging_hours fehlt: Absenden (SQL) und Waisenliste scheitern mit setting_missing; mit Wert läuft beides (Positivkontrolle) 2181ms
+   ✓ Nach dem Absenden (7)
+     ✓ verweigert: Hinzufügen in den Ordner (403), auch mit neuer Datei 407ms
+     ✓ verweigert: Löschen einer nicht genannten Datei im Ordner mit Anfrage (nur die Anfrage-Bedingung schützt sie, keine Zeile) 352ms
+     ✓ verweigert: Löschen, Ersetzen und Verschieben der übernommenen Datei; sie bleibt unverändert 2235ms
+     ✓ verweigert (request_photos): Kunde und anon fügen weder ein noch ändern oder löschen sie (42501) 862ms
+     ✓ verweigert für service_role: Umhängen auf eine andere Anfrage, Ersetzen, Löschen (Rechte entzogen, 42501); Einfügen am Funktionspfad vorbei (Trigger) 1132ms
+     ✓ Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen), DELETE und TRUNCATE → photo_immutable; INSERT ohne Marker → photo_insert_forbidden 901ms
+     ✓ Kaskade: Löschen der Anfrage entfernt die Zeilen (Positivkontrolle der DELETE-Ausnahme) 3149ms
+   ✓ Waisenliste (2)
+     ✓ Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar (verweigert für anon und Kunden) 2244ms
+     ✓ Waisen-Liste: nur abgelaufene Dateien ohne Zeile (frisch und übernommen bleiben draußen) 4289ms
+   ✓ Aufräumen (1)
+     ✓ Aufräumen löscht abgelaufene, nicht übernommene Dateien (Objekt), übernommene und frische bleiben 7807ms
+   ✓ Staging-Kontingent und Pfad (0021) (4)
+     ✓ bis zur Grenze erlaubt, die 41. Datei verweigert (403); Löschen und Übernehmen geben Platz frei 8357ms
+     ✓ Insert in request_photos ohne storage_path: Trigger lehnt ab (photo_insert_forbidden), mit Marker ebenso 1251ms
+     ✓ kein Default mehr: die Spalte hat keinen Standardwert 989ms
+     ✓ Zeilen-Bedingung (Alt-Pfad {uid}/{request_id}/…): Kunde löscht kein übernommenes Objekt und lädt nicht unter dessen Namen hoch 4511ms
+ ✓ |rls| tests/rls/quote-hardening.test.ts (44 tests) 117843ms
+   ✓ Haltefenster und Preisabgleich (8)
+     ✓ abgelaufenes Haltefenster: 409 price_changed mit neuer Version und neuem Snapshot, nichts gespeichert 4384ms
+     ✓ innerhalb von 30 Minuten: gespeichert mit der gezeigten Version 4601ms
+     ✓ künftige oder nie gültige Version: nie haltbar → 409 price_changed 9678ms
+     ✓ ersetzte Version ohne Einstellung price_hold_minutes: 500 setting_missing, nichts gespeichert 860ms
+     ✓ gleiche Version, anderer Betrag (z. B. Strecke): 409 price_changed mit dem berechneten Preis, keine Zeile 3109ms
+     ✓ Festpreis als Spanne gezeigt (total null) und Angebot statt Preis gezeigt: ebenfalls 409 3666ms
+     ✓ Positivkontrolle: exakt der gezeigte Betrag wird gespeichert 3155ms
+     ✓ Miete: gezeigter Betrag weicht ab → 409 price_changed, keine Mietanfrage (M-3) 2055ms
+   ✓ Bedingungen und Pflichtfelder (9)
+     ✓ falscher termsHash: 409 terms_changed mit den aktuellen Bedingungen, keine Zeile 739ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact: 400, keine Zeile 423ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.email: 400, keine Zeile 501ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.phone: 400, keine Zeile 457ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.name: 400, keine Zeile 451ms
+     ✓ fehlendes oder ungültiges Pflichtfeld shown: 400, keine Zeile 486ms
+     ✓ fehlendes oder ungültiges Pflichtfeld termsHash: 400, keine Zeile 502ms
+     ✓ fehlendes oder ungültiges Pflichtfeld priceVersion: 400, keine Zeile 541ms
+     ✓ fehlendes oder ungültiges Pflichtfeld preferredDate: 400, keine Zeile 410ms
+   ✓ Adressprüfung und Bezirk (6)
+     ✓ Abholung außerhalb Wiens: 422 pickup_outside_vienna, keine Zeile 1479ms
+     ✓ manipulierte Koordinaten oder Client-postcode ändern das nicht (Graz mit Wiener Punkt, Wien mit Grazer Punkt, falsche PLZ) 6571ms
+     ✓ Punkt ohne Hausnummer (Straße): 422 address_imprecise; unbekannte Adresse: address_mismatch; ohne Punkt: address_point_required 7427ms
+     ✓ Ziel im Ausland: 422 offer_not_bookable; Ziel im Inland außerhalb Wiens ist buchbar 7309ms
+     ✓ Entrümpelung und Montage nutzen dieselbe Prüfung; gespeichert wird das kanonische Label 4701ms
+     ✓ Geocode-Cache: zweiter Aufruf mit demselben Label fragt den Anbieter nicht erneut 5940ms
+   ✓ Ausfälle und Limits: Abbruch ohne Zeile (4)
+     ✓ Geocoder fällt aus: 503 provider_unavailable 1616ms
+     ✓ Routing fällt aus: 503 provider_unavailable; keine Route: Angebot route_missing 7245ms
+     ✓ Geocode-Kontingent erschöpft: 429 rate_limited; Zähler fällt aus: 503 limiter_unavailable 2860ms
+     ✓ Routen-Kontingent erschöpft: 429 rate_limited 3556ms
+   ✓ Journal, Revision und Kontakt (2)
+     ✓ price_confirmed im Journal mit Betrag, Bedingungen-Hash, Version und Inhalts-Hash; Revision 1 trägt die Bedingungen; Kontakt gespeichert 6615ms
+     ✓ der Kunde liest die Antwort ohne Gebühr; fremde Kontakte sieht er nicht 7714ms
+   ✓ quote_save_request: eigene Prüfungen (10)
+     ✓ terms_missing 501ms
+     ✓ contact_required 379ms
+     ✓ Kontaktformat zusätzlich in der Datenbank (Constraint): 23514 373ms
+   ✓ Rechte nach 0019 (4)
+     ✓ geocode_cache und geo_districts: anon und authenticated 42501, service_role liest (23 Bezirke) 981ms
+     ✓ price_version_hold und quote_district: anon und authenticated 42501, service_role darf 889ms
+     ✓ rental_bookings: service_role darf einfügen, aber weder ändern noch löschen (42501) 2000ms
+   ✓ Rohaufruf ohne Absender-Hilfe (1)
+     ✓ Wiederholung derselben clientRef nach 409 legt genau eine Zeile an 3706ms
+ ✓ |rls| tests/rls/rls.test.ts (40 tests) 35210ms
+   ✓ Kunden sehen nur Eigenes (6)
+     ✓ Anfragen 300ms
+     ✓ Foto-Einträge und Dateien 985ms
+     ✓ kein Upload und kein Foto-Eintrag in fremde Anfragen 799ms
+     ✓ fremde Fotos lassen sich nicht löschen 669ms
+     ✓ fremde Profile: nicht lesen, nicht ändern 396ms
+   ✓ Kunden setzen nur „zurückgezogen" (6)
+     ✓ legen Anfragen nicht selbst an (nur über quote) 305ms
+     ✓ kein anderer Status, keine Preisfelder 564ms
+     ✓ fremde Anfrage bleibt unverändert 307ms
+     ✓ eigene Anfrage zurückziehen, danach nicht wieder öffnen 356ms
+     ✓ keine Fotos zu einer zurückgezogenen Anfrage 354ms
+     ✓ Mietanfrage: nur zurückziehen 314ms
+   ✓ Vermieter und Fahrzeuge (4)
+     ✓ ändert nur eigene Fahrzeuge 594ms
+   ✓ Gebühren (5)
+     ✓ Kunden und anon lesen weder fee_splits noch platform_settings 763ms
+     ✓ Vermieter liest nur eigene Aufteilung und den Satz 355ms
+     ✓ Vermieter ändert den Satz nicht 557ms
+     ✓ admin liest Aufteilungen nur mit aal2 2005ms
+     ✓ niemand außer dem Server schreibt Aufteilungen 355ms
+   ✓ price_config (5)
+     ✓ Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501) 2081ms
+     ✓ nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert 818ms
+     ✓ DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt 883ms
+   ✓ current_price_version (2)
+     ✓ liefert für anon und Kunden die höchste bereits gültige Version, keine künftige 447ms
+   ✓ Rollen (4)
+     ✓ niemand setzt die eigene Rolle 493ms
+     ✓ kein Selbst-Upgrade: Kunde wird nicht Vermieter und liest keinen Gebührensatz 373ms
+     ✓ SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste 949ms
+ ✓ |rls| tests/rls/status.test.ts (16 tests) 46231ms
+   ✓ Status nur über Funktionen (7)
+     ✓ direktes Status-UPDATE: customer, partner, admin (aal1 und aal2), service_role und anon verweigert, Status unverändert 1592ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker sind getrennte Prüfungen 784ms
+     ✓ INSERT: nur requested/awaiting_offer; eine Anfrage ohne Revision wird beim Commit verworfen 447ms
+     ✓ withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal invalid_transition, fremd not_found, anon 42501 2551ms
+     ✓ withdraw aus awaiting_offer ok; die Marker der Funktion bleiben nicht in der Sitzung stehen 1321ms
+     ✓ Miete: nur requested → withdrawn, auch für den Eigentümer; ungültige Paare invalid_transition 1256ms
+   ✓ Revisionen unveränderlich (5)
+     ✓ UPDATE, DELETE, TRUNCATE: auch der Eigentümer scheitert an revision_immutable; service_role hat kein Recht 1141ms
+     ✓ INSERT: nur Revision 1 beim Absenden, Status passend zum Preis, Snapshot passend zu den Beträgen, Version veröffentlicht 872ms
+     ✓ Zeiger: einmalig, nur auf Revision 1 derselben Anfrage; Frist, Termin und Bezirk unveränderlich 1233ms
+     ✓ service_role ändert nur den Zeiger: Adresse, Kunde, Strecke verweigert; Löschen verweigert (auch Eigentümer, nur Kaskade) 1641ms
+     ✓ Kontolöschung räumt Anfrage, Revision, Ereignisse und Kontakte per Kaskade (Positivkontrolle) 4002ms
+   ✓ status_events: nur anfügen, nur admin (aal2) liest (2)
+     ✓ UPDATE, DELETE, TRUNCATE: append_only; service_role und Kunde schreiben nicht 1482ms
+     ✓ Lesen: Kunde und Partner nie, admin nur mit aal2 (Positivkontrolle) 3902ms
+   ✓ Lesen: Revisionen und Kontakte (2)
+     ✓ Kunde liest nur eigene Revisionen und Kontakte, fremde 0 Zeilen (Positivkontrolle eigene), admin und Partner nichts 10558ms
+     ✓ Kontakte und Revisionen: Kunde schreibt nicht; service_role fügt Kontakte nur ein (kein UPDATE/DELETE) 1206ms
+ ✓ |rls| tests/rls/quote.test.ts (17 tests) 76664ms
+   ✓ Anfrage anlegen (echte DB) (10)
+     ✓ manipulierter Client-Preis und Client-Strecke werden ignoriert; Anfrage gehört dem Token-Nutzer 5380ms
+     ✓ Frist und Termin rechnet die Datenbank: Annahmefrist 24 h bei weit entferntem Termin, Termin 00:00 Wiener Zeit 6887ms
+     ✓ Termin näher als accept_min_hours: 422 too_late, nichts gespeichert 4015ms
+     ✓ Punkte werden als (Länge, Breite) gespeichert, Adresse und Bezirk kommen vom geprüften Kandidaten 3232ms
+     ✓ Wien → Graz: Region, Kilometer und Preis kommen aus Strecke und PostGIS 4256ms
+     ✓ Negativtest: quote schreibt keine fee_splits-Zeile (Anfrage und Mietanfrage), die Antwort enthält keine Gebühr 5972ms
+     ✓ Sonderfall: awaiting_offer, kein Preis, Revision ohne Beträge 2862ms
+     ✓ Entrümpelung (Spanne): awaiting_offer, Revision mit low/high ohne total; Montage mit README-Betrag 7526ms
+     ✓ Idempotenz: dieselbe clientRef ergibt genau eine Anfrage, auch bei paralleler Absendung 8601ms
+     ✓ ohne Token 401, mit fremdem Format 400 ohne Schreiben; Bearbeiten mit requestId gibt es nicht 1709ms
+   ✓ Mietanfrage (echte DB) (3)
+     ✓ Cargo Van: 276,00 €, Kaution 500,00 € separat, Zeiten als Zeitpunkte (Wiener Zeit), keine Gebührenzeile 2892ms
+     ✓ Angebot eines Vermieters: keine Gebührenzeile, die Antwort nennt den Vermieter nicht 2307ms
+     ✓ nicht freigegebenes Angebot: 404; Idempotenz: dieselbe clientRef = eine Mietanfrage 3741ms
+   ✓ Rechte (Verweigerung exakt, Positivkontrolle) (3)
+     ✓ Schreib-Funktionen: anon und authenticated erhalten 42501, service_role darf 802ms
+     ✓ Gebührensatz: Kunde sieht nur NULL, Vermieter den Satz, anon verweigert 302ms
+     ✓ Kunde schreibt weder Spalten noch Anfragen; Zurückziehen nur über withdraw (Positivkontrolle) 3837ms
+   ✓ Nutzerlimit (echte Zähler) (1)
+     ✓ ab dem 7. Aufruf in einer Minute 429 4377ms
+ ✓ |rls| tests/rls/settings.test.ts (11 tests) 42228ms
+   ✓ veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen service_role) (2)
+     ✓ Änderungen jeder Art werden verweigert, die unveröffentlichte Version bleibt änderbar 6044ms
+     ✓ über die API: authenticated und admin (aal1) verweigert (42501), service_role bekommt version_published 1966ms
+   ✓ Admin-Funktionen: nur service_role bzw. Eigentümer, nur für Rolle admin (5)
+     ✓ anon ruft keine Admin-Funktion auf (42501) 626ms
+     ✓ customer ruft keine Admin-Funktion auf (42501) 1003ms
+     ✓ admin ruft keine Admin-Funktion auf (42501) 732ms
+     ✓ admin_grant_role ist auch für service_role gesperrt; die anderen erreicht service_role (Gegenfall) 858ms
+     ✓ erlaubt: admin (p_actor) legt eine Konfigurationszeile in der unveröffentlichten Version an und das Journal hält es fest 591ms
+   ✓ Gebührensätze und Einstellungen (3)
+     ✓ Vorlauf, Unveränderlichkeit, Wertebereich 6900ms
+     ✓ Schreiben über die API: admin (aal1) und Kunde verweigert (42501), keine Schreib-Grants 936ms
+     ✓ booking_terms: fünf Werte und termsHash, kein fee_*, für anon und Kunden 6412ms
+   ✓ audit_log, Rollen, aal2-Admin (1)
+     ✓ audit_log nur anfügen; Lesen nur admin mit aal2; profiles.role nur mit Marker 5870ms
+ ✓ |rls| tests/rls/route.test.ts (15 tests) 10226ms
+   ✓ Zugriff nur für service_role (3)
+     ✓ anon: Tabellen und Funktionen mit 42501 verweigert 864ms
+     ✓ authenticated: Tabellen und Funktionen mit 42501 verweigert 960ms
+     ✓ service_role darf dieselben Aufrufe 1936ms
+   ✓ Löschung (route_cleanup, stündlicher Job) (1)
+     ✓ entfernt abgelaufene Cache-Zeilen und alte Zähler, lässt frische stehen 574ms
+   ✓ Grenzen (2)
+     ✓ fehlende Grenze bricht ab, statt „Wien" zu liefern 433ms
+   ✓ Routenfakten aus PostGIS (Anbieter gemockt) (5)
+     ✓ Wien → Graz 318ms
+     ✓ Wien → München 305ms
+   ✓ Zähler (4)
+     ✓ zählt parallele Aufrufe exakt 649ms
+     ✓ ein überschrittener Zähler lehnt ab und lässt die folgenden (globalen) unberührt 724ms
+     ✓ eine ungültige Geometrie wird beim Schreiben repariert 387ms
+     ✓ eine leere Grenze wird abgelehnt 367ms
+ ✓ |rls| tests/rls/auth.test.ts (4 tests) 3908ms
+   ✓ Magic-Link-Mail: Code und Link (4)
+     ✓ der Code meldet an; das Profil entsteht erst jetzt, als Kunde 1149ms
+     ✓ der Link (token_hash) meldet in jedem Browser an 907ms
+     ✓ falscher oder schon benutzter Code wird abgelehnt 1023ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Staging hochladen (storage.objects) > erlaubt: der Eigentümer löscht sein Staging-Foto; verweigert: Überschreiben der eigenen Datei (kein UPDATE-Recht)
+AssertionError: expected StorageUnknownError: fetch failed { …(5) } to be null
+
+- Expected:
+null
+
++ Received:
+StorageUnknownError {
+  "message": "fetch failed",
+  "__isStorageError": true,
+  "namespace": "storage",
+  "name": "StorageUnknownError",
+  "status": undefined,
+  "statusCode": undefined,
+  "originalError": TypeError {
+    "message": "fetch failed",
+    "cause": ConnectTimeoutError {
+      "message": "Connect Timeout Error (attempted addresses: 104.18.38.10:443, 172.64.149.246:443, timeout: 10000ms)",
+      "name": "ConnectTimeoutError",
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      Symbol(undici.error.UND_ERR): true,
+      Symbol(undici.error.UND_ERR_CONNECT_TIMEOUT): true,
+    },
+  },
+}
+
+ ❯ stageOk tests/rls/uploads.test.ts:52:19
+     50| const stageOk = async (user: TestUser, ref: string) => {
+     51|   const s = await stage(user, ref);
+     52|   expect(s.error).toBeNull();
+       |                   ^
+     53|   return s;
+     54| };
+ ❯ tests/rls/uploads.test.ts:210:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Staging hochladen (storage.objects) > zu groß: der Bucket lehnt ab (413); falscher Typ: PNG, WebP, HEIC, Text (415)
+AssertionError: image/png: expected StorageUnknownError: fetch failed { …(5) } to match object { statusCode: '415', …(1) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "message": "mime type image/png is not supported",
+-   "statusCode": "415",
++ StorageUnknownError {
++   "statusCode": undefined,
+  }
+
+ ❯ tests/rls/uploads.test.ts:248:29
+    246|           contentType: type,
+    247|         });
+    248|       expect(r.error, type).toMatchObject({
+       |                             ^
+    249|         statusCode: "415",
+    250|         message: `mime type ${type} is not supported`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Übernahme beim Absenden (quote_save_request) > erlaubt: eigene, frische Fotos werden atomar als request_photos übernommen; nur der Eigentümer liest sie
+AssertionError: expected StorageUnknownError: fetch failed { …(5) } to be null
+
+- Expected:
+null
+
++ Received:
+StorageUnknownError {
+  "message": "fetch failed",
+  "__isStorageError": true,
+  "namespace": "storage",
+  "name": "StorageUnknownError",
+  "status": undefined,
+  "statusCode": undefined,
+  "originalError": TypeError {
+    "message": "fetch failed",
+    "cause": ConnectTimeoutError {
+      "message": "Connect Timeout Error (attempted addresses: 104.18.38.10:443, 172.64.149.246:443, timeout: 10000ms)",
+      "name": "ConnectTimeoutError",
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      Symbol(undici.error.UND_ERR): true,
+      Symbol(undici.error.UND_ERR_CONNECT_TIMEOUT): true,
+    },
+  },
+}
+
+ ❯ stageOk tests/rls/uploads.test.ts:52:19
+     50| const stageOk = async (user: TestUser, ref: string) => {
+     51|   const s = await stage(user, ref);
+     52|   expect(s.error).toBeNull();
+       |                   ^
+     53|   return s;
+     54| };
+ ❯ tests/rls/uploads.test.ts:259:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Übernahme beim Absenden (quote_save_request) > doppelte IDs ergeben ein Foto; ohne Fotos geht es auch (Gegenfall)
+AssertionError: expected StorageUnknownError: fetch failed { …(5) } to be null
+
+- Expected:
+null
+
++ Received:
+StorageUnknownError {
+  "message": "fetch failed",
+  "__isStorageError": true,
+  "namespace": "storage",
+  "name": "StorageUnknownError",
+  "status": undefined,
+  "statusCode": undefined,
+  "originalError": TypeError {
+    "message": "fetch failed",
+    "cause": ConnectTimeoutError {
+      "message": "Connect Timeout Error (attempted addresses: 104.18.38.10:443, 172.64.149.246:443, timeout: 10000ms)",
+      "name": "ConnectTimeoutError",
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      Symbol(undici.error.UND_ERR): true,
+      Symbol(undici.error.UND_ERR_CONNECT_TIMEOUT): true,
+    },
+  },
+}
+
+ ❯ stageOk tests/rls/uploads.test.ts:52:19
+     50| const stageOk = async (user: TestUser, ref: string) => {
+     51|   const s = await stage(user, ref);
+     52|   expect(s.error).toBeNull();
+       |                   ^
+     53|   return s;
+     54| };
+ ❯ tests/rls/uploads.test.ts:289:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Übernahme beim Absenden (quote_save_request) > verweigert: fremde Foto-ID (Datei von b) → photo_missing, keine Anfrage, keine Zeile
+AssertionError: expected StorageUnknownError: fetch failed { …(5) } to be null
+
+- Expected:
+null
+
++ Received:
+StorageUnknownError {
+  "message": "fetch failed",
+  "__isStorageError": true,
+  "namespace": "storage",
+  "name": "StorageUnknownError",
+  "status": undefined,
+  "statusCode": undefined,
+  "originalError": TypeError {
+    "message": "fetch failed",
+    "cause": ConnectTimeoutError {
+      "message": "Connect Timeout Error (attempted addresses: 104.18.38.10:443, 172.64.149.246:443, timeout: 10000ms)",
+      "name": "ConnectTimeoutError",
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      Symbol(undici.error.UND_ERR): true,
+      Symbol(undici.error.UND_ERR_CONNECT_TIMEOUT): true,
+    },
+  },
+}
+
+ ❯ stageOk tests/rls/uploads.test.ts:52:19
+     50| const stageOk = async (user: TestUser, ref: string) => {
+     51|   const s = await stage(user, ref);
+     52|   expect(s.error).toBeNull();
+       |                   ^
+     53|   return s;
+     54| };
+ ❯ tests/rls/uploads.test.ts:300:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Übernahme beim Absenden (quote_save_request) > verweigert: Foto aus einem anderen eigenen Ordner und nie hochgeladene ID → photo_missing
+AssertionError: expected { …(4) } to match object { code: 'P0001', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "P0001",
+-   "message": "photo_missing",
++   "code": "",
++   "message": "TypeError: fetch failed",
+  }
+
+ ❯ tests/rls/uploads.test.ts:319:48
+    317|     for (const id of [other.id, crypto.randomUUID()]) {
+    318|       const ref = crypto.randomUUID();
+    319|       expect((await save(a, ref, [id])).error).toMatchObject({
+       |                                                ^
+    320|         code: "P0001",
+    321|         message: "photo_missing",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  |rls| tests/rls/uploads.test.ts > Übernahme beim Absenden (quote_save_request) > verweigert: abgelaufenes Staging-Foto → photo_expired, nichts gespeichert; Gegenfall kurz vor Ablauf wird übernommen
+AssertionError: expected StorageUnknownError: fetch failed { …(5) } to be null
+
+- Expected:
+null
+
++ Received:
+StorageUnknownError {
+  "message": "fetch failed",
+  "__isStorageError": true,
+  "namespace": "storage",
+  "name": "StorageUnknownError",
+  "status": undefined,
+  "statusCode": undefined,
+  "originalError": TypeError {
+    "message": "fetch failed",
+    "cause": ConnectTimeoutError {
+      "message": "Connect Timeout Error (attempted addresses: 104.18.38.10:443, 172.64.149.246:443, timeout: 10000ms)",
+      "name": "ConnectTimeoutError",
+      "code": "UND_ERR_CONNECT_TIMEOUT",
+      Symbol(undici.error.UND_ERR): true,
+      Symbol(undici.error.UND_ERR_CONNECT_TIMEOUT): true,
+    },
+  },
+}
+
+ ❯ stageOk tests/rls/uploads.test.ts:52:19
+     50| const stageOk = async (user: TestUser, ref: string) => {
+     51|   const s = await stage(user, ref);
+     52|   expect(s.error).toBeNull();
+       |                   ^
+     53|   return s;
+     54| };
+ ❯ tests/rls/uploads.test.ts:329:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  7 failed | 169 passed (176)
+   Start at  22:01:18
+   Duration  503.49s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=1
