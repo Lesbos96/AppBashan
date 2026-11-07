@@ -450,7 +450,8 @@ describe('Rollen', () => {
   it('SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste', () => {
     const rows = ownerSql(`select p.oid::regprocedure::text as fn, pg_get_userbyid(p.proowner) as owner,
         coalesce(array_to_string(p.proconfig, ','), '') as cfg,
-        has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as auth
+        has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as auth,
+        has_function_privilege('service_role', p.oid, 'execute') as svc
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'private') and p.prosecdef order by 1`)
     for (const r of rows) {
@@ -463,9 +464,23 @@ describe('Rollen', () => {
     expect(open).toEqual([
       'booking_terms():anon+authenticated',
       'private.is_admin():authenticated',
+      'private.my_job_partner_id():authenticated',
+      'private.my_member_partner_id():authenticated',
+      'private.my_partner_id():authenticated',
       'private.my_role():authenticated',
+      'private.partner_of_user():authenticated',
       'private.staging_photo_count():authenticated',
+      'register_partner(text,text,text,boolean,text,text,text,text,text,text,smallint[],text)',
       'withdraw(uuid):authenticated',
-    ])
+    ].map((s) => (s.endsWith(')') ? `${s}:authenticated` : s)))
+    // nur service_role (R2-N7): Admin-Funktionen laufen nie mit einem Nutzer-JWT
+    const svcOnly = rows.filter((r) => r.svc === true && r.anon !== true && r.auth !== true).map((r) => String(r.fn))
+    expect(svcOnly).toContain('admin_approve_partner(uuid,uuid,partner_service[],partner_vat_rule,text)')
+    expect(svcOnly).toContain('admin_set_partner_status(uuid,uuid,partner_status,text)')
+    expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])
+    // Trigger- und Hilfsfunktionen in private (ohne SECURITY DEFINER): kein EXECUTE für Nutzer-Rollen, außer geo_boundaries_make_valid (NA-15)
+    const invoker = ownerSql(`select p.oid::regprocedure::text as fn from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'private' and not p.prosecdef and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))`)
+    expect(invoker.map((r) => String(r.fn))).toEqual(['private.geo_boundaries_make_valid()'])
   })
 })

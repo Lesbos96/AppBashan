@@ -197,6 +197,188 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_categories: {
+        Row: {
+          partner_id: string
+          service: Database["public"]["Enums"]["partner_service"]
+        }
+        Insert: {
+          partner_id: string
+          service: Database["public"]["Enums"]["partner_service"]
+        }
+        Update: {
+          partner_id?: string
+          service?: Database["public"]["Enums"]["partner_service"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_categories_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_members: {
+        Row: {
+          created_at: string
+          partner_id: string
+          role: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          partner_id: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          partner_id?: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_members_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_regions: {
+        Row: {
+          district: number
+          partner_id: string
+        }
+        Insert: {
+          district: number
+          partner_id: string
+        }
+        Update: {
+          district?: number
+          partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_regions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_vat_rules: {
+        Row: {
+          created_at: string
+          id: number
+          partner_id: string
+          rule: Database["public"]["Enums"]["partner_vat_rule"]
+          valid_from: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          partner_id: string
+          rule: Database["public"]["Enums"]["partner_vat_rule"]
+          valid_from: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          partner_id?: string
+          rule?: Database["public"]["Enums"]["partner_vat_rule"]
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_vat_rules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          address_city: string
+          address_postcode: string
+          address_street: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          country: string
+          created_at: string
+          id: string
+          legal_form: string
+          name: string
+          payout_model: string
+          small_business: boolean
+          status: Database["public"]["Enums"]["partner_status"]
+          status_changed_at: string | null
+          status_reason: string | null
+          stripe_account_id: string | null
+          terms_accepted_at: string
+          terms_version: string
+          uid: string | null
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          address_city: string
+          address_postcode: string
+          address_street: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          country?: string
+          created_at?: string
+          id?: string
+          legal_form: string
+          name: string
+          payout_model?: string
+          small_business?: boolean
+          status?: Database["public"]["Enums"]["partner_status"]
+          status_changed_at?: string | null
+          status_reason?: string | null
+          stripe_account_id?: string | null
+          terms_accepted_at: string
+          terms_version: string
+          uid?: string | null
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          address_city?: string
+          address_postcode?: string
+          address_street?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          country?: string
+          created_at?: string
+          id?: string
+          legal_form?: string
+          name?: string
+          payout_model?: string
+          small_business?: boolean
+          status?: Database["public"]["Enums"]["partner_status"]
+          status_changed_at?: string | null
+          status_reason?: string | null
+          stripe_account_id?: string | null
+          terms_accepted_at?: string
+          terms_version?: string
+          uid?: string | null
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -804,6 +986,16 @@ export type Database = {
       }
     }
     Functions: {
+      admin_approve_partner: {
+        Args: {
+          p_actor: string
+          p_note?: string
+          p_partner: string
+          p_services: Database["public"]["Enums"]["partner_service"][]
+          p_vat_rule: Database["public"]["Enums"]["partner_vat_rule"]
+        }
+        Returns: undefined
+      }
       admin_create_price_version: {
         Args: {
           p_actor: string
@@ -817,6 +1009,15 @@ export type Database = {
         Args: {
           p_role: Database["public"]["Enums"]["user_role"]
           p_user: string
+        }
+        Returns: undefined
+      }
+      admin_set_partner_status: {
+        Args: {
+          p_actor: string
+          p_partner: string
+          p_reason: string
+          p_status: Database["public"]["Enums"]["partner_status"]
         }
         Returns: undefined
       }
@@ -930,6 +1131,23 @@ export type Database = {
           status: Database["public"]["Enums"]["request_status"]
         }[]
       }
+      register_partner: {
+        Args: {
+          p_city: string
+          p_contact_email: string
+          p_contact_name: string
+          p_contact_phone: string
+          p_districts: number[]
+          p_legal_form: string
+          p_name: string
+          p_postcode: string
+          p_small_business: boolean
+          p_street: string
+          p_terms_version: string
+          p_uid: string
+        }
+        Returns: string
+      }
       route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {
         Args: {
@@ -954,6 +1172,20 @@ export type Database = {
     }
     Enums: {
       offer_status: "pending" | "approved" | "archived"
+      partner_role: "owner" | "staff"
+      partner_service:
+        | "transport"
+        | "move"
+        | "clearance"
+        | "assembly"
+        | "rental"
+      partner_status:
+        | "pending"
+        | "active"
+        | "payment_hold"
+        | "suspended"
+        | "rejected"
+      partner_vat_rule: "standard_20" | "reverse_charge" | "none"
       region: "vienna" | "austria" | "international"
       request_status:
         | "requested"
@@ -1098,6 +1330,16 @@ export const Constants = {
   public: {
     Enums: {
       offer_status: ["pending", "approved", "archived"],
+      partner_role: ["owner", "staff"],
+      partner_service: ["transport", "move", "clearance", "assembly", "rental"],
+      partner_status: [
+        "pending",
+        "active",
+        "payment_hold",
+        "suspended",
+        "rejected",
+      ],
+      partner_vat_rule: ["standard_20", "reverse_charge", "none"],
       region: ["vienna", "austria", "international"],
       request_status: [
         "requested",

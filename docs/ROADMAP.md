@@ -109,6 +109,8 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 - [x] S9a-3 `quote`-Härtung: Haltefenster und Preisabgleich, Adressprüfung, Bezirk aus Bezirksgrenzen, Bedingungen und Kontakt im Snapshot, `rental_bookings` gesperrt (2026-11-02, `docs/proof/s9a3/`)
 - [x] S9a-4 Fotos-Staging (`docs/S9a_PLAN.md`): 4a Backend (0020), 4b App und Nachzug (0021, 2026-11-03, `docs/proof/s9a4a/`, `docs/proof/s9a4b/`). S9a fertig; offene Nachzug-Punkte stehen in `docs/OPEN_ISSUES.md` („S9a-4b · Offen“)
 
+- [x] S9b-1 Partnerkern: Firmen, Statusmaschine, Registrierung, Helfer, RLS (Migration 0023, 2026-11-07)
+
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
 - [ ] Politur-Loop aus Schritt E, höchstens 3 globale Runden
