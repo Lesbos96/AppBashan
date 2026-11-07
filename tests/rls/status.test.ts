@@ -1,6 +1,6 @@
 // Statusmaschine, Revisionen, Kontakte, status_events (S9a-2, Migrationen 0017/0018). Jede Sperre: erlaubt UND verweigert, genauer Fehler.
 // Fehler der Trigger und Funktionen: P0001 mit dem Code als Meldung; fehlende Rechte: 42501. Eigentümer-Proben laufen in begin … rollback.
-// Der Rot-Beweis zu diesen Sperren steht in scripts/redproof-s9a2.mjs.
+// Der Rot-Beweis zu diesen Sperren steht in docs/proof/s9a2/ (das Skript redproof-s9a2.mjs ist seit R1 entfernt, git-Verlauf vor dem Entfernen).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { anon, DENIED, deleteUsers, makeRequest, makeUser, must, service, type TestUser } from '../support/db.ts'
 import { TERMS } from '../support/quote.ts'

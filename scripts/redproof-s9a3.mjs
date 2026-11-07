@@ -1,61 +1,34 @@
 // Stand 0019, ab S9a-4b mit der Signatur von 0020 (p_photo_ids); der Nachweis von S9a-3 bleibt docs/proof/s9a3/. Fotos: redproof-s9a4.mjs.
-// Rot-Beweis S9a-3 (nur Dev-Projekt). Drei Teile, jede Prüfung misst den Ist-Wert:
-//  1. SQL-Sperren aus 0019: lockern (committet, Eigentümer-SQL), Probe „Ergebnis | Wert“ (Rollback), wiederherstellen, Probe erneut, zuständiger Test muss gelockert rot werden.
-//  2. Function-Sperren in quote (Redeploy-Beweis R2-N13): Quelltext lockern, deployen, Test muss rot werden (Ist-Wert = Fehlermeldung des Tests),
-//     aus dem vorher gelesenen Inhalt zurückschreiben (md5 vorher/nachher gleich), neu deployen, Test muss grün sein. Bricht mit Exit 2 ab, wenn supabase/functions nicht sauber committet ist.
+// Rot-Beweis S9a-3 (nur Dev-Projekt), seit R1 über redproof-lib.mjs. Drei Teile, jede Prüfung misst den Ist-Wert:
+//  1. SQL-Sperren aus 0019: Probe „Ergebnis | Wert“ mit der Lockerung in einer Rollback-Transaktion; nur Schritte mit vitest-Test lockern zusätzlich
+//     committet (Fenster: Markierung, Totmann, Soll-Diff), der zuständige Test muss gelockert rot werden; danach Restore bis Soll-Gleichheit.
+//  2. Function-Sperren in quote (Redeploy-Beweis R2-N13): Kopie aus `git show <HEAD>` (nie der Arbeitsbaum), Textänderung, Deploy aus der Kopie,
+//     Test muss rot werden, Deploy des sauberen Commits, Stand von Dev = HEAD (Download). Steht Dev vor Teil 2 nicht auf HEAD: STOPP vor Teil 2.
 //  3. Werkzeuge: Negativbeweis N-15 (falsche Ref in SUPABASE_PROJECT_ID erreicht Dev nicht), N-16 (scan-proof findet Token, URL, fehlendes Verzeichnis).
 // „Schicht“: eine zweite Sperre dahinter hält; der erwartete Wert ist der Fehler der zweiten Schicht, kein Beweis der ersten.
-// Vorher/Nachher: Definitionen (md5), Policies, Trigger (inkl. tgenabled) und Rechte werden verglichen. Bericht: tmp/proof/s9a3-rotbeweis.md
-// Start: npx dotenv -e .env.local -- node scripts/redproof-s9a3.mjs [--only <Namensteil>[,…]] [--no-tests] [--no-code]
+// Soll: scripts/redproof-soll.json (kanonisch, gleich HEAD) für Läufe mit Schreibzugriff; --soll <pfad> nur lesend (Startprüfung, Exit vor dem Lockern);
+// --print-sql schreibt tmp/proof/r1-dev-sql-s9a3.sql und sendet nur Selects. Exit: 0 bestanden, 1 fehlgeschlagen, 2 Vorprüfung, 3 Fatal, 130 Signal.
+// Start: npx dotenv -e .env.local -- node scripts/redproof-s9a3.mjs [--only <Namensteil>[,…]] [--no-tests] [--no-code] [--print-sql] [--soll <pfad>] [--deadman-probe (nur Totmann-Probelauf je Restore-Art, nichts gelockert)]
 import './dev-guard.mjs'
-console.error('Gesperrt bis R1 Redproof-Härtung (Abnahme nachtabnahme-vorher-redproof.md: H-1, M-1 bis M-4)')
-process.exit(2)
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
+import { createRun, EXIT, realDeps, runMain } from './redproof-lib.mjs'
+import { createDeployer, realDeployDeps } from './redproof-deploy.mjs'
+import * as B from './redproof-sql.mjs'
 
 const SB = 'node_modules/supabase/dist/supabase.js'
-const cli = (...args) => execFileSync(process.execPath, [SB, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 })
-const sql = (q) => {
-  const json = JSON.parse(cli('db', 'query', '--linked', q))
-  if (json._tag === 'Error') throw new Error(json.error?.message)
-  return json.rows
-}
+const arg = (n) => { const i = process.argv.indexOf(n); return i < 0 ? null : process.argv[i + 1] }
+const mode = process.argv.includes('--print-sql') ? 'print' : arg('--soll') ? 'readonly' : 'write'
+const soll = JSON.parse(readFileSync(mode === 'readonly' ? arg('--soll') : 'scripts/redproof-soll.json', 'utf8')).rows
+const deps = realDeps()
+const rp = createRun(deps, { name: 's9a3', mode, soll })
+const select = (q) => rp.select(q)
 const q1 = (s) => `'${s.replaceAll("'", "''")}'`
-const md5 = (s) => createHash('md5').update(s).digest('hex')
-
-// Der Redeploy-Teil überschreibt handler.ts und stellt sie aus dem gelesenen Inhalt wieder her; `functions deploy` lädt die ganze Function hoch.
-// Uncommittete Änderungen in supabase/functions würden ungeprüft auf Dev landen und dort bleiben: darum vorher abbrechen (vor jeder Änderung an Dev).
 const H = 'supabase/functions/_shared/quote/handler.ts'
-if (!process.argv.includes('--no-code') && execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim() !== '') {
-  console.error('ABBRUCH: supabase/functions hat uncommittete Änderungen (git status --porcelain nicht leer). Erst committen oder verwerfen.')
-  process.exit(2)
-}
-
-const OBJECTS = `('public.service_requests'::regclass, 'public.price_revisions'::regclass, 'public.status_events'::regclass, 'public.rental_bookings'::regclass, 'public.request_contacts'::regclass, 'public.geocode_cache'::regclass, 'public.geo_districts'::regclass, 'public.profiles'::regclass)`
-const SNAPSHOT = `
-  select 'policy' k, schemaname || '.' || tablename || '.' || policyname || ' ' || cmd || ' ' || roles::text || ' ' || coalesce(qual, '') || ' ' || coalesce(with_check, '') v
-    from pg_policies where (schemaname = 'public' and tablename in ('service_requests', 'price_revisions', 'status_events', 'rental_bookings', 'request_contacts', 'geocode_cache', 'geo_districts')) or (schemaname = 'storage' and tablename = 'objects')
-  union all
-  select 'trigger', tgrelid::regclass || ' ' || tgenabled::text || ' ' || pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS}
-  union all
-  select 'constraint', conrelid::regclass || ' ' || conname || ' ' || pg_get_constraintdef(oid) from pg_constraint where conrelid in ${OBJECTS}
-  union all
-  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where (n.nspname = 'private' and p.proname in ('guard_request_insert', 'guard_request_status', 'guard_request_pointer', 'guard_request_fields', 'guard_revision_insert', 'guard_rental_status', 'immutable_row', 'log_request_status', 'require_revision'))
-       or (n.nspname = 'public' and p.proname in ('withdraw', 'quote_save_request', 'quote_save_booking', 'quote_district', 'price_version_hold'))
-  union all
-  select 'acl', c.oid::regclass || ' ' || coalesce(c.relacl::text, '') from pg_class c where c.oid in ${OBJECTS}
-  union all
-  select 'colacl', attrelid::regclass || '.' || attname || ' ' || attacl::text from pg_attribute where attrelid in ${OBJECTS} and attacl is not null
-  order by 1, 2`
-const snapshot = () => JSON.stringify(sql(SNAPSHOT))
-
-const def = (name) => sql(`select pg_get_functiondef('${name}'::regprocedure) as d`)[0].d
-const conDef = (name, table) => sql(`select pg_get_constraintdef(oid) as d from pg_constraint where conname = ${q1(name)} and conrelid = '${table}'::regclass`)[0].d
 
 const SAVE = 'public.quote_save_request(uuid, uuid, public.service_type, jsonb, jsonb, int, int, int, int, text, double precision, double precision, text, double precision, double precision, jsonb, public.region, smallint, date, text, text, numeric, jsonb, jsonb, uuid[])'
 const TERMS = { cancel_free_hours: 48, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) }
@@ -83,57 +56,57 @@ const make = async (over = {}) => {
   return data[0].id
 }
 
-// --- Probe: führt `stmt` aus (Rolle/Claims wie angegeben), meldet „ok“ oder „SQLSTATE: Meldung“, dann den Ist-Wert `value` ---------------
+// --- Probe: Rollback-Transaktion. `preLoosen` (die Lockerung des Schritts, nur für SQL-Proben) steht vor dem Setup in derselben Transaktion;
+// es wird nichts committet. Meldet „ok“ oder „SQLSTATE: Meldung“, dann den Ist-Wert `value`. -------------------------------------------------
+let preLoosen = ''
 const probe = ({ setup = '', stmt, value, role = 'owner', claims = '' }) => {
   const prefix = [role === 'owner' ? '' : `set local role ${role};`, claims ? `perform set_config('request.jwt.claims', ${q1(claims)}, true);` : ''].join(' ')
   const body = `begin ${prefix} ${stmt}; reset role; insert into res values ('ok'); exception when others then reset role; insert into res values (sqlstate || ': ' || sqlerrm); end; insert into res select coalesce((${value})::text, '<null>');`
-  const rows = sql(`begin; ${setup}; create temp table res (v text); do $p$ begin ${body} end $p$; select string_agg(v, ' | ') as v from res; rollback;`)
-  return rows[0].v
+  return rp.probe(`begin; ${preLoosen ? `${preLoosen};` : ''} ${setup}; create temp table res (v text); do $p$ begin ${body} end $p$; select string_agg(v, ' | ') as v from res; rollback;`)[0]?.v
 }
 
 const results = []
 const loosen = []
 const add = (s) => loosen.push(s)
-const patchFn = (label, fn, from, to) => ({
-  label, kind: 'Sperre', save: () => def(fn),
-  apply: (d) => {
-    if (!d.includes(from)) throw new Error(`Muster nicht gefunden: ${from}`)
-    sql(d.replace(from, to))
-  },
-  restore: (d) => sql(d),
-})
-const disableTrigger = (name, table, label) => ({
-  label, kind: 'Sperre', save: () => null, apply: () => sql(`alter table ${table} disable trigger ${name}`), restore: () => sql(`alter table ${table} enable trigger ${name}`),
-})
-const grantToggle = (label, loosenSql, restoreSql, kind = 'Sperre') => ({ label, kind, save: () => null, apply: () => sql(loosenSql), restore: () => sql(restoreSql) })
+// Bausteine liefern { loosen, restore } als SQL-Text (lazy: Originale werden erst beim Schritt gelesen, im Soll-geprüften Zustand).
+const patchFn = (label, fn, from, to) => ({ label, kind: 'Sperre', text: () => B.patchFn(select, fn, from, to) })
+const disableTrigger = (name, table, label) => ({ label, kind: 'Sperre', text: () => B.triggerOff(table, name) })
+const grantToggle = (label, loosenSql, restoreSql, kind = 'Sperre') => ({ label, kind, text: () => B.toggle(loosenSql, restoreSql) })
+// Proben, die async sind, laufen über Storage-/PostgREST-API und brauchen das committete Fenster; SQL-Proben messen in der Rollback-Transaktion.
+const isAsync = (f) => f.constructor.name === 'AsyncFunction'
 
-const runSql = async (selected, withTests, testRun) => {
+const runSql = async (selected, withTests) => {
   for (const s of selected) {
-    // Wiederherstellungs-SQL liegt vor dem Lockern in einer Datei (A1-N1): bricht der Lauf ab, steht die Definition dort.
-    const saved = s.save()
-    if (saved) writeFileSync(`tmp/proof/s9a3-restore-${results.length}.sql`, String(saved))
+    const text = s.text()
+    const sqlProbe = !isAsync(s.probe)
     let looseValue, redTests
-    try {
-      s.apply(saved)
-      looseValue = s.probe()
-      if (withTests && s.tests) redTests = testRun(s.tests, s.testFile)
-    } finally {
-      s.restore(saved)
+    if (sqlProbe) {
+      preLoosen = text.loosen
+      try { looseValue = s.probe() } finally { preLoosen = '' }
     }
-    const lockedValue = s.probe()
+    // Committet wird nur, was eine andere Verbindung sehen muss: der vitest-Lauf oder eine API-Probe.
+    if (!sqlProbe || (withTests && s.tests)) {
+      await rp.withWindow({ label: s.label, ...text }, async () => {
+        if (!sqlProbe) looseValue = await s.probe()
+        if (withTests && s.tests) redTests = await rp.vitest({ file: s.testFile ?? 'tests/rls/status.test.ts', pattern: s.tests })
+      })
+    }
+    if (mode === 'print') continue
+    const lockedValue = await s.probe()
     const effect = looseValue === s.loose
     const blocked = lockedValue === s.locked
-    const testsRed = !withTests || !s.tests || redTests.failed.length > 0
+    const testsRed = !withTests || !s.tests || redTests?.status === 'rot'
     const good = effect && blocked && testsRed
     results.push({ ...s, part: 'SQL', looseValue, lockedValue, redTests, good, effect, blocked, testsRed })
-    console.log(`${good ? 'OK    ' : 'FEHLER'} [${s.kind}] ${s.label}\n         gelockert: ${looseValue} (erwartet ${s.loose})\n         gesperrt:  ${lockedValue} (erwartet ${s.locked})${redTests ? `\n         Test rot: ${redTests.failed.length}` : ''}`)
+    console.log(`${good ? 'OK    ' : 'FEHLER'} [${s.kind}] ${s.label}\n         gelockert: ${looseValue} (erwartet ${s.loose})\n         gesperrt:  ${lockedValue} (erwartet ${s.locked})${redTests ? `\n         Test ${redTests.status}: ${redTests.failed.length} rot${redTests.status === 'fehler' ? ` (${redTests.reason})` : ''}` : ''}`)
   }
 }
 
+const FAKE = '00000000-0000-0000-0000-000000000001' // --print-sql: keine Fixtures, Platzhalter-ID in den SQL-Texten
 const run = async () => {
-  priceVersion = sql(`select version from public.current_price_version`)[0].version
-  userId = (await service.auth.admin.createUser({ email: `redproof-s9a3-${Date.now().toString(36)}@movenow.test`, password: `${randomUUID()}Aa1!`, email_confirm: true })).data.user.id
-  const A = await make()
+  priceVersion = select(`select version from public.current_price_version`)[0].version
+  userId = mode === 'print' ? FAKE : (await service.auth.admin.createUser({ email: `redproof-s9a3-${Date.now().toString(36)}@movenow.test`, password: `${randomUUID()}Aa1!`, email_confirm: true })).data.user.id
+  const A = mode === 'print' ? FAKE : await make()
   const custClaims = JSON.stringify({ sub: userId, role: 'authenticated', aal: 'aal1' })
   const reqCount = `(select count(*) from public.service_requests where customer_id = '${userId}')`
   const contactCount = `(select count(*) from public.request_contacts c join public.service_requests r on r.id = c.request_id where r.customer_id = '${userId}')`
@@ -195,10 +168,9 @@ const run = async () => {
     loose: 'ok | 2', locked: 'P0001: too_late | 1',
   })
   add({
-    ...grantToggle('request_contacts_format: Kontaktformat-Constraint entfernt', 'alter table public.request_contacts drop constraint request_contacts_format', '', 'Sperre'),
-    save: () => conDef('request_contacts_format', 'public.request_contacts'),
-    apply: () => sql('alter table public.request_contacts drop constraint request_contacts_format'),
-    restore: (d) => sql(`alter table public.request_contacts add constraint request_contacts_format ${d}`),
+    label: 'request_contacts_format: Kontaktformat-Constraint entfernt', kind: 'Sperre',
+    // Restore: vorher die verletzenden Zeilen der Wegwerf-Konten löschen (ein gelockerter Test kann sie committet haben; Abbruchweg: Exit-Handler und Totmann).
+    text: () => B.constraintDrop(select, 'public.request_contacts', 'request_contacts_format', (expr) => `delete from public.request_contacts where request_id in (select r.id from public.service_requests r join auth.users u on u.id = r.customer_id where u.email like '%@movenow.test') and not ${expr}`), // alle Testkonten (die Testdateien legen <tag>-<run>@movenow.test an); Zeilen anderer Konten bleiben, dann scheitert add constraint sichtbar
     tests: 'Kontaktformat zusätzlich in der Datenbank', testFile: 'tests/rls/quote-hardening.test.ts',
     probe: () => probe({ stmt: `perform ${callSql({ p_contact: { ...CONTACT, email: 'kein-mail' } })}`, value: contactCount, role: 'service_role' }),
     loose: 'ok | 2', locked: '23514: new row for relation "request_contacts" violates check constraint "request_contacts_format" | 1',
@@ -315,17 +287,14 @@ const run = async () => {
   const matches = (s) => !only || only.some((o) => s.label.toLowerCase().includes(o))
   const selected = loosen.filter(matches)
 
-  const testRun = (pattern, file = 'tests/rls/status.test.ts') => {
-    const out = 'tmp/reports/redproof-s9a3.json'
-    const r = spawnSync('npx', ['dotenv', '-e', '.env.local', '--', 'vitest', 'run', '--project', 'rls', file, '-t', JSON.stringify(pattern), '--reporter=json', `--outputFile=${out}`], { encoding: 'utf8', shell: true, maxBuffer: 1 << 26 })
-    const tests = JSON.parse(readFileSync(out, 'utf8')).testResults.flatMap((f) => f.assertionResults)
-    return { exit: r.status, ran: tests.filter((t) => t.status === 'failed' || t.status === 'passed').length, failed: tests.filter((t) => t.status === 'failed'), passed: tests.filter((t) => t.status === 'passed').length, message: tests.find((t) => t.status === 'failed')?.failureMessages?.[0]?.split('\n')[0]?.slice(0, 220) }
+  if (process.argv.includes('--deadman-probe')) { // nur der Totmann-Probelauf je Restore-Art (nichts gelockert), dann Ende
+    for (const l of rp.deadmanProbe(loosen.map((s) => ({ label: s.label, restore: s.text().restore })))) console.log(`Totmann-Probelauf ${l}`)
+    return
   }
 
-  const before = snapshot()
-  await runSql(selected, withTests, testRun)
+  await runSql(selected, withTests)
 
-  // --- Teil 2: Function quote, Redeploy-Beweis (R2-N13) -------------------------------------------------------------------------------
+  // --- Teil 2: Function quote, Redeploy-Beweis (R2-N13): Deploy aus Kopie von HEAD, Arbeitsbaum unverändert -----------------------------
   const code = [
     { label: 'quote: Abholung außerhalb Wiens nicht mehr geprüft (Schicht: Bezirk aus Polygon)', kind: 'Schicht', file: H, from: "if (!pickup.inVienna) throw new HttpError(422, 'pickup_outside_vienna')", to: "if (false) throw new HttpError(422, 'pickup_outside_vienna')", test: 'Abholung außerhalb Wiens', note: 'zweite Schicht: district null → district_required' },
     { label: 'quote: gezeigter Betrag nicht mehr abgeglichen (Kundenpreis ohne Zustimmung)', kind: 'Sperre', file: H, from: '|| !matchesShown(snapshot, call.shown)) throw new Conflict', to: ') throw new Conflict', test: 'gleiche Version, anderer Betrag' },
@@ -333,33 +302,42 @@ const run = async () => {
     { label: 'quote: Bedingungen-Hash nicht mehr abgeglichen', kind: 'Sperre', file: H, from: "if (terms['termsHash'] !== call.termsHash) throw", to: 'if (false) throw', test: 'falscher termsHash' },
     { label: 'quote: Client-Punkt bindet nicht mehr an den Kandidaten (Schicht: Bezirk/Wien-Prüfung)', kind: 'Schicht', file: H, from: 'return pickCandidate(candidates, place.point)', to: 'return candidates[0]!', test: 'manipulierte Koordinaten', note: 'zweite Schicht: Wien-Prüfung am Kandidaten' },
   ].filter((c) => matches({ label: c.label }))
-  const deploy = () => cli('functions', 'deploy', 'quote', '--use-api')
-  if (withCode) {
-    for (const c of code) {
-      const original = readFileSync(c.file, 'utf8')
-      if (!original.includes(c.from)) throw new Error(`Muster nicht gefunden: ${c.from}`)
-      const md5Before = md5(original)
-      let loose, restored, diffClean, md5After
-      try {
-        writeFileSync(c.file, original.replace(c.from, c.to))
-        deploy()
-        loose = testRun(c.test, 'tests/rls/quote-hardening.test.ts')
-      } finally {
-        // Die Datei kommt aus dem vor dem Lockern gelesenen Inhalt zurück, nicht aus Git: eigene Änderungen am Handler gehen nie verloren.
-        writeFileSync(c.file, original)
-        md5After = md5(readFileSync(c.file, 'utf8'))
-        deploy()
-        restored = testRun(c.test, 'tests/rls/quote-hardening.test.ts')
-        diffClean = md5After === md5Before
+  if (withCode && code.length) {
+    const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    if (mode === 'print') {
+      for (const c of code) await rp.withDeployWindow({ label: c.label, commit })
+    } else {
+      const dep = createDeployer(realDeployDeps())
+      writeFileSync('tmp/proof/r1-quote-info-vorher.txt', dep.info())
+      const before = dep.matches(commit)
+      if (!before.same) {
+        results.push({ label: `quote: Dev-Stand vor Teil 2 ist nicht Commit ${commit.slice(0, 8)}`, kind: 'Werkzeug', part: 'Redeploy', looseValue: before.diff.join('; '), lockedValue: '–', loose: 'gleich HEAD', locked: 'gleich HEAD', good: false, effect: false, blocked: false })
+        console.log(`STOPP vor Teil 2: Dev weicht von HEAD ab: ${before.diff.join('; ')}`)
+      } else {
+        const clean = dep.exportCommit(commit)
+        try {
+          for (const c of code) {
+            const dir = dep.exportCommit(commit, { file: c.file, from: c.from, to: c.to })
+            let loose, restoredRun, verified
+            try {
+              await rp.withDeployWindow({ label: c.label, commit, loosen: () => dep.deploy(dir), restore: () => dep.deploy(clean), verify: () => dep.matches(commit).same }, async () => {
+                loose = await rp.vitest({ file: 'tests/rls/quote-hardening.test.ts', pattern: c.test })
+              })
+              restoredRun = await rp.vitest({ file: 'tests/rls/quote-hardening.test.ts', pattern: c.test })
+              verified = dep.matches(commit)
+            } finally { dep.remove(dir) }
+            const good = loose.status === 'rot' && restoredRun.status === 'nicht-rot' && verified.same
+            results.push({ ...c, part: 'Redeploy', looseValue: `${loose.failed.length} Test(s) rot (${loose.status}): ${loose.message ?? loose.reason ?? '–'}`, lockedValue: `${restoredRun.passed} grün, ${restoredRun.failed.length} rot (${restoredRun.status})`, loose: 'Test rot', locked: 'Test grün', good, effect: loose.status === 'rot', blocked: restoredRun.status === 'nicht-rot', diffClean: verified.same, commit })
+            console.log(`${good ? 'OK    ' : 'FEHLER'} [${c.kind}] ${c.label}\n         gelockert: ${loose.status}, ${loose.failed.length} rot (${loose.message ?? loose.reason ?? '–'})\n         neu deployt: ${restoredRun.passed} grün, ${restoredRun.failed.length} rot; Dev-Stand gleich Commit ${commit.slice(0, 8)}: ${verified.same ? 'ja' : 'NEIN'}`)
+          }
+        } finally { dep.remove(clean) }
       }
-      const good = loose.failed.length > 0 && restored.failed.length === 0 && restored.passed > 0 && diffClean
-      results.push({ ...c, part: 'Redeploy', looseValue: `${loose.failed.length} Test(s) rot: ${loose.message ?? '–'}`, lockedValue: `${restored.passed} grün, ${restored.failed.length} rot`, loose: 'Test rot', locked: 'Test grün', good, effect: loose.failed.length > 0, blocked: restored.failed.length === 0, diffClean, md5Before, md5After })
-      console.log(`${good ? 'OK    ' : 'FEHLER'} [${c.kind}] ${c.label}\n         gelockert: ${loose.failed.length} rot (${loose.message ?? '–'})\n         neu deployt: ${restored.passed} grün, ${restored.failed.length} rot; md5 ${c.file} vorher ${md5Before}, nachher ${md5After}: ${diffClean ? 'gleich' : 'ABWEICHUNG'}`)
+      writeFileSync('tmp/proof/r1-quote-info-nachher.txt', dep.info())
     }
   }
 
   // --- Teil 3: Werkzeuge ------------------------------------------------------------------------------------------------------------
-  if (!only) {
+  if (!only && mode === 'write') {
     // N-15: SUPABASE_PROJECT_ID mit nicht existierender Ref – die CLI darf Dev nicht erreichen (gleiche Abfrage wie sonst).
     const wrong = 'a'.repeat(20)
     const r = spawnSync(process.execPath, [SB, 'db', 'query', '--linked', 'select 1 as x'], { encoding: 'utf8', env: { ...process.env, SUPABASE_PROJECT_ID: wrong } })
@@ -391,39 +369,49 @@ const run = async () => {
     }
     rmSync(root, { recursive: true, force: true })
   }
-  const after = snapshot()
-  return { before, after }
 }
 
 mkdirSync('tmp/proof', { recursive: true })
-mkdirSync('tmp/reports', { recursive: true })
-let outcome
-try {
-  outcome = await run()
-} finally {
-  if (userId) await service.auth.admin.deleteUser(userId)
+mkdirSync('tmp/reports/r1', { recursive: true })
+const main = async () => {
+  if (mode === 'readonly') { console.log('Startprüfung gegen die angegebene Soll-Datei bestanden, nichts gelockert (Modus lesend).'); return EXIT.OK }
+  try {
+    await run()
+  } finally {
+    if (userId && mode === 'write') await service.auth.admin.deleteUser(userId)
+  }
+  if (process.argv.includes('--deadman-probe')) return rp.finish().end.length ? EXIT.FAIL : EXIT.OK // kein Bericht, kein Rot-Beweis
+  if (mode === 'print') {
+    writeFileSync('tmp/proof/r1-dev-sql-s9a3.sql', rp.printed.map((p) => `-- ${p.label}${p.deploy ? ` (Deploy aus Commit ${p.deploy})` : ''}\n${p.sql ?? [p.loosen && `-- Lockerung\n${p.loosen}`, p.restore && `-- Restore\n${p.restore}`].filter(Boolean).join('\n')}\n`).join('\n'))
+    console.log(`SQL-Texte nach tmp/proof/r1-dev-sql-s9a3.sql geschrieben (${rp.printed.length} Einträge), nichts gesendet außer Selects.`)
+    return EXIT.OK
+  }
+  const { end } = rp.finish()
+  const same = end.length === 0
+  const count = (part, kind) => results.filter((r) => r.good && r.part === part && r.kind === kind).length
+  const report = [
+    '# S9a-3 Rot-Beweis (R1-Lib)',
+    '',
+    `Stand ${new Date().toISOString()} (Dev-Projekt). Soll: scripts/redproof-soll.json. Teil 1 SQL: Ist-Wert-Probe mit der Lockerung in einer Rollback-Transaktion, nur Schritte mit vitest-Test zusätzlich committet (Fenster); Restore bis Soll-Gleichheit. Teil 2 Redeploy (R2-N13): Kopie aus HEAD, Deploy aus der Kopie, Test rot, Deploy des sauberen Commits, Dev-Stand gleich Commit. Teil 3 Werkzeuge (N-15, N-16).`,
+    '',
+    'Format der Probe: „Ergebnis | Wert“. Ergebnis ist „ok“ oder „SQLSTATE: Meldung“; Wert ist der Zustand danach. „Schicht“: eine zweite Sperre dahinter hält, kein Beweis der ersten.',
+    '',
+  ]
+  for (const r of results) {
+    report.push(`## ${r.label}`, '', `- Teil: ${r.part}; Art: ${r.kind === 'Schicht' ? `Schicht (zweite Sperre dahinter${r.note ? `: ${r.note}` : ''}, kein Beweis der ersten)` : r.kind}`)
+    report.push(`- Gelockert/Beobachtet: \`${r.looseValue}\` (erwartet \`${r.loose}\`) ${r.effect ? '✓' : '✗ ABWEICHUNG'}`, `- Gesperrt/Wiederhergestellt: \`${r.lockedValue}\` (erwartet \`${r.locked}\`) ${r.blocked ? '✓' : '✗ ABWEICHUNG'}`)
+    if (r.part === 'SQL') report.push(r.tests ? `- Test \`${r.testFile ?? 'tests/rls/status.test.ts'}\` -t "${r.tests}" gelockert: ${r.redTests ? `${r.redTests.status}: ${r.redTests.failed.length} rot von ${r.redTests.ran} gelaufen${r.redTests.message ? ` (${r.redTests.message})` : ''}${r.redTests.reason ? ` [${r.redTests.reason}]` : ''}` : 'nicht ausgeführt'} ${r.testsRed ? '✓' : '✗ (kein Rot-Beweis!)'}` : '- Test: keiner (Wirkung durch die Probe belegt)')
+    if (r.part === 'Redeploy') report.push(`- Dev-Stand nach dem Restore gleich Commit ${r.commit}: ${r.diffClean ? 'ja' : 'NEIN'}`)
+    report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
+  }
+  report.push('## Fenster (committete Lockerungen)', '', 'Schlüssel = Diff von Dev gegen das Soll nach dem Commit (aus der Probe-Transaktion abgeleitet, der Commit muss gleich sein); Hash = sha256 des Lockerungstexts in Probe und Commit.', '')
+  for (const w of rp.windowLog) report.push(`- ${w.label}: ${w.keys.join('; ')}; Hash Probe ${w.hashProbe.slice(0, 12)}, Commit ${w.hashCommit.slice(0, 12)}: ${w.hashProbe === w.hashCommit ? 'gleich' : 'ABWEICHUNG'}`)
+  report.push('', '## Endprüfung gegen das Soll', '', same ? 'Dev ist nach dem Lauf gleich dem Soll (alle Objektarten des Snapshots).' : `ACHTUNG: Dev weicht vom Soll ab: ${end.map((x) => `${x.k} ${x.n} ${x.state}`).join('; ')}`, '')
+  report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Redeploy ${count('Redeploy', 'Sperre')} Sperren und ${count('Redeploy', 'Schicht')} Schichten, Werkzeuge ${count('Werkzeug', 'Werkzeug')} bewiesen von ${results.length}.`)
+  writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a3-rotbeweis-nachzug.md' : 'tmp/proof/s9a3-rotbeweis.md', report.join('\n') + '\n')
+  const allGood = results.every((r) => r.good) && same
+  console.log(same ? 'Dev nach dem Lauf gleich Soll.' : 'ACHTUNG: Dev weicht vom Soll ab!')
+  console.log(allGood ? 'REDPROOF BESTANDEN' : 'REDPROOF FEHLGESCHLAGEN')
+  return allGood ? EXIT.OK : EXIT.FAIL
 }
-const same = outcome.before === outcome.after
-const count = (part, kind) => results.filter((r) => r.good && r.part === part && r.kind === kind).length
-const report = [
-  '# S9a-3 Rot-Beweis',
-  '',
-  `Stand ${new Date().toISOString()} (Dev-Projekt). Teil 1 SQL: lockern (committet), Ist-Wert-Probe (Rollback) und zuständigen Test laufen lassen, Original wiederherstellen (Restore-SQL vorher nach tmp/proof/s9a3-restore-*.sql), Probe erneut. Teil 2 Redeploy (R2-N13): Quelltext lockern, quote deployen, Test muss rot werden, Datei aus dem vorher gelesenen Inhalt zurück, neu deployen, Test grün, md5 der Datei vorher und nachher gleich. Teil 3 Werkzeuge (N-15, N-16).`,
-  '',
-  'Format der Probe: „Ergebnis | Wert“. Ergebnis ist „ok“ oder „SQLSTATE: Meldung“; Wert ist der Zustand danach. „Schicht“: eine zweite Sperre dahinter hält, kein Beweis der ersten.',
-  '',
-]
-for (const r of results) {
-  report.push(`## ${r.label}`, '', `- Teil: ${r.part}; Art: ${r.kind === 'Schicht' ? `Schicht (zweite Sperre dahinter${r.note ? `: ${r.note}` : ''}, kein Beweis der ersten)` : r.kind}`)
-  report.push(`- Gelockert/Beobachtet: \`${r.looseValue}\` (erwartet \`${r.loose}\`) ${r.effect ? '✓' : '✗ ABWEICHUNG'}`, `- Gesperrt/Wiederhergestellt: \`${r.lockedValue}\` (erwartet \`${r.locked}\`) ${r.blocked ? '✓' : '✗ ABWEICHUNG'}`)
-  if (r.part === 'SQL') report.push(r.tests ? `- Test \`${r.testFile ?? 'tests/rls/status.test.ts'}\` -t "${r.tests}" gelockert: ${r.redTests ? `${r.redTests.failed.length} rot von ${r.redTests.ran} gelaufen${r.redTests.message ? ` (${r.redTests.message})` : ''}` : 'nicht ausgeführt'} ${r.testsRed ? '✓' : '✗ (Lücke im Test!)'}` : '- Test: keiner (Wirkung durch die Probe belegt)')
-  if (r.part === 'Redeploy') report.push(`- md5 der Datei vorher \`${r.md5Before}\`, nachher \`${r.md5After}\`: ${r.diffClean ? 'gleich' : 'ABWEICHUNG'}`)
-  report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
-}
-report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Constraints, Funktionen (md5) und Rechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
-report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, Redeploy ${count('Redeploy', 'Sperre')} Sperren und ${count('Redeploy', 'Schicht')} Schichten, Werkzeuge ${count('Werkzeug', 'Werkzeug')} bewiesen von ${results.length}.`)
-writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a3-rotbeweis-nachzug.md' : 'tmp/proof/s9a3-rotbeweis.md', report.join('\n') + '\n')
-const allGood = results.every((r) => r.good) && same
-console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')
-console.log(allGood ? 'REDPROOF BESTANDEN' : 'REDPROOF FEHLGESCHLAGEN')
-process.exitCode = allGood ? 0 : 1
+await runMain(rp, main, deps)

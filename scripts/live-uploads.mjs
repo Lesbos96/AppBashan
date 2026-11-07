@@ -68,11 +68,21 @@ async function quote(user, ref, photoIds, place) {
   }
   const shown0 = { kind: 'price', totalCents: 0, lowCents: 0, highCents: 0 }
   const { version } = (await service.from('current_price_version').select('version').single()).data
+  // NA-1: die Vorabfragen müssen genau so antworten und dürfen keine Anfrage anlegen; sonst Abbruch mit dem abweichenden Ergebnis (kein stilles Durchreichen).
+  const noRequest = async () => (await service.from('service_requests').select('id').eq('client_ref', ref)).data?.length === 0
   const first = await post({ ...base, priceVersion: version, termsHash: 'f'.repeat(64), shown: shown0 })
-  if (first.status !== 409 || first.json?.error !== 'terms_changed') return first
+  const ok1 = first.status === 409 && first.json?.error === 'terms_changed'
+  check(ok1, `quote ${ref.slice(0, 8)}: 1. Aufruf genau 409 terms_changed`, `${first.status} ${first.json?.error ?? ''}`)
+  const none1 = await noRequest()
+  check(none1, `quote ${ref.slice(0, 8)}: nach dem 1. Aufruf keine Anfrage zur clientRef`)
+  if (!ok1 || !none1) return first
   const second = await post({ ...base, priceVersion: version, termsHash: first.json.terms.termsHash, shown: shown0 })
   const snap = second.json?.snapshot
-  if (second.status !== 409 || !snap) return second
+  const ok2 = second.status === 409 && second.json?.error === 'price_changed' && !!snap
+  check(ok2, `quote ${ref.slice(0, 8)}: 2. Aufruf genau 409 price_changed mit Snapshot`, `${second.status} ${second.json?.error ?? ''}`)
+  const none2 = await noRequest()
+  check(none2, `quote ${ref.slice(0, 8)}: nach dem 2. Aufruf keine Anfrage zur clientRef`)
+  if (!ok2 || !none2) return second
   return post({ ...base, priceVersion: second.json.priceVersion, termsHash: first.json.terms.termsHash, shown: { kind: 'price', totalCents: snap.totalCents ?? null, lowCents: snap.lowCents, highCents: snap.highCents } })
 }
 

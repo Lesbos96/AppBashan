@@ -2,8 +2,8 @@
 // Importieren als erste Zeile (import './dev-guard.mjs'). Prüft vor jeder DB-Aktion die Ref aus der Umgebung
 // (SUPABASE_PROJECT_REF), aus der URL (NEXT_PUBLIC_SUPABASE_URL) und aus dem verlinkten Projekt (supabase/.temp/project-ref).
 import { existsSync, readFileSync } from 'node:fs'
+import { DEV_REF } from './dev-ref.mjs'
 
-const DEV_REF = 'vcpbbzdyltvffvzjrzdi'
 const refs = {
   SUPABASE_PROJECT_REF: process.env.SUPABASE_PROJECT_REF ?? '',
   NEXT_PUBLIC_SUPABASE_URL: /^https:\/\/([a-z0-9]+)\.supabase\.co(?:\/|$)/.exec(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '')?.[1] ?? '',

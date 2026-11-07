@@ -1,40 +1,29 @@
-// Rot-Beweis S9a-4 (nur Dev-Projekt): Sperren aus Migration 0020 (Fotos vor dem Absenden). Jede Prüfung misst den Ist-Wert:
-//  1. SQL-Sperren: lockern (committet, Eigentümer-SQL), Probe „Ergebnis | Wert“ (Rollback bzw. Storage-API), zuständigen Test laufen lassen
-//     (gelockert muss er rot werden), wiederherstellen aus den vorher gelesenen Definitionen, Probe erneut.
+// Rot-Beweis S9a-4 (nur Dev-Projekt), seit R1 über redproof-lib.mjs: Sperren aus Migration 0020 bis 0022 (Fotos vor dem Absenden, Selbst-Upgrade). Jede Prüfung misst den Ist-Wert:
+//  1. SQL-Sperren: Probe „Ergebnis | Wert“ mit der Lockerung in einer Rollback-Transaktion; Schritte mit vitest-Test oder Storage-/PostgREST-Probe lockern
+//     zusätzlich committet (Fenster: Markierung, Totmann, Soll-Diff). Der Test muss gelockert rot werden; danach Restore bis Soll-Gleichheit.
+//     Schritte mit photo_orphans laufen nur unter Cron-Pause (Job photo-cleanup für die ganze Dauer inaktiv, Fenster mit Markierung).
 //  2. Live-Probe der deployten Function `quote` (R2-N13): keine Quelltext-Mutation, nur Aufrufe gegen ${URL}/functions/v1/quote mit Testnutzer-JWT.
-//  3. Werkzeuge: Exit 2 des dev-guard mit fiktiver Ref (M-3), Exit 2 von redproof-s9a3 bei uncommitteter Datei unter supabase/functions (A-N4).
+//  3. Werkzeuge: Wirkung des dev-guard (Kontrolle Exit 0, fiktive Ref Exit 2) und der Git-Prüfung (A-N4), je im lesenden Modus gemessen, ohne Meldungstext.
 // „Schicht“: eine zweite Sperre dahinter hält; der erwartete Wert ist der Fehler der zweiten Schicht, kein Beweis der ersten.
-// Vorher/Nachher: Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte werden verglichen. Bericht: tmp/proof/s9a4-rotbeweis.md
-// Nie parallel zu test:rls, test:e2e oder Shots. Start: npx dotenv -e .env.local -- node scripts/redproof-s9a4.mjs [--only <Namensteil>[,…]] [--no-tests] [--no-live]
+// Soll: scripts/redproof-soll.json (kanonisch, gleich HEAD) für Läufe mit Schreibzugriff; --soll <pfad> nur lesend (Startprüfung, Exit vor dem Lockern);
+// --print-sql schreibt tmp/proof/r1-dev-sql-s9a4.sql und sendet nur Selects. Exit: 0 bestanden, 1 fehlgeschlagen, 2 Vorprüfung, 3 Fatal, 130 Signal.
+// Nie parallel zu test:rls, test:e2e oder Shots; nur im Hintergrund mit Log oder im Terminal, nie im Vordergrund des Tool-Aufrufs.
+// Start: npx dotenv -e .env.local -- node scripts/redproof-s9a4.mjs [--only <Namensteil>[,…]] [--no-tests] [--no-live] [--print-sql] [--soll <pfad>] [--deadman-probe (nur Totmann-Probelauf je Restore-Art, nichts gelockert)]
 import './dev-guard.mjs'
-console.error('Gesperrt bis R1 Redproof-Härtung (Abnahme nachtabnahme-vorher-redproof.md: H-1, M-1 bis M-4)')
-process.exit(2)
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
+import { createRun, EXIT, realDeps, runMain } from './redproof-lib.mjs'
+import * as SQL from './redproof-sql.mjs'
 
 const SB = 'node_modules/supabase/dist/supabase.js'
-const cli = (...args) => execFileSync(process.execPath, [SB, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 })
-// Transportfehler zur Management-API (Netz, nicht die Abfrage): bis zu 3 Versuche mit Backoff 2 s / 4 s. Sperren/Wiederherstellungen
-// (alter ... enable/disable, alter policy, create or replace) und Selects sind idempotent. Die Fixture-Inserts sind es nicht: kam eine Anfrage
-// trotz Transportfehler an, entstehen Doppelzeilen in Wegwerf-Konten, die das Aufräumen (Konto-Kaskade) entfernt.
-const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
-const isTransport = (m) => /Transport error|HttpClientError|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|fetch failed/i.test(m)
-const sql = (q) => {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const json = JSON.parse(cli('db', 'query', '--linked', q))
-      if (json._tag === 'Error') throw new Error(json.error?.message)
-      return json.rows
-    } catch (e) {
-      const msg = `${e?.message ?? e}\n${e?.stdout ?? ''}`
-      if (attempt >= 3 || !isTransport(msg)) throw e
-      console.log(`  Transportfehler zur Management-API, Versuch ${attempt + 1} von 3 in ${2 * attempt} s`)
-      sleep(2000 * attempt)
-    }
-  }
-}
+const arg = (n) => { const i = process.argv.indexOf(n); return i < 0 ? null : process.argv[i + 1] }
+const mode = process.argv.includes('--print-sql') ? 'print' : arg('--soll') ? 'readonly' : 'write'
+const soll = JSON.parse(readFileSync(mode === 'readonly' ? arg('--soll') : 'scripts/redproof-soll.json', 'utf8')).rows
+const deps = realDeps()
+const rp = createRun(deps, { name: 's9a4', mode, soll })
+const select = (q) => rp.select(q)
 const q1 = (s) => `'${s.replaceAll("'", "''")}'`
 
 const BUCKET = 'request-photos'
@@ -42,33 +31,6 @@ const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL
 const PUB = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 const mkClient = (key) => createClient(URL_, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = mkClient(process.env.SUPABASE_SECRET_KEY)
-
-const OBJECTS = `('public.request_photos'::regclass, 'public.service_requests'::regclass, 'public.platform_settings'::regclass)`
-const SNAPSHOT = `
-  select 'policy' k, schemaname || '.' || tablename || '.' || policyname || ' ' || cmd || ' ' || roles::text || ' ' || coalesce(qual, '') || ' ' || coalesce(with_check, '') v
-    from pg_policies where (schemaname = 'public' and tablename in ('request_photos', 'platform_settings')) or (schemaname = 'storage' and tablename = 'objects')
-  union all
-  select 'trigger', tgrelid::regclass || ' ' || tgenabled::text || ' ' || pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS}
-  union all
-  select 'function', p.oid::regprocedure || ' ' || md5(pg_get_functiondef(p.oid)) || ' ' || coalesce(p.proacl::text, '') || ' ' || p.proowner::regrole::text || ' ' || p.prosecdef::text || ' ' || coalesce(p.proconfig::text, '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where (n.nspname = 'private' and p.proname in ('guard_photo_insert', 'immutable_row', 'assert_admin', 'guard_price_version', 'staging_photo_count', 'my_role', 'is_admin'))
-       or (n.nspname = 'public' and p.proname in ('quote_save_request', 'photo_orphans', 'photo_cleanup', 'photo_staging_interval', 'booking_terms', 'publish_version', 'admin_set_setting', 'become_rental_provider', 'admin_grant_role'))
-  union all
-  select 'coldefault', table_name || '.' || column_name || ' ' || coalesce(column_default, '<kein Default>') from information_schema.columns where table_schema = 'public' and table_name = 'request_photos'
-  union all
-  select 'acl', c.oid::regclass || ' ' || coalesce(c.relacl::text, '') from pg_class c where c.oid in ${OBJECTS}
-  union all
-  select 'colacl', attrelid::regclass || '.' || attname || ' ' || attacl::text from pg_attribute where attrelid in ${OBJECTS} and attacl is not null
-  union all
-  select 'rls', oid::regclass || ' ' || relrowsecurity::text from pg_class where oid in ${OBJECTS}
-  order by 1, 2`
-const snapshot = () => JSON.stringify(sql(SNAPSHOT))
-
-const def = (name) => sql(`select pg_get_functiondef('${name}'::regprocedure) as d`)[0].d
-const policyDef = (name, table) => {
-  const [schema, rel] = table.split('.')
-  return JSON.stringify(sql(`select qual, with_check from pg_policies where schemaname = ${q1(schema)} and tablename = ${q1(rel)} and policyname = ${q1(name)}`)[0])
-}
 
 const SAVE = 'public.quote_save_request(uuid, uuid, public.service_type, jsonb, jsonb, int, int, int, int, text, double precision, double precision, text, double precision, double precision, jsonb, public.region, smallint, date, text, text, numeric, jsonb, jsonb, uuid[])'
 const GUARD = 'private.guard_photo_insert()'
@@ -88,6 +50,7 @@ let A, B, C, E // { id, db (JWT-Client) }; C und E haben je 40 Dateien (Kontinge
 let priceVersion
 const made = [] // Storage-Pfade zum Aufräumen
 const put = async (path, body = JPEG) => {
+  if (mode === 'print') return path
   const r = await service.storage.from(BUCKET).upload(path, body, { contentType: 'image/jpeg', upsert: false })
   if (r.error) throw r.error
   made.push(path)
@@ -95,6 +58,7 @@ const put = async (path, body = JPEG) => {
 }
 const exists = async (path) => (await service.storage.from(BUCKET).download(path)).error === null
 const newUser = async (tag) => {
+  if (mode === 'print') return { id: `00000000-0000-0000-0000-00000000000${++fakeN}`, db: null, jwt: '' }
   const email = `redproof-s9a4-${tag}-${Date.now().toString(36)}@movenow.test`
   const password = `${randomUUID()}Aa1!`
   const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true })
@@ -116,85 +80,65 @@ const baseArgs = (over = {}) => ({
 const callSql = (over = {}) => `public.quote_save_request(${Object.entries(baseArgs(over)).map(([k, v]) => `${k} => ${lit(v)}`).join(', ')})`
 const claims = (u, aal = 'aal1') => JSON.stringify({ sub: u.id, role: 'authenticated', aal })
 
-// Probe: führt `stmt` aus (Rolle/Claims wie angegeben), meldet „ok“ oder „SQLSTATE: Meldung“, dann den Ist-Wert `value` (Rollback).
+// Probe: Rollback-Transaktion. `preLoosen` (die Lockerung des Schritts, nur für SQL-Proben) steht vor dem Setup in derselben Transaktion;
+// es wird nichts committet. Meldet „ok“ oder „SQLSTATE: Meldung“, dann den Ist-Wert `value`.
+let preLoosen = ''
 const probe = ({ setup = '', stmt, value, role = 'owner', claims: cl = '' }) => {
   const prefix = [role === 'owner' ? '' : `set local role ${role};`, cl ? `perform set_config('request.jwt.claims', ${q1(cl)}, true);` : ''].join(' ')
   const body = `begin ${prefix} ${stmt}; reset role; insert into res values ('ok'); exception when others then reset role; insert into res values (sqlstate || ': ' || sqlerrm); end; insert into res select coalesce((${value})::text, '<null>');`
-  const rows = sql(`begin; ${setup}; create temp table res (v text); do $p$ begin ${body} end $p$; select string_agg(v, ' | ') as v from res; rollback;`)
-  return rows[0].v
+  return rp.probe(`begin; ${preLoosen ? `${preLoosen};` : ''} ${setup}; create temp table res (v text); do $p$ begin ${body} end $p$; select string_agg(v, ' | ') as v from res; rollback;`)[0]?.v
 }
 
 const results = []
 const loosen = []
 const add = (s) => loosen.push(s.label.startsWith('photo_orphans:') ? { ...s, cron: true } : s)
-const patchFns = (label, edits) => ({
-  label, kind: 'Sperre',
-  save: () => JSON.stringify([...new Set(edits.map(([fn]) => fn))].map((fn) => def(fn))),
-  apply: (saved) => {
-    const defs = Object.fromEntries(JSON.parse(saved).map((d, i) => [[...new Set(edits.map(([fn]) => fn))][i], d]))
-    const cur = { ...defs }
-    for (const [fn, from, to] of edits) {
-      if (!cur[fn].includes(from)) throw new Error(`Muster nicht gefunden: ${from}`)
-      cur[fn] = cur[fn].replace(from, to)
-    }
-    for (const d of Object.values(cur)) sql(d)
-  },
-  restore: (saved) => JSON.parse(saved).forEach((d) => sql(d)),
-})
+// Bausteine liefern { loosen, restore } als SQL-Text (lazy: Originale werden erst beim Schritt gelesen, im Soll-geprüften Zustand).
+const patchFns = (label, edits) => ({ label, kind: 'Sperre', text: () => SQL.patchFns(select, edits) })
 const patchFn = (label, fn, from, to) => patchFns(label, [[fn, from, to]])
-const triggerOff = (label, name, table) => ({ label, kind: 'Sperre', save: () => null, apply: () => sql(`alter table ${table} disable trigger ${name}`), restore: () => sql(`alter table ${table} enable trigger ${name}`) })
-const toggle = (label, loosenSql, restoreSql, kind = 'Sperre') => ({ label, kind, save: () => null, apply: () => sql(loosenSql), restore: () => sql(restoreSql) })
+const triggerOff = (label, name, table) => ({ label, kind: 'Sperre', text: () => SQL.triggerOff(table, name) })
+const toggle = (label, loosenSql, restoreSql, kind = 'Sperre') => ({ label, kind, text: () => SQL.toggle(loosenSql, restoreSql) })
 /** Policy lockern: `looseExpr` ersetzt Bedingung (using/with check), Wiederherstellung aus der gelesenen Definition. */
-const policyLoosen = (label, name, table, clause, looseExpr, kind = 'Sperre') => ({
-  label, kind,
-  save: () => policyDef(name, table),
-  apply: () => sql(`alter policy ${name} on ${table} ${clause} (${looseExpr})`),
-  restore: (saved) => {
-    const d = JSON.parse(saved)
-    sql(`alter policy ${name} on ${table} ${clause} (${clause === 'using' ? d.qual : d.with_check})`)
-  },
-})
-
+const policyLoosen = (label, name, table, clause, looseExpr, kind = 'Sperre') => ({ label, kind, text: () => SQL.policyLoosen(select, name, table, clause, looseExpr) })
 /** Zwei Policy-Lockerungen zugleich (z. B. DELETE und die SELECT-Sicht, die die Storage-API vorher prüft). */
-const combine = (a, b) => ({
-  label: a.label, kind: a.kind,
-  save: () => JSON.stringify([a.save(), b.save()]),
-  apply: (saved) => { const [x, y] = JSON.parse(saved); a.apply(x); b.apply(y) },
-  restore: (saved) => { const [x, y] = JSON.parse(saved); a.restore(x); b.restore(y) },
-})
+const combine = (a, b) => ({ label: a.label, kind: a.kind, text: () => SQL.combine(a.text(), b.text()) })
+// Proben, die async sind, laufen über Storage-/PostgREST-API und brauchen das committete Fenster; SQL-Proben messen in der Rollback-Transaktion.
+const isAsync = (f) => f.constructor.name === 'AsyncFunction'
 
-const restoreFailed = []
-const runSql = async (selected, withTests, testRun) => {
+const runSql = async (selected, withTests) => {
   for (const s of selected) {
-    // Lockerungen von photo_orphans wirken auf den echten Aufräumjob (stündlich um :23): nur in Minute 27–50 starten.
-    if (s.cron) while (![...Array(24).keys()].map((i) => i + 27).includes(new Date().getMinutes())) await new Promise((r) => setTimeout(r, 15_000))
-    const saved = s.save()
-    if (saved) writeFileSync(`tmp/proof/s9a4-restore-${results.length}.sql`, String(saved))
+    const text = s.text()
+    const sqlProbe = !isAsync(s.probe)
     let looseValue, redTests
-    try {
-      s.apply(saved)
-      looseValue = await s.probe()
-      if (withTests && s.tests) redTests = testRun(s.tests, s.testFile ?? 'tests/rls/uploads.test.ts')
-    } finally {
-      // Wiederherstellung läuft auch nach Abbruch von apply/probe; sql() versucht Transportfehler dreimal. Schlägt sie endgültig fehl, bleibt der
-      // Name der Sperre im Log (und in restoreFailed), der Fehler von apply/probe wird nicht verdeckt, und das Netz am Ende (restoreTriggers) greift.
-      try { s.restore(saved) } catch (e) {
-        restoreFailed.push(s.label)
-        console.error(`WIEDERHERSTELLUNG FEHLGESCHLAGEN: ${s.label}: ${e?.message ?? e}`)
-      }
+    if (sqlProbe) {
+      preLoosen = text.loosen
+      try { looseValue = s.probe() } finally { preLoosen = '' }
     }
+    // Committet wird nur, was eine andere Verbindung sehen muss: der vitest-Lauf oder eine Storage-/PostgREST-Probe.
+    if (!sqlProbe || (withTests && s.tests)) {
+      if (s.cron && mode === 'write') rp.assertCleanupPaused()
+      await rp.withWindow({ label: s.label, ...text }, async () => {
+        s.onLoose?.()
+        if (!sqlProbe) looseValue = await s.probe()
+        if (withTests && s.tests) redTests = await rp.vitest({ file: s.testFile ?? 'tests/rls/uploads.test.ts', pattern: s.tests, forbid: s.cron ? /Aufräumen/ : undefined })
+      })
+      s.onRestored?.()
+    }
+    if (mode === 'print') continue
     const lockedValue = await s.probe()
     const effect = looseValue === s.loose
     const blocked = lockedValue === s.locked
-    const testsRed = !withTests || !s.tests || redTests.failed.length > 0
+    const testsRed = !withTests || !s.tests || redTests?.status === 'rot'
     const good = effect && blocked && testsRed
     results.push({ ...s, part: 'SQL', looseValue, lockedValue, redTests, good, effect, blocked, testsRed })
-    console.log(`${good ? 'OK    ' : 'FEHLER'} [${s.kind}] ${s.label}\n         gelockert: ${looseValue} (erwartet ${s.loose})\n         gesperrt:  ${lockedValue} (erwartet ${s.locked})${redTests ? `\n         Test rot: ${redTests.failed.length}${redTests.message ? ` (${redTests.message})` : ''}` : ''}`)
+    console.log(`${good ? 'OK    ' : 'FEHLER'} [${s.kind}] ${s.label}\n         gelockert: ${looseValue} (erwartet ${s.loose})\n         gesperrt:  ${lockedValue} (erwartet ${s.locked})${redTests ? `\n         Test ${redTests.status}: ${redTests.failed.length} rot${redTests.message ? ` (${redTests.message})` : ''}${redTests.status === 'fehler' ? ` [${redTests.reason}]` : ''}` : ''}`)
   }
 }
 
+let fakeN = 0
+const FAKE_REQ = '00000000-0000-0000-0000-0000000000ff' // --print-sql: keine Fixtures, Platzhalter-IDs in den SQL-Texten
+const rpc = (name, args) => (mode === 'print' ? Promise.resolve({ data: [{ id: FAKE_REQ }] }) : service.rpc(name, args))
 const run = async () => {
-  priceVersion = sql(`select version from public.current_price_version`)[0].version
+  priceVersion = select(`select version from public.current_price_version`)[0].version
   A = await newUser('a')
   B = await newUser('b')
   C = await newUser('c')
@@ -208,8 +152,8 @@ const run = async () => {
   const path = (u, ref, i) => `${u.id}/${ref}/${i}.jpg`
   await put(path(A, refS, S1)); await put(path(A, refS, S2)); await put(path(A, refX, X1)); await put(path(B, refB, BO)); await put(path(A, ref1, P1))
   for (const n of N) await put(path(A, refN, n))
-  const R1 = (await service.rpc('quote_save_request', baseArgs({ p_client_ref: ref1, p_photo_ids: [P1] }))).data?.[0]?.id
-  const R2 = (await service.rpc('quote_save_request', baseArgs({ p_client_ref: ref2 }))).data?.[0]?.id
+  const R1 = (await rpc('quote_save_request', baseArgs({ p_client_ref: ref1, p_photo_ids: [P1] }))).data?.[0]?.id
+  const R2 = (await rpc('quote_save_request', baseArgs({ p_client_ref: ref2 }))).data?.[0]?.id
   if (!R1 || !R2) throw new Error('Fixtures: Anfragen nicht angelegt')
   const photosOf = (ref) => `(select count(*) from public.request_photos p join public.service_requests r on r.id = p.request_id where r.client_ref = '${ref}')`
   const reqsOf = (ref) => `(select count(*) from public.service_requests where client_ref = '${ref}')`
@@ -401,9 +345,7 @@ const run = async () => {
   add({ ...policyLoosen('Storage-DELETE: client_ref-Bedingung entfernt (Schicht: Zeilen-Bedingung)', 'request_photos_objects_delete', 'storage.objects', 'using', `${base} and ${form} and ${own} and ${noRow}`, 'Schicht'), tests: null, probe: keepAdopted, loose: 'entfernt 0 | Datei da', locked: 'entfernt 0 | Datei da' })
   add({
     label: 'Storage: UPDATE-Policy für Eigentümer vorhanden (Ersetzen/Verschieben nach dem Absenden)', kind: 'Sperre',
-    save: () => null,
-    apply: () => sql(`create policy redproof_update on storage.objects for update to authenticated using (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text) with check (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text)`),
-    restore: () => sql('drop policy if exists redproof_update on storage.objects'),
+    text: () => SQL.createObject(`create policy redproof_update on storage.objects for update to authenticated using (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text) with check (bucket_id = 'request-photos' and (storage.foldername(name))[1] = (select auth.uid())::text)`, 'drop policy if exists redproof_update on storage.objects'),
     tests: 'Ersetzen und Verschieben',
     probe: async () => {
       const name = `${A.id}/${ref1}/${id()}.jpg`
@@ -416,11 +358,11 @@ const run = async () => {
     loose: 'ok | verschoben', locked: 'Fehler | unverändert',
   })
   // 7b. Zeilen-Bedingung „keine Zeile in request_photos“ (A-M2): Alt-Pfad {uid}/{request_id}/{id}.jpg, hier hält nur die Zeile (die client_ref-Bedingung greift nicht)
-  const R3 = (await service.rpc('quote_save_request', baseArgs({ p_client_ref: randomUUID() }))).data?.[0]?.id
+  const R3 = (await rpc('quote_save_request', baseArgs({ p_client_ref: randomUUID() }))).data?.[0]?.id
   if (!R3) throw new Error('Fixtures: Anfrage R3 nicht angelegt')
   const legacyKept = `${A.id}/${R3}/${id()}.jpg`
   const legacyFree = `${A.id}/${R3}/${id()}.jpg`
-  const legacyRows = (req, ...names) => sql(`begin; alter table public.request_photos disable trigger guard_photo_insert; insert into public.request_photos (request_id, storage_path) values ${names.map((n) => `('${req}', '${n}')`).join(', ')}; alter table public.request_photos enable trigger guard_photo_insert; commit; select 1 as x`)
+  const legacyRows = (req, ...names) => rp.fixture(`begin; alter table public.request_photos disable trigger guard_photo_insert; insert into public.request_photos (request_id, storage_path) values ${names.map((n) => `('${req}', '${n}')`).join(', ')}; alter table public.request_photos enable trigger guard_photo_insert; commit; select 1 as x`)
   legacyRows(R3, legacyKept, legacyFree)
   await put(legacyKept)
   const legacyDelete = async () => {
@@ -444,7 +386,7 @@ const run = async () => {
   }
   await forty(C, 40)
   await forty(E, 39)
-  const RE = (await service.rpc('quote_save_request', baseArgs({ p_customer: E.id, p_client_ref: randomUUID() }))).data?.[0]?.id
+  const RE = (await rpc('quote_save_request', baseArgs({ p_customer: E.id, p_client_ref: randomUUID() }))).data?.[0]?.id
   if (!RE) throw new Error('Fixtures: Anfrage RE nicht angelegt')
   const adoptedE = `${E.id}/${RE}/${id()}.jpg`
   legacyRows(RE, adoptedE)
@@ -453,7 +395,7 @@ const run = async () => {
   const overLimit = (u) => async () => {
     const name = `${u.id}/${randomUUID()}/${id()}.jpg`
     const r = await u.db.storage.from(BUCKET).upload(name, JPEG, { contentType: 'image/jpeg' })
-    const n = Number(sql(`select count(*)::int as n from storage.objects where bucket_id = '${BUCKET}' and name like '${u.id}/%'`)[0].n)
+    const n = Number(select(`select count(*)::int as n from storage.objects where bucket_id = '${BUCKET}' and name like '${u.id}/%'`)[0].n)
     if (!r.error) await service.storage.from(BUCKET).remove([name])
     return `${r.error ? r.error.statusCode : 'ok'} | ${n}`
   }
@@ -557,9 +499,9 @@ revoke all on function public.become_rental_provider() from public, anon;
 grant execute on function public.become_rental_provider() to authenticated;
 notify pgrst, 'reload schema'`
   add({
-    label: 'become_rental_provider entfernt (0022): Kunde stuft sich selbst hoch und liest den Gebührensatz', kind: 'Sperre', save: () => null,
-    apply: () => { sql(BRP); brpOn = true },
-    restore: () => { sql(`drop function public.become_rental_provider(); notify pgrst, 'reload schema'`); brpOn = false },
+    label: 'become_rental_provider entfernt (0022): Kunde stuft sich selbst hoch und liest den Gebührensatz', kind: 'Sperre',
+    text: () => SQL.createObject(BRP, `drop function if exists public.become_rental_provider(); notify pgrst, 'reload schema'`),
+    onLoose: () => { brpOn = true }, onRestored: () => { brpOn = false },
     tests: 'kein Selbst-Upgrade', testFile: 'tests/rls/rls.test.ts',
     probe: async () => {
       await rpcReady()
@@ -580,23 +522,22 @@ notify pgrst, 'reload schema'`
   const matches = (s) => !only || only.some((o) => s.label.toLowerCase().includes(o))
   const selected = loosen.filter(matches)
 
-  const testRun = (pattern, file) => {
-    const out = 'tmp/reports/redproof-s9a4.json'
-    const r = spawnSync('npx', ['dotenv', '-e', '.env.local', '--', 'vitest', 'run', '--project', 'rls', file, '-t', JSON.stringify(pattern), '--reporter=json', `--outputFile=${out}`], { encoding: 'utf8', shell: true, maxBuffer: 1 << 26 })
-    const tests = JSON.parse(readFileSync(out, 'utf8')).testResults.flatMap((f) => f.assertionResults)
-    return { exit: r.status, ran: tests.filter((t) => t.status === 'failed' || t.status === 'passed').length, failed: tests.filter((t) => t.status === 'failed'), passed: tests.filter((t) => t.status === 'passed').length, message: tests.find((t) => t.status === 'failed')?.failureMessages?.[0]?.split('\n')[0]?.slice(0, 200) }
+  if (process.argv.includes('--deadman-probe')) { // nur der Totmann-Probelauf je Restore-Art (nichts gelockert), dann Ende
+    for (const l of rp.deadmanProbe(loosen.map((s) => ({ label: s.label, restore: s.text().restore })))) console.log(`Totmann-Probelauf ${l}`)
+    return
   }
 
-  const before = snapshot()
-  await runSql(selected, withTests, testRun)
+  // Schritte mit photo_orphans wirken auf den echten Aufräumjob (stündlich um :23): der Job ist für die ganze Dauer pausiert (Fenster mit Markierung).
+  const steps = () => runSql(selected, withTests)
+  if (selected.some((s) => s.cron)) await rp.cronPause(steps)
+  else await steps()
+  if (mode === 'print') return
 
   // --- Teil 2: Live-Probe der deployten Function (R2-N13) ---------------------------------------------------------------------------------
   if (withLive && !only) await liveProbe()
 
   // --- Teil 3: Werkzeuge ------------------------------------------------------------------------------------------------------------------
   if (!only) tools()
-  const after = snapshot()
-  return { before, after }
 }
 
 async function liveProbe() {
@@ -683,84 +624,77 @@ function tools() {
     results.push({ label, kind: 'Werkzeug', part: 'Werkzeug', looseValue: got, lockedValue: want, loose: want, locked: want, good: got === want, effect: got === want, blocked: got === want })
     console.log(`${got === want ? 'OK    ' : 'FEHLER'} [Werkzeug] ${label}: ${got} (erwartet ${want})`)
   }
-  // M-3: fiktive Ref in SUPABASE_PROJECT_ID → dev-guard bricht mit Exit 2 und „ABBRUCH“ ab, bevor ein Befehl die DB erreicht.
+  // Gemessen wird die Wirkung (Exit-Code, Konten, Baum), nicht ein Meldungstext. Die Kinder laufen lesend (--soll): Kontrolle Exit 0, mit der Störung Exit 2,
+  // so trennt der Vergleich die Ursache (die Sperre des laufenden Hauptprozesses spielt im lesenden Modus keine Rolle).
+  const accounts = () => Number(select(`select count(*)::int as n from auth.users where email like 'redproof-%@movenow.test'`)[0].n)
+  const child = (script, env = process.env) => spawnSync(process.execPath, [script, '--soll', 'scripts/redproof-soll.json', '--only', 'zzz-nichts'], { encoding: 'utf8', env })
+  const a0 = accounts()
   const fake = 'a'.repeat(20)
-  const g = spawnSync(process.execPath, ['scripts/redproof-s9a4.mjs', '--only', 'zzz-nichts'], { encoding: 'utf8', env: { ...process.env, SUPABASE_PROJECT_ID: fake } })
-  record('M-3: dev-guard mit fiktiver SUPABASE_PROJECT_ID → Exit 2 „ABBRUCH“', `Exit ${g.status}, ${/ABBRUCH/.test(g.stderr) ? 'ABBRUCH' : 'ohne ABBRUCH'}`, 'Exit 2, ABBRUCH')
+  const control = child('scripts/redproof-s9a4.mjs')
+  const g = child('scripts/redproof-s9a4.mjs', { ...process.env, SUPABASE_PROJECT_ID: fake })
+  record('M-3: dev-guard mit fiktiver SUPABASE_PROJECT_ID', `Kontrolle Exit ${control.status}, fiktive Ref Exit ${g.status}, Konten ${accounts() === a0 ? 'unverändert' : 'VERÄNDERT'}`, 'Kontrolle Exit 0, fiktive Ref Exit 2, Konten unverändert')
   const cliRun = spawnSync(process.execPath, [SB, 'db', 'query', '--linked', 'select 1 as x'], { encoding: 'utf8', env: { ...process.env, SUPABASE_PROJECT_ID: fake } })
   record('M-3: CLI mit fiktiver Ref scheitert und nennt die fiktive Ref', `Exit ${cliRun.status !== 0 ? '≠0' : '0'}, ${(cliRun.stderr + cliRun.stdout).includes(fake) ? 'Ref genannt' : 'Ref nicht genannt'}`, 'Exit ≠0, Ref genannt')
-  // A-N4: uncommittete Datei unter supabase/functions → redproof-s9a3 bricht vor jeder DB-Aktion mit Exit 2 ab; danach ist der Baum wieder sauber.
+  // A-N4: uncommittete Datei unter supabase/functions → die Startprüfung bricht ab (Exit 2), ohne die Datei Exit 0; danach ist der Baum wieder wie vorher.
   const helper = 'supabase/functions/zz-redproof-s9a4.tmp'
-  const dirtyBefore = execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim()
+  const treeBefore = execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim()
+  const clean = child('scripts/redproof-s9a3.mjs')
   writeFileSync(helper, 'redproof\n')
-  let exit3, msg3, dirtyAfter
+  let dirty, treeAfter
   try {
-    const r = spawnSync(process.execPath, ['scripts/redproof-s9a3.mjs', '--only', 'zzz-nichts'], { encoding: 'utf8', env: process.env })
-    exit3 = r.status
-    msg3 = /ABBRUCH/.test(r.stderr)
+    dirty = child('scripts/redproof-s9a3.mjs')
   } finally {
     rmSync(helper, { force: true })
-    dirtyAfter = execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim()
+    treeAfter = execFileSync('git', ['status', '--porcelain', '--', 'supabase/functions'], { encoding: 'utf8' }).trim()
   }
-  // Hilfsdatei weg, Baum wie vorher. War der Baum schon unsauber (uncommittete Function-Änderungen), bricht s9a3 auch ohne Hilfsdatei ab: das steht im Label.
-  record(`A-N4: redproof-s9a3 mit uncommitteter Datei unter supabase/functions → Exit 2 „ABBRUCH“${dirtyBefore === '' ? '' : ' (Baum war schon unsauber: Wirkung der Hilfsdatei nicht getrennt)'}`, `Exit ${exit3}, ${msg3 ? 'ABBRUCH' : 'ohne ABBRUCH'}, Hilfsdatei ${existsSync(helper) ? 'NOCH DA' : 'entfernt'}, Baum ${dirtyAfter === dirtyBefore ? 'wie vorher' : 'VERÄNDERT'}`, 'Exit 2, ABBRUCH, Hilfsdatei entfernt, Baum wie vorher')
+  record('A-N4: Start von redproof-s9a3 mit uncommitteter Datei unter supabase/functions', `ohne Datei Exit ${clean.status}, mit Datei Exit ${dirty.status}, Konten ${accounts() === a0 ? 'unverändert' : 'VERÄNDERT'}, Hilfsdatei ${existsSync(helper) ? 'NOCH DA' : 'entfernt'}, Baum ${treeAfter === treeBefore ? 'wie vorher' : 'VERÄNDERT'}`, 'ohne Datei Exit 0, mit Datei Exit 2, Konten unverändert, Hilfsdatei entfernt, Baum wie vorher')
 }
 
 mkdirSync('tmp/proof', { recursive: true })
-mkdirSync('tmp/reports', { recursive: true })
-// Netz unter allem: Trigger-Zustand vor dem Lauf. Ist schon einer ausgeschaltet (Rest eines abgebrochenen Laufs), startet das Skript nicht,
-// sonst würde „ausgeschaltet“ als Ausgangszustand gelten. Am Ende (auch nach Abbruch) wird jeder Trigger auf diesen Zustand zurückgesetzt.
-const TRIGGERS = `select tgrelid::regclass::text as t, tgname as n, tgenabled::text as e from pg_trigger where not tgisinternal and tgrelid in ${OBJECTS} order by 1, 2`
-const triggersBefore = sql(TRIGGERS)
-const off = triggersBefore.filter((r) => r.e === 'D')
-if (off.length > 0) {
-  console.error(`ABBRUCH: Trigger vor dem Lauf ausgeschaltet: ${off.map((r) => `${r.t}.${r.n}`).join(', ')}. Erst von Hand einschalten und den Zustand prüfen.`)
-  process.exit(2)
-}
-const MODE = { O: 'enable', D: 'disable', R: 'enable replica', A: 'enable always' }
-const restoreTriggers = () => {
-  const fixed = []
-  for (const r of sql(TRIGGERS)) {
-    const want = triggersBefore.find((b) => b.t === r.t && b.n === r.n)?.e
-    if (want && want !== r.e) {
-      sql(`alter table ${r.t} ${MODE[want]} trigger ${r.n}`)
-      fixed.push(`${r.t}.${r.n}: ${r.e} → ${want}`)
+mkdirSync('tmp/reports/r1', { recursive: true })
+const main = async () => {
+  if (mode === 'readonly') { console.log('Startprüfung gegen die angegebene Soll-Datei bestanden, nichts gelockert (Modus lesend).'); return EXIT.OK }
+  try {
+    await run()
+  } finally {
+    // Aufräumen: jeder Schritt einzeln abgesichert, damit ein Netzfehler die übrigen nicht überspringt.
+    const step = async (label, f) => { try { await f() } catch (e) { console.error(`AUFRÄUMEN FEHLGESCHLAGEN: ${label}: ${e?.message ?? e}`) } }
+    if (mode === 'write') {
+      for (const u of [A, B, C, E]) if (u) await step(`Konto ${u.id}`, () => service.auth.admin.deleteUser(u.id))
+      for (let i = 0; i < made.length; i += 100) await step('Dateien löschen', () => service.storage.from(BUCKET).remove(made.slice(i, i + 100)))
     }
   }
-  return fixed
+  if (process.argv.includes('--deadman-probe')) return rp.finish().end.length ? EXIT.FAIL : EXIT.OK // kein Bericht, kein Rot-Beweis
+  if (mode === 'print') {
+    writeFileSync('tmp/proof/r1-dev-sql-s9a4.sql', rp.printed.map((p) => `-- ${p.label}\n${p.sql ?? [p.loosen && `-- Lockerung\n${p.loosen}`, p.restore && `-- Restore\n${p.restore}`].filter(Boolean).join('\n')}\n`).join('\n'))
+    console.log(`SQL-Texte nach tmp/proof/r1-dev-sql-s9a4.sql geschrieben (${rp.printed.length} Einträge), nichts gesendet außer Selects.`)
+    return EXIT.OK
+  }
+  const { end } = rp.finish()
+  const same = end.length === 0
+  const count = (part, kind) => results.filter((r) => r.good && r.part === part && r.kind === kind).length
+  const report = [
+    '# S9a-4 Rot-Beweis (R1-Lib)',
+    '',
+    `Stand ${new Date().toISOString()} (Dev-Projekt). Soll: scripts/redproof-soll.json. Teil 1 SQL und Storage: Ist-Wert-Probe mit der Lockerung in einer Rollback-Transaktion bzw. Storage-API im committeten Fenster, zuständigen Test laufen lassen, Restore bis Soll-Gleichheit; Schritte mit photo_orphans unter Cron-Pause. Teil 2 Live-Probe (R2-N13): Aufrufe gegen die deployte Function \`quote\` mit Testnutzer-JWT, keine Quelltext-Mutation. Teil 3 Werkzeuge (M-3, A-N4), Wirkung statt Meldungstext.`,
+    '',
+    'Format der Probe: „Ergebnis | Wert“. Ergebnis ist „ok“ oder „SQLSTATE: Meldung“; Wert ist der Zustand danach. „Schicht“: eine zweite Sperre dahinter hält, kein Beweis der ersten.',
+    '',
+  ]
+  for (const r of results) {
+    report.push(`## ${r.label}`, '', `- Teil: ${r.part}; Art: ${r.kind === 'Schicht' ? 'Schicht (zweite Sperre dahinter, kein Beweis der ersten)' : r.kind}`)
+    report.push(`- Gelockert/Beobachtet: \`${r.looseValue}\` (erwartet \`${r.loose}\`) ${r.effect ? '✓' : '✗ ABWEICHUNG'}`, `- Gesperrt/Wiederhergestellt: \`${r.lockedValue}\` (erwartet \`${r.locked}\`) ${r.blocked ? '✓' : '✗ ABWEICHUNG'}`)
+    if (r.part === 'SQL') report.push(r.tests ? `- Test \`${r.testFile ?? 'tests/rls/uploads.test.ts'}\` -t "${r.tests}" gelockert: ${r.redTests ? `${r.redTests.status}: ${r.redTests.failed.length} rot von ${r.redTests.ran} gelaufen${r.redTests.message ? ` (${r.redTests.message})` : ''}${r.redTests.reason ? ` [${r.redTests.reason}]` : ''}` : 'nicht ausgeführt'} ${r.testsRed ? '✓' : '✗ (kein Rot-Beweis!)'}` : '- Test: keiner (Wirkung durch die Probe belegt)')
+    report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
+  }
+  report.push('## Fenster (committete Lockerungen)', '', 'Schlüssel = Diff von Dev gegen das Soll nach dem Commit (aus der Probe-Transaktion abgeleitet, der Commit muss gleich sein); Hash = sha256 des Lockerungstexts in Probe und Commit.', '')
+  for (const w of rp.windowLog) report.push(`- ${w.label}: ${w.keys.join('; ')}; Hash Probe ${w.hashProbe.slice(0, 12)}, Commit ${w.hashCommit.slice(0, 12)}: ${w.hashProbe === w.hashCommit ? 'gleich' : 'ABWEICHUNG'}`)
+  report.push('', '## Endprüfung gegen das Soll', '', same ? 'Dev ist nach dem Lauf gleich dem Soll (alle Objektarten des Snapshots).' : `ACHTUNG: Dev weicht vom Soll ab: ${end.map((x) => `${x.k} ${x.n} ${x.state}`).join('; ')}`, '')
+  report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, ${count('SQL', 'Verfügbarkeit')} Verfügbarkeit, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
+  writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
+  const allGood = results.every((r) => r.good) && same
+  console.log(same ? 'Dev nach dem Lauf gleich Soll.' : 'ACHTUNG: Dev weicht vom Soll ab!')
+  console.log(allGood ? 'REDPROOF BESTANDEN' : 'REDPROOF FEHLGESCHLAGEN')
+  return allGood ? EXIT.OK : EXIT.FAIL
 }
-let outcome
-try {
-  outcome = await run()
-} finally {
-  // Aufräumen: jeder Schritt einzeln abgesichert, damit ein Netzfehler die übrigen nicht überspringt.
-  const step = async (label, f) => { try { await f() } catch (e) { restoreFailed.push(label); console.error(`AUFRÄUMEN FEHLGESCHLAGEN: ${label}: ${e?.message ?? e}`) } }
-  await step('Trigger zurücksetzen', () => { const fixed = restoreTriggers(); if (fixed.length) console.error(`Netz: Trigger zurückgesetzt: ${fixed.join('; ')}`); restoreFailed.push(...fixed.map((f) => `Trigger-Rest ${f}`)) })
-  await step('Policy redproof_update', () => sql('drop policy if exists redproof_update on storage.objects'))
-  for (const u of [A, B, C, E]) if (u) await step(`Konto ${u.id}`, () => service.auth.admin.deleteUser(u.id))
-  for (let i = 0; i < made.length; i += 100) await step('Dateien löschen', () => service.storage.from(BUCKET).remove(made.slice(i, i + 100)))
-  if (restoreFailed.length) console.error(`OFFEN, von Hand prüfen: ${restoreFailed.join(' | ')}`)
-}
-const same = outcome.before === outcome.after
-const count = (part, kind) => results.filter((r) => r.good && r.part === part && r.kind === kind).length
-const report = [
-  '# S9a-4 Rot-Beweis',
-  '',
-  `Stand ${new Date().toISOString()} (Dev-Projekt). Teil 1 SQL und Storage: lockern (committet), Ist-Wert-Probe (Rollback bzw. Storage-API), zuständigen Test laufen lassen, aus den vorher gelesenen Definitionen wiederherstellen (Restore-SQL vorher nach tmp/proof/s9a4-restore-*.sql), Probe erneut. Teil 2 Live-Probe (R2-N13): Aufrufe gegen die deployte Function \`quote\` mit Testnutzer-JWT, keine Quelltext-Mutation. Teil 3 Werkzeuge (M-3, A-N4).`,
-  '',
-  'Format der Probe: „Ergebnis | Wert“. Ergebnis ist „ok“ oder „SQLSTATE: Meldung“; Wert ist der Zustand danach. „Schicht“: eine zweite Sperre dahinter hält, kein Beweis der ersten.',
-  '',
-]
-for (const r of results) {
-  report.push(`## ${r.label}`, '', `- Teil: ${r.part}; Art: ${r.kind === 'Schicht' ? 'Schicht (zweite Sperre dahinter, kein Beweis der ersten)' : r.kind}`)
-  report.push(`- Gelockert/Beobachtet: \`${r.looseValue}\` (erwartet \`${r.loose}\`) ${r.effect ? '✓' : '✗ ABWEICHUNG'}`, `- Gesperrt/Wiederhergestellt: \`${r.lockedValue}\` (erwartet \`${r.locked}\`) ${r.blocked ? '✓' : '✗ ABWEICHUNG'}`)
-  if (r.part === 'SQL') report.push(r.tests ? `- Test \`${r.testFile ?? 'tests/rls/uploads.test.ts'}\` -t "${r.tests}" gelockert: ${r.redTests ? `${r.redTests.failed.length} rot von ${r.redTests.ran} gelaufen${r.redTests.message ? ` (${r.redTests.message})` : ''}` : 'nicht ausgeführt'} ${r.testsRed ? '✓' : '✗ (Lücke im Test!)'}` : '- Test: keiner (Wirkung durch die Probe belegt)')
-  report.push(`- Bewertung: ${r.good ? 'bestanden' : 'FEHLGESCHLAGEN'}`, '')
-}
-report.push('## Definitionen vorher/nachher (SQL-Teil)', '', same ? 'Policies, Trigger (inkl. tgenabled), Funktionen (md5, Rechte) und Tabellenrechte sind identisch.' : 'ACHTUNG: Definitionen weichen ab!', '')
-report.push(`Ergebnis: SQL ${count('SQL', 'Sperre')} Sperren und ${count('SQL', 'Schicht')} Schichten, ${count('SQL', 'Verfügbarkeit')} Verfügbarkeit, Beobachtungen ${count('Live', 'Beobachtung')}, Werkzeuge ${count('Werkzeug', 'Werkzeug')}, bestanden von ${results.length} Prüfungen.`)
-writeFileSync(process.argv.includes('--only') ? 'tmp/proof/s9a4-rotbeweis-teil.md' : 'tmp/proof/s9a4-rotbeweis.md', report.join('\n') + '\n')
-const allGood = results.every((r) => r.good) && same && restoreFailed.length === 0
-console.log(same ? 'Definitionen vorher und nachher identisch.' : 'ACHTUNG: Definitionen weichen ab!')
-console.log(allGood ? 'REDPROOF BESTANDEN' : 'REDPROOF FEHLGESCHLAGEN')
-process.exitCode = allGood ? 0 : 1
+await runMain(rp, main, deps)
