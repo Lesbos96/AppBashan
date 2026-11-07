@@ -9,7 +9,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { DEV_REF } from './dev-ref.mjs'
 
 export const FUNCTION = 'quote'
-const PATHS = ['supabase/functions', 'supabase/config.toml']
+const PATHS = ['supabase/functions', 'supabase/config.toml', 'supabase/templates'] // templates: config.toml verweist per content_path darauf, die CLI liest sie beim Deploy
 const lf = (b) => Buffer.from(b).toString('utf8').replace(/\r/g, '')
 const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]))
 
@@ -74,6 +74,20 @@ export function createDeployer(d) {
         }
         if (files.length === 0) diff.push('keine Dateien geladen')
         return { same: diff.length === 0, diff, files: files.length }
+      } finally { d.rm(dir) }
+    },
+    /** Einstellungen von quote auf Dev (nur lesend): ACTIVE, verify_jwt wie in config.toml von `commit`, Einstiegspunkt quote/index.ts, keine Import-Map. */
+    settingsMatch(commit) {
+      const dir = d.mkdtemp('redproof-ls-')
+      try {
+        const raw = JSON.parse(d.run(cmdArgs(['functions', 'list', '-o', 'json']), { cwd: dir }))
+        const list = Array.isArray(raw) ? raw : raw?.functions // gemessen 2026-11-07: Array; die Objektform {functions: […]} liefert `functions list` ohne -o
+        if (!Array.isArray(list)) throw new Error('functions list: unbekannte Form der JSON-Ausgabe')
+        const fn = list.find((f) => f.slug === FUNCTION)
+        const toml = lf(d.gitShow(commit, 'supabase/config.toml')).split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
+        const section = /^\[functions\.quote\]\s*\n((?:(?!\[).*\n?)*)/m.exec(toml)?.[1] ?? ''
+        const want = /^\s*verify_jwt\s*=\s*(true|false)/m.exec(section)?.[1] ?? 'true' // CLI-Standard
+        return Boolean(fn) && fn.status === 'ACTIVE' && String(fn.verify_jwt) === want && fn.import_map === false && /\/supabase\/functions\/quote\/index\.ts$/.test(String(fn.entrypoint_path))
       } finally { d.rm(dir) }
     },
     info() {

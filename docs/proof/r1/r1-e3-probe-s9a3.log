@@ -1,0 +1,6 @@
+pg_cron: Zeitzone GMT, Background-Worker off, 4 erfolgreiche Läufe in 65 min
+Totmann-Probelauf recht: succeeded, Job entfernt (rental_bookings: UPDATE für service_role (Schicht: guard_rental_status))
+Totmann-Probelauf funktion: succeeded, Job entfernt (terms_missing: Bedingungen im Snapshot nicht mehr verlangt (Schicht: invalid_revision))
+Totmann-Probelauf constraint: succeeded, Job entfernt (request_contacts_format: Kontaktformat-Constraint entfernt)
+Totmann-Probelauf trigger: succeeded, Job entfernt (request_delete_guard nach 0019 ausgeschaltet (Eigentümer-DELETE))
+EXIT=0

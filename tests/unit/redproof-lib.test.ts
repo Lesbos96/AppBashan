@@ -578,6 +578,46 @@ describe('Restore von Hand (recover)', () => {
     const dead = setup({ dir: first.dir, db: first.db, alive: [] })
     await expect(dead.run.recover()).resolves.toBeTruthy()
   })
+  it('Deploy-Markierung: Stand = Commit und Einstellungen gleich → quittiert ohne Deploy; sonst genau ein Deploy des Marker-Commits; bleibt er ungleich → Fatal', async () => {
+    const mk = async () => {
+      const first = setup()
+      await first.run.start()
+      void first.run.withDeployWindow({ label: 'quote', commit: 'abc123', loosen: () => {}, restore: () => {}, verify: () => true }, never)
+      await tick()
+      return first
+    }
+    const same = await mk()
+    const deployed: string[] = []
+    const a = setup({ dir: same.dir, db: same.db })
+    a.deps.deployCommit = (c: string) => { deployed.push(c) }
+    a.deps.deployMatches = () => true
+    await expect(a.run.recover()).resolves.toMatchObject({ restored: ['quote'] })
+    expect(deployed).toEqual([])
+    expect(markersIn(same.dir)).toHaveLength(0)
+
+    const differs = await mk()
+    let live = false
+    const b = setup({ dir: differs.dir, db: differs.db })
+    b.deps.deployCommit = (c: string) => { deployed.push(c); live = true }
+    b.deps.deployMatches = () => live
+    await b.run.recover()
+    expect(deployed).toEqual(['abc123'])
+
+    const throwing = await mk() // Vorprüfung wirft (z. B. Function fehlt) → deployen, Nachprüfung streng
+    let calls = 0
+    const e = setup({ dir: throwing.dir, db: throwing.db })
+    e.deps.deployCommit = (c: string) => { deployed.push(`wirft:${c}`) }
+    e.deps.deployMatches = () => { if (++calls === 1) throw new Error('Download scheitert'); return true }
+    await e.run.recover()
+    expect(deployed).toEqual(['abc123', 'wirft:abc123'])
+
+    const stuck = await mk()
+    const c = setup({ dir: stuck.dir, db: stuck.db })
+    c.deps.deployCommit = () => {}
+    c.deps.deployMatches = () => false
+    await expect(c.run.recover()).rejects.toBeInstanceOf(FatalError)
+    expect(markersIn(stuck.dir)).toHaveLength(1)
+  })
   it('verlangt sauberen supabase/functions-Stand', async () => {
     const first = await crashed()
     first.db.calls.length = 0

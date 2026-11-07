@@ -1,0 +1,8 @@
+Diagnose-Deploy der sauberen HEAD-Kopie (Commit 137afdb8ff4d9b4ba40d3a70cda01395c899b9a3) nach Dev, Skript tmp/proof/r1-deploy-diag.mjs.
+Hinweis: Dieses Log wurde nachträglich angelegt. Der Wortlaut ist die Ausgabe des Laufs aus dem Chat (stderr war leer, der Fehler stand im JSON auf stdout; keine Secrets enthalten).
+Der Lauf erfolgte vor der im Chat verlangten Ankündigung. Er hat auf Dev nichts verändert, weil die CLI vor dem Deploy abbrach.
+
+STDERR:
+STDOUT: {"_tag":"Error","error":{"code":"UnknownError","message":"Invalid config for auth.email.template.magic_link.content_path: ENOENT: no such file or directory, open 'C:\\Users\\gesch\\AppData\\Local\\Temp\\redproof-sauber-00A62r\\supabase\\templates\\magic_link.html'"}}
+
+Ursache: Die Deploy-Kopie enthielt nur supabase/functions und supabase/config.toml. config.toml verweist per content_path auf supabase/templates/magic_link.html und confirmation.html; ohne diese Dateien bricht `functions deploy` ab. Der gelockerte Deploy (gleiche Kopie, mit Textersatz) scheiterte damit ebenfalls.

@@ -1,0 +1,3 @@
+redproof-restore-Jobs: []
+Jobs: [{"active":true,"jobname":"geocode-cleanup","schedule":"23 * * * *"},{"active":true,"jobname":"photo-cleanup","schedule":"23 * * * *"},{"active":true,"jobname":"route-cleanup","schedule":"17 * * * *"}]
+EXIT=0

@@ -1,0 +1,57 @@
+diff --git a/scripts/redproof-deploy.mjs b/scripts/redproof-deploy.mjs
+index b309da6..32eba97 100644
+--- a/scripts/redproof-deploy.mjs
++++ b/scripts/redproof-deploy.mjs
+@@ -9,7 +9,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+ import { DEV_REF } from './dev-ref.mjs'
+ 
+ export const FUNCTION = 'quote'
+-const PATHS = ['supabase/functions', 'supabase/config.toml']
++const PATHS = ['supabase/functions', 'supabase/config.toml', 'supabase/templates'] // templates: config.toml verweist per content_path darauf, die CLI liest sie beim Deploy
+ const lf = (b) => Buffer.from(b).toString('utf8').replace(/\r/g, '')
+ const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]))
+ 
+@@ -76,6 +76,16 @@ export function createDeployer(d) {
+         return { same: diff.length === 0, diff, files: files.length }
+       } finally { d.rm(dir) }
+     },
++    /** Einstellungen von quote auf Dev (nur lesend): ACTIVE und verify_jwt wie in config.toml von `commit`. */
++    settingsMatch(commit) {
++      const dir = d.mkdtemp('redproof-ls-')
++      try {
++        const list = JSON.parse(d.run(cmdArgs(['functions', 'list', '-o', 'json']), { cwd: dir }))
++        const fn = (Array.isArray(list) ? list : []).find((f) => f.slug === FUNCTION)
++        const want = /\[functions\.quote\][^[]*?verify_jwt\s*=\s*(true|false)/.exec(lf(d.gitShow(commit, 'supabase/config.toml')))?.[1]
++        return Boolean(fn) && fn.status === 'ACTIVE' && want !== undefined && String(fn.verify_jwt) === want
++      } finally { d.rm(dir) }
++    },
+     info() {
+       const dir = d.mkdtemp('redproof-ls-')
+       try { return d.run(cmdArgs(['functions', 'list']), { cwd: dir }) } finally { d.rm(dir) }
+diff --git a/scripts/redproof-lib.mjs b/scripts/redproof-lib.mjs
+index d8bc678..5c1e51b 100644
+--- a/scripts/redproof-lib.mjs
++++ b/scripts/redproof-lib.mjs
+@@ -527,7 +527,8 @@ export function createRun(deps, { name, mode = 'write', soll }) {
+         const w = { kind: m.type, label: m.label, nr: m.nr, restore: m.restoreSql, marker: join(dir, f), touched: m.touched ?? [], deadman: m.deadman, children: new Set() }
+         if (m.type === 'deploy') {
+           if (!deps.deployCommit) throw new FatalError('Kein Deploy-Restore verfügbar')
+-          deps.deployCommit(m.commit)
++          // erst lesend prüfen: Download = Commit der Markierung und Einstellungen gleich → quittieren, sonst deployen (Etappe 3: Deploy war nie gelaufen)
++          if (!deps.deployMatches(m.commit)) deps.deployCommit(m.commit)
+           if (!deps.deployMatches(m.commit)) throw new FatalError(`Deploy-Stand entspricht nicht Commit ${m.commit}. Markierung ${w.marker}`)
+         } else {
+           restoreVerified(w, [...rest, `cron|${DEADMAN_PREFIX}*`])
+diff --git a/scripts/redproof-restore.mjs b/scripts/redproof-restore.mjs
+index e158d1b..1dbbe12 100644
+--- a/scripts/redproof-restore.mjs
++++ b/scripts/redproof-restore.mjs
+@@ -16,7 +16,7 @@ deps.deployCommit = (commit) => {
+   const dir = deployer.exportCommit(commit)
+   try { deployer.deploy(dir) } finally { deployer.remove(dir) }
+ }
+-deps.deployMatches = (commit) => deployer.matches(commit).same
++deps.deployMatches = (commit) => deployer.matches(commit).same && deployer.settingsMatch(commit)
+ const soll = JSON.parse(readFileSync('scripts/redproof-soll.json', 'utf8')).rows
+ const run = createRun(deps, { name: 'restore', mode: 'write', soll })
+ try {

@@ -1,0 +1,84 @@
+pg_cron: Zeitzone GMT, Background-Worker off, 14 erfolgreiche Läufe in 65 min
+OK     [Sperre] rental_bookings: UPDATE für service_role (Schicht: guard_rental_status)
+         gelockert: ok | withdrawn (erwartet ok | withdrawn)
+         gesperrt:  42501: permission denied for table rental_bookings | requested (erwartet 42501: permission denied for table rental_bookings | requested)
+         Test rot: 1 rot
+OK     [Schicht] rental_bookings: UPDATE ungültiges Statuspaar (Schicht: guard_rental_status)
+         gelockert: P0001: invalid_transition | requested (erwartet P0001: invalid_transition | requested)
+         gesperrt:  42501: permission denied for table rental_bookings | requested (erwartet 42501: permission denied for table rental_bookings | requested)
+OK     [Schicht] rental_bookings: DELETE für service_role (Schicht: Löschschutz)
+         gelockert: ok | 0 (erwartet ok | 0)
+         gesperrt:  42501: permission denied for table rental_bookings | 1 (erwartet 42501: permission denied for table rental_bookings | 1)
+         Test rot: 1 rot
+OK     [Schicht] terms_missing: Bedingungen im Snapshot nicht mehr verlangt (Schicht: invalid_revision)
+         gelockert: P0001: invalid_revision | 1 (erwartet P0001: invalid_revision | 1)
+         gesperrt:  P0001: terms_missing | 1 (erwartet P0001: terms_missing | 1)
+         Test rot: 2 rot
+OK     [Schicht] district_required: Bezirk nicht mehr verlangt (Schicht: NOT NULL der Spalte)
+         gelockert: 23502: null value in column "district" of relation "service_requests" violates not-null constraint | 1 (erwartet 23502: null value in column "district" of relation "service_requests" violates not-null constraint | 1)
+         gesperrt:  P0001: district_required | 1 (erwartet P0001: district_required | 1)
+         Test rot: 1 rot
+OK     [Schicht] contact_required: Kontakt nicht mehr verlangt (Schicht: NOT NULL der Spalten)
+         gelockert: 23502: null value in column "name" of relation "request_contacts" violates not-null constraint | 1 (erwartet 23502: null value in column "name" of relation "request_contacts" violates not-null constraint | 1)
+         gesperrt:  P0001: contact_required | 1 (erwartet P0001: contact_required | 1)
+         Test rot: 2 rot
+OK     [Schicht] confirmed_required: Bestätigung nicht mehr verlangt (Schicht: NOT NULL audit_log.detail)
+         gelockert: 23502: null value in column "detail" of relation "audit_log" violates not-null constraint | 1/1 (erwartet 23502: null value in column "detail" of relation "audit_log" violates not-null constraint | 1/1)
+         gesperrt:  P0001: confirmed_required | 1/1 (erwartet P0001: confirmed_required | 1/1)
+         Test rot: 1 rot
+OK     [Sperre] too_late: Mindestvorlauf nicht mehr geprüft (N-6, Test läuft gelockert)
+         gelockert: ok | 2 (erwartet ok | 2)
+         gesperrt:  P0001: too_late | 1 (erwartet P0001: too_late | 1)
+         Test rot: 1 rot
+OK     [Sperre] request_contacts_format: Kontaktformat-Constraint entfernt
+         gelockert: ok | 2 (erwartet ok | 2)
+         gesperrt:  23514: new row for relation "request_contacts" violates check constraint "request_contacts_format" | 1 (erwartet 23514: new row for relation "request_contacts" violates check constraint "request_contacts_format" | 1)
+         Test rot: 1 rot
+OK     [Sperre] quote_district: Prüfung „liegt in Wien“ ausgeschaltet (Grazer Punkt)
+         gelockert: ok | true (erwartet ok | true)
+         gesperrt:  ok | false (erwartet ok | false)
+         Test rot: 1 rot
+OK     [Sperre] quote_district: Bezirk aus falschem Polygon (immer 99)
+         gelockert: ok | 99 (erwartet ok | 99)
+         gesperrt:  ok | 1 (erwartet ok | 1)
+         Test rot: 1 rot
+OK     [Schicht] geo_districts: SELECT für authenticated (Schicht: RLS ohne Policy)
+         gelockert: ok | 23 (erwartet ok | 23)
+         gesperrt:  42501: permission denied for table geo_districts | 23 (erwartet 42501: permission denied for table geo_districts | 23)
+         Test rot: 1 rot
+OK     [Sperre] geocode_cache: SELECT für authenticated (isoliert: Lese-Policy nur in der Probe)
+         gelockert: ok | 1 (erwartet ok | 1)
+         gesperrt:  42501: permission denied for table geocode_cache | 0 (erwartet 42501: permission denied for table geocode_cache | 0)
+         Test rot: 1 rot
+OK     [Schicht] quote_district: EXECUTE für authenticated (Schicht: kein Recht auf geo_boundaries)
+         gelockert: 42501: permission denied for table geo_boundaries | 1 (erwartet 42501: permission denied for table geo_boundaries | 1)
+         gesperrt:  42501: permission denied for function quote_district | 1 (erwartet 42501: permission denied for function quote_district | 1)
+         Test rot: 1 rot
+OK     [Sperre] quote_save_request: EXECUTE für authenticated (isoliert: innere Schichten und photo_staging_interval nur in der Probe offen)
+         gelockert: ok | 2 (erwartet ok | 2)
+         gesperrt:  42501: permission denied for function quote_save_request | 1 (erwartet 42501: permission denied for function quote_save_request | 1)
+         Test rot: 1 rot
+OK     [Sperre] photo_staging_interval: EXECUTE für authenticated (isoliert: innere Schichten und quote_save_request nur in der Probe offen)
+         gelockert: ok | 2 (erwartet ok | 2)
+         gesperrt:  42501: permission denied for function photo_staging_interval | 1 (erwartet 42501: permission denied for function photo_staging_interval | 1)
+OK     [Schicht] S9a-1 N2: publish_version für authenticated mit nie angelegter Version 9990 (Schicht: assert_admin)
+         gelockert: 42501: not_admin | 0 (erwartet 42501: not_admin | 0)
+         gesperrt:  42501: permission denied for function publish_version | 0 (erwartet 42501: permission denied for function publish_version | 0)
+OK     [Sperre] S9a-1 N3: assert_admin lässt Nicht-Admin durch
+         gelockert: ok | 1 (erwartet ok | 1)
+         gesperrt:  42501: not_admin | 0 (erwartet 42501: not_admin | 0)
+OK     [Sperre] S9a-1 N3: guard_price_version, INSERT-Zweig (veröffentlicht einfügen)
+         gelockert: ok | 1 (erwartet ok | 1)
+         gesperrt:  P0001: field_immutable | 0 (erwartet P0001: field_immutable | 0)
+OK     [Schicht] S9a-1 N3: TRUNCATE auf platform_settings für service_role (Schicht: Trigger)
+         gelockert: P0001: append_only | 27 (erwartet P0001: append_only | 27)
+         gesperrt:  42501: permission denied for table platform_settings | 27 (erwartet 42501: permission denied for table platform_settings | 27)
+OK     [Sperre] S9a-1 N3: booking_terms liefert fee_rate
+         gelockert: ok | true (erwartet ok | true)
+         gesperrt:  ok | false (erwartet ok | false)
+OK     [Sperre] request_delete_guard nach 0019 ausgeschaltet (Eigentümer-DELETE)
+         gelockert: ok | 0 (erwartet ok | 0)
+         gesperrt:  P0001: request_immutable | 1 (erwartet P0001: request_immutable | 1)
+Deploy-Restore fehlgeschlagen: quote: Abholung außerhalb Wiens nicht mehr geprüft (Schicht: Bezirk aus Polygon). Markierung tmp\proof\redproof-offen-015-2026-11-07T19-19-02-306Z.json. Wiederherstellen: node scripts/redproof-restore.mjs
+Deploy-Restore fehlgeschlagen: quote: Abholung außerhalb Wiens nicht mehr geprüft (Schicht: Bezirk aus Polygon). Markierung tmp\proof\redproof-offen-015-2026-11-07T19-19-02-306Z.json. Wiederherstellen: node scripts/redproof-restore.mjs
+EXIT=3

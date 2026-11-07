@@ -1,0 +1,5 @@
+route: version 7, updated_at 1793585230988, verify_jwt false, entrypoint supabase/functions/route/index.ts, sha 62171521641b4b084607f382950136d062bb62362014ae97af81bc4f34c6a9a2
+quote: version 90, updated_at 1794081315565, verify_jwt false, entrypoint supabase/functions/quote/index.ts, sha d6c23d1ed40016d421e7367b3fc7a71b275e760c8819cd43de34edbe2d96cf4a
+photo-cleanup: version 1, updated_at 1793501295866, verify_jwt false, entrypoint supabase/functions/photo-cleanup/index.ts, sha df581f770848c12887973b53c79e061ac5c63050b65a0293135f9f87a4735cea
+Download gleich 137afdb: true (27 Dateien)
+EXIT=0

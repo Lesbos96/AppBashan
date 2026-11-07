@@ -1,0 +1,9 @@
+pg_cron: Zeitzone GMT, Background-Worker off, 9 erfolgreiche Läufe in 65 min
+Totmann-Probelauf funktion: succeeded, Job entfernt (photo_missing: Existenz der Datei nicht mehr verlangt (Schicht: fehlende Datei gilt als abgelaufen, N-3))
+Totmann-Probelauf trigger: succeeded, Job entfernt (guard_photo_insert ausgeschaltet (Einfügen am Funktionspfad vorbei))
+Totmann-Probelauf recht: succeeded, Job entfernt (request_photos: INSERT für authenticated (Schicht: keine Insert-Policy))
+Totmann-Probelauf policy: succeeded, Job entfernt (request_photos_select: jeder liest (fremde Fotos))
+Totmann-Probelauf policy-storage: succeeded, Job entfernt (request_photos_objects_select: admin-Klausel wieder da (admin aal2 liest fremde Datei))
+Totmann-Probelauf drop-if-exists: succeeded, Job entfernt (Storage: UPDATE-Policy für Eigentümer vorhanden (Ersetzen/Verschieben nach dem Absenden))
+Totmann-Probelauf default: succeeded, Job entfernt (storage_path: Default '' wiederhergestellt (Schicht: NOT NULL; der Trigger ist im Probe-Ablauf aus, Rollback))
+EXIT=0

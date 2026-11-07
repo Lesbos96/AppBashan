@@ -1,9 +1,10 @@
 // Deploy aus der Kopie (H-B, M-B): kein Schreibzugriff im Repository, cwd = Kopie, Ref aus der Konstante, config.toml Pflicht.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { execFileSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DEV_REF } from '../../scripts/dev-ref.mjs'
-import { createDeployer } from '../../scripts/redproof-deploy.mjs'
+import { createDeployer, realDeployDeps } from '../../scripts/redproof-deploy.mjs'
 
 const REPO = resolve('/repo')
 const TMP = resolve('/tmp-root')
@@ -64,6 +65,36 @@ describe('createDeployer', () => {
     const other = fake({ devFiles: { 'supabase/functions/_shared/quote/handler.ts': 'a\nif (false) throw\n' } })
     expect(createDeployer(other.d).matches('abc')).toMatchObject({ same: false, diff: ['_shared/quote/handler.ts: abweichend'] })
     expect(() => createDeployer(fake({ inRepo: true }).d).download()).toThrow(/Repository/)
+  })
+  it('Etappe 3: jede Datei, auf die config.toml per content_path verweist, kommt in die Kopie (sonst scheitert der Deploy mit ENOENT)', () => {
+    const list = realDeployDeps().gitList('HEAD')
+    const toml = execFileSync('git', ['show', 'HEAD:supabase/config.toml'], { encoding: 'utf8' })
+    const refs = [...toml.matchAll(/^content_path\s*=\s*"\.\/(.+)"/gm)].map((m) => m[1])
+    expect(refs.length).toBeGreaterThan(0)
+    for (const r of refs) expect(list).toContain(r)
+  })
+  it('Einstellungen: ACTIVE und verify_jwt wie config.toml des Commits (nur lesend: functions list)', () => {
+    const toml = '[functions.route]\nverify_jwt = true\n\n[functions.quote]\n# verify_jwt = true\nverify_jwt = false\n\n[functions.photo-cleanup]\nverify_jwt = true\n'
+    const mk = (list: unknown, config = toml) => {
+      const t = fake({ files: { 'supabase/config.toml': config } })
+      const run = t.d.run
+      t.d.run = (args: string[], o: { cwd: string }) => { run(args, o); return JSON.stringify(list) }
+      return { t, dep: createDeployer(t.d) }
+    }
+    const fn = { slug: 'quote', status: 'ACTIVE', verify_jwt: false, import_map: false, entrypoint_path: 'file:///tmp/user_fn_x_1/source/supabase/functions/quote/index.ts' }
+    const ok = mk([fn])
+    expect(ok.dep.settingsMatch('abc')).toBe(true)
+    expect(ok.t.runs[0]!.args).toEqual(['functions', 'list', '-o', 'json', '--project-ref', DEV_REF])
+    expect(mk({ functions: [fn] }).dep.settingsMatch('abc')).toBe(true) // Objektform wird auch angenommen
+    expect(() => mk({ data: [fn] }).dep.settingsMatch('abc')).toThrow(/unbekannte Form/)
+    expect(mk([{ ...fn, verify_jwt: true }]).dep.settingsMatch('abc')).toBe(false)
+    expect(mk([{ ...fn, status: 'REMOVED' }]).dep.settingsMatch('abc')).toBe(false)
+    expect(mk([{ ...fn, import_map: true }]).dep.settingsMatch('abc')).toBe(false)
+    expect(mk([{ ...fn, entrypoint_path: 'file:///x/source/supabase/functions/photo-cleanup/index.ts' }]).dep.settingsMatch('abc')).toBe(false)
+    expect(mk([]).dep.settingsMatch('abc')).toBe(false)
+    // verify_jwt fehlt im Abschnitt → CLI-Standard true; auskommentierter Wert zählt nicht
+    expect(mk([{ ...fn, verify_jwt: true }], '[functions.quote]\n# verify_jwt = false\n').dep.settingsMatch('abc')).toBe(true)
+    expect(mk([fn], '[functions.quote]\n# verify_jwt = false\n').dep.settingsMatch('abc')).toBe(false)
   })
   it('nichts geladen → nicht gleich', () => {
     expect(createDeployer(fake({ devFiles: {} }).d).matches('abc')).toMatchObject({ same: false })

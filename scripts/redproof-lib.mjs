@@ -527,7 +527,10 @@ export function createRun(deps, { name, mode = 'write', soll }) {
         const w = { kind: m.type, label: m.label, nr: m.nr, restore: m.restoreSql, marker: join(dir, f), touched: m.touched ?? [], deadman: m.deadman, children: new Set() }
         if (m.type === 'deploy') {
           if (!deps.deployCommit) throw new FatalError('Kein Deploy-Restore verfügbar')
-          deps.deployCommit(m.commit)
+          // erst lesend prüfen: Download = Commit der Markierung und Einstellungen gleich → quittieren, sonst deployen (Etappe 3: Deploy war nie gelaufen)
+          let passt = false
+          try { passt = deps.deployMatches(m.commit) } catch { /* Vorprüfung gescheitert (Download, Function fehlt, Netz) → deployen; die Nachprüfung bleibt streng */ }
+          if (!passt) deps.deployCommit(m.commit)
           if (!deps.deployMatches(m.commit)) throw new FatalError(`Deploy-Stand entspricht nicht Commit ${m.commit}. Markierung ${w.marker}`)
         } else {
           restoreVerified(w, [...rest, `cron|${DEADMAN_PREFIX}*`])

@@ -16,7 +16,7 @@ deps.deployCommit = (commit) => {
   const dir = deployer.exportCommit(commit)
   try { deployer.deploy(dir) } finally { deployer.remove(dir) }
 }
-deps.deployMatches = (commit) => deployer.matches(commit).same
+deps.deployMatches = (commit) => deployer.matches(commit).same && deployer.settingsMatch(commit)
 const soll = JSON.parse(readFileSync('scripts/redproof-soll.json', 'utf8')).rows
 const run = createRun(deps, { name: 'restore', mode: 'write', soll })
 try {

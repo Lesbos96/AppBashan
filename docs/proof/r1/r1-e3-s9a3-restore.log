@@ -1,0 +1,2 @@
+Command failed: C:\Program Files\nodejs\node.exe C:\Users\gesch\Music\MoveNow\node_modules\supabase\dist\supabase.js functions deploy quote --use-api --project-ref vcpbbzdyltvffvzjrzdi
+EXIT=1

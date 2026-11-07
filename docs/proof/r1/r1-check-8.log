@@ -1,0 +1,61 @@
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 14ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 31ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (10 tests) 33ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 17ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 27ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 30ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 59ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 16ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 6ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 8ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 11ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 129ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 32ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 21ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 113ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 92ms
+ ✓ |unit| tests/unit/auth.test.ts (54 tests) 31ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 220ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 18ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (17 tests) 45ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 78ms
+ ✓ |unit| tests/unit/quote.test.ts (57 tests) 171ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 575ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 814ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 32ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 58ms
+
+ Test Files  26 passed (26)
+      Tests  637 passed (637)
+   Start at  21:01:45
+   Duration  1.63s (import 43%, transform 28%, tests 25%, worker 3%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=0
