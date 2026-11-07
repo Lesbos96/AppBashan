@@ -348,7 +348,7 @@ Alle Probes laufen in Rollback-Transaktionen; zweischichtige Sperren isoliert (d
 
 ## 11. Offen
 
-- Text und gültige Version der **Partnerbedingungen** (`terms_version` wird als Text gespeichert, nur das Format geprüft; die Liste gültiger Versionen steht aus).
+- Text und gültige Version der **Partnerbedingungen** (`terms_version` wird als Text gespeichert, nur das Format geprüft; die Liste gültiger Versionen steht aus). Auf Dev gilt bis zur Rechtsklärung der Platzhalter `partner-2026-11-entwurf` (Beks, 2026-11-07).
 - Schließen offener Listings/Angebote beim Statuswechsel, Zuordnungs- und Statusprüfung im Journal: Pflicht für S9c/S9e.
 - Aufruf-Skript für admin-Edge-Functions: S9c.
 - `vat_rule` `reverse_charge`/`none`: Phase 2, mit Frage 14 und Frage Recht 9.

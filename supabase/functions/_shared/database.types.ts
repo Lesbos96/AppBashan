@@ -220,6 +220,38 @@ export type Database = {
           },
         ]
       }
+      partner_documents: {
+        Row: {
+          id: string
+          kind: string
+          partner_id: string
+          storage_path: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          kind: string
+          partner_id: string
+          storage_path: string
+          uploaded_at?: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          partner_id?: string
+          storage_path?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_documents_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_members: {
         Row: {
           created_at: string
@@ -1012,6 +1044,36 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_remove_partner_document: {
+        Args: { p_actor: string; p_document: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_set_partner_master: {
+        Args: {
+          p_actor: string
+          p_city: string
+          p_legal_form: string
+          p_name: string
+          p_note?: string
+          p_partner: string
+          p_postcode: string
+          p_small_business: boolean
+          p_street: string
+          p_stripe_account_id: string
+          p_uid: string
+        }
+        Returns: undefined
+      }
+      admin_set_partner_scope: {
+        Args: {
+          p_actor: string
+          p_districts: number[]
+          p_note?: string
+          p_partner: string
+          p_services: Database["public"]["Enums"]["partner_service"][]
+        }
+        Returns: undefined
+      }
       admin_set_partner_status: {
         Args: {
           p_actor: string
@@ -1041,6 +1103,16 @@ export type Database = {
           p_key: string
           p_note?: string
           p_value: number
+        }
+        Returns: undefined
+      }
+      admin_set_vat_rule: {
+        Args: {
+          p_actor: string
+          p_note?: string
+          p_partner: string
+          p_rule: Database["public"]["Enums"]["partner_vat_rule"]
+          p_valid_from: string
         }
         Returns: undefined
       }

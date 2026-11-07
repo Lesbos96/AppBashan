@@ -112,6 +112,20 @@ Zuständigkeit: vier Helfer (SECURITY DEFINER, EXECUTE `authenticated`, 0023): `
 
 Löschen einer Firma: nur Eigentümer-SQL mit Marker `app.mv_partner_delete`; TRUNCATE nie. Tests: `tests/rls/partners.test.ts` (Rollback-Proben, aal als Claim; echte TOTP-Token S9b-3).
 
+### Partner-Verwaltung (Migrationen 0024 bis 0026, S9b-2)
+
+Kategorien, Bezirke, USt.-Regel und Stammdaten ändert nur admin über vier Funktionen (Grant nur `service_role`, `p_actor` muss admin und darf nicht Mitglied der Firma sein, ein `audit_log`-Eintrag je Aufruf; das Stripe-Konto steht nur als Feldname im Audit). Phase 1 sperrt `rental` und andere USt.-Regeln als `standard_20` zusätzlich per Constraint (`partner_categories_no_rental`, `partner_vat_rules_phase1`). Stammdaten: `app.mv_partner_master` = Firmen-ID unmittelbar vor dem UPDATE. Dokumente: Der Partner legt die Zeile an (nur `id`, `kind`), der Trigger setzt Firma und Pfad `{partner_id}/{id}`, verlangt Mitglied mit aal2 und Status pending/active/payment_hold, höchstens 5 Zeilen je Firma unter Advisory-Lock (`limit_reached`), lehnt eine ID ab, deren Datei noch im Bucket liegt (`slot_taken`). Upload nur auf den Pfad einer eigenen Zeile (`private.partner_document_slot`, aal2, Status wie oben); Lesen der eigenen Dateien aus demselben Grund (Upload mit RETURNING braucht die Select-Policy, 0025; offen: OPEN_ISSUES S9b-2 M2).
+
+| Objekt | anon | Kunde ohne Firma | Mitglied (eigene Firma) | admin (aal2) | service_role | Beleg |
+|---|---|---|---|---|---|---|
+| `partner_documents` | – | – (INSERT: `not_partner_member`) | S `id, partner_id, kind, uploaded_at` (aal1 genügt, nie `storage_path`); I `(id, kind)` nur mit aal2; U D – | S Spalten wie Mitglied | S alle Spalten; I U D entzogen | 0024:Tabelle, Policies |
+| Bucket `partner-documents` (`storage.objects`) | – | – | I nur auf eigenen Slot (aal2); S eigene Dateien (aal2); U D – | S | umgeht RLS (Edge Functions) | 0024:Policies, 0025 |
+| `public.admin_set_partner_scope`, `admin_set_vat_rule`, `admin_set_partner_master`, `admin_remove_partner_document` | – | – | – | – | EXECUTE | 0024:Funktionen |
+| `private.partner_document_slot(text)` | – | EXECUTE | EXECUTE | EXECUTE | – | 0024 |
+| `private.guard_document_insert` (SECURITY DEFINER, 0026 ersetzt), `guard_document_delete` | – | – | – | – | – (nur Trigger) | 0024, 0026 |
+
+Dokumentzeilen sind unveränderlich (UPDATE, TRUNCATE: `append_only`); DELETE nur mit Marker `app.mv_partner_doc_delete` (= Dokument-ID, setzt `admin_remove_partner_document`) oder `app.mv_partner_delete` (Firma). Tests: `tests/rls/partner-admin.test.ts`.
+
 Abgesichert in `tests/rls/` (acht Dateien; `npm run test:rls`, gegen das Dev-Projekt, Nutzer je Lauf neu und danach gelöscht). Welche Zeilen durch einen Test belegt sind und welche nicht: `docs/proof/archdoku/archdoku-abgleich.md` (Korrekturen: OPEN_ISSUES NA-19).
 
 ## Datenschutz

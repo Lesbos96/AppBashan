@@ -15,7 +15,7 @@ export const P = (key: string) => `current_setting('app.p_${key}')::uuid`
 export const regArgs = (o: Partial<Record<string, string>> = {}) => {
   const a = {
     name: "'Testfirma GmbH'", legal: "'gmbh'", uid: "'ATU12345678'", small: 'false', street: "'Teststraße 1'", zip: "'1010'", city: "'Wien'",
-    cname: "'Max Test'", phone: "'+43 660 1234567'", email: "'firma@movenow.test'", districts: 'array[1,2]::smallint[]', terms: "'2026-11'", ...o,
+    cname: "'Max Test'", phone: "'+43 660 1234567'", email: "'firma@movenow.test'", districts: 'array[1,2]::smallint[]', terms: "'partner-2026-11-entwurf'", ...o,
   }
   return `${a.name}, ${a.legal}, ${a.uid}, ${a.small}, ${a.street}, ${a.zip}, ${a.city}, ${a.cname}, ${a.phone}, ${a.email}, ${a.districts}, ${a.terms}`
 }
@@ -50,6 +50,7 @@ export function firm(user: string, key: string, status: PStatus, admin: string):
 export function ownerDeletePartner(id: string) {
   ownerSql(
     `begin; select set_config('app.mv_partner_delete', '${id}', true);
+     delete from public.partner_documents where partner_id = '${id}';
      delete from public.partner_vat_rules where partner_id = '${id}'; delete from public.partner_regions where partner_id = '${id}';
      delete from public.partner_categories where partner_id = '${id}'; delete from public.partner_members where partner_id = '${id}';
      delete from public.partners where id = '${id}'; commit`,

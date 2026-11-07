@@ -468,6 +468,7 @@ describe('Rollen', () => {
       'private.my_member_partner_id():authenticated',
       'private.my_partner_id():authenticated',
       'private.my_role():authenticated',
+      'private.partner_document_slot(text):authenticated',
       'private.partner_of_user():authenticated',
       'private.staging_photo_count():authenticated',
       'register_partner(text,text,text,boolean,text,text,text,text,text,text,smallint[],text)',
@@ -477,6 +478,10 @@ describe('Rollen', () => {
     const svcOnly = rows.filter((r) => r.svc === true && r.anon !== true && r.auth !== true).map((r) => String(r.fn))
     expect(svcOnly).toContain('admin_approve_partner(uuid,uuid,partner_service[],partner_vat_rule,text)')
     expect(svcOnly).toContain('admin_set_partner_status(uuid,uuid,partner_status,text)')
+    expect(svcOnly).toContain('admin_set_partner_scope(uuid,uuid,partner_service[],smallint[],text)')
+    expect(svcOnly).toContain('admin_set_vat_rule(uuid,uuid,partner_vat_rule,date,text)')
+    expect(svcOnly).toContain('admin_set_partner_master(uuid,uuid,text,text,text,boolean,text,text,text,text,text)')
+    expect(svcOnly).toContain('admin_remove_partner_document(uuid,uuid,text)')
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])
     // Trigger- und Hilfsfunktionen in private (ohne SECURITY DEFINER): kein EXECUTE für Nutzer-Rollen, außer geo_boundaries_make_valid (NA-15)
     const invoker = ownerSql(`select p.oid::regprocedure::text as fn from pg_proc p join pg_namespace n on n.oid = p.pronamespace
