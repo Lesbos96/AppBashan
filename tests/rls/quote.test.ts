@@ -291,9 +291,9 @@ describe('Rechte (Verweigerung exakt, Positivkontrolle)', () => {
     expect((await service.rpc('quote_save_booking', bookingArgs())).error?.code).toBe('23503')
   })
 
-  it('Gebührensatz: Kunde sieht nur NULL, Vermieter den Satz, anon verweigert', async () => {
+  it('Gebührensatz: Kunde und Vermieter sehen nur NULL (Satz nur für Partner-Mitglieder, partner-fee-read.test.ts), anon verweigert', async () => {
     expect(must(await a.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null, fee_vat_rate: null })
-    expect(must(await landlord.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: 0.15, fee_vat_rate: 0.2, fee_rate_from: '2026-10-28' })
+    expect(must(await landlord.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null, fee_vat_rate: null })
     expect((await anon.from('current_fee_rates').select('*')).error?.code).toBe(DENIED)
   })
 

@@ -126,6 +126,10 @@ Kategorien, Bezirke, USt.-Regel und Stammdaten ändert nur admin über vier Funk
 
 Dokumentzeilen sind unveränderlich (UPDATE, TRUNCATE: `append_only`); DELETE nur mit Marker `app.mv_partner_doc_delete` (= Dokument-ID, setzt `admin_remove_partner_document`) oder `app.mv_partner_delete` (Firma). Tests: `tests/rls/partner-admin.test.ts`.
 
+### Gebührensatz lesen (Migration 0027, S9b-3; ersetzt die Zeilen zu `platform_settings` und `current_fee_rates` in der Matrix oben)
+
+`platform_settings`: Spalten-Grant `select (key, version, value, effective_from)` an `authenticated` (`note`, `created_at` intern, `select *` ergibt 42501, auch für admin); Policy `platform_settings_select`: admin (aal2) alle Zeilen, Mitglied einer Partnerfirma (`my_member_partner_id()`: jeder Status, aal2) nur `fee_rate` und `fee_vat_rate`, auch künftige Zeilen (angekündigter Satz, P2B). Kunden ohne Firma, Mitglieder mit aal1, anon (42501) und die Rolle `rental_provider` lesen nichts; Schreiben bleibt entzogen. `current_fee_rates` (View, `security_invoker`): Mitglied aal2 sieht den heute geltenden Satz, alle anderen NULL; den angekündigten Satz zeigt sie nicht (Tabelle mit `effective_from > heute` lesen). Folgen für die Admin-Oberfläche: `note` nur über `service_role` oder eine SECURITY-DEFINER-Funktion mit aal2-Prüfung. Tests: `partner-fee-read.test.ts` (Claim-Ebene, alle fünf Status, künftige Zeile), `partner-mfa.test.ts` (echte TOTP-Token; Überspringen nur bei abgeschaltetem TOTP, Hilfen `tests/support/totp.ts`, `otpauth` nur als devDependency).
+
 Abgesichert in `tests/rls/` (acht Dateien; `npm run test:rls`, gegen das Dev-Projekt, Nutzer je Lauf neu und danach gelöscht). Welche Zeilen durch einen Test belegt sind und welche nicht: `docs/proof/archdoku/archdoku-abgleich.md` (Korrekturen: OPEN_ISSUES NA-19).
 
 ## Datenschutz

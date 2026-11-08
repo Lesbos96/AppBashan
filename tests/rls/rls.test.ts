@@ -320,17 +320,19 @@ describe('Vermieter und Fahrzeuge', () => {
 describe('Gebühren', () => {
   it('Kunden und anon lesen weder fee_splits noch platform_settings', async () => {
     for (const db of [a.db, b.db, anon]) {
-      expect((await db.from('fee_splits').select('*')).data ?? []).toEqual([])
-      expect((await db.from('platform_settings').select('*')).data ?? []).toEqual([])
+      const splits = await db.from('fee_splits').select('*')
+      if (db === anon) expect(splits.error?.code).toBe('42501')
+      else expect(must(splits)).toEqual([])
+      expect((await db.from('platform_settings').select('*')).error?.code).toBe('42501') // Spalten-Grant (0027): select * verweigert
     }
+    expect(must(await a.db.from('platform_settings').select('key'))).toEqual([])
   })
 
-  it('Vermieter liest nur eigene Aufteilung und den Satz', async () => {
+  it('Vermieter liest nur eigene Aufteilung, den Satz seit 0027 nicht mehr (nur Partner-Mitglieder, partner-fee-read.test.ts)', async () => {
     const own = must(await provider.db.from('fee_splits').select('rental_booking_id'))
     expect(own).toEqual([{ rental_booking_id: bookingB }])
     expect(must(await otherProvider.db.from('fee_splits').select('id'))).toEqual([])
-    const keys = must(await provider.db.from('platform_settings').select('key')).map((s) => s.key)
-    expect(keys).toEqual(expect.arrayContaining(['fee_rate', 'fee_vat_rate']))
+    expect(must(await provider.db.from('platform_settings').select('key'))).toEqual([])
   })
 
   it('Vermieter ändert den Satz nicht', async () => {

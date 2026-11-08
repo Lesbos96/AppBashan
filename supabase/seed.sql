@@ -79,7 +79,7 @@ from (values
 ) as v(version, key, value, unit, label, sources, researched_at)
 where not exists (select 1 from public.price_config c where c.version = v.version and c.key = v.key);
 
--- Nicht öffentlich: nur rental_provider und admin (aal2) lesen.
+-- Nicht öffentlich: Partner-Mitglieder (aal2, nur fee_rate und fee_vat_rate) und admin (aal2) lesen; note bleibt intern.
 insert into public.platform_settings (key, version, value, note, effective_from)
 select v.key, v.version, v.value, v.note, v.effective_from::date
 from (values

@@ -111,6 +111,7 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 
 - [x] S9b-1 Partnerkern: Firmen, Statusmaschine, Registrierung, Helfer, RLS (Migration 0023, 2026-11-07)
 - [x] S9b-2 Scope, USt.-Regel, Stammdaten, Dokumente (Migrationen 0024 bis 0026, 2026-11-07)
+- [x] S9b-3 Gebührensatz lesen (N-10), echte TOTP-Tests (Migration 0027, 2026-11-08)
 
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
