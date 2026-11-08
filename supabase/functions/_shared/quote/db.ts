@@ -147,7 +147,17 @@ export function quoteDb(db: Db): DbDeps {
       // Die generierten Typen kennen keine NULL-Argumente; die Funktion nimmt sie an.
       const row = must(await db.rpc('quote_save_request', args as never))[0]
       if (!row) throw new Error('keine Antwort der Schreib-Funktion')
-      return { id: row.id, status: row.status, needsQuote: row.needs_quote, created: row.created }
+      let status = row.status
+      if (row.created) {
+        // Verteilung an die Partner (S9c). Scheitert sie, holt der Cron-Lauf distribute_pending sie nach; die Anfrage ist gespeichert.
+        const dist = await db.rpc('distribute_request', { p_request: row.id })
+        if (dist.error) console.error(JSON.stringify({ event: 'distribute_failed', code: dist.error.code }))
+        else {
+          const now = await db.from('service_requests').select('status').eq('id', row.id).maybeSingle()
+          if (now.data) status = now.data.status
+        }
+      }
+      return { id: row.id, status, needsQuote: row.needs_quote, created: row.created }
     },
     async saveBooking(a: SaveBooking) {
       const args = {

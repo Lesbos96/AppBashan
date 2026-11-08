@@ -61,7 +61,8 @@ describe('register_partner', () => {
       { name: 'UID fehlt ohne Kleinunternehmer', sql: call({ uid: 'null' }), ...auth(c1, 'aal1') },
       { name: 'UID falsches Format', sql: call({ uid: "'ATU123'" }), ...auth(c1, 'aal1') },
       { name: 'PLZ falsch', sql: call({ zip: "'abc'" }), ...auth(c1, 'aal1') },
-      { name: 'Nach Fehlversuchen keine Firma', sql: '=(select count(*) from public.partner_members)' },
+      // nur die Nutzer dieser Probe: committete Testfirmen (Abdeckungsfirma, S9c) und Reste ändern die Gesamtzahl
+      { name: 'Nach Fehlversuchen keine Firma', sql: `=(select count(*) from public.partner_members where user_id in ('${c1}', '${c2}', '${c3}', '${adm}'))` },
       { name: 'Gegenfall: Kunde registriert', sql: call(), ...auth(c1, 'aal1') },
       { name: 'zweiter Aufruf', sql: call(), ...auth(c1, 'aal1') },
       { name: 'Gegenfall: Kleinunternehmer ohne UID', sql: call({ uid: 'null', small: 'true' }), ...auth(c2, 'aal2') },

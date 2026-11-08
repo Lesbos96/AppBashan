@@ -61,7 +61,7 @@ describe('Status nur über Funktionen', () => {
       { name: 'gültiges Paar ohne Marker', sql: upd(reqA, 'withdrawn') },
       { name: 'gültiges Paar, Marker einer anderen Anfrage', sql: `${set(`'${reqB}:withdrawn'`)} ${upd(reqA, 'withdrawn')}` },
       { name: 'gültiges Paar, Marker mit anderem Ziel', sql: `${set(`'${reqA}:expired'`)} ${upd(reqA, 'withdrawn')}` },
-      { name: 'ungültiges Paar mit Marker', sql: `${set(`'${reqA}:accepted'`)} ${upd(reqA, 'accepted')}` },
+      { name: 'ungültiges Paar mit Marker', sql: `${set(`'${reqA}:in_progress'`)} ${upd(reqA, 'in_progress')}` },
       { name: 'ungültiges Paar (completed) mit Marker', sql: `${set(`'${reqA}:completed'`)} ${upd(reqA, 'completed')}` },
       { name: 'Positivkontrolle: Paar und Marker', sql: `${set(`'${reqA}:withdrawn'`)} ${upd(reqA, 'withdrawn')}` },
       { name: 'Positivkontrolle: Ereignis ohne Akteur ist „sql“', sql: `=(select actor_role from public.status_events where request_id = '${reqA}')` },

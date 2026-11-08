@@ -131,7 +131,7 @@ describe('Provisionsjournal', () => {
       { name: 'DELETE (service_role)', sql: 'delete from public.commission_entries', as: 'service_role' },
       { name: 'TRUNCATE (service_role)', sql: 'truncate public.commission_entries', as: 'service_role' },
       { name: 'INSERT (service_role)', sql: direct(RT, s, { req: R.r4, rev: rev1(R.r4) }), as: 'service_role' },
-      { name: 'Ist-Zeilen', sql: '=(select count(*) from public.commission_entries)' },
+      { name: 'Ist-Zeilen', sql: `=(select count(*) from public.commission_entries where request_id in (select id from public.service_requests where customer_id = '${U.cust}'))` },
       { name: 'Firma löschen', sql: deleteFirm('a') },
       { name: 'Kunde löschen', sql: `delete from auth.users where id = '${U.cust}'` },
       { name: 'ohne gültige USt.-Regel', sql: `alter table public.partner_vat_rules disable trigger append_only; update public.partner_vat_rules set valid_from = valid_from + 5 where partner_id = ${P('a')}; ${J.step({ p: 'a', req: R.r4, s })}` },
@@ -302,7 +302,12 @@ describe('Provisionsjournal', () => {
     const s = RT.split(68961)
     const R = { r1: newId(), r2: newId(), r3: newId() }
     const auth = (sub: string, aal: 'aal1' | 'aal2' = 'aal2') => ({ as: 'authenticated', claims: { sub, aal } }) as const
-    const N = (name: string, who: ReturnType<typeof auth>): Step => ({ name, sql: '=(select count(*) from public.commission_entries)', ...who })
+    // nur die Firmen dieser Probe zählen: committete Reste anderer Tests (Wettlauftest, unlöschbares Journal) bleiben außen vor
+    const N = (name: string, who: ReturnType<typeof auth>): Step => ({
+      name,
+      sql: `=(select count(*) from public.commission_entries where partner_id in (${P('a')}, ${P('b')}, ${P('pend')}, ${P('h')}))`,
+      ...who,
+    })
     const steps: Step[] = [
       N('Mitglied A aal2', auth(U.pa)),
       N('Mitglied A aal1', auth(U.pa, 'aal1')),
@@ -319,7 +324,7 @@ describe('Provisionsjournal', () => {
       { name: 'Mitglied A: update', sql: 'update public.commission_entries set total_cents = 1', ...auth(U.pa) },
       { name: 'Mitglied A: delete', sql: 'delete from public.commission_entries', ...auth(U.pa) },
       { name: 'admin aal2: update', sql: 'update public.commission_entries set total_cents = 1', ...auth(U.adm) },
-      { name: 'service_role liest', sql: '=(select count(*) from public.commission_entries)', as: 'service_role' },
+      { name: 'service_role liest', sql: `=(select count(*) from public.commission_entries where request_id in (select id from public.service_requests where customer_id = '${U.cust}'))`, as: 'service_role' },
       { name: 'commission_book (authenticated)', sql: J.call({ p: 'a', req: R.r3, s }), ...auth(U.adm) },
       { name: 'commission_book (anon)', sql: J.call({ p: 'a', req: R.r3, s }), as: 'anon' },
       { name: 'commission_book (service_role)', sql: J.call({ p: 'a', req: R.r3, s }), as: 'service_role' },

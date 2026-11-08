@@ -424,6 +424,15 @@ verify_jwt = false
 [functions.photo-cleanup]
 verify_jwt = false
 
+[functions.accept]
+verify_jwt = false
+
+[functions.admin-contact]
+verify_jwt = false
+
+[functions.outbox-send]
+verify_jwt = false
+
 # Anmelde-Mail (S8a): Code und Link (token_hash) in derselben Mail. Neue Nutzer bekommen je nach Einstellung die Bestätigungs-Mail,
 # daher gilt dieselbe Vorlage für beide. Im gehosteten Projekt im Dashboard eintragen (Authentication → Emails) oder per `supabase config push`.
 [auth.email.template.magic_link]

@@ -113,6 +113,7 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 - [x] S9b-2 Scope, USt.-Regel, Stammdaten, Dokumente (Migrationen 0024 bis 0026, 2026-11-07)
 - [x] S9b-3 Gebührensatz lesen (N-10), echte TOTP-Tests (Migration 0027, 2026-11-08)
 - [x] S9b-4 Journal `commission_entries`, `fee_splits` entfällt (Migrationen 0028, 0029, 2026-11-08)
+- [x] S9c Verteilung und Annahme: `job_listings`, `assignments`, `outbox`, `distribute_request`, `partner_accept` (Edge Function `accept`), `decline_listing`, Fristablauf per Cron, `start_job`, `complete_job`, `job_contact`, `my_job_partner`, `admin_contact` (Migrationen 0030 bis 0034, 2026-11-08; Mailversand gebaut, nicht eingerichtet: OPEN_ISSUES S9c-3)
 
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)

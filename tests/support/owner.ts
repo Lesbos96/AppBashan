@@ -1,7 +1,7 @@
 // Eigentümer-SQL gegen das verlinkte Dev-Projekt (supabase db query --linked, Werte per dotenv-cli aus npm run test:rls).
 // Nur für Tests, die als Datenbank-Eigentümer laufen müssen: Rollen vergeben, Claims (aal) setzen, Rolle wechseln, TRUNCATE.
 // Verändernde Prüfungen laufen in begin … rollback. Die CLI liefert nur das Ergebnis des letzten Statements mit Zeilen.
-import { execFileSync } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 
 type Row = Record<string, unknown>
 
@@ -19,6 +19,20 @@ export function ownerSql(query: string): Row[] {
   const json = JSON.parse(out) as { _tag?: string; error?: { message: string }; rows?: Row[] }
   if (json._tag === 'Error') throw new Error(json.error?.message ?? 'Eigentümer-SQL fehlgeschlagen')
   return json.rows ?? []
+}
+
+/** Wie ownerSql, aber nebenläufig (für Wettlauf-Tests): liefert die Zeilen oder die Fehlermeldung, wirft nie. */
+export function ownerSqlAsync(query: string): Promise<{ rows: Row[] } | { error: string }> {
+  return new Promise((resolve) => {
+    execFile(process.execPath, ['node_modules/supabase/dist/supabase.js', 'db', 'query', '--linked', query], { encoding: 'utf8' }, (e, stdout) => {
+      try {
+        const json = JSON.parse(stdout) as { _tag?: string; error?: { message: string }; rows?: Row[] }
+        resolve(json._tag === 'Error' ? { error: json.error?.message ?? 'Fehler' } : { rows: json.rows ?? [] })
+      } catch {
+        resolve({ error: e ? String(e.message) : 'keine Antwort' })
+      }
+    })
+  })
 }
 
 /** Meldung des Fehlers (Format „ERROR:  SQLSTATE: Meldung“) oder null, wenn die Abfrage gelang. */

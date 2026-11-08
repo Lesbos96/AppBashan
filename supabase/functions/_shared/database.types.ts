@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          accepted_at: string
+          ended_at: string | null
+          ended_reason: Database["public"]["Enums"]["assignment_end"] | null
+          id: string
+          partner_id: string
+          request_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          ended_at?: string | null
+          ended_reason?: Database["public"]["Enums"]["assignment_end"] | null
+          id?: string
+          partner_id: string
+          request_id: string
+        }
+        Update: {
+          accepted_at?: string
+          ended_at?: string | null
+          ended_reason?: Database["public"]["Enums"]["assignment_end"] | null
+          id?: string
+          partner_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -221,6 +263,141 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      job_listings: {
+        Row: {
+          accept_deadline: string
+          created_at: string
+          decided_at: string | null
+          district: number
+          high_cents: number | null
+          id: string
+          inputs: Json
+          low_cents: number | null
+          partner_id: string
+          preferred_date: string | null
+          request_id: string
+          revision_id: string
+          service: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["listing_status"]
+          time_window: string | null
+          total_cents: number | null
+          volume_m3: number | null
+        }
+        Insert: {
+          accept_deadline: string
+          created_at?: string
+          decided_at?: string | null
+          district: number
+          high_cents?: number | null
+          id?: string
+          inputs: Json
+          low_cents?: number | null
+          partner_id: string
+          preferred_date?: string | null
+          request_id: string
+          revision_id: string
+          service: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["listing_status"]
+          time_window?: string | null
+          total_cents?: number | null
+          volume_m3?: number | null
+        }
+        Update: {
+          accept_deadline?: string
+          created_at?: string
+          decided_at?: string | null
+          district?: number
+          high_cents?: number | null
+          id?: string
+          inputs?: Json
+          low_cents?: number | null
+          partner_id?: string
+          preferred_date?: string | null
+          request_id?: string
+          revision_id?: string
+          service?: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["listing_status"]
+          time_window?: string | null
+          total_cents?: number | null
+          volume_m3?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outbox: {
+        Row: {
+          attempts: number
+          claimed_at: string | null
+          created_at: string
+          dedupe_key: string
+          id: number
+          kind: string
+          last_error: string | null
+          recipient_id: string
+          recipient_kind: string
+          request_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          dedupe_key: string
+          id?: never
+          kind: string
+          last_error?: string | null
+          recipient_id: string
+          recipient_kind: string
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          dedupe_key?: string
+          id?: never
+          kind?: string
+          last_error?: string | null
+          recipient_id?: string
+          recipient_kind?: string
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbox_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partner_categories: {
         Row: {
@@ -1055,6 +1232,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_contact: {
+        Args: { p_actor: string; p_reason: string; p_request: string }
+        Returns: {
+          email: string
+          name: string
+          phone: string
+          stairs_door: string
+        }[]
+      }
       admin_create_price_version: {
         Args: {
           p_actor: string
@@ -1144,6 +1330,77 @@ export type Database = {
         Returns: undefined
       }
       booking_terms: { Args: never; Returns: Json }
+      complete_job: { Args: { p_request: string }; Returns: undefined }
+      decline_listing: { Args: { p_listing: string }; Returns: undefined }
+      distribute_pending: { Args: never; Returns: number }
+      distribute_request: { Args: { p_request: string }; Returns: number }
+      expire_requests: { Args: never; Returns: number }
+      job_contact: {
+        Args: { p_request: string }
+        Returns: {
+          email: string
+          from_address: string
+          name: string
+          phone: string
+          preferred_date: string
+          stairs_door: string
+          time_window: string
+          to_address: string
+        }[]
+      }
+      my_job_partner: {
+        Args: { p_request: string }
+        Returns: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          name: string
+        }[]
+      }
+      outbox_claim: {
+        Args: { p_limit: number }
+        Returns: {
+          id: number
+          kind: string
+          partner_email: string
+          recipient_id: string
+          recipient_kind: string
+          request_id: string
+        }[]
+      }
+      outbox_dispatch: { Args: never; Returns: undefined }
+      outbox_mark: {
+        Args: { p_error: string; p_id: number; p_ok: boolean }
+        Returns: undefined
+      }
+      partner_accept: {
+        Args: {
+          p_actor: string
+          p_fee: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_listing: string
+          p_payout: number
+          p_revision: string
+          p_shown_payout: number
+        }
+        Returns: string
+      }
+      partner_accept_basis: {
+        Args: { p_actor: string; p_listing: string }
+        Returns: {
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+          revision_id: string
+          total_cents: number
+        }[]
+      }
       photo_cleanup: { Args: never; Returns: undefined }
       photo_orphans: {
         Args: never
@@ -1262,6 +1519,7 @@ export type Database = {
           to_in_austria: boolean
         }[]
       }
+      start_job: { Args: { p_request: string }; Returns: undefined }
       take_rate_tokens: { Args: { checks: Json }; Returns: boolean }
       verify_price_version: { Args: { p_version: number }; Returns: undefined }
       withdraw: {
@@ -1270,12 +1528,17 @@ export type Database = {
       }
     }
     Enums: {
+      assignment_end:
+        | "completed"
+        | "cancelled_by_customer"
+        | "cancelled_by_partner"
       commission_kind:
         | "booking"
         | "change"
         | "cancellation"
         | "cancellation_fee"
         | "correction"
+      listing_status: "open" | "closed" | "declined" | "accepted"
       offer_status: "pending" | "approved" | "archived"
       partner_role: "owner" | "staff"
       partner_service:
@@ -1434,6 +1697,11 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      assignment_end: [
+        "completed",
+        "cancelled_by_customer",
+        "cancelled_by_partner",
+      ],
       commission_kind: [
         "booking",
         "change",
@@ -1441,6 +1709,7 @@ export const Constants = {
         "cancellation_fee",
         "correction",
       ],
+      listing_status: ["open", "closed", "declined", "accepted"],
       offer_status: ["pending", "approved", "archived"],
       partner_role: ["owner", "staff"],
       partner_service: ["transport", "move", "clearance", "assembly", "rental"],

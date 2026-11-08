@@ -35,14 +35,33 @@ export const setStatus = (admin: string, key: string, status: string, reason = '
   `select public.admin_set_partner_status('${admin}', ${P(key)}, '${status}', '${reason}');`
 
 /** Firma `key` des Nutzers `user` im gewünschten Status (über die zwei Funktionen, wie im Betrieb). */
-export function firm(user: string, key: string, status: PStatus, admin: string): string {
-  const r = register(user, key)
+export function firm(user: string, key: string, status: PStatus, admin: string, over: Partial<Record<string, string>> = {}): string {
+  const r = register(user, key, over)
   switch (status) {
     case 'pending': return r
     case 'active': return `${r} ${approve(admin, key)}`
     case 'payment_hold': return `${r} ${approve(admin, key)} ${setStatus(admin, key, 'payment_hold')}`
     case 'suspended': return `${r} ${approve(admin, key)} ${setStatus(admin, key, 'suspended')}`
     case 'rejected': return `${r} ${setStatus(admin, key, 'rejected')}`
+  }
+}
+
+/**
+ * Committete, aktive Testfirma für alle Leistungen und Bezirke: Anfragen der quote-Tests bleiben `requested`/`awaiting_offer`, statt
+ * sofort `unmatched` zu werden (S9c: `quote` verteilt beim Speichern). Rückgabe: Aufräumfunktion (Firma ohne Zuordnung, löschbar).
+ */
+export function committedCoverFirm(): () => void {
+  // Reste eines abgebrochenen Laufs entfernen (Name ist eindeutig), dann neu anlegen
+  for (const old of ownerSql(`select id from public.partners where name = 'Testabdeckung GmbH'`)) ownerDeletePartner(String(old.id))
+  const [adm, u] = [newId(), newId()]
+  // Bezirke 17, 18 und 21 bleiben frei: tests/rls/listings.test.ts prüft dort Empfänger und „kein Partner passt“
+  const all = `array[${Array.from({ length: 23 }, (_, i) => i + 1).filter((d) => ![17, 18, 21].includes(d)).join(',')}]::smallint[]`
+  ownerSql(`begin; ${insertUsers([adm, u])} ${grantAdmin(adm)} ${register(u, 'cover', { districts: all, name: "'Testabdeckung GmbH'" })}
+    select public.admin_approve_partner('${adm}', ${P('cover')}, array['transport','move','clearance','assembly']::public.partner_service[], 'standard_20', null); commit;`)
+  const pid = String(ownerSql(`select partner_id from public.partner_members where user_id = '${u}'`)[0]?.partner_id)
+  return () => {
+    ownerDeletePartner(pid)
+    ownerSql(`delete from auth.users where id in ('${adm}', '${u}')`)
   }
 }
 

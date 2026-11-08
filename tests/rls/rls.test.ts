@@ -6,7 +6,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
 import { makeRequest } from '../support/db.ts'
 import { ownerGrantRole, ownerSql } from '../support/owner.ts'
-
 type Db = SupabaseClient<Database>
 
 function env(name: string): string {
@@ -451,6 +450,12 @@ describe('Rollen', () => {
       .map((r) => `${r.fn}:${[r.anon === true && 'anon', r.auth === true && 'authenticated'].filter(Boolean).join('+')}`)
     expect(open).toEqual([
       'booking_terms():anon+authenticated',
+      'complete_job(uuid)',
+      'decline_listing(uuid)',
+      'job_contact(uuid)',
+      'my_job_partner(uuid)',
+      'private.assignment_access(uuid,uuid):authenticated',
+      'private.in_scope(uuid,service_type,smallint):authenticated',
       'private.is_admin():authenticated',
       'private.my_job_partner_id():authenticated',
       'private.my_member_partner_id():authenticated',
@@ -460,6 +465,7 @@ describe('Rollen', () => {
       'private.partner_of_user():authenticated',
       'private.staging_photo_count():authenticated',
       'register_partner(text,text,text,boolean,text,text,text,text,text,text,smallint[],text)',
+      'start_job(uuid)',
       'withdraw(uuid):authenticated',
     ].map((s) => (s.endsWith(')') ? `${s}:authenticated` : s)))
     // nur service_role (R2-N7): Admin-Funktionen laufen nie mit einem Nutzer-JWT
@@ -470,6 +476,10 @@ describe('Rollen', () => {
     expect(svcOnly).toContain('admin_set_vat_rule(uuid,uuid,partner_vat_rule,date,text)')
     expect(svcOnly).toContain('admin_set_partner_master(uuid,uuid,text,text,text,boolean,text,text,text,text,text)')
     expect(svcOnly).toContain('admin_remove_partner_document(uuid,uuid,text)')
+    // S9c: Annahme (Art A) und Verteilung nur service_role, Partner-Aufrufe nie mit p_actor aus der Anfrage
+    for (const f of ['partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'partner_accept_basis(uuid,uuid)', 'distribute_request(uuid)', 'distribute_pending()', 'expire_requests()', 'outbox_claim(integer)', 'outbox_mark(bigint,boolean,text)', 'admin_contact(uuid,uuid,text)']) {
+      expect(svcOnly, f).toContain(f)
+    }
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])
     // Journal: die einzige Schreibstelle hat keinen Grant an irgendeine API-Rolle (S9b-4)
     expect(rows.filter((r) => String(r.fn).startsWith('private.commission_book(')).map((r) => [r.anon, r.auth, r.svc])).toEqual([[false, false, false]])
