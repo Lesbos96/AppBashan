@@ -1,0 +1,10 @@
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  15:02:46
+   Duration  797ms (tests 50%, import 36%, transform 13%, worker 1%)
+
+EXIT=0

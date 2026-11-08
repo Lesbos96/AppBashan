@@ -1,4 +1,5 @@
-// Edge Function `photo-cleanup`: entfernt Foto-Dateien ohne Zeile in `request_photos` (Fehl-Uploads, gelöschte Anfragen und Konten) über die Storage-API.
+// Edge Function `photo-cleanup`: entfernt Foto-Dateien ohne Zeile in `request_photos` (Fehl-Uploads, gelöschte Anfragen und Konten) über die Storage-API
+// und räumt mit `photo_purge` beide Buckets auf (Kopien in `job-photos` nach Zugriffsende, Waisen, Originale zurückgezogener Anfragen; Belege nie).
 // Aufruf stündlich durch `public.photo_cleanup()` (pg_cron + pg_net) mit dem Header x-cleanup-secret. Function-Secrets: CLEANUP_SECRET, SECRET_KEY.
 // SUPABASE_URL setzt die Plattform. Die Antwort und das Log enthalten nur Zähler, nie Pfade.
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -43,6 +44,24 @@ Deno.serve(async (req) => {
     }
     removed += gone.data.length
   }
-  console.log(JSON.stringify({ event: 'photo_cleanup', removed }))
-  return Response.json({ removed })
+  // S9d: Kopien und Originale, deren Zugriff endet, und Waisen in job-photos (public.photo_purge, beide Buckets).
+  let purged = 0
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const list = await db.rpc('photo_purge')
+    if (list.error) {
+      console.log(JSON.stringify({ event: 'photo_cleanup_error', code: list.error.code, removed, purged }))
+      return Response.json({ removed, purged }, { status: 500 })
+    }
+    if (list.data.length === 0) break
+    for (const bucket of new Set(list.data.map((o) => o.bucket_id))) {
+      const gone = await db.storage.from(bucket).remove(list.data.filter((o) => o.bucket_id === bucket).map((o) => o.name))
+      if (gone.error) {
+        console.log(JSON.stringify({ event: 'photo_cleanup_error', removed, purged }))
+        return Response.json({ removed, purged }, { status: 500 })
+      }
+      purged += gone.data.length
+    }
+  }
+  console.log(JSON.stringify({ event: 'photo_cleanup', removed, purged }))
+  return Response.json({ removed, purged })
 })

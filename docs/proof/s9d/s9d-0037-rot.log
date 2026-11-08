@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/job-photos.test.ts (12 tests | 3 failed) 54779ms
+   ❯ Verteilung wartet auf Fotos, Claim und Mark (2)
+     × Wartebedingung, Claim mit Lease, Mark nur mit gültigem Versuch, Verteilung nach dem letzten Foto, Mail bei failed 1083ms
+     × Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung 1093ms
+   ❯ Abnahme S9d: Lücken (6)
+     × M1: fehlt das Objekt einer ready-Zeile, liefern admin_photo und job_photo_list nur vorhandene Dateien (Original und Beleg bleiben erreichbar) 5963ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/job-photos.test.ts > Verteilung wartet auf Fotos, Claim und Mark > Wartebedingung, Claim mit Lease, Mark nur mit gültigem Versuch, Verteilung nach dem letzten Foto, Mail bei failed
+AssertionError: 42501: ok: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ err tests/rls/job-photos.test.ts:57:97
+     55| const dist = (req: string) => `select public.distribute_request('${req…
+     56| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     57| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     58| const rows = (v: string | undefined, n: number) => expect(v, String(v)…
+     59| const uid = () => crypto.randomUUID()
+ ❯ tests/rls/job-photos.test.ts:104:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  |rls| tests/rls/job-photos.test.ts > Verteilung wartet auf Fotos, Claim und Mark > Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung
+AssertionError: = 1: expected '= 1' to be '= 0' // Object.is equality
+
+Expected: "= 0"
+Received: "= 1"
+
+ ❯ rows tests/rls/job-photos.test.ts:58:73
+     56| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     57| const err = (v: string | undefined, part: string) => expect(v?.include…
+     58| const rows = (v: string | undefined, n: number) => expect(v, String(v)…
+       |                                                                         ^
+     59| const uid = () => crypto.randomUUID()
+     60|
+ ❯ tests/rls/job-photos.test.ts:146:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  |rls| tests/rls/job-photos.test.ts > Abnahme S9d: Lücken > M1: fehlt das Objekt einer ready-Zeile, liefern admin_photo und job_photo_list nur vorhandene Dateien (Original und Beleg bleiben erreichbar)
+AssertionError: = 3: expected '= 3' to be '= 2' // Object.is equality
+
+Expected: "= 2"
+Received: "= 3"
+
+ ❯ rows tests/rls/job-photos.test.ts:58:73
+     56| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     57| const err = (v: string | undefined, part: string) => expect(v?.include…
+     58| const rows = (v: string | undefined, n: number) => expect(v, String(v)…
+       |                                                                         ^
+     59| const uid = () => crypto.randomUUID()
+     60|
+ ❯ tests/rls/job-photos.test.ts:335:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+   Start at  15:07:59
+   Duration  58.14s (tests 100%)
+
+[vitest-pool]: Timeout terminating forks worker for test files C:/Users/gesch/Music/MoveNow/tests/rls/job-photos.test.ts.
+EXIT=1

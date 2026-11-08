@@ -1,0 +1,12 @@
+photo-publish POST ohne Secret: 503 {"error":"not_configured"}
+photo-publish POST falsches Secret: 503 {"error":"not_configured"}
+photo-publish GET GET: 405 {"error":"method_not_allowed"}
+job-photo POST ohne Token: 401 {"error":"unauthorized"}
+job-photo POST ungültiges Token: 401 {"error":"unauthorized"}
+admin-photo POST ohne Token: 401 {"error":"unauthorized"}
+admin-photo POST ungültiges Token: 401 {"error":"unauthorized"}
+photo-receipt POST ohne Token: 401 {"error":"unauthorized"}
+photo-receipt POST ungültiges Token: 401 {"error":"unauthorized"}
+outbox-send POST ohne Secret: 503 {"error":"mail_not_configured"}
+photo-cleanup POST ohne Secret: 401 
+EXIT=0

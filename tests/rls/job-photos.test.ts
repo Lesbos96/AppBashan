@@ -39,12 +39,18 @@ const photo = (req: string) =>
    select set_config('app.mv_photo_request', '', true);`
 /** Kopien im Endzustand ready für alle Fotos der Anfrage. */
 const path = (p?: string) => (p ? `'${p}'` : "gen_random_uuid() || '.jpg'")
+// Ohne Pfad: Zufallspfad samt Objekt im Bucket (die Listen liefern nur Dateien, die es gibt, 0037); mit Pfad legt der Aufrufer das Objekt selbst an.
 const ready = (req: string, p?: string) =>
   `insert into public.job_photos (request_id, kind, source_photo_id, status, storage_path, sha256, decided_at)
-     select request_id, 'request', id, 'ready', ${path(p)}, repeat('a', 64), now() from public.request_photos where request_id = '${req}';`
+     select request_id, 'request', id, 'ready', ${path(p)}, repeat('a', 64), now() from public.request_photos where request_id = '${req}';
+   ${p ? '' : objectsFor(req, 'request')}`
+const objectsFor = (req: string, kind: string) =>
+  `insert into storage.objects (bucket_id, name) select 'job-photos', j.storage_path from public.job_photos j where j.request_id = '${req}' and j.kind = '${kind}'
+     and not exists (select 1 from storage.objects o where o.bucket_id = 'job-photos' and o.name = j.storage_path);`
 const receipt = (req: string, key: string, n = 1, p?: string) =>
   `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
-     select '${req}', 'receipt', ${P(key)}, 'ready', ${path(p)}, repeat('b', 64), now() from generate_series(1, ${n});`
+     select '${req}', 'receipt', ${P(key)}, 'ready', ${path(p)}, repeat('b', 64), now() from generate_series(1, ${n});
+   ${p ? '' : objectsFor(req, 'receipt')}`
 /** Statusfunktion als plpgsql-Anweisung (ohne Semikolon am Ende). */
 const setSt = (key: string, status: string) => setStatus(U.adm, key, status).replace(/^select /, 'perform ').replace(/;$/, '')
 const obj = (bucket: string, name: string, age = '0 seconds') =>
@@ -73,9 +79,10 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
       { name: 'Nachlauf ließ aus', sql: `=${count(`public.job_listings where request_id = '${R1}'`)}` },
       { name: 'Dispatch ohne Secrets', sql: `perform public.photo_publish_dispatch()` },
       { name: 'kein Versuch gezählt', sql: `=${count(`public.job_photos where request_id = '${R1}'`)}` },
-      { name: 'claim', as: 'service_role', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'claim als service_role', as: 'service_role', sql: `perform count(*) from public.photo_claim(50)` }, // nur der Cron (Eigentümer) claimt, S9d-Abnahme N4
+      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
       { name: 'beide pending', sql: `=${count(`public.job_photos where request_id = '${R1}' and status = 'pending' and attempts = 1`)}` },
-      { name: 'zweiter claim in der Lease', as: 'service_role', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'zweiter claim in der Lease', sql: `perform count(*) from public.photo_claim(50)` },
       { name: 'Versuche bleiben 1', sql: `=(select max(attempts) from public.job_photos where request_id = '${R1}')` },
       { name: 'begin', as: 'service_role', sql: `=public.photo_publish_begin(${JP(R1, 0)}, 1)` },
       { name: 'begin falscher Versuch', as: 'service_role', sql: `perform public.photo_publish_begin(${JP(R1, 0)}, 2)` },
@@ -100,6 +107,7 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
     rows(r['Nachlauf ließ aus'], 0)
     err(r['Dispatch ohne Secrets'], 'nicht eingerichtet')
     rows(r['kein Versuch gezählt'], 0)
+    err(r['claim als service_role'], '42501')
     rows(r['beide pending'], 2)
     rows(r['Versuche bleiben 1'], 1)
     expect(r['begin']).toMatch(/^= .+\.jpg$/)
@@ -121,7 +129,7 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
   it('Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung', () => {
     const R = newId()
     const expire = `update public.job_photos set lease_until = now() - interval '1 second' where request_id = '${R}'`
-    const claim = { as: 'service_role' as const, sql: `perform count(*) from public.photo_claim(50)` }
+    const claim = { sql: `perform count(*) from public.photo_claim(50)` }
     const att = `=(select attempts from public.job_photos where request_id = '${R}')`
     const steps: Step[] = [
       { name: 'c1', ...claim }, { name: 'a1', sql: att }, { name: 'e1', sql: expire },
@@ -140,7 +148,8 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
     rows(r['a3'], 3)
     expect(r['Endzustand']).toBe('= failed:attempts_exhausted')
     rows(r['Listings'], 2)
-    rows(r['Mail'], 1)
+    // Abnahme M2: ein Ausfall der Pipeline (attempts_exhausted) ist kein schlechtes Foto: keine Mail an den Kunden, die Verteilung läuft trotzdem
+    rows(r['Mail'], 0)
   })
 })
 
@@ -291,5 +300,146 @@ describe('Direktzugriff, admin-photo, Aufräumen', () => {
     rows(r['zurückgezogen: Beleg bleibt'], 0)
     rows(r['zurückgezogen: Original'], 1)
     err(r['purge als Konto'], '42501')
+  })
+
+  it('Pfad der Kopie ist nur eine UUID mit .jpg: kein Ordner, kein Nutzer- oder Anfragebezug, nicht der Pfad des Originals (die signierte URL zeigt nur diesen Namen)', () => {
+    const R = newId()
+    const put = (p: string) =>
+      `insert into public.job_photos (request_id, kind, source_photo_id, status, storage_path, sha256, decided_at)
+         select request_id, 'request', id, 'ready', ${p}, repeat('a', 64), now() from public.request_photos where request_id = '${R}'`
+    const steps: Step[] = [
+      { name: 'Nutzer-ID als Ordner', sql: put(`'${U.cust}/${uid()}.jpg'`) },
+      { name: 'Pfad des Originals', sql: put('storage_path') },
+      { name: 'Anfrage-ID als Ordner', sql: put(`'${R}/${uid()}.jpg'`) },
+      { name: 'Endung fehlt', sql: put(`'${uid()}'`) },
+      { name: 'Großbuchstaben', sql: put(`upper('${uid()}') || '.jpg'`) },
+      { name: 'Positivkontrolle', sql: put(`'${uid()}.jpg'`) },
+    ]
+    const r = probes(`${BASE} ${request(R)} ${photo(R)}`, steps)
+    for (const k of ['Nutzer-ID als Ordner', 'Pfad des Originals', 'Anfrage-ID als Ordner', 'Endung fehlt', 'Großbuchstaben']) err(r[k], '23514')
+    expect(r['Positivkontrolle']).toBe('ok')
+  })
+})
+
+// Lücken aus der Abnahme S9d (tmp/proof/s9d-abnahme.md): fehlende Objekte, Aufräum-Matrix, Zuständigkeit, Claim-Auswahl, Mark nach Zurückziehen, Beleg-Tor
+describe('Abnahme S9d: Lücken', () => {
+  const origins = (R: string) => `insert into storage.objects (bucket_id, name) select 'request-photos', storage_path from public.request_photos where request_id = '${R}';`
+
+  it('M1: fehlt das Objekt einer ready-Zeile, liefern admin_photo und job_photo_list nur vorhandene Dateien (Original und Beleg bleiben erreichbar)', () => {
+    const R = newId()
+    const [PC, PB] = [`${uid()}.jpg`, `${uid()}.jpg`]
+    const setup = `${BASE} ${request(R)} ${photo(R)} ${ready(R, PC)} ${receipt(R, 'a', 1, PB)} ${obj('job-photos', PB)} ${origins(R)} ${dist(R)}`
+    const list = `public.job_photo_list('${U.pa}', 'aal2', ${LID(R, 'a')}, null)`
+    const steps: Step[] = [
+      { name: 'admin_photo ohne Kopie', as: 'service_role', sql: `=(select count(*) from public.admin_photo('${U.adm}', '${R}', 'Begründung für den Test'))` },
+      { name: 'Liste ohne Datei', as: 'service_role', sql: `=(select count(*) from ${list})` },
+      { name: 'Kopie kommt', sql: obj('job-photos', PC).replace(/;$/, '') },
+      { name: 'Liste mit Datei', as: 'service_role', sql: `=(select count(*) from ${list})` },
+      { name: 'admin_photo mit Kopie', as: 'service_role', sql: `=(select count(*) from public.admin_photo('${U.adm}', '${R}', 'Begründung für den Test'))` },
+    ]
+    const r = probes(setup, steps)
+    rows(r['admin_photo ohne Kopie'], 2) // Original und Beleg
+    rows(r['Liste ohne Datei'], 0)
+    rows(r['Liste mit Datei'], 1)
+    rows(r['admin_photo mit Kopie'], 3)
+  })
+
+  it('photo_purge nach Status: accepted bleibt, completed bleibt 30 Tage nach Zugriffsende und fällt danach, expired und unmatched fallen sofort, Belege bleiben immer', () => {
+    const [RA, R29, R31, RE, RU] = [newId(), newId(), newId(), newId(), newId()]
+    const [PA, P29, P31, PE, PU, PRB] = Array.from({ length: 6 }, () => `${uid()}.jpg`) as [string, string, string, string, string, string]
+    const one = (R: string, p: string) => `${request(R)} ${photo(R)} ${ready(R, p)} ${obj('job-photos', p)}`
+    const assign = (R: string, ended?: string) =>
+      `insert into public.assignments (request_id, partner_id${ended ? ', ended_at, ended_reason' : ''}) values ('${R}', ${P('a')}${ended ? `, now() - interval '${ended}', 'completed'` : ''})`
+    const to = (R: string, status: string, actor: string | null = U.pa, role = 'partner') => `perform private.set_request_status('${R}', '${status}', ${actor ? `'${actor}'` : 'null'}, '${role}')`
+    const purge = (name: string) => `=(select count(*) from public.photo_purge() where name = '${name}')`
+    const setup = `${BASE} ${one(RA, PA)} ${one(R29, P29)} ${one(R31, P31)} ${one(RE, PE)} ${one(RU, PU)} ${receipt(R31, 'a', 1, PRB)} ${obj('job-photos', PRB)}`
+    const steps: Step[] = [
+      { name: 'RA annehmen', sql: `${to(RA, 'accepted')}; ${assign(RA)}` },
+      { name: 'R29', sql: `${to(R29, 'accepted')}; ${assign(R29, '29 days')}; ${to(R29, 'completed')}` },
+      { name: 'R31', sql: `${to(R31, 'accepted')}; ${assign(R31, '31 days')}; ${to(R31, 'completed')}` },
+      { name: 'RE', sql: to(RE, 'expired', null, 'system') },
+      { name: 'RU', sql: to(RU, 'unmatched', null, 'system') },
+      { name: 'accepted', as: 'service_role', sql: purge(PA) },
+      { name: 'completed, 29 Tage', as: 'service_role', sql: purge(P29) },
+      { name: 'completed, 31 Tage', as: 'service_role', sql: purge(P31) },
+      { name: 'expired', as: 'service_role', sql: purge(PE) },
+      { name: 'unmatched', as: 'service_role', sql: purge(PU) },
+      { name: 'Beleg des alten Auftrags', as: 'service_role', sql: purge(PRB) },
+    ]
+    const r = probes(setup, steps)
+    for (const k of ['RA annehmen', 'R29', 'R31', 'RE', 'RU']) expect(r[k], k).toBe('ok')
+    rows(r['accepted'], 0)
+    rows(r['completed, 29 Tage'], 0)
+    rows(r['completed, 31 Tage'], 1)
+    rows(r['expired'], 1)
+    rows(r['unmatched'], 1)
+    rows(r['Beleg des alten Auftrags'], 0)
+  })
+
+  it('job_photo_list: ein Listing außerhalb der Zuständigkeit (Bezirk) liefert nichts, obwohl es noch offen ist', () => {
+    const R = newId()
+    const list = `public.job_photo_list('${U.pa}', 'aal2', ${LID(R, 'a')}, null)`
+    const r = probes(`${BASE} ${request(R)} ${photo(R)} ${ready(R)} ${dist(R)}`, [
+      { name: 'zuständig', as: 'service_role', sql: `=(select count(*) from ${list})` },
+      { name: 'Bezirk ändern', sql: `update public.job_listings set district = 5 where id = ${LID(R, 'a')}` },
+      { name: 'außerhalb', as: 'service_role', sql: `perform * from ${list}` },
+    ])
+    rows(r['zuständig'], 1)
+    expect(r['Bezirk ändern']).toBe('ok')
+    err(r['außerhalb'], 'not_found')
+  })
+
+  it('photo_claim lässt zurückgezogene, abgelaufene und fristüberschrittene Anfragen aus, nimmt offene', () => {
+    const [RW, RD, RX, RO] = [newId(), newId(), newId(), newId()]
+    // accept_deadline ist unveränderlich: die Anfrage mit überschrittener Frist entsteht gleich so
+    const late = request(RD).replace("now() + interval '1 day'", "now() - interval '1 minute'")
+    const setup = `${BASE} ${[RW, RX, RO].map((x) => request(x)).join(' ')} ${late} ${[RW, RD, RX, RO].map((x) => photo(x)).join(' ')}`
+    const r = probes(setup, [
+      { name: 'zurückziehen', sql: `perform private.set_request_status('${RW}', 'withdrawn', '${U.cust}', 'customer')` },
+      { name: 'abgelaufen', sql: `perform private.set_request_status('${RX}', 'expired', null, 'system')` },
+      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
+      {
+        name: 'geclaimt',
+        sql: `=(select count(*) filter (where request_id = '${RO}')::text || '/' || count(*) filter (where request_id in ('${RW}', '${RD}', '${RX}'))::text from public.job_photos)`,
+      },
+    ])
+    for (const k of ['zurückziehen', 'abgelaufen']) expect(r[k], k).toBe('ok')
+    expect(r['geclaimt']).toBe('= 1/0')
+  })
+
+  it('Mark nach dem Zurückziehen: Foto wird failed, aber keine Mail und keine Verteilung', () => {
+    const R = newId()
+    const r = probes(`${BASE} ${request(R)} ${photo(R)}`, [
+      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'zurückziehen', sql: `perform private.set_request_status('${R}', 'withdrawn', '${U.cust}', 'customer')` },
+      { name: 'mark', as: 'service_role', sql: `perform public.photo_publish_mark(${JP(R, 0)}, 1, false, null, null, 'decode_failed')` },
+      { name: 'Foto', sql: `=(select status from public.job_photos where request_id = '${R}')` },
+      { name: 'Mails', sql: `=${count(`public.outbox where request_id = '${R}'`)}` },
+      { name: 'Listings', sql: `=${count(`public.job_listings where request_id = '${R}'`)}` },
+    ])
+    expect(r['mark']).toBe('ok')
+    expect(r['Foto']).toBe('= failed')
+    rows(r['Mails'], 0)
+    rows(r['Listings'], 0)
+  })
+
+  it('Beleg-Tor: gesperrte Firma partner_not_active, abgeschlossener Auftrag request_closed', () => {
+    const R = newId()
+    const RT = rates()
+    const s = RT.split(68961)
+    const accept = `public.partner_accept('${U.pa}', ${LID(R, 'a')}, ${rev(R)}, ${s.payoutCents}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+    const check = `perform public.photo_receipt_check('${U.pa}', 'aal2', '${R}')`
+    const r = probes(`${BASE} ${request(R)} ${dist(R)}`, [
+      { name: 'Annahme', as: 'service_role', sql: `perform ${accept}` },
+      { name: 'Tor offen', as: 'service_role', sql: check },
+      { name: 'suspended', sql: setSt('a', 'suspended') },
+      { name: 'Tor suspended', as: 'service_role', sql: check },
+      { name: 'wieder aktiv', sql: setStatus(U.adm, 'a', 'active', 'Wieder freigegeben im Test').replace(/^select /, 'perform ').replace(/;$/, '') },
+      { name: 'abschließen', sql: `perform private.set_request_status('${R}', 'completed', '${U.pa}', 'partner')` },
+      { name: 'Tor nach Abschluss', as: 'service_role', sql: check },
+    ])
+    for (const k of ['Annahme', 'Tor offen', 'suspended', 'wieder aktiv', 'abschließen']) expect(r[k], k).toBe('ok')
+    err(r['Tor suspended'], 'partner_not_active')
+    err(r['Tor nach Abschluss'], 'request_closed')
   })
 })

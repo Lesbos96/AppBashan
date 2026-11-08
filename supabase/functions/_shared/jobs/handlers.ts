@@ -12,10 +12,10 @@ export class DbError extends Error {
 
 export type AuthUser = { id: string; aal: string }
 export type Log = (entry: Record<string, unknown>) => void
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Fehlercode der Datenbank → HTTP-Status. Unbekannte Codes sind 500 ohne Details.
-const STATUS: Record<string, number> = {
+export const STATUS: Record<string, number> = {
   not_found: 404,
   partner_not_active: 403,
   not_responsible: 403,
@@ -31,9 +31,14 @@ const STATUS: Record<string, number> = {
   partner_job_limit: 409,
   fee_rate_changed: 409,
   reason_required: 422,
+  mfa_required: 403,
+  bad_request: 400,
+  receipt_limit: 409,
+  file_missing: 409,
+  stale_claim: 409,
 }
 
-async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>) {
+export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>) {
   const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
   const user = jwt ? await deps.getUser(jwt) : null
   if (!user) return { res: json(401, { error: 'unauthorized' }, origin) }
@@ -41,7 +46,7 @@ async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUs
   return { user }
 }
 
-async function body(req: Request): Promise<Record<string, unknown> | null> {
+export async function body(req: Request): Promise<Record<string, unknown> | null> {
   try {
     const v = JSON.parse(await readLimited(req, 2048))
     return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
@@ -50,7 +55,7 @@ async function body(req: Request): Promise<Record<string, unknown> | null> {
   }
 }
 
-const preflight = (req: Request, origin: Record<string, string>) =>
+export const preflight = (req: Request, origin: Record<string, string>) =>
   req.method === 'OPTIONS' ? new Response(null, { status: 204, headers: origin }) : req.method !== 'POST' ? json(405, { error: 'method_not_allowed' }, origin) : null
 
 // accept -------------------------------------------------------------------------------------------------------------------
@@ -153,10 +158,11 @@ const TEXTS: Record<string, { subject: string; text: (url: string) => string }> 
   request_accepted: { subject: 'Dein Auftrag wurde angenommen', text: (u) => `Ein Partner hat deine Anfrage angenommen. Alle Angaben findest du unter Aufträge: ${u}` },
   request_expired: { subject: 'Deine Anfrage ist abgelaufen', text: (u) => `Deine Anfrage wurde in der Frist nicht angenommen. Du kannst sie in der App neu senden: ${u}` },
   request_unmatched: { subject: 'Für deine Anfrage hat sich kein Partner gefunden', text: (u) => `Für Termin und Umfang hat sich leider kein Partner gefunden. Passe die Anfrage an oder sende sie neu: ${u}` },
+  photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }
 
 // Zeitkonstanter Vergleich über SHA-256 beider Werte.
-async function sameSecret(a: string, b: string): Promise<boolean> {
+export async function sameSecret(a: string, b: string): Promise<boolean> {
   const h = async (s: string) => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))
   const [x, y] = await Promise.all([h(a), h(b)])
   let d = 0
@@ -180,20 +186,30 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   if (!deps.secret || !(await sameSecret(got, deps.secret))) return json(401, { error: 'unauthorized' })
   let sent = 0
   let failed = 0
+  // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
+  // Gegenbuchung (die Zeile bleibt `sending`, nach der Lease holt sie der nächste Lauf erneut). Ein Fehler bei einer Zeile stoppt den Lauf nicht.
+  const mark = async (id: number, ok: boolean, error: string | null) => {
+    try {
+      await deps.mark(id, ok, error)
+    } catch {
+      deps.log({ event: 'outbox_mark_failed', id, code: 'mark_failed' })
+    }
+  }
   for (const row of await deps.claim(25)) {
     try {
       const t = TEXTS[row.kind]
       const to = row.recipientKind === 'partner' ? row.partnerEmail : await deps.customerEmail(row.recipientId)
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
       await deps.send({ to, subject: t.subject, text: t.text(deps.appUrl) })
-      await deps.mark(row.id, true, null)
-      sent++
     } catch (e) {
       failed++
       const code = safeCode(e)
       deps.log({ event: 'outbox_failed', id: row.id, kind: row.kind, code })
-      await deps.mark(row.id, false, code)
+      await mark(row.id, false, code)
+      continue
     }
+    sent++
+    await mark(row.id, true, null)
   }
   return json(200, { sent, failed })
 }

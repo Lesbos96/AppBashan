@@ -581,7 +581,7 @@ describe("Nach dem Absenden", () => {
     expect(await photoRows(other)).toEqual([]);
   });
 
-  it("Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen), DELETE und TRUNCATE → photo_immutable; INSERT ohne Marker → photo_insert_forbidden", async () => {
+  it("Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen) und DELETE → photo_immutable, TRUNCATE verweigert (Fremdschlüssel); INSERT ohne Marker → photo_insert_forbidden", async () => {
     const res = probes("select 1", [
       {
         name: "umhängen",
@@ -609,7 +609,8 @@ describe("Nach dem Absenden", () => {
       umhängen: "P0001: photo_immutable",
       ersetzen: "P0001: photo_immutable",
       löschen: "P0001: photo_immutable",
-      truncate: "P0001: photo_immutable",
+      // seit 0035 verweist job_photos.source_photo_id auf request_photos: PostgreSQL verweigert TRUNCATE schon vor dem Trigger (photo_immutable bleibt als zweite Sperre)
+      truncate: "0A000: cannot truncate a table referenced in a foreign key constraint",
       einfügen: "P0001: photo_insert_forbidden",
       "fremder pfad": "P0001: photo_insert_forbidden",
     });

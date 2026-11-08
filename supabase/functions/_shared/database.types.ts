@@ -346,6 +346,76 @@ export type Database = {
           },
         ]
       }
+      job_photos: {
+        Row: {
+          attempts: number
+          created_at: string
+          decided_at: string | null
+          error_code: string | null
+          id: string
+          kind: string
+          lease_until: string | null
+          request_id: string
+          sha256: string | null
+          source_photo_id: string | null
+          status: string
+          storage_path: string | null
+          uploaded_partner_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          decided_at?: string | null
+          error_code?: string | null
+          id?: string
+          kind: string
+          lease_until?: string | null
+          request_id: string
+          sha256?: string | null
+          source_photo_id?: string | null
+          status: string
+          storage_path?: string | null
+          uploaded_partner_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          decided_at?: string | null
+          error_code?: string | null
+          id?: string
+          kind?: string
+          lease_until?: string | null
+          request_id?: string
+          sha256?: string | null
+          source_photo_id?: string | null
+          status?: string
+          storage_path?: string | null
+          uploaded_partner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_photos_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_photos_source_photo_id_fkey"
+            columns: ["source_photo_id"]
+            isOneToOne: true
+            referencedRelation: "request_photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_photos_uploaded_partner_id_fkey"
+            columns: ["uploaded_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outbox: {
         Row: {
           attempts: number
@@ -1257,6 +1327,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_photo: {
+        Args: { p_actor: string; p_reason: string; p_request: string }
+        Returns: {
+          bucket_id: string
+          storage_path: string
+        }[]
+      }
       admin_remove_partner_document: {
         Args: { p_actor: string; p_document: string; p_note?: string }
         Returns: undefined
@@ -1348,6 +1425,19 @@ export type Database = {
           to_address: string
         }[]
       }
+      job_photo_list: {
+        Args: {
+          p_aal: string
+          p_actor: string
+          p_listing?: string
+          p_request?: string
+        }
+        Returns: {
+          id: string
+          kind: string
+          storage_path: string
+        }[]
+      }
       my_job_partner: {
         Args: { p_request: string }
         Returns: {
@@ -1401,12 +1491,56 @@ export type Database = {
           total_cents: number
         }[]
       }
+      photo_claim: {
+        Args: { p_limit: number }
+        Returns: {
+          attempt: number
+          job_photo_id: string
+        }[]
+      }
       photo_cleanup: { Args: never; Returns: undefined }
       photo_orphans: {
         Args: never
         Returns: {
           name: string
         }[]
+      }
+      photo_publish_begin: {
+        Args: { p_attempt: number; p_job_photo: string }
+        Returns: string
+      }
+      photo_publish_dispatch: { Args: never; Returns: number }
+      photo_publish_mark: {
+        Args: {
+          p_attempt: number
+          p_error: string
+          p_job_photo: string
+          p_ok: boolean
+          p_path: string
+          p_sha: string
+        }
+        Returns: undefined
+      }
+      photo_purge: {
+        Args: never
+        Returns: {
+          bucket_id: string
+          name: string
+        }[]
+      }
+      photo_receipt_add: {
+        Args: {
+          p_aal: string
+          p_actor: string
+          p_path: string
+          p_request: string
+          p_sha: string
+        }
+        Returns: string
+      }
+      photo_receipt_check: {
+        Args: { p_aal: string; p_actor: string; p_request: string }
+        Returns: undefined
       }
       photo_staging_interval: { Args: never; Returns: string }
       price_version_hold: {

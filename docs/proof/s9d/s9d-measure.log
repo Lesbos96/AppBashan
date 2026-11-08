@@ -1,0 +1,4 @@
+photo-worst.jpg: 2048 x 2048 Rauschen, Quality 98, 9.8 MB
+tmp/scratch/photo-typical.jpg: Eingabe 0.2 MB -> Ausgabe 0.1 MB (1600 x 1200); Wanduhr 158 ms, CPU 266 ms, Spitzen-RSS 95.2 MB
+tmp/scratch/photo-worst.jpg: Eingabe 9.8 MB -> Ausgabe 1.5 MB (1600 x 1600); Wanduhr 507 ms, CPU 640 ms, Spitzen-RSS 138.0 MB
+EXIT=0

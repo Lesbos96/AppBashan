@@ -10,6 +10,7 @@ const probe = await tryAal2User('mfa-probe')
 const reason = 'reason' in probe ? probe.reason : null
 if (reason) console.warn(`partner-mfa: TOTP nicht nutzbar, Tests übersprungen (${reason})`)
 const firms: string[] = []
+let adminId = ''
 
 afterAll(async () => {
   try {
@@ -56,6 +57,7 @@ describe.skipIf(reason !== null)('aal2 mit echten Token', () => {
     const adm = await tryAal2User('mfa-admin')
     if ('reason' in adm) throw new Error(adm.reason)
     ownerGrantRole(adm.user.id, 'admin')
+    adminId = adm.user.id
     expect(must(await adm.user.aal1.from('partners').select('id'))).toEqual([])
     const firmId = firms[0]
     expect(firmId).toBeDefined()
@@ -69,5 +71,39 @@ describe.skipIf(reason !== null)('aal2 mit echten Token', () => {
     expect((await partner.aal1.from('partner_documents').insert(doc)).error?.code).toBe('42501')
     expect((await partner.aal2.from('partner_documents').insert(doc)).error).toBeNull()
     expect(must(await partner.aal1.from('partner_documents').select('id'))).toHaveLength(1)
+  }, 60_000)
+
+  // S3-N6: Policy partners_update_contact (aal2 und Status pending/active/payment_hold). Zuletzt, weil der Test die Firma ablehnt.
+  it('Partner-Mitglied: Kontakt ändern nur mit aal2, nur die drei Kontaktspalten, nicht nach Status rejected', async () => {
+    const id = firms[0]!
+    const contact = () => ownerSql(`select contact_name, contact_phone, contact_email, name, status::text as status from public.partners where id = '${id}'`)[0]
+    const before = contact()
+    const upd = (db: Aal2User['aal1'], patch: Record<string, string>) => db.from('partners').update(patch as never).eq('id', id).select('id')
+
+    // aal1: die Policy blendet die Zeile aus, kein Fehler, keine betroffene Zeile, Wert unverändert
+    const a1 = await upd(partner.aal1, { contact_name: 'Nur aal1' })
+    expect(a1.error).toBeNull()
+    expect(a1.data).toEqual([])
+    expect(contact()).toEqual(before)
+
+    // aal2: erlaubt, geändert wird genau die Spalte
+    const a2 = await upd(partner.aal2, { contact_name: 'Mit aal2' })
+    expect(a2.data?.map((r) => r.id)).toEqual([id])
+    expect(contact()).toEqual({ ...before, contact_name: 'Mit aal2' })
+
+    // Spalten ohne Grant: Name, Status, USt-IdNr. bleiben der Firma verwehrt (auch mit aal2)
+    const forbidden: Record<string, string>[] = [{ name: 'Umbenannt' }, { status: 'active' }, { uid: 'ATU99999999' }]
+    for (const patch of forbidden) {
+      expect((await upd(partner.aal2, patch)).error?.code, JSON.stringify(patch)).toBe('42501')
+    }
+    expect(contact()).toEqual({ ...before, contact_name: 'Mit aal2' })
+
+    // nach Ablehnung ist die Policy zu: aal2 ändert nichts mehr
+    expect(adminId).not.toBe('')
+    ownerSql(`select public.admin_set_partner_status('${adminId}', '${id}', 'rejected', 'Ablehnung im Test der Kontaktpolicy')`)
+    const rejected = await upd(partner.aal2, { contact_name: 'Nach Ablehnung' })
+    expect(rejected.error).toBeNull()
+    expect(rejected.data).toEqual([])
+    expect(contact()?.contact_name).toBe('Mit aal2')
   }, 60_000)
 })

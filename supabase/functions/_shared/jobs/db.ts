@@ -4,15 +4,15 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
 import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OutboxDeps } from './handlers.ts'
 
-type Db = SupabaseClient<Database>
-const must = <T>(r: { data: T; error: { message: string } | null }): NonNullable<T> => {
+export type Db = SupabaseClient<Database>
+export const must = <T>(r: { data: T; error: { message: string } | null }): NonNullable<T> => {
   if (r.error) throw new DbError(r.error.message)
   if (r.data == null) throw new DbError('no_data')
   return r.data
 }
 
 /** Prüft das JWT bei Supabase Auth und liest aal aus der geprüften Nutzlast. */
-async function getUser(db: Db, jwt: string): Promise<AuthUser | null> {
+export async function getUser(db: Db, jwt: string): Promise<AuthUser | null> {
   const { data, error } = await db.auth.getUser(jwt)
   if (error || !data.user) return null
   try {

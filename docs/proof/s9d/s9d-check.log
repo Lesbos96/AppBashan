@@ -1,0 +1,76 @@
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m supabase/functions/accept/index.ts
+[0m[32mCheck[0m supabase/functions/admin-contact/index.ts
+[0m[32mCheck[0m supabase/functions/outbox-send/index.ts
+[0m[32mCheck[0m supabase/functions/photo-publish/index.ts
+[0m[32mCheck[0m supabase/functions/photo-receipt/index.ts
+[0m[32mCheck[0m supabase/functions/job-photo/index.ts
+[0m[32mCheck[0m supabase/functions/admin-photo/index.ts
+[0m[32mCheck[0m scripts/measure-photo.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 57ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (2 tests) 57ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 29ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 32ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 32ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (10 tests) 50ms
+ ✓ |unit| tests/unit/accept.test.ts (10 tests) 117ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 144ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 238ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 143ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 191ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 25ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 15ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 12ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 16ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 12ms
+ ✓ |unit| tests/unit/auth.test.ts (54 tests) 29ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (17 tests) 53ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 84ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (18 tests) 69ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 6ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 20ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 5ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 3ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 4ms
+ ✓ |unit| tests/unit/quote.test.ts (57 tests) 216ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 743ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 946ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 588ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 538ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 25ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 58ms
+
+ Test Files  31 passed (31)
+      Tests  682 passed (682)
+   Start at  15:16:23
+   Duration  1.70s (import 48%, tests 34%, transform 14%, worker 3%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=0

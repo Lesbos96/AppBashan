@@ -16,9 +16,14 @@ export function corsHeaders(req: Request, allowedOrigins: readonly string[]): Re
 
 // Liest den Body und bricht bei mehr als maxBytes ab, auch ohne content-length.
 export async function readLimited(req: Request, maxBytes: number): Promise<string> {
+  return new TextDecoder().decode(await readBytesLimited(req, maxBytes))
+}
+
+/** Wie `readLimited`, liefert aber die rohen Bytes (Foto-Uploads). */
+export async function readBytesLimited(req: Request, maxBytes: number): Promise<Uint8Array> {
   if (Number(req.headers.get('content-length')) > maxBytes) throw new HttpError(413, 'body_too_large')
   const reader = req.body?.getReader()
-  if (!reader) return ''
+  if (!reader) return new Uint8Array(0)
   const chunks: Uint8Array[] = []
   let size = 0
   for (;;) {
@@ -37,7 +42,7 @@ export async function readLimited(req: Request, maxBytes: number): Promise<strin
     all.set(c, at)
     at += c.length
   }
-  return new TextDecoder().decode(all)
+  return all
 }
 
 // Client-IP von der Plattform: cf-connecting-ip, sonst das letzte x-forwarded-for-Element (das erste kann der Client selbst setzen).

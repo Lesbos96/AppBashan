@@ -1,0 +1,98 @@
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/outbox.test.ts (3 tests | 2 failed) 2204ms
+   ❯ outbox_claim und outbox_mark (3)
+     × K1: eine Zeile mit fünf Versuchen und abgelaufener Lease wird vom Cron auf failed gesetzt, auch wenn sonst nichts zu senden ist 724ms
+     × K4: feste Fehlercodes (CHECK), unbekannter Text wird zu smtp_error, mark wirkt nur auf sending 750ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/outbox.test.ts > outbox_claim und outbox_mark > K1: eine Zeile mit fünf Versuchen und abgelaufener Lease wird vom Cron auf failed gesetzt, auch wenn sonst nichts zu senden ist
+AssertionError: expected '= sending:5:' to be '= failed:5:lease_expired' // Object.is equality
+
+Expected: "= failed:5:lease_expired"
+Received: "= sending:5:"
+
+ ❯ tests/rls/outbox.test.ts:61:20
+     59|     ])
+     60|     expect(r['dispatch']).toBe('ok')
+     61|     expect(r['e']).toBe('= failed:5:lease_expired')
+       |                    ^
+     62|     expect(r['f (Lease läuft noch)']).toBe('= sending:5:')
+     63|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |rls| tests/rls/outbox.test.ts > outbox_claim und outbox_mark > K4: feste Fehlercodes (CHECK), unbekannter Text wird zu smtp_error, mark wirkt nur auf sending
+AssertionError: 23514: ok: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ err tests/rls/outbox.test.ts:17:97
+     15| const svc = (name: string, sql: string): Step => ({ name, as: 'service…
+     16| const rows = (v: string | undefined, n: number) => expect(v, String(v)…
+     17| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     18|
+     19| describe('outbox_claim und outbox_mark', () => {
+ ❯ tests/rls/outbox.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  12:10:15
+   Duration  4.71s (tests 98%, transform 1%, import 1%)
+
+EXIT=1
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/outbox-handler.test.ts (2 tests | 2 failed) 25ms
+   ❯ outbox-send Markieren (K3) (2)
+     × Mail ging raus, mark(true) schlägt fehl: kein zweites mark(false), nicht als SMTP-Fehler gezählt, Lauf geht weiter 22ms
+     × Versand scheitert und auch mark(false) scheitert: der Lauf zählt es als Fehler und verarbeitet die nächste Zeile 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/outbox-handler.test.ts > outbox-send Markieren (K3) > Mail ging raus, mark(true) schlägt fehl: kein zweites mark(false), nicht als SMTP-Fehler gezählt, Lauf geht weiter
+Error: db down
+ ❯ Object.mark tests/unit/outbox-handler.test.ts:32:29
+     30|       mark: async (id, ok, error) => {
+     31|         d.marks.push([id, ok, error])
+     32|         if (id === 1) throw new Error('db down')
+       |                             ^
+     33|       },
+     34|     })
+ ❯ handleOutbox supabase/functions/_shared/jobs/handlers.ts:201:18
+ ❯ tests/unit/outbox-handler.test.ts:35:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| tests/unit/outbox-handler.test.ts > outbox-send Markieren (K3) > Versand scheitert und auch mark(false) scheitert: der Lauf zählt es als Fehler und verarbeitet die nächste Zeile
+Error: db down
+ ❯ Object.mark tests/unit/outbox-handler.test.ts:51:24
+     49|       mark: async (id, ok, error) => {
+     50|         d.marks.push([id, ok, error])
+     51|         if (!ok) throw new Error('db down')
+       |                        ^
+     52|       },
+     53|     })
+ ❯ handleOutbox supabase/functions/_shared/jobs/handlers.ts:201:18
+ ❯ tests/unit/outbox-handler.test.ts:54:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  12:10:28
+   Duration  223ms (transform 34%, tests 31%, import 29%, worker 6%)
+
+EXIT=1

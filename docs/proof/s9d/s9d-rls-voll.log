@@ -1,0 +1,284 @@
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/uploads.test.ts (29 tests) 63207ms
+   ✓ Staging hochladen (storage.objects) (6)
+     ✓ erlaubt: der Eigentümer lädt in den eigenen Ordner ohne Anfrage, liest per signiertem Link; der Bucket ist privat 977ms
+     ✓ verweigert: fremder Ordner (b lädt in den Ordner von a), anon 568ms
+     ✓ verweigert: falsche Pfadform (Großbuchstaben, andere Endung, ohne client_ref-Ordner, kein UUID, Pfadtrick) 691ms
+     ✓ verweigert: fremder Nutzer liest, überschreibt, löscht, verschiebt nicht; anon bekommt nichts; die Datei bleibt unverändert 1703ms
+     ✓ erlaubt: der Eigentümer löscht sein Staging-Foto; verweigert: Überschreiben der eigenen Datei (kein UPDATE-Recht) 845ms
+     ✓ zu groß: der Bucket lehnt ab (413); falscher Typ: PNG, WebP, HEIC, Text (415) 2122ms
+   ✓ Übernahme beim Absenden (quote_save_request) (9)
+     ✓ erlaubt: eigene, frische Fotos werden atomar als request_photos übernommen; nur der Eigentümer liest sie 1464ms
+     ✓ doppelte IDs ergeben ein Foto; ohne Fotos geht es auch (Gegenfall) 747ms
+     ✓ verweigert: fremde Foto-ID (Datei von b) → photo_missing, keine Anfrage, keine Zeile 719ms
+     ✓ verweigert: Foto aus einem anderen eigenen Ordner und nie hochgeladene ID → photo_missing 775ms
+     ✓ verweigert: abgelaufenes Staging-Foto → photo_expired, nichts gespeichert; Gegenfall kurz vor Ablauf wird übernommen 2401ms
+     ✓ Grenze: 8 Fotos gehen, 9 → too_many_photos ohne Anfrage 2634ms
+     ✓ Wiederholung derselben client_ref liefert die vorhandene Anfrage und fügt keine Fotos hinzu 1301ms
+     ✓ Handler: photoIds werden übernommen (200), fremde ID → 422 photo_missing, 9 → 422 too_many_photos, kein Array → 400, nichts gespeichert 10879ms
+     ✓ photo_staging_hours fehlt: Absenden (SQL) und Waisenliste scheitern mit setting_missing; mit Wert läuft beides (Positivkontrolle) 1992ms
+   ✓ Nach dem Absenden (7)
+     ✓ verweigert: Löschen, Ersetzen und Verschieben der übernommenen Datei; sie bleibt unverändert 780ms
+     ✓ verweigert (request_photos): Kunde und anon fügen weder ein noch ändern oder löschen sie (42501) 562ms
+     ✓ verweigert für service_role: Umhängen auf eine andere Anfrage, Ersetzen, Löschen (Rechte entzogen, 42501); Einfügen am Funktionspfad vorbei (Trigger) 599ms
+     ✓ Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen) und DELETE → photo_immutable, TRUNCATE verweigert (Fremdschlüssel); INSERT ohne Marker → photo_insert_forbidden 821ms
+     ✓ Kaskade: Löschen der Anfrage entfernt die Zeilen (Positivkontrolle der DELETE-Ausnahme) 1891ms
+   ✓ Waisenliste (2)
+     ✓ Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar (verweigert für anon und Kunden) 616ms
+     ✓ Waisen-Liste: nur abgelaufene Dateien ohne Zeile (frisch und übernommen bleiben draußen) 3203ms
+   ✓ Aufräumen (1)
+     ✓ Aufräumen löscht abgelaufene, nicht übernommene Dateien (Objekt), übernommene und frische bleiben 3805ms
+   ✓ Staging-Kontingent und Pfad (0021) (4)
+     ✓ bis zur Grenze erlaubt, die 41. Datei verweigert (403); Löschen und Übernehmen geben Platz frei 7133ms
+     ✓ Insert in request_photos ohne storage_path: Trigger lehnt ab (photo_insert_forbidden), mit Marker ebenso 1502ms
+     ✓ kein Default mehr: die Spalte hat keinen Standardwert 1481ms
+     ✓ Zeilen-Bedingung (Alt-Pfad {uid}/{request_id}/…): Kunde löscht kein übernommenes Objekt und lädt nicht unter dessen Namen hoch 4433ms
+ ✓ |rls| tests/rls/accept-concurrency.test.ts (1 test) 108513ms
+   ✓ Nebenläufigkeit (1)
+     ✓ 10 parallele Annahmen = 1; Annahme gegen Rücknahme = genau eine 21801ms
+ ✓ |rls| tests/rls/quote-hardening.test.ts (44 tests) 77913ms
+   ✓ Haltefenster und Preisabgleich (8)
+     ✓ abgelaufenes Haltefenster: 409 price_changed mit neuer Version und neuem Snapshot, nichts gespeichert 3489ms
+     ✓ innerhalb von 30 Minuten: gespeichert mit der gezeigten Version 2988ms
+     ✓ künftige oder nie gültige Version: nie haltbar → 409 price_changed 5214ms
+     ✓ ersetzte Version ohne Einstellung price_hold_minutes: 500 setting_missing, nichts gespeichert 499ms
+     ✓ gleiche Version, anderer Betrag (z. B. Strecke): 409 price_changed mit dem berechneten Preis, keine Zeile 1804ms
+     ✓ Festpreis als Spanne gezeigt (total null) und Angebot statt Preis gezeigt: ebenfalls 409 2276ms
+     ✓ Positivkontrolle: exakt der gezeigte Betrag wird gespeichert 2492ms
+     ✓ Miete: gezeigter Betrag weicht ab → 409 price_changed, keine Mietanfrage (M-3) 1523ms
+   ✓ Bedingungen und Pflichtfelder (9)
+     ✓ falscher termsHash: 409 terms_changed mit den aktuellen Bedingungen, keine Zeile 481ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact: 400, keine Zeile 310ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.email: 400, keine Zeile 325ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.phone: 400, keine Zeile 314ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.name: 400, keine Zeile 343ms
+     ✓ fehlendes oder ungültiges Pflichtfeld shown: 400, keine Zeile 336ms
+     ✓ fehlendes oder ungültiges Pflichtfeld termsHash: 400, keine Zeile 446ms
+     ✓ fehlendes oder ungültiges Pflichtfeld priceVersion: 400, keine Zeile 347ms
+     ✓ fehlendes oder ungültiges Pflichtfeld preferredDate: 400, keine Zeile 336ms
+   ✓ Adressprüfung und Bezirk (6)
+     ✓ Abholung außerhalb Wiens: 422 pickup_outside_vienna, keine Zeile 1099ms
+     ✓ manipulierte Koordinaten oder Client-postcode ändern das nicht (Graz mit Wiener Punkt, Wien mit Grazer Punkt, falsche PLZ) 3106ms
+     ✓ Punkt ohne Hausnummer (Straße): 422 address_imprecise; unbekannte Adresse: address_mismatch; ohne Punkt: address_point_required 4160ms
+     ✓ Ziel im Ausland: 422 offer_not_bookable; Ziel im Inland außerhalb Wiens ist buchbar 4673ms
+     ✓ Entrümpelung und Montage nutzen dieselbe Prüfung; gespeichert wird das kanonische Label 2965ms
+     ✓ Geocode-Cache: zweiter Aufruf mit demselben Label fragt den Anbieter nicht erneut 3732ms
+   ✓ Ausfälle und Limits: Abbruch ohne Zeile (4)
+     ✓ Geocoder fällt aus: 503 provider_unavailable 861ms
+     ✓ Routing fällt aus: 503 provider_unavailable; keine Route: Angebot route_missing 4442ms
+     ✓ Geocode-Kontingent erschöpft: 429 rate_limited; Zähler fällt aus: 503 limiter_unavailable 1385ms
+     ✓ Routen-Kontingent erschöpft: 429 rate_limited 1255ms
+   ✓ Journal, Revision und Kontakt (2)
+     ✓ price_confirmed im Journal mit Betrag, Bedingungen-Hash, Version und Inhalts-Hash; Revision 1 trägt die Bedingungen; Kontakt gespeichert 3339ms
+     ✓ der Kunde liest die Antwort ohne Gebühr; fremde Kontakte sieht er nicht 5097ms
+   ✓ quote_save_request: eigene Prüfungen (10)
+     ✓ Positivkontrolle: gültige Argumente werden gespeichert 357ms
+     ✓ district_required 305ms
+     ✓ Kontaktformat zusätzlich in der Datenbank (Constraint): 23514 434ms
+   ✓ Rechte nach 0019 (4)
+     ✓ geocode_cache und geo_districts: anon und authenticated 42501, service_role liest (23 Bezirke) 869ms
+     ✓ price_version_hold und quote_district: anon und authenticated 42501, service_role darf 666ms
+     ✓ rental_bookings: service_role darf einfügen, aber weder ändern noch löschen (42501) 2008ms
+   ✓ Rohaufruf ohne Absender-Hilfe (1)
+     ✓ Wiederholung derselben clientRef nach 409 legt genau eine Zeile an 3807ms
+ ✓ |rls| tests/rls/quote.test.ts (17 tests) 53120ms
+   ✓ Anfrage anlegen (echte DB) (10)
+     ✓ manipulierter Client-Preis und Client-Strecke werden ignoriert; Anfrage gehört dem Token-Nutzer 4249ms
+     ✓ Frist und Termin rechnet die Datenbank: Annahmefrist 24 h bei weit entferntem Termin, Termin 00:00 Wiener Zeit 5179ms
+     ✓ Termin näher als accept_min_hours: 422 too_late, nichts gespeichert 2772ms
+     ✓ Punkte werden als (Länge, Breite) gespeichert, Adresse und Bezirk kommen vom geprüften Kandidaten 2866ms
+     ✓ Wien → Graz: Region, Kilometer und Preis kommen aus Strecke und PostGIS 3253ms
+     ✓ Negativtest: quote bucht nichts ins Journal, die Antwort enthält keine Gebühr 4345ms
+     ✓ Sonderfall: awaiting_offer, kein Preis, Revision ohne Beträge 2076ms
+     ✓ Entrümpelung (Spanne): awaiting_offer, Revision mit low/high ohne total; Montage mit README-Betrag 3954ms
+     ✓ Idempotenz: dieselbe clientRef ergibt genau eine Anfrage, auch bei paralleler Absendung 4367ms
+     ✓ ohne Token 401, mit fremdem Format 400 ohne Schreiben; Bearbeiten mit requestId gibt es nicht 719ms
+   ✓ Mietanfrage (echte DB) (3)
+     ✓ Cargo Van: 276,00 €, Kaution 500,00 € separat, Zeiten als Zeitpunkte (Wiener Zeit), keine Gebührenzeile 1513ms
+     ✓ Angebot eines Vermieters: Vermieter liest kein Journal, die Antwort nennt den Vermieter nicht 1436ms
+     ✓ nicht freigegebenes Angebot: 404; Idempotenz: dieselbe clientRef = eine Mietanfrage 3234ms
+   ✓ Rechte (Verweigerung exakt, Positivkontrolle) (3)
+     ✓ Schreib-Funktionen: anon und authenticated erhalten 42501, service_role darf 543ms
+     ✓ Kunde schreibt weder Spalten noch Anfragen; Zurückziehen nur über withdraw (Positivkontrolle) 2845ms
+   ✓ Nutzerlimit (echte Zähler) (1)
+     ✓ ab dem 7. Aufruf in einer Minute 429 2856ms
+ ✓ |rls| tests/rls/job-photos.test.ts (12 tests) 14186ms
+   ✓ Verteilung wartet auf Fotos, Claim und Mark (2)
+     ✓ Wartebedingung, Claim mit Lease, Mark nur mit gültigem Versuch, Verteilung nach dem letzten Foto, Mail bei failed 1375ms
+     ✓ Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung 756ms
+   ✓ Zugriff auf Kopien (job_photo_list) (2)
+     ✓ Partner vor der Annahme nur Fotos, Kunde nur Belege; verweigert: aal1, fremdes Listing, fremder Kunde, Argumente, suspended, nach Frist 954ms
+     ✓ nach der Annahme Fotos und Belege (auch payment_hold), Belege nur mit Zuordnung, aal2, Limit 8; Zugriff endet nach 30 Tagen 2205ms
+   ✓ Direktzugriff, admin-photo, Aufräumen (2)
+     ✓ Konten (auch admin, aal2) ohne Zugriff auf job_photos und beide Buckets; admin_photo protokolliert; photo_purge nach Kriterien 832ms
+     ✓ Pfad der Kopie ist nur eine UUID mit .jpg: kein Ordner, kein Nutzer- oder Anfragebezug, nicht der Pfad des Originals (die signierte URL zeigt nur diesen Namen) 794ms
+   ✓ Abnahme S9d: Lücken (6)
+     ✓ M1: fehlt das Objekt einer ready-Zeile, liefern admin_photo und job_photo_list nur vorhandene Dateien (Original und Beleg bleiben erreichbar) 963ms
+     ✓ photo_purge nach Status: accepted bleibt, completed bleibt 30 Tage nach Zugriffsende und fällt danach, expired und unmatched fallen sofort, Belege bleiben immer 893ms
+     ✓ job_photo_list: ein Listing außerhalb der Zuständigkeit (Bezirk) liefert nichts, obwohl es noch offen ist 798ms
+     ✓ photo_claim lässt zurückgezogene, abgelaufene und fristüberschrittene Anfragen aus, nimmt offene 1060ms
+     ✓ Mark nach dem Zurückziehen: Foto wird failed, aber keine Mail und keine Verteilung 848ms
+     ✓ Beleg-Tor: gesperrte Firma partner_not_active, abgeschlossener Auftrag request_closed 2702ms
+ ✓ |rls| tests/rls/status.test.ts (16 tests) 33011ms
+   ✓ Status nur über Funktionen (7)
+     ✓ direktes Status-UPDATE: customer, partner, admin (aal1 und aal2), service_role und anon verweigert, Status unverändert 1129ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker sind getrennte Prüfungen 770ms
+     ✓ INSERT: nur requested/awaiting_offer; eine Anfrage ohne Revision wird beim Commit verworfen 389ms
+     ✓ withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal invalid_transition, fremd not_found, anon 42501 1867ms
+     ✓ withdraw aus awaiting_offer ok; die Marker der Funktion bleiben nicht in der Sitzung stehen 1303ms
+     ✓ Miete: nur requested → withdrawn, auch für den Eigentümer; ungültige Paare invalid_transition 1134ms
+   ✓ Revisionen unveränderlich (5)
+     ✓ UPDATE, DELETE, TRUNCATE: auch der Eigentümer scheitert an revision_immutable; service_role hat kein Recht 939ms
+     ✓ INSERT: nur Revision 1 beim Absenden, Status passend zum Preis, Snapshot passend zu den Beträgen, Version veröffentlicht 1072ms
+     ✓ Zeiger: einmalig, nur auf Revision 1 derselben Anfrage; Frist, Termin und Bezirk unveränderlich 804ms
+     ✓ service_role ändert nur den Zeiger: Adresse, Kunde, Strecke verweigert; Löschen verweigert (auch Eigentümer, nur Kaskade) 1393ms
+     ✓ Kontolöschung räumt Anfrage, Revision, Ereignisse und Kontakte per Kaskade (Positivkontrolle) 3093ms
+   ✓ status_events: nur anfügen, nur admin (aal2) liest (2)
+     ✓ UPDATE, DELETE, TRUNCATE: append_only; service_role und Kunde schreiben nicht 1107ms
+     ✓ Lesen: Kunde und Partner nie, admin nur mit aal2 (Positivkontrolle) 3402ms
+   ✓ Lesen: Revisionen und Kontakte (2)
+     ✓ Kunde liest nur eigene Revisionen und Kontakte, fremde 0 Zeilen (Positivkontrolle eigene), admin und Partner nichts 5705ms
+     ✓ Kontakte und Revisionen: Kunde schreibt nicht; service_role fügt Kontakte nur ein (kein UPDATE/DELETE) 691ms
+ ✓ |rls| tests/rls/rls.test.ts (39 tests) 24665ms
+   ✓ Kunden sehen nur Eigenes (6)
+     ✓ Foto-Einträge und Dateien 472ms
+     ✓ kein Upload und kein Foto-Eintrag in fremde Anfragen 470ms
+     ✓ fremde Fotos lassen sich nicht löschen 512ms
+   ✓ Kunden setzen nur „zurückgezogen" (6)
+     ✓ eigene Anfrage zurückziehen, danach nicht wieder öffnen 338ms
+     ✓ keine Fotos zu einer zurückgezogenen Anfrage 310ms
+   ✓ Vermieter und Fahrzeuge (4)
+     ✓ ändert nur eigene Fahrzeuge 423ms
+   ✓ Gebühren (4)
+     ✓ Kunden und anon lesen weder das Journal noch platform_settings 528ms
+   ✓ price_config (5)
+     ✓ Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501) 866ms
+     ✓ nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert 695ms
+     ✓ DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt 589ms
+   ✓ Rollen (4)
+     ✓ SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste 1520ms
+ ✓ |rls| tests/rls/partners.test.ts (12 tests) 17253ms
+   ✓ Helfer (1)
+     ✓ Matrix: Firma in jedem Status × aal1/aal2 × Mitglied/Nichtmitglied 3633ms
+   ✓ register_partner (2)
+     ✓ erlaubt für Kunden, verweigert sonst, Eingaben geprüft, Rolle bleibt customer 702ms
+     ✓ zwei parallele Aufrufe: genau eine Firma, der zweite already_member; aal1 sieht die eigene Firma, ändert aber nur mit aal2 2580ms
+   ✓ Statusmaschine (5)
+     ✓ Funktionen: alle gültigen Paare, Zustand zurückgelesen, genau ein Audit je Aufruf 736ms
+     ✓ Funktionen: verbotene Paare, Begründung, Umfang, Akteur, Rechte 799ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker getrennt, Marker an die Zeile gebunden 735ms
+     ✓ Löschen: eine freigegebene Testfirma samt USt.-Regel, Kategorien und Bezirken lässt sich nur mit Marker entfernen; danach auch das admin-Konto 834ms
+     ✓ Freigabe verlangt im Trigger Kategorie, Bezirk, Mitglied und USt.-Regel (Eigentümer-Weg) 721ms
+   ✓ RLS und Rechte (4)
+     ✓ Mitglied sieht nur die eigene Firma (aal1 und aal2), Kunde ohne Firma nichts, admin nur mit aal2, anon wird verweigert 878ms
+     ✓ Schreibrechte: Mitglied ändert nur Kontaktdaten (aal2, aktiver Status), service_role und authenticated haben kein DML 793ms
+     ✓ Rolle bleibt customer, auch nach der Freigabe; echte Clients: anon und Kunde ohne Firma 2456ms
+     ✓ N-5: aktiver Partner (aal2) liest weder Anfragen noch Fotos noch Dateien im Bucket request-photos 2108ms
+ ✓ |rls| tests/rls/job-photos-concurrency.test.ts (2 tests) 14616ms
+   ✓ Foto-Pipeline unter Last (2)
+     ✓ die letzten zwei Fotos gleichzeitig markiert: genau eine Verteilung (je Firma ein Listing, eine Mail), kein Deadlock 3826ms
+     ✓ zwei Belege gleichzeitig beim achten: genau einer gewinnt, danach acht Belege, der andere meldet receipt_limit 5211ms
+ ✓ |rls| tests/rls/journal.test.ts (6 tests) 9781ms
+   ✓ Provisionsjournal (6)
+     ✓ booking: Revisionsbetrag, Satz, Firmenstatus, Summen, einmalig je Auftrag, nur anfügen 1537ms
+     ✓ Gegenbuchungen: exakte Negation, nur booking, change und cancellation_fee, einmalig; Summe 0 1442ms
+     ✓ change: nur erhöhend, Differenz zur aktuellen Revision; cancellation_fee bis zum Gesamtpreis; Satz aus der booking-Zeile 1911ms
+     ✓ Revisionen: change nur aus einer change_order, Gegenbuchung nur mit derselben Revision, erneuter change nach correction 1455ms
+     ✓ Sätze: höchste Version bei gleichem Datum, künftige Zeilen zählen nicht; current_fee_rates nennt die Versionen 1673ms
+     ✓ Lesen: eigene Firma mit aal2 (jeder Status) und admin mit aal2; sonst nichts; kein Schreibrecht; commission_book ohne Aufruf 1761ms
+ ✓ |rls| tests/rls/partner-mfa.test.ts (5 tests) 16197ms
+   ✓ aal2 mit echten Token (5)
+     ✓ Partner-Mitglied: Satz nur mit aal2, Firmendaten schon mit aal1; Kunde mit aal2 ohne Firma liest keinen Satz 3914ms
+     ✓ Admin: aal1 sieht keine Firmen, aal2 schon 3459ms
+     ✓ Partner-Mitglied: Kontakt ändern nur mit aal2, nur die drei Kontaktspalten, nicht nach Status rejected 7473ms
+ ✓ |rls| tests/rls/settings.test.ts (11 tests) 25908ms
+   ✓ veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen service_role) (2)
+     ✓ Änderungen jeder Art werden verweigert, die unveröffentlichte Version bleibt änderbar 892ms
+     ✓ über die API: authenticated und admin (aal1) verweigert (42501), service_role bekommt version_published 1071ms
+   ✓ Admin-Funktionen: nur service_role bzw. Eigentümer, nur für Rolle admin (5)
+     ✓ anon ruft keine Admin-Funktion auf (42501) 520ms
+     ✓ customer ruft keine Admin-Funktion auf (42501) 434ms
+     ✓ admin ruft keine Admin-Funktion auf (42501) 387ms
+     ✓ admin_grant_role ist auch für service_role gesperrt; die anderen erreicht service_role (Gegenfall) 350ms
+   ✓ Gebührensätze und Einstellungen (3)
+     ✓ Vorlauf, Unveränderlichkeit, Wertebereich 5815ms
+     ✓ Schreiben über die API: admin (aal1) und Kunde verweigert (42501), keine Schreib-Grants 585ms
+     ✓ booking_terms: fünf Werte und termsHash, kein fee_*, für anon und Kunden 6142ms
+   ✓ audit_log, Rollen, aal2-Admin (1)
+     ✓ audit_log nur anfügen; Lesen nur admin mit aal2; profiles.role nur mit Marker 5806ms
+ ✓ |rls| tests/rls/listings.test.ts (13 tests) 79002ms
+   ✓ Verteilung (distribute_request) (1)
+     ✓ Empfänger: aktive Firmen mit Kategorie und Bezirk, keine Selbstbuchung; sonst unmatched mit Outbox; zweiter Aufruf ohne Wirkung 5856ms
+   ✓ Listing-Lesen (RLS) (1)
+     ✓ eigene Zeilen mit aal2 und Status active; verweigert: aal1, fremde Firma, Kunde, pending, nach Frist, Spalte request_id 5881ms
+   ✓ Annahme (partner_accept) (3)
+     ✓ Erfolg: Status, Zuordnung, Listings, Journal, Ereignis, Outbox in einer Transaktion; verweigert: zweite Annahme, Revision, Auszahlung, Firmenstatus, fremdes Listing 5834ms
+     ✓ Zuständigkeit gilt bei der Annahme und beim Lesen (Abnahme H1): Scope entzogen → Listing unsichtbar, Annahme verweigert, keine Zuordnung 6182ms
+     ✓ Frist (Cron noch nicht gelaufen), Limit offener Aufträge, pending-Firma 6819ms
+   ✓ Ablehnen und Fristen (3)
+     ✓ decline_listing: eigene Zeile, letzte Ablehnung → unmatched mit Outbox; aal1, fremde, pending, geschlossen verweigert 7494ms
+     ✓ expire_requests: nur abgelaufene requested/awaiting_offer; Listings geschlossen, Outbox, Ereignis; Annahme danach: expired 5920ms
+     ✓ Zurückziehen schließt die Listings; direktes UPDATE auf den Status bleibt verweigert 5889ms
+   ✓ Abwicklung (start_job, complete_job, job_contact, my_job_partner) (4)
+     ✓ start und complete: Akteur, Zeitpunkt, Zuordnung; Zuordnung endet mit completed 5986ms
+     ✓ Kunde bestätigt „durchgeführt“ ab Termin auch aus accepted 5808ms
+     ✓ job_contact: nur zugeordnet, aal2, protokolliert, bis partner_access_days nach Ende; my_job_partner für den Kunden 5814ms
+     ✓ admin_contact: nur admin (p_actor), Begründung Pflicht, Audit; authenticated verweigert 5699ms
+   ✓ Outbox und Zuordnung: Rechte (1)
+     ✓ Kunde und Partner lesen weder outbox noch fremde assignments; assignments nur Select; admin liest outbox 5814ms
+ ✓ |rls| tests/rls/partner-admin.test.ts (10 tests) 14732ms
+   ✓ Admin-Funktionen: Rechte (4)
+     ✓ admin_set_partner_scope: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 6182ms
+     ✓ admin_set_vat_rule: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 941ms
+     ✓ admin_set_partner_master: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 685ms
+     ✓ admin_remove_partner_document: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 718ms
+   ✓ admin_set_partner_scope (1)
+     ✓ ersetzt Kategorien und Bezirke, lehnt rental und leere Mengen bei active ab 878ms
+   ✓ admin_set_vat_rule (1)
+     ✓ nur standard_20, nicht rückdatiert, eine Regel je Tag 1002ms
+   ✓ admin_set_partner_master (1)
+     ✓ Stammdaten nur über die Funktion, verified_at unverändert, Audit ohne Stripe-Konto 1071ms
+   ✓ Dokumente (3)
+     ✓ Zeile, Upload, Limit, Lesen, Unveränderlichkeit 1038ms
+     ✓ Firmenstatus, Upsert und Pfadvarianten beim Upload 1090ms
+     ✓ Lesen, Unveränderlichkeit, Storage-Lesen 1121ms
+ ✓ |rls| tests/rls/route.test.ts (15 tests) 7180ms
+   ✓ Zugriff nur für service_role (3)
+     ✓ anon: Tabellen und Funktionen mit 42501 verweigert 871ms
+     ✓ authenticated: Tabellen und Funktionen mit 42501 verweigert 599ms
+     ✓ service_role darf dieselben Aufrufe 1042ms
+   ✓ Löschung (route_cleanup, stündlicher Job) (1)
+     ✓ entfernt abgelaufene Cache-Zeilen und alte Zähler, lässt frische stehen 483ms
+   ✓ Grenzen (2)
+     ✓ Punkte in Wien und Österreich liegen in den Grenzen (Geometrie gültig, brauchbar) 324ms
+     ✓ fehlende Grenze bricht ab, statt „Wien" zu liefern 356ms
+   ✓ Zähler (4)
+     ✓ zählt parallele Aufrufe exakt 476ms
+     ✓ ein überschrittener Zähler lehnt ab und lässt die folgenden (globalen) unberührt 346ms
+ ✓ |rls| tests/rls/auth.test.ts (4 tests) 2744ms
+   ✓ Magic-Link-Mail: Code und Link (4)
+     ✓ der Code meldet an; das Profil entsteht erst jetzt, als Kunde 833ms
+     ✓ der Link (token_hash) meldet in jedem Browser an 701ms
+     ✓ falscher oder schon benutzter Code wird abgelehnt 817ms
+ ✓ |rls| tests/rls/outbox.test.ts (3 tests) 17078ms
+   ✓ outbox_claim und outbox_mark (3)
+     ✓ Claims sind disjunkt, die Lease dauert 10 Minuten, der fünfte Versuch endet in failed, ok setzt sent 5723ms
+     ✓ K1: eine Zeile mit fünf Versuchen und abgelaufener Lease wird vom Cron auf failed gesetzt, auch wenn sonst nichts zu senden ist 5691ms
+     ✓ K4: feste Fehlercodes (CHECK), unbekannter Text wird zu smtp_error, mark wirkt nur auf sending 5662ms
+ ✓ |rls| tests/rls/partner-fee-read.test.ts (1 test) 5753ms
+   ✓ Gebührensatz lesen (1)
+     ✓ Mitglied jeder Firma mit aal2 liest den Satz; aal1, Kunde, rental_provider, anon nicht; note und Schreiben verweigert 5752ms
+
+ Test Files  18 passed (18)
+      Tests  240 passed (240)
+   Start at  15:16:35
+   Duration  595.42s (tests 99%, import 1%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=0

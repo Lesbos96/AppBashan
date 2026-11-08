@@ -59,10 +59,10 @@ function request(id: string, total: number | null = 68961): string {
 }
 
 /** Änderungs-Revision n = 2 (die Trigger für Revisionen und Zeiger öffnen erst S9h: hier nur im Rollback abgeschaltet). */
-const changeOrder = (id: string, total: number) =>
+const changeOrder = (id: string, total: number, source = 'change_order') =>
   `set constraints all immediate; alter table public.price_revisions disable trigger guard_revision_insert; alter table public.service_requests disable trigger guard_request_pointer;
    insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, content_hash, total_cents, low_cents, high_cents)
-   values ('${id}', 2, 'change_order', '{}', '{"kind":"price","totalCents":${total},"lowCents":${total},"highCents":${total},"lines":[]}', 1, repeat('a', 64), ${total}, ${total}, ${total});
+   values ('${id}', 2, '${source}', '{}', '{"kind":"price","totalCents":${total},"lowCents":${total},"highCents":${total},"lines":[]}', 1, repeat('a', 64), ${total}, ${total}, ${total});
    update public.service_requests set current_revision = ${rev2(id)} where id = '${id}';`
 
 function journal(RT: Rates) {
@@ -273,18 +273,54 @@ describe('Provisionsjournal', () => {
     expect(r['Stornogebühr Firma payment_hold']).toBe('ok')
   }, 240_000)
 
+  // S4-N3 (Testlücken aus der Abnahme S9b-4): Revisionsquelle, Revision der Gegenbuchung, erneuter change nach correction
+  it('Revisionen: change nur aus einer change_order, Gegenbuchung nur mit derselben Revision, erneuter change nach correction', () => {
+    const RT = rates()
+    const J = journal(RT)
+    const s = RT.split(68961)
+    const diff = RT.split(80000 - 68961)
+    const R = { o: newId(), x: newId(), c: newId() }
+    const steps: Step[] = [
+      { name: 'change auf Revision aus partner_offer', sql: J.step({ p: 'a', req: R.o, kind: 'change', rev: rev2(R.o), s: diff }) },
+      { name: 'cancellation mit anderer Revision desselben Auftrags', sql: J.step({ p: 'a', req: R.x, kind: 'cancellation', rev: rev2(R.x), of: 'bx', s: neg(s) }) },
+      { name: 'cancellation mit der Revision der Buchung', sql: J.step({ p: 'a', req: R.x, kind: 'cancellation', rev: rev1(R.x), of: 'bx', s: neg(s) }) },
+      { name: 'Positivkontrolle change', sql: J.step({ p: 'a', req: R.c, kind: 'change', rev: rev2(R.c), s: diff, save: 'ch' }) },
+      { name: 'correction der change', sql: J.step({ p: 'a', req: R.c, kind: 'correction', rev: rev2(R.c), of: 'ch', s: neg(diff) }) },
+      { name: 'erneuter change nach correction', sql: J.step({ p: 'a', req: R.c, kind: 'change', rev: rev2(R.c), s: diff }) },
+      { name: 'Summe aller Zeilen des Auftrags', sql: `=(select sum(total_cents) from public.commission_entries where request_id = '${R.c}')` },
+      { name: 'dritter change ohne neue Differenz', sql: J.step({ p: 'a', req: R.c, kind: 'change', rev: rev2(R.c), s: diff }) },
+    ]
+    const r = probes(
+      `${BASE('a')} ${request(R.o)} ${request(R.x)} ${request(R.c)}
+       ${J.setup({ p: 'a', req: R.o, s })} ${J.setup({ p: 'a', req: R.x, s, save: 'bx' })} ${J.setup({ p: 'a', req: R.c, s })}
+       ${changeOrder(R.o, 80000, 'partner_offer')} ${changeOrder(R.x, 80000)} ${changeOrder(R.c, 80000)}`,
+      steps,
+    )
+    P0001(r['change auf Revision aus partner_offer'], 'amount_mismatch')
+    P0001(r['cancellation mit anderer Revision desselben Auftrags'], 'amount_mismatch')
+    expect(r['cancellation mit der Revision der Buchung']).toBe('ok') // Gegenkontrolle: dieselbe Gegenbuchung mit der Revision der Buchung
+    for (const k of ['Positivkontrolle change', 'correction der change', 'erneuter change nach correction']) expect(r[k], k).toBe('ok')
+    expect(r['Summe aller Zeilen des Auftrags']).toBe(`= ${s.totalCents + diff.totalCents}`)
+    P0001(r['dritter change ohne neue Differenz'], 'amount_mismatch')
+  }, 240_000)
+
   it('Sätze: höchste Version bei gleichem Datum, künftige Zeilen zählen nicht; current_fee_rates nennt die Versionen', () => {
     const RT = rates()
     const J = journal(RT)
     const R = { r1: newId() }
     const ins = (version: number, value: number, from: string) => `insert into public.platform_settings (key, version, value, effective_from) values ('fee_rate', ${version}, ${value}, ${from});`
     const sAt = (rate: number) => splitFee(68961, { feeRate: rate, vatRate: RT.vr })
+    const seen = "(select coalesce(fee_rate_version::text, '<null>') || '/' || coalesce(fee_vat_rate_version::text, '<null>') || '/' || coalesce(fee_rate::float8::text, '<null>') from public.current_fee_rates)"
     const steps: Step[] = [
       { name: 'Ist-Versionen in der View', sql: "=(select fee_rate_version || '/' || fee_vat_rate_version from public.current_fee_rates)" },
       { name: 'älterer Satz', sql: J.step({ p: 'a', req: R.r1, s: RT.split(68961) }) },
       { name: 'niedrigere Version bei Gleichstand', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.16), fr: 0.16, frv: 98 }) },
       { name: 'künftige Zeile', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.3), fr: 0.3, frv: 100 }) },
       { name: 'richtige Version', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.17), fr: 0.17, frv: 99 }) },
+      // S4-N3: Satz und Versionen sieht nur ein Partner-Mitglied mit aal2; Kunden und aal1 bekommen überall NULL
+      { name: 'Versionen für Kunden', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.cust, aal: 'aal2' } },
+      { name: 'Versionen für Mitglied aal1', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.pa, aal: 'aal1' } },
+      { name: 'Versionen für Mitglied aal2', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.pa, aal: 'aal2' } },
     ]
     const r = probes(
       `${BASE('a')} ${request(R.r1)} alter table public.platform_settings disable trigger guard_platform_setting;
@@ -294,6 +330,9 @@ describe('Provisionsjournal', () => {
     expect(r['Ist-Versionen in der View']).toBe(`= 99/${RT.vrv}`)
     for (const k of ['älterer Satz', 'niedrigere Version bei Gleichstand', 'künftige Zeile']) P0001(r[k], 'rate_mismatch')
     expect(r['richtige Version']).toBe('ok')
+    expect(r['Versionen für Kunden']).toBe('= <null>/<null>/<null>')
+    expect(r['Versionen für Mitglied aal1']).toBe('= <null>/<null>/<null>')
+    expect(r['Versionen für Mitglied aal2']).toBe(`= 99/${RT.vrv}/0.17`)
   }, 240_000)
 
   it('Lesen: eigene Firma mit aal2 (jeder Status) und admin mit aal2; sonst nichts; kein Schreibrecht; commission_book ohne Aufruf', () => {
@@ -329,6 +368,10 @@ describe('Provisionsjournal', () => {
       { name: 'commission_book (anon)', sql: J.call({ p: 'a', req: R.r3, s }), as: 'anon' },
       { name: 'commission_book (service_role)', sql: J.call({ p: 'a', req: R.r3, s }), as: 'service_role' },
       { name: 'commission_book (Eigentümer, Gegenkontrolle)', sql: J.call({ p: 'a', req: R.r3, s }) },
+      // S4-N3: auch eine gesperrte Firma liest ihr Journal (mit aal2), sonst bliebe ihr die Abrechnung verborgen
+      { name: 'Firma a suspended setzen', sql: `perform ${statusCall('a', 'suspended')}` },
+      N('Mitglied A suspended aal2', auth(U.pa)),
+      N('Mitglied A suspended aal1', auth(U.pa, 'aal1')),
     ]
     const r = probes(
       `${BASE('a', 'b', 'pend', 'h')} ${request(R.r1)} ${request(R.r2)} ${request(R.r3)} ${J.setup({ p: 'a', req: R.r1, s })} ${J.setup({ p: 'h', req: R.r2, s })} select ${statusCall('h', 'payment_hold')};`,
@@ -344,5 +387,8 @@ describe('Provisionsjournal', () => {
     expect(r['service_role liest']).toBe('= 2')
     for (const k of ['commission_book (authenticated)', 'commission_book (anon)', 'commission_book (service_role)']) check(r[k], '42501', 'permission denied')
     expect(r['commission_book (Eigentümer, Gegenkontrolle)']).toBe('ok')
+    expect(r['Firma a suspended setzen']).toBe('ok')
+    expect(r['Mitglied A suspended aal2']).toBe('= 2') // R1 aus dem Setup und R3 aus der Gegenkontrolle davor
+    expect(r['Mitglied A suspended aal1']).toBe('= 0')
   }, 240_000)
 })
