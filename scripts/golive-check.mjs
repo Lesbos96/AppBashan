@@ -54,7 +54,7 @@ if (key) {
   check('price_config öffentlich lesbar', tariffs.status === 200 && tariffs.data.length === 1, String(tariffs.status))
   const leak = await rows('price_config', '&key=ilike.*fee*')
   check('price_config enthält keinen Gebührenschlüssel', leak.status === 200 && leak.data.length === 0, `${leak.data?.length ?? leak.status}`)
-  for (const table of ['platform_settings', 'fee_splits', 'service_requests', 'price_revisions', 'request_contacts', 'status_events', 'rental_bookings', 'profiles', 'geocode_cache', 'geo_districts']) {
+  for (const table of ['platform_settings', 'commission_entries','service_requests', 'price_revisions', 'request_contacts', 'status_events', 'rental_bookings', 'profiles', 'geocode_cache', 'geo_districts']) {
     const res = await rows(table, '&limit=1')
     check(`${table}: anonym keine Zeilen`, (res.status === 200 && res.data.length === 0) || res.status === 401 || res.status === 403, `${res.status} ${res.data?.length ?? ''}`)
   }

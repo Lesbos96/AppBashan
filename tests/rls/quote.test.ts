@@ -67,7 +67,7 @@ const call = (user: TestUser | null, body: unknown) => (body && typeof body === 
 const dayAhead = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
 const requestRow = async (id: string) => must(await service.from('service_requests').select('*').eq('id', id).single())
 const revisionOf = async (id: string) => must(await service.from('price_revisions').select('*').eq('request_id', id).single())
-const splitCount = async (column: 'service_request_id' | 'rental_booking_id', id: string) => must(await service.from('fee_splits').select('id').eq(column, id)).length
+const journalCount = async (requestId: string) => must(await service.from('commission_entries').select('id').eq('request_id', requestId)).length
 
 /** Länge und Breite aus dem EWKB-Hex einer geography(Point) (PostgREST liefert die Spalte so). */
 function lonLat(hex: string): [number, number] {
@@ -172,16 +172,15 @@ describe('Anfrage anlegen (echte DB)', () => {
     expect((await revisionOf(res.body.id)).total_cents).toBeGreaterThan(68961)
   })
 
-  it('Negativtest: quote schreibt keine fee_splits-Zeile (Anfrage und Mietanfrage), die Antwort enthält keine Gebühr', async () => {
+  it('Negativtest: quote bucht nichts ins Journal, die Antwort enthält keine Gebühr', async () => {
     const res = await call(a, moveCall())
     expect(JSON.stringify(res.body).replaceAll('call_out_fee_cents', '')).not.toMatch(/fee|payout|platform/i) // Anfahrtspauschale ist eine Bedingung, keine Plattformgebühr
-    expect(await splitCount('service_request_id', res.body.id)).toBe(0)
+    expect(await journalCount(res.body.id)).toBe(0)
     const rent = await call(a, rentalCall({ inputs: { ...rentalInput, pickupAt: `${dayAhead(10)}T09:00`, returnAt: `${dayAhead(12)}T09:00` } }))
     expect(rent.status).toBe(200)
-    expect(await splitCount('rental_booking_id', rent.body.id)).toBe(0)
-    // Kunde und anon: kein Zugriff auf fee_splits (RLS liefert nichts bzw. Recht fehlt)
-    expect(must(await a.db.from('fee_splits').select('*'))).toEqual([])
-    expect((await anon.from('fee_splits').select('*')).error?.code).toBe(DENIED)
+    // Kunde und anon: kein Zugriff auf das Journal (RLS liefert nichts bzw. Recht fehlt)
+    expect(must(await a.db.from('commission_entries').select('*'))).toEqual([])
+    expect((await anon.from('commission_entries').select('*')).error?.code).toBe(DENIED)
   })
 
   it('Sonderfall: awaiting_offer, kein Preis, Revision ohne Beträge', async () => {
@@ -238,15 +237,13 @@ describe('Mietanfrage (echte DB)', () => {
     expect(booking).toMatchObject({ customer_id: a.id, total_cents: 27600, deposit_cents: 50000, km: 350, cover: true, status: 'requested' })
     const wall = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Vienna', dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso)).replace(' ', 'T')
     expect([wall(booking.pickup_at), wall(booking.return_at)]).toEqual([`${dayAhead(10)}T09:00`, `${dayAhead(12)}T09:00`])
-    expect(await splitCount('rental_booking_id', booking.id)).toBe(0)
     expect(res.body.snapshot).toMatchObject({ days: 2, depositCents: 50000, offer: { name: 'Cargo Van' } })
   })
 
-  it('Angebot eines Vermieters: keine Gebührenzeile, die Antwort nennt den Vermieter nicht', async () => {
+  it('Angebot eines Vermieters: Vermieter liest kein Journal, die Antwort nennt den Vermieter nicht', async () => {
     const res = await rent(a, { offerId: landlordOffer }, { km: 0, cover: false })
     expect(res.status).toBe(200)
-    expect(await splitCount('rental_booking_id', res.body.id)).toBe(0)
-    expect(must(await landlord.db.from('fee_splits').select('id'))).toEqual([])
+    expect(must(await landlord.db.from('commission_entries').select('id'))).toEqual([])
     expect(JSON.stringify(res.body)).not.toContain(landlord.id)
   })
 

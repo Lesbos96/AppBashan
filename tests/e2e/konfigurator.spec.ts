@@ -38,7 +38,7 @@ test('Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile', asy
   await expect(sheet.getByText('5 h × 70,80 €', { exact: false })).toBeVisible()
   // Kein Hinweis auf Gebühr oder Provision, kein Zugriff auf die Gebührentabellen
   await expect(page.locator('body')).not.toContainText(/15 ?%|Gebühr|Provision|Plattform/)
-  expect(requests.filter((u) => /platform_settings|fee_splits/.test(u))).toEqual([])
+  expect(requests.filter((u) => /platform_settings|commission_entries/.test(u))).toEqual([])
   expect(errors).toEqual([])
 })
 

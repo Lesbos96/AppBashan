@@ -5,7 +5,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
 import { makeRequest } from '../support/db.ts'
-import { asUser, ownerGrantRole, ownerSql } from '../support/owner.ts'
+import { ownerGrantRole, ownerSql } from '../support/owner.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -137,12 +137,6 @@ beforeAll(async () => {
 
   bookingA = must(await service.from('rental_bookings').insert(bookingRow(a.id, CARGO_VAN)).select('id').single()).id
   bookingB = must(await service.from('rental_bookings').insert(bookingRow(b.id, approvedOffer)).select('id').single()).id
-
-  // Gebührenzeilen schreibt niemand mehr außer dem Eigentümer (service_role hat kein Schreibrecht, S9a-2): Fixtures per Eigentümer-SQL.
-  ownerSql(`insert into public.fee_splits (rental_booking_id, payee_id, total_cents, fee_rate, fee_vat_rate, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, price_version)
-    values ('${bookingB}', '${provider.id}', 27600, 0.15, 0.2, 4140, 3450, 690, 23460, 1);
-    insert into public.fee_splits (service_request_id, total_cents, fee_rate, fee_vat_rate, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, price_version)
-    values ('${requestA}', 68961, 0.15, 0.2, 10344, 8620, 1724, 58617, 1)`)
 })
 
 afterAll(async () => {
@@ -164,7 +158,7 @@ describe('anon', () => {
     expect(offers.every((o) => o.status === 'approved')).toBe(true)
   })
 
-  it.each(['profiles', 'service_requests', 'request_photos', 'rental_bookings', 'fee_splits', 'platform_settings'] as const)(
+  it.each(['profiles', 'service_requests', 'request_photos', 'rental_bookings', 'commission_entries', 'platform_settings'] as const)(
     'liest nichts aus %s',
     async (table) => {
       const { data } = await anon.from(table).select('*')
@@ -318,20 +312,19 @@ describe('Vermieter und Fahrzeuge', () => {
 })
 
 describe('Gebühren', () => {
-  it('Kunden und anon lesen weder fee_splits noch platform_settings', async () => {
+  it('Kunden und anon lesen weder das Journal noch platform_settings', async () => {
     for (const db of [a.db, b.db, anon]) {
-      const splits = await db.from('fee_splits').select('*')
-      if (db === anon) expect(splits.error?.code).toBe('42501')
-      else expect(must(splits)).toEqual([])
+      const entries = await db.from('commission_entries').select('*')
+      if (db === anon) expect(entries.error?.code).toBe('42501')
+      else expect(must(entries)).toEqual([])
       expect((await db.from('platform_settings').select('*')).error?.code).toBe('42501') // Spalten-Grant (0027): select * verweigert
     }
     expect(must(await a.db.from('platform_settings').select('key'))).toEqual([])
   })
 
-  it('Vermieter liest nur eigene Aufteilung, den Satz seit 0027 nicht mehr (nur Partner-Mitglieder, partner-fee-read.test.ts)', async () => {
-    const own = must(await provider.db.from('fee_splits').select('rental_booking_id'))
-    expect(own).toEqual([{ rental_booking_id: bookingB }])
-    expect(must(await otherProvider.db.from('fee_splits').select('id'))).toEqual([])
+  it('Vermieter liest weder Journal noch Satz (nur Partner-Mitglieder: journal.test.ts, partner-fee-read.test.ts)', async () => {
+    expect(must(await provider.db.from('commission_entries').select('id'))).toEqual([])
+    expect(must(await otherProvider.db.from('commission_entries').select('id'))).toEqual([])
     expect(must(await provider.db.from('platform_settings').select('key'))).toEqual([])
   })
 
@@ -342,20 +335,13 @@ describe('Gebühren', () => {
     expect(must(await service.from('platform_settings').select('value').eq('key', 'fee_rate').eq('version', 1).single()).value).toBe(0.15)
   })
 
-  it('admin liest Aufteilungen nur mit aal2', async () => {
-    // Anmeldung per Passwort ist aal1: nichts. Positivkontrolle mit gesetztem Claim aal2 (Eigentümer-SQL).
-    expect(must(await admin.db.from('fee_splits').select('id'))).toEqual([])
-    expect(Number(asUser(admin.id, 'aal1', 'select count(*)::int as n from public.fee_splits')[0]!.n)).toBe(0)
-    expect(Number(asUser(admin.id, 'aal2', 'select count(*)::int as n from public.fee_splits')[0]!.n)).toBeGreaterThanOrEqual(2)
-  })
-
-  it('niemand außer dem Server schreibt Aufteilungen', async () => {
+  it('admin liest das Journal nur mit aal2 (Anmeldung per Passwort ist aal1: nichts); niemand schreibt es per API', async () => {
+    expect(must(await admin.db.from('commission_entries').select('id'))).toEqual([])
     const row = {
-      service_request_id: requestB, total_cents: 1, fee_rate: 0, fee_vat_rate: 0, fee_cents: 0,
-      fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, price_version: 1,
-    }
-    expect((await provider.db.from('fee_splits').insert(row)).error).not.toBeNull()
-    expect((await admin.db.from('fee_splits').insert(row)).error?.code).toBe('42501')
+      request_id: requestB, partner_id: provider.id, revision_id: requestB, kind: 'booking', total_cents: 1, fee_rate: 0, fee_vat_rate: 0, fee_cents: 0,
+      fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, vat_rule: 'standard_20', price_version: 1, fee_rate_version: 1, fee_vat_rate_version: 1,
+    } as never
+    for (const db of [provider.db, admin.db, a.db]) expect((await db.from('commission_entries').insert(row)).error?.code).toBe('42501')
   })
 })
 
@@ -421,9 +407,9 @@ describe('current_price_version', () => {
     }
   })
 
-  it('macht platform_settings und fee_splits nicht lesbar', async () => {
+  it('macht platform_settings und das Journal nicht lesbar', async () => {
     expect((await anon.from('platform_settings').select('key')).data ?? []).toEqual([])
-    expect((await anon.from('fee_splits').select('id')).data ?? []).toEqual([])
+    expect((await anon.from('commission_entries').select('id')).data ?? []).toEqual([])
   })
 })
 
@@ -485,6 +471,8 @@ describe('Rollen', () => {
     expect(svcOnly).toContain('admin_set_partner_master(uuid,uuid,text,text,text,boolean,text,text,text,text,text)')
     expect(svcOnly).toContain('admin_remove_partner_document(uuid,uuid,text)')
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])
+    // Journal: die einzige Schreibstelle hat keinen Grant an irgendeine API-Rolle (S9b-4)
+    expect(rows.filter((r) => String(r.fn).startsWith('private.commission_book(')).map((r) => [r.anon, r.auth, r.svc])).toEqual([[false, false, false]])
     // Trigger- und Hilfsfunktionen in private (ohne SECURITY DEFINER): kein EXECUTE für Nutzer-Rollen, außer geo_boundaries_make_valid (NA-15)
     const invoker = ownerSql(`select p.oid::regprocedure::text as fn from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'private' and not p.prosecdef and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))`)

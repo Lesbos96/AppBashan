@@ -55,6 +55,7 @@ Reihenfolge: Abschnitt 1 bis 5.
 | 24 | **Partner-Dokumente (S9b-2, 0024/0025):** Der Bucket `partner-documents` entsteht mit der Migration (privat, 10 MB, PDF und JPEG). Löschfrist (90 Tage nach Ablehnung, Rechtsfrage) und Anonymisierung folgen mit S9h; Dateien einer gelöschten Firma entfernt nur der Eigentümer über die Storage-API | CC | `select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'partner-documents'` ergibt `false`, `10485760`, PDF und JPEG |
 | 25 | **TOTP und Faktor-Reset:** MFA (TOTP) im Produktivprojekt aktivieren (Auth → MFA, `config.toml` nur als Datei, kein `config push`). Supabase-TOTP kennt keine Wiederherstellungscodes: verlorene Faktoren setzt Beks per Dashboard zurück, nach Identitätsprüfung der Person | Beks | Partner-Konto meldet sich mit TOTP auf `aal2` an; Reset-Ablauf ist beschrieben und einmal geprobt |
 | 26 | **Captcha und Rate-Limit für die offene Partner-Registrierung** (`register_partner` und Dokument-Uploads: Spam und Speicherkosten durch Anträge und Uploads; Konto ist Voraussetzung, die Anmeldung braucht Punkt 18) | CC (Code), Beks (Konto) | Registrierung und Upload ohne Token werden abgelehnt; je Konto höchstens 5 Dokumente (Test in `partner-admin.test.ts`) |
+| 27 | **Provisionsjournal (S9b-4, 0028/0029):** Journalzeilen sind unlöschbar (`ON DELETE RESTRICT`, `append_only`). Ein Produktivprojekt bekommt `commission_entries` nur über die Migrationen; kein Test und kein Skript bucht dort (Journal-Tests laufen als Rollback). Kontolöschung bei vorhandenen Journalzeilen (DSGVO, BAO) braucht eine Anonymisierung (S9h) | CC | `select count(*) from public.commission_entries` auf Dev ergibt 0; Allowlist-Test: `commission_book` ohne Grant |
 
 Weitere Abnahme-Punkte (Lighthouse, Preis-Stichproben über 10 Szenarien, `shots:all`, README, Apple-Anmeldung) stehen in ROADMAP S10 und OPEN_ISSUES; Apple bleibt bis dahin ausgeblendet.
 
@@ -68,6 +69,6 @@ GOLIVE_URL=https://<ref>.supabase.co GOLIVE_ORIGIN=https://<app-domain> GOLIVE_P
 `GOLIVE_PUBLISHABLE_KEY` ist optional (der Key ist öffentlich). Geprüft werden:
 - CORS von `route` und `quote`: echte Origin und `capacitor://localhost` erlaubt; fremde Origin sowie `http://localhost:5173` und `:4173` ohne `Access-Control-Allow-Origin`; POST mit falschen Zugangsdaten und fremder Origin gibt 401 ohne CORS-Header.
 - `quote` ohne JWT und mit Müll-Token: 401; `route` ohne `apikey`: 401.
-- Mit Key: `price_config` anonym lesbar, aber ohne Gebührenschlüssel; `platform_settings`, `fee_splits`, `service_requests`, `rental_bookings`, `profiles` anonym ohne Zeilen; keine Demo-Angebote.
+- Mit Key: `price_config` anonym lesbar, aber ohne Gebührenschlüssel; `platform_settings`, `commission_entries`, `service_requests`, `rental_bookings`, `profiles` anonym ohne Zeilen; keine Demo-Angebote.
 
 Exit-Code 0 = bestanden, 1 = mindestens ein FAIL, 2 = falscher Aufruf. Nicht geprüft werden Mailversand, Redirect-URLs, SMTP, Turnstile, Secrets und der ORS-Plan: diese Punkte nur per Dashboard und echter Anmeldung.

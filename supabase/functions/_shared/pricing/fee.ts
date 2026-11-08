@@ -23,3 +23,9 @@ export function splitFee(totalCents: number, { feeRate, vatRate }: FeeRates): Fe
   const feeNetCents = Math.floor((2 * feeCents * 10000 + d) / (2 * d))
   return { totalCents, feeCents, feeNetCents, feeVatCents: feeCents - feeNetCents, payoutCents: totalCents - feeCents }
 }
+
+/** Gegenbuchung im Journal: jede Betragsspalte exakt negiert (kein −0). Die Datenbank prüft dasselbe im Trigger. */
+export function negateSplit(s: FeeSplit): FeeSplit {
+  const n = (x: number) => (x === 0 ? 0 : -x)
+  return { totalCents: n(s.totalCents), feeCents: n(s.feeCents), feeNetCents: n(s.feeNetCents), feeVatCents: n(s.feeVatCents), payoutCents: n(s.payoutCents) }
+}

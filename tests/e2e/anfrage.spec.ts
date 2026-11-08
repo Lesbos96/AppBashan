@@ -443,7 +443,7 @@ test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', as
   expect(url.searchParams.get('select')).not.toMatch(/fee|inputs/)
 })
 
-test('Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält Gebührenfelder', async ({ page }) => {
+test('Die App liest nie das Journal oder Einstellungen und keine Antwort enthält Gebührenfelder', async ({ page }) => {
   const requested: string[] = []
   const keys: string[] = []
   page.on('request', (r) => requested.push(r.url()))
@@ -466,7 +466,7 @@ test('Die App liest nie fee_splits oder Einstellungen und keine Antwort enthält
   await expect(page).toHaveURL(/\/montage\/gesendet$/)
   await page.goto('/auftraege')
   await page.getByText('Noch keine Aufträge').or(page.getByText(/Aktiv ·/)).waitFor()
-  expect(requested.filter((u) => /fee_splits|platform_settings|current_fee_rates/.test(u))).toEqual([])
+  expect(requested.filter((u) => /commission_entries|platform_settings|current_fee_rates/.test(u))).toEqual([])
   expect(keys.length).toBeGreaterThan(0)
   // call_out_fee_cents ist die Anfahrtspauschale aus den Bedingungen, keine Plattformgebühr
   expect(keys.filter((k) => k !== 'call_out_fee_cents' && /fee|payout|platform|share|anteil|vat/i.test(k))).toEqual([])

@@ -47,87 +47,112 @@ export type Database = {
         }
         Relationships: []
       }
-      fee_splits: {
+      commission_entries: {
         Row: {
           created_at: string
           fee_cents: number
           fee_net_cents: number
           fee_rate: number
+          fee_rate_version: number
           fee_vat_cents: number
           fee_vat_rate: number
+          fee_vat_rate_version: number
           id: string
-          payee_id: string | null
+          kind: Database["public"]["Enums"]["commission_kind"]
+          partner_id: string
+          payment_flow: string
           payout_cents: number
           price_version: number
-          rental_booking_id: string | null
-          service_request_id: string | null
+          request_id: string
+          reverses_entry_id: string | null
+          revision_id: string
           total_cents: number
+          vat_rule: Database["public"]["Enums"]["partner_vat_rule"]
         }
         Insert: {
           created_at?: string
           fee_cents: number
           fee_net_cents: number
           fee_rate: number
+          fee_rate_version: number
           fee_vat_cents: number
           fee_vat_rate: number
+          fee_vat_rate_version: number
           id?: string
-          payee_id?: string | null
+          kind: Database["public"]["Enums"]["commission_kind"]
+          partner_id: string
+          payment_flow?: string
           payout_cents: number
           price_version: number
-          rental_booking_id?: string | null
-          service_request_id?: string | null
+          request_id: string
+          reverses_entry_id?: string | null
+          revision_id: string
           total_cents: number
+          vat_rule: Database["public"]["Enums"]["partner_vat_rule"]
         }
         Update: {
           created_at?: string
           fee_cents?: number
           fee_net_cents?: number
           fee_rate?: number
+          fee_rate_version?: number
           fee_vat_cents?: number
           fee_vat_rate?: number
+          fee_vat_rate_version?: number
           id?: string
-          payee_id?: string | null
+          kind?: Database["public"]["Enums"]["commission_kind"]
+          partner_id?: string
+          payment_flow?: string
           payout_cents?: number
           price_version?: number
-          rental_booking_id?: string | null
-          service_request_id?: string | null
+          request_id?: string
+          reverses_entry_id?: string | null
+          revision_id?: string
           total_cents?: number
+          vat_rule?: Database["public"]["Enums"]["partner_vat_rule"]
         }
         Relationships: [
           {
-            foreignKeyName: "fee_splits_payee_id_fkey"
-            columns: ["payee_id"]
+            foreignKeyName: "commission_entries_partner_id_fkey"
+            columns: ["partner_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fee_splits_price_version_fkey"
+            foreignKeyName: "commission_entries_price_version_fkey"
             columns: ["price_version"]
             isOneToOne: false
             referencedRelation: "current_price_version"
             referencedColumns: ["version"]
           },
           {
-            foreignKeyName: "fee_splits_price_version_fkey"
+            foreignKeyName: "commission_entries_price_version_fkey"
             columns: ["price_version"]
             isOneToOne: false
             referencedRelation: "price_versions"
             referencedColumns: ["version"]
           },
           {
-            foreignKeyName: "fee_splits_rental_booking_id_fkey"
-            columns: ["rental_booking_id"]
-            isOneToOne: true
-            referencedRelation: "rental_bookings"
+            foreignKeyName: "commission_entries_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fee_splits_service_request_id_fkey"
-            columns: ["service_request_id"]
-            isOneToOne: true
-            referencedRelation: "service_requests"
+            foreignKeyName: "commission_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            isOneToOne: false
+            referencedRelation: "commission_entries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_entries_revision_id_request_id_fkey"
+            columns: ["revision_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id", "request_id"]
           },
         ]
       }
@@ -1004,8 +1029,10 @@ export type Database = {
         Row: {
           fee_rate: number | null
           fee_rate_from: string | null
+          fee_rate_version: number | null
           fee_vat_rate: number | null
           fee_vat_rate_from: string | null
+          fee_vat_rate_version: number | null
         }
         Relationships: []
       }
@@ -1243,6 +1270,12 @@ export type Database = {
       }
     }
     Enums: {
+      commission_kind:
+        | "booking"
+        | "change"
+        | "cancellation"
+        | "cancellation_fee"
+        | "correction"
       offer_status: "pending" | "approved" | "archived"
       partner_role: "owner" | "staff"
       partner_service:
@@ -1401,6 +1434,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      commission_kind: [
+        "booking",
+        "change",
+        "cancellation",
+        "cancellation_fee",
+        "correction",
+      ],
       offer_status: ["pending", "approved", "archived"],
       partner_role: ["owner", "staff"],
       partner_service: ["transport", "move", "clearance", "assembly", "rental"],

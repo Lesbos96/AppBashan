@@ -573,7 +573,7 @@ Nach Zustimmung: `splitFee(neuer Gesamtpreis, Satz und USt.-Regel der Buchungsze
 
 ### 9.6 Was mit `fee_splits` passiert
 
-`fee_splits` wird durch das Journal ersetzt (keine Kompatibilitätsschicht, Dev-Daten werden verworfen). Heutige Eigenschaften, die entfallen: eine Zeile je Anfrage, Upsert, Kaskadenlöschung, `payee_id` null bei Kontolöschung (M01:196-212, M10:97-100). Die Checks `fee_parts` und `payout_rest` (M01:211-212) übernimmt das Journal; **nicht** übernommen werden `non_negative` (M02:43-44) und `total_cents >= 0` (M01:201), weil Gegenbuchungen negativ sind (5.8). Die Schreibung von `fee_splits` in `quote` (H:259, M10:89-101) entfällt mit S9a, damit beim Absenden keine Gebührenzeile ohne Empfänger mehr entsteht; das Journal selbst entsteht in S9b (es braucht `partners`).
+`fee_splits` wird durch das Journal ersetzt (keine Kompatibilitätsschicht, Dev-Daten werden verworfen). Heutige Eigenschaften, die entfallen: eine Zeile je Anfrage, Upsert, Kaskadenlöschung, `payee_id` null bei Kontolöschung (M01:196-212, M10:97-100). Die Checks `fee_parts` und `payout_rest` (M01:211-212) übernimmt das Journal; **nicht** übernommen werden `non_negative` (M02:43-44) und `total_cents >= 0` (M01:201), weil Gegenbuchungen negativ sind (5.8). Die Schreibung von `fee_splits` in `quote` (H:259, M10:89-101) entfällt mit S9a, damit beim Absenden keine Gebührenzeile ohne Empfänger mehr entsteht; das Journal selbst entsteht in S9b (es braucht `partners`). **Stand:** `fee_splits` ist mit Migration 0028 (S9b-4) gelöscht, `commission_entries` besteht; `change` bucht nur erhöhend (R2-M1).
 
 ### 9.7 Phase 2 (später)
 

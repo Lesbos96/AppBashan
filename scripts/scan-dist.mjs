@@ -4,7 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const PATTERNS = { 'sb_secret_-Schlüssel': /sb_secret_[A-Za-z0-9_-]{20,}/g, 'JWT-Token': /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, 'Gebührentabelle': /fee_splits|platform_settings|current_fee_rates/g }
+const PATTERNS = { 'sb_secret_-Schlüssel': /sb_secret_[A-Za-z0-9_-]{20,}/g, 'JWT-Token': /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, 'Gebührentabelle': /commission_entries|platform_settings|current_fee_rates/g }
 
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]))
 

@@ -76,7 +76,7 @@ try {
   check(statuses.every((s) => s === 200 || s === 429) && statuses.includes(200), 'Rennen: Statuscodes', statuses.join(' '))
   check(rows.length === 1, 'Rennen: genau eine Anfrage in der Datenbank', rows.length)
   check(ids.size === 1 && ids.has(rows[0]?.id), 'Rennen: alle 200er liefern dieselbe id', ids.size)
-  check((await count('fee_splits', 'service_request_id', rows[0]?.id)) === 0, 'Rennen: quote schreibt keine Gebührenaufteilung', 'fee_splits')
+  check((await count('commission_entries', 'request_id', rows[0]?.id)) === 0, 'Rennen: quote bucht nichts ins Journal', 'commission_entries')
 
   // 2. CORS an route: fremde Origin bekommt keinen Allow-Origin-Header
   const pre = async (origin) => {

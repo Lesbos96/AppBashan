@@ -35,7 +35,7 @@ test('Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Geb�
     if (detail) await expect(row.first()).toContainText(detail)
   }
   await expect(page.locator('body')).not.toContainText(noFee)
-  expect(requests.filter((u) => /platform_settings|fee_splits/.test(u))).toEqual([])
+  expect(requests.filter((u) => /platform_settings|commission_entries/.test(u))).toEqual([])
   expect(errors).toEqual([])
 })
 
@@ -107,7 +107,7 @@ test('Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile', async (
   await expect(sheet.locator('li', { hasText: 'Montage / Demontage' }).filter({ hasText: /770,40.€/ }).first()).toBeVisible()
   await expect(sheet.getByText('Grundbetrag 72,00', { exact: false })).toBeVisible()
   await expect(page.locator('body')).not.toContainText(noFee)
-  expect(requests.filter((u) => /platform_settings|fee_splits/.test(u))).toEqual([])
+  expect(requests.filter((u) => /platform_settings|commission_entries/.test(u))).toEqual([])
   expect(errors).toEqual([])
 })
 

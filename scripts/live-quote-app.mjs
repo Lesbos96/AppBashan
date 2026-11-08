@@ -178,12 +178,12 @@ try {
   // Eigene Zeilen lesbar, Gebührentabelle nicht
   const own = await app.from('service_requests').select('id, service, status').eq('customer_id', userId)
   check(!own.error && own.data.length === requestIds.length, 'Kunde liest seine Anfragen über RLS', `${own.data?.length ?? 0} von ${requestIds.length}`)
-  const fees = await app.from('fee_splits').select('id')
-  check(Boolean(fees.error) || fees.data.length === 0, 'Kunde liest keine fee_splits')
+  const fees = await app.from('commission_entries').select('id')
+  check(Boolean(fees.error) || fees.data.length === 0, 'Kunde liest kein Journal')
   const settings = await app.from('platform_settings').select('key')
   check(Boolean(settings.error) || settings.data.length === 0, 'Kunde liest keine platform_settings')
-  const serverFees = await service.from('fee_splits').select('id').in('service_request_id', requestIds)
-  check(!serverFees.error && serverFees.data.length === 0, 'quote schreibt keine Gebührenaufteilung (Journal erst ab S9b)', `${serverFees.data?.length ?? 0} Zeilen`)
+  const serverFees = await service.from('commission_entries').select('id').in('request_id', requestIds)
+  check(!serverFees.error && serverFees.data.length === 0, 'quote bucht nichts ins Journal', `${serverFees.data?.length ?? 0} Zeilen`)
 } catch (e) {
   failed++
   console.log(`FAIL Abbruch: ${e instanceof Error ? e.message : 'unbekannt'}`)
@@ -197,9 +197,8 @@ try {
     check(!gone.data?.user, 'Testnutzer nicht mehr vorhanden')
     const requests = await service.from('service_requests').select('id').eq('customer_id', userId)
     const bookings = await service.from('rental_bookings').select('id').eq('customer_id', userId)
-    const splits = requestIds.length ? await service.from('fee_splits').select('id').in('service_request_id', requestIds) : { data: [] }
-    const bookingSplits = bookingIds.length ? await service.from('fee_splits').select('id').in('rental_booking_id', bookingIds) : { data: [] }
-    check(requests.data?.length === 0 && bookings.data?.length === 0 && splits.data?.length === 0 && bookingSplits.data?.length === 0, 'Keine Anfragen, Mietanfragen oder Gebührenzeilen übrig')
+    const entries = requestIds.length ? await service.from('commission_entries').select('id').in('request_id', requestIds) : { data: [] }
+    check(requests.data?.length === 0 && bookings.data?.length === 0 && entries.data?.length === 0, 'Keine Anfragen, Mietanfragen oder Journalzeilen übrig')
   }
 }
 console.log(failed === 0 ? 'ALLE BESTANDEN' : `${failed} FEHLGESCHLAGEN`)
