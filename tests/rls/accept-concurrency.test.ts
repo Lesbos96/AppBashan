@@ -31,7 +31,7 @@ const startAt = (secs: number) => `select pg_sleep(greatest(0, extract(epoch fro
 function sweep(admin: string) {
   const rows = (q: string) => ownerSql(q) as Record<string, string>[]
   try {
-    const firms = rows(`select distinct p.id, p.status::text as status, exists (select 1 from public.assignments a where a.partner_id = p.id) as bound
+    const firms = rows(`select distinct p.id, p.status::text as status, (exists (select 1 from public.assignments a where a.partner_id = p.id) or exists (select 1 from public.partner_offers o where o.partner_id = p.id)) as bound
       from public.partners p join public.partner_members m on m.partner_id = p.id join auth.users u on u.id = m.user_id where u.email like 'pt-%@movenow.test' and p.name <> 'Testabdeckung GmbH'`) as unknown as { id: string; status: string; bound: boolean }[]
     for (const f of firms) {
       if (!f.bound) ownerDeletePartner(f.id)

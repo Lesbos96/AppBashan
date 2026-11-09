@@ -116,6 +116,8 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 - [x] S9c Verteilung und Annahme: `job_listings`, `assignments`, `outbox`, `distribute_request`, `partner_accept` (Edge Function `accept`), `decline_listing`, Fristablauf per Cron, `start_job`, `complete_job`, `job_contact`, `my_job_partner`, `admin_contact` (Migrationen 0030 bis 0034, 2026-11-08; Mailversand gebaut, nicht eingerichtet: OPEN_ISSUES S9c-3)
 - [x] S9d Fotos für Partner: Bucket `job-photos`, `job_photos`, Pipeline `photo-publish` (Neu-Kodierung ohne Metadaten), Verteilung erst nach den Foto-Endzuständen, `job-photo`, `photo-receipt`, `admin-photo`, Aufräumen beider Buckets, Outbox-Härtung (Migrationen 0035 bis 0037, 2026-11-08; Einrichtung der Pipeline durch Beks: `npm run setup:photo-publish`)
 
+- [x] S9e Festangebot: `partner_offers`, `send_offer`, `withdraw_offer`, `reject_offers`, `my_request_offers`, `confirm_offer` (Edge Function `offer-confirm`), T4b/T7 (`expire_offers`), `admin_set_partner_status` schließt Listings und Angebote, `to_district` im Listing, gemeinsame Limit-Prüfung (Migrationen 0038, 0039, 2026-11-09; schließt S9c-1, S9c-2, S9c-10, S9c-12)
+
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
 - [ ] Politur-Loop aus Schritt E, höchstens 3 globale Runden

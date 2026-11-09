@@ -2,7 +2,7 @@
 // die SQL-Funktionen prüfen Akteur, Firma und Status selbst. Fehler der Funktionen kommen als DbError mit dem Code der Exception.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
-import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OutboxDeps } from './handlers.ts'
+import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OfferDeps, type OutboxDeps } from './handlers.ts'
 
 export type Db = SupabaseClient<Database>
 export const must = <T>(r: { data: T; error: { message: string } | null }): NonNullable<T> => {
@@ -57,7 +57,39 @@ export const acceptDb = (db: Db): Pick<AcceptDeps, 'getUser' | 'basis' | 'accept
   },
 })
 
-export const contactDb = (db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
+export const offerDb = (db: Db): Pick<OfferDeps, 'getUser' | 'basis' | 'confirm'> => ({
+  getUser: (jwt) => getUser(db, jwt),
+  async basis(userId, offerId) {
+    const row = must(await db.rpc('confirm_offer_basis', { p_actor: userId, p_offer: offerId }))[0]
+    if (!row) throw new DbError('not_found')
+    return {
+      amountCents: Number(row.amount_cents),
+      feeRate: Number(row.fee_rate),
+      feeVatRate: Number(row.fee_vat_rate),
+      feeRateVersion: row.fee_rate_version,
+      feeVatRateVersion: row.fee_vat_rate_version,
+    }
+  },
+  async confirm(userId, offerId, b, split) {
+    return must(
+      await db.rpc('confirm_offer', {
+        p_actor: userId,
+        p_offer: offerId,
+        p_shown_amount: b.amountCents,
+        p_fee_rate: b.feeRate,
+        p_fee_vat_rate: b.feeVatRate,
+        p_fee: split.feeCents,
+        p_fee_net: split.feeNetCents,
+        p_fee_vat: split.feeVatCents,
+        p_payout: split.payoutCents,
+        p_fee_rate_version: b.feeRateVersion,
+        p_fee_vat_rate_version: b.feeVatRateVersion,
+      }),
+    )
+  },
+})
+
+export const contactDb =(db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
   getUser: (jwt) => getUser(db, jwt),
   async contact(adminId, requestId, reason) {
     const rows = must(await db.rpc('admin_contact', { p_actor: adminId, p_request: requestId, p_reason: reason }))

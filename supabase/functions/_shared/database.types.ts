@@ -281,6 +281,7 @@ export type Database = {
           service: Database["public"]["Enums"]["service_type"]
           status: Database["public"]["Enums"]["listing_status"]
           time_window: string | null
+          to_district: number | null
           total_cents: number | null
           volume_m3: number | null
         }
@@ -300,6 +301,7 @@ export type Database = {
           service: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["listing_status"]
           time_window?: string | null
+          to_district?: number | null
           total_cents?: number | null
           volume_m3?: number | null
         }
@@ -319,6 +321,7 @@ export type Database = {
           service?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["listing_status"]
           time_window?: string | null
+          to_district?: number | null
           total_cents?: number | null
           volume_m3?: number | null
         }
@@ -549,6 +552,67 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_offers: {
+        Row: {
+          amount_cents: number
+          base_revision_id: string
+          created_at: string
+          decided_at: string | null
+          end_reason: string | null
+          id: string
+          partner_id: string
+          request_id: string
+          status: Database["public"]["Enums"]["partner_offer_status"]
+          valid_until: string
+        }
+        Insert: {
+          amount_cents: number
+          base_revision_id: string
+          created_at?: string
+          decided_at?: string | null
+          end_reason?: string | null
+          id?: string
+          partner_id: string
+          request_id: string
+          status?: Database["public"]["Enums"]["partner_offer_status"]
+          valid_until: string
+        }
+        Update: {
+          amount_cents?: number
+          base_revision_id?: string
+          created_at?: string
+          decided_at?: string | null
+          end_reason?: string | null
+          id?: string
+          partner_id?: string
+          request_id?: string
+          status?: Database["public"]["Enums"]["partner_offer_status"]
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_offers_base_revision_id_fkey"
+            columns: ["base_revision_id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_offers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -1408,9 +1472,36 @@ export type Database = {
       }
       booking_terms: { Args: never; Returns: Json }
       complete_job: { Args: { p_request: string }; Returns: undefined }
+      confirm_offer: {
+        Args: {
+          p_actor: string
+          p_fee: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_offer: string
+          p_payout: number
+          p_shown_amount: number
+        }
+        Returns: string
+      }
+      confirm_offer_basis: {
+        Args: { p_actor: string; p_offer: string }
+        Returns: {
+          amount_cents: number
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+        }[]
+      }
       decline_listing: { Args: { p_listing: string }; Returns: undefined }
       distribute_pending: { Args: never; Returns: number }
       distribute_request: { Args: { p_request: string }; Returns: number }
+      expire_offers: { Args: never; Returns: number }
       expire_requests: { Args: never; Returns: number }
       job_contact: {
         Args: { p_request: string }
@@ -1445,6 +1536,16 @@ export type Database = {
           contact_name: string
           contact_phone: string
           name: string
+        }[]
+      }
+      my_request_offers: {
+        Args: { p_request: string }
+        Returns: {
+          amount_cents: number
+          company_name: string
+          offer_id: string
+          status: Database["public"]["Enums"]["partner_offer_status"]
+          valid_until: string
         }[]
       }
       outbox_claim: {
@@ -1638,6 +1739,7 @@ export type Database = {
         }
         Returns: string
       }
+      reject_offers: { Args: { p_request: string }; Returns: undefined }
       route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {
         Args: {
@@ -1653,6 +1755,10 @@ export type Database = {
           to_in_austria: boolean
         }[]
       }
+      send_offer: {
+        Args: { p_amount: number; p_request: string }
+        Returns: string
+      }
       start_job: { Args: { p_request: string }; Returns: undefined }
       take_rate_tokens: { Args: { checks: Json }; Returns: boolean }
       verify_price_version: { Args: { p_version: number }; Returns: undefined }
@@ -1660,6 +1766,7 @@ export type Database = {
         Args: { p_request: string }
         Returns: Database["public"]["Enums"]["request_status"]
       }
+      withdraw_offer: { Args: { p_offer: string }; Returns: undefined }
     }
     Enums: {
       assignment_end:
@@ -1674,6 +1781,13 @@ export type Database = {
         | "correction"
       listing_status: "open" | "closed" | "declined" | "accepted"
       offer_status: "pending" | "approved" | "archived"
+      partner_offer_status:
+        | "sent"
+        | "confirmed"
+        | "rejected"
+        | "superseded"
+        | "expired"
+        | "withdrawn"
       partner_role: "owner" | "staff"
       partner_service:
         | "transport"
@@ -1845,6 +1959,14 @@ export const Constants = {
       ],
       listing_status: ["open", "closed", "declined", "accepted"],
       offer_status: ["pending", "approved", "archived"],
+      partner_offer_status: [
+        "sent",
+        "confirmed",
+        "rejected",
+        "superseded",
+        "expired",
+        "withdrawn",
+      ],
       partner_role: ["owner", "staff"],
       partner_service: ["transport", "move", "clearance", "assembly", "rental"],
       partner_status: [

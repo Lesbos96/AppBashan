@@ -409,5 +409,19 @@ Mittel (Löschen-Test) behoben. Rest:
 | S9d-7 | niedrig | S9h | T16 (Übernahme eines Auftrags nach Absage) braucht die Kopien: `photo_purge` (b) löscht sie bei `unmatched`/`expired` sofort. Wie T16 sie erneut erzeugt (Pipeline nochmals für dieselben `request_photos`), mit S9h klären |
 | S9d-8 | niedrig | erledigt | Der Test `uploads.test.ts` erwartet für `TRUNCATE public.request_photos` jetzt den Fremdschlüsselfehler 0A000 (`job_photos.source_photo_id`); der Trigger `photo_immutable` bleibt als zweite Sperre |
 
+## S9e · Abnahme (Berater `tmp/proof/s9e-abnahme.md`; hoch 0, mittel 2, niedrig 8) und offene Punkte
+
+Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_partner_status` schließt Listings, zieht Angebote zurück, wendet T4b/T8 an), S9c-10 (Sperrreihenfolge, gemeinsame Limit-Prüfung), S9c-12 (Zuständigkeit aus dem Auftrag, T8 zählt nur lebende Listings, `partner_accept_basis` prüft Listing, Frist, Zuständigkeit).
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9e-1 | mittel | erledigt (0039) | M1: `admin_set_partner_status` bestimmt die Aufträge nach der Firmensperre erneut und bricht bei Änderung mit `retry` ab (Admin-Skript wiederholt). Der Wettlauf zwischen dem Lesen und der Sperre ist nicht eigens getestet; `offers-concurrency.test.ts` deckt `confirm_offer` gegen die Sperre ab. Ein Listing, das `distribute_request` im selben Fenster für die Firma anlegt, bleibt bis zu seiner Frist `open` (nicht lebend, die Annahme scheitert an `partner_not_active`) |
+| S9e-2 | mittel | erledigt (0039) | M2: `send_offer(p_listing, p_amount)` nimmt die Listing-ID, `partner_offers.request_id` ist für `authenticated` gesperrt. Konzept 4.5 (T4 als Art A) weicht ab: T4 und T6 sind Art-B-RPC, weil kein Betrag aus TypeScript kommt |
+| S9e-3 | niedrig | erledigt (0039) | N1 (abgelaufene Angebote der ganzen Anfrage werden `expired`), N2 (`partner_job_limit` erreicht den Kunden als `offer_unavailable`), N3 (Gewinner-Listing muss offen sein), N5 (`end_reason` passt zum Status, CHECK) |
+| S9e-4 | niedrig | S9h/S10 | N4: Ein Partner kann durch Zurückziehen und Neusenden mehrere `offer_new`-Mails auslösen; Obergrenze der Angebote je Partner und Anfrage oder Dedupe je Firma festlegen |
+| S9e-5 | niedrig | offen | N6: Der Snapshot der Angebots-Revision übernimmt alle Schlüssel der Revision 1 (bei `kind = offer` etwa die Gründe); nur Stornostufen und `termsHash` übernehmen, sobald die App den Snapshot darstellt |
+| S9e-6 | niedrig | Konzept | N7/N8: Fehlercode `amount_out_of_range` statt `offer_amount_invalid`/`offer_out_of_range`; `withdraw_offer` mit `my_member_partner_id()` (auch eine gesperrte Firma darf eigene Angebote zurückziehen). Konzept 5.5 angleichen |
+| S9e-7 | Pflicht | Beks | Mail-Texte `offer_new`, `offer_withdrawn`, `offer_confirmed` prüfen; der Versand bleibt bis zur Einrichtung (S9c-3) aus |
+
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

@@ -30,6 +30,10 @@ export const STATUS: Record<string, number> = {
   payout_changed: 409,
   partner_job_limit: 409,
   fee_rate_changed: 409,
+  offer_not_valid: 409,
+  invalid_transition: 409,
+  amount_changed: 409,
+  retry: 409,
   reason_required: 422,
   mfa_required: 403,
   bad_request: 400,
@@ -38,11 +42,11 @@ export const STATUS: Record<string, number> = {
   stale_claim: 409,
 }
 
-export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>) {
+export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>, needAal2 = true) {
   const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
   const user = jwt ? await deps.getUser(jwt) : null
   if (!user) return { res: json(401, { error: 'unauthorized' }, origin) }
-  if (user.aal !== 'aal2') return { res: json(403, { error: 'mfa_required' }, origin) }
+  if (needAal2 && user.aal !== 'aal2') return { res: json(403, { error: 'mfa_required' }, origin) }
   return { user }
 }
 
@@ -110,6 +114,60 @@ export async function handleAccept(req: Request, deps: AcceptDeps): Promise<Resp
   }
 }
 
+// offer-confirm --------------------------------------------------------------------------------------------------------------
+export type OfferBasis = { amountCents: number; feeRate: number; feeVatRate: number; feeRateVersion: number; feeVatRateVersion: number }
+export type OfferDeps = {
+  allowedOrigins: readonly string[]
+  getUser(jwt: string): Promise<AuthUser | null>
+  basis(userId: string, offerId: string): Promise<OfferBasis>
+  confirm(userId: string, offerId: string, basis: OfferBasis, split: ReturnType<typeof splitFee>): Promise<string>
+  log: Log
+}
+
+// Codes, die eine Gebühr oder einen Satz verraten könnten, gehen nie an den Kunden: einmal neu laden, dann neutral `retry`.
+const RETRY_CODES = new Set(['rate_mismatch', 'amount_mismatch', 'vat_rule_missing', 'setting_missing'])
+
+/** Bestätigung eines Festangebots durch den Kunden (T5, Art A). Kein aal2: Kunden haben keine MFA; die Datenbank prüft den Eigentümer. */
+export async function handleConfirmOffer(req: Request, deps: OfferDeps): Promise<Response> {
+  const origin = corsHeaders(req, deps.allowedOrigins)
+  const early = preflight(req, origin)
+  if (early) return early
+  try {
+    const a = await authed(req, deps, origin, false)
+    if (a.res) return a.res
+    const { offerId, shownAmountCents } = ((await body(req)) ?? {}) as Record<string, unknown>
+    if (typeof offerId !== 'string' || !UUID.test(offerId) || !Number.isSafeInteger(shownAmountCents) || (shownAmountCents as number) <= 0) {
+      return json(400, { error: 'invalid_input' }, origin)
+    }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const basis = await deps.basis(a.user.id, offerId)
+      if (basis.amountCents !== shownAmountCents) throw new DbError('amount_changed')
+      const split = splitFee(basis.amountCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate })
+      try {
+        const result = await deps.confirm(a.user.id, offerId, basis, split)
+        if (result === 'partner_not_active') return json(409, { error: 'partner_not_active' }, origin)
+        return json(200, { status: 'confirmed' }, origin)
+      } catch (e) {
+        const code = e instanceof DbError ? e.code : ''
+        if (RETRY_CODES.has(code)) {
+          if (attempt === 1) throw new DbError('retry')
+          continue
+        }
+        throw e
+      }
+    }
+    throw new DbError('retry')
+  } catch (e) {
+    const code = e instanceof DbError ? e.code : ''
+    // Auslastung der Firma geht nie an den Kunden: neutral „Angebot nicht verfügbar“, er wählt ein anderes
+    if (code === 'partner_job_limit') return json(409, { error: 'offer_unavailable' }, origin)
+    const status = RETRY_CODES.has(code) ? 409 : STATUS[code]
+    if (status) return json(status, { error: RETRY_CODES.has(code) ? 'retry' : code }, origin)
+    deps.log({ event: 'offer_confirm_failed', message: e instanceof Error ? e.message.slice(0, 200) : 'unknown' })
+    return json(500, { error: 'internal' }, origin)
+  }
+}
+
 // admin-contact --------------------------------------------------------------------------------------------------------------
 export type ContactDeps = {
   allowedOrigins: readonly string[]
@@ -158,6 +216,9 @@ const TEXTS: Record<string, { subject: string; text: (url: string) => string }> 
   request_accepted: { subject: 'Dein Auftrag wurde angenommen', text: (u) => `Ein Partner hat deine Anfrage angenommen. Alle Angaben findest du unter Aufträge: ${u}` },
   request_expired: { subject: 'Deine Anfrage ist abgelaufen', text: (u) => `Deine Anfrage wurde in der Frist nicht angenommen. Du kannst sie in der App neu senden: ${u}` },
   request_unmatched: { subject: 'Für deine Anfrage hat sich kein Partner gefunden', text: (u) => `Für Termin und Umfang hat sich leider kein Partner gefunden. Passe die Anfrage an oder sende sie neu: ${u}` },
+  offer_new: { subject: 'Neues Angebot für deine Anfrage', text: (u) => `Ein Partner hat dir ein Festangebot gesendet. Du kannst es unter Aufträge ansehen und bestätigen: ${u}` },
+  offer_withdrawn: { subject: 'Ein Angebot ist nicht mehr verfügbar', text: (u) => `Ein Angebot für deine Anfrage ist nicht mehr gültig. Unter Aufträge siehst du die übrigen Angebote: ${u}` },
+  offer_confirmed: { subject: 'Dein Angebot wurde bestätigt', text: (u) => `Der Kunde hat dein Festangebot bestätigt. Alle Angaben findest du im Partner-Bereich: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }
 

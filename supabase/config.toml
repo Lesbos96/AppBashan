@@ -427,6 +427,9 @@ verify_jwt = false
 [functions.accept]
 verify_jwt = false
 
+[functions.offer-confirm]
+verify_jwt = false
+
 [functions.admin-contact]
 verify_jwt = false
 
