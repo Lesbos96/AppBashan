@@ -125,7 +125,7 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
   - [x] S9h-1 Storno durch den Kunden (T12): `cancel_by_customer_basis`, `cancel_by_customer`, Stornostufen aus dem Snapshot, Edge Function `cancel-customer` mit Vorschau und gezeigter Gebühr, Mail `request_cancelled`, Tageszahl in den Mails (S9g-7) (Migrationen 0044, 0045, 2026-11-09)
   - [x] S9h-2 `cancel_by_partner` (T13, `scope_impossible`), T16 (`reissued_from`, Kopierzweig S9f-6, Fotos S9d-7), `partner_quality`, Kundenstorno nur bis Terminbeginn (S9h1-1) (Migrationen 0046, 0047, 2026-11-09)
   - [x] S9h-3 `admin-correct` (T14: `complete`, `cancel_customer`, `cancel_partner`, `negate_fee`, `dismiss_report`), `reported_jobs()`, `npm run admin:call`, Entscheidungen Beks S9h2-2 und S9h2-3 (Migrationen 0048 bis 0051, 2026-11-09; S9g-5, S9g-6)
-  - [ ] S9h-4 Konto löschen mit Anonymisierung (S4-N8, S1-N2, S9d-6)
+  - [x] S9h-4 Konto löschen mit Anonymisierung (S4-N8, S1-N2, S9d-6)
 
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)

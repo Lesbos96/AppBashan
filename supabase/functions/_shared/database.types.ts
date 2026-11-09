@@ -967,6 +967,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deleted_at: string | null
           display_name: string | null
           id: string
           phone: string | null
@@ -975,6 +976,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           display_name?: string | null
           id: string
           phone?: string | null
@@ -983,6 +985,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           display_name?: string | null
           id?: string
           phone?: string | null
@@ -1695,6 +1698,7 @@ export type Database = {
         }[]
       }
       decline_listing: { Args: { p_listing: string }; Returns: undefined }
+      delete_account: { Args: { p_user: string }; Returns: undefined }
       distribute_pending: { Args: never; Returns: number }
       distribute_request: { Args: { p_request: string }; Returns: number }
       expire_changes: { Args: never; Returns: number }

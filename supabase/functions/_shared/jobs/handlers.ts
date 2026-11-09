@@ -46,6 +46,8 @@ export const STATUS: Record<string, number> = {
   too_late_for_reason: 409,
   no_fee_line: 409,
   receipt_required: 422,
+  open_requests: 409,
+  role_not_allowed: 403,
 }
 
 export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>, needAal2 = true) {

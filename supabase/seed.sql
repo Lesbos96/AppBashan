@@ -106,6 +106,7 @@ from (values
   ('partner_cancel_review_count', 1, 3, 'Prüfung ab so vielen Partner-Stornos', '2026-10-28'),
   ('partner_cancel_review_days', 1, 30, 'Zeitraum der Partner-Storno-Prüfung in Tagen', '2026-10-28'),
   ('photo_staging_hours', 1, 24, 'Aufräumfrist für Fotos im Staging-Pfad in Stunden', '2026-10-28'),
+  ('photo_retention_days', 1, 90, 'Aufbewahrung der Originalfotos nach dem Endstatus der Anfrage in Tagen', '2026-10-28'),
   ('window_start_morning', 1, 480, 'Beginn Vormittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
   ('window_start_midday', 1, 660, 'Beginn Mittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
   ('window_start_afternoon', 1, 840, 'Beginn Nachmittag, Minuten nach Mitternacht (Wiener Zeit)', '2026-10-28'),
