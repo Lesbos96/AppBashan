@@ -16,7 +16,7 @@ export async function getUser(db: Db, jwt: string): Promise<AuthUser | null> {
   const { data, error } = await db.auth.getUser(jwt)
   if (error || !data.user) return null
   try {
-    const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: string }
+    const payload = JSON.parse(atob((jwt.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: string }
     return { id: data.user.id, aal: String(payload.aal ?? '') }
   } catch {
     return null

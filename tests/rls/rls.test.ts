@@ -471,6 +471,7 @@ describe('Rollen', () => {
       'register_partner(text,text,text,boolean,text,text,text,text,text,text,smallint[],text)',
       'reject_offers(uuid)',
       'report_not_done(uuid)',
+      'reported_jobs()', // S9h-3: nur admin mit aal2 sieht Zeilen (is_admin und aal2 in der Funktion)
       'send_offer(uuid,integer)',
       'start_job(uuid)',
       'withdraw_change(uuid)',

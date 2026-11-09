@@ -97,7 +97,7 @@ describe('handleCancelPartner', () => {
   it('Fehlercodes der Datenbank: Status; unbekannter Fehler 500 ohne Details', async () => {
     for (const [code, status] of [
       ['not_found', 404], ['invalid_transition', 409], ['partner_not_active', 403], ['reason_required', 422],
-      ['call_out_not_allowed', 409], ['receipt_required', 422], ['terms_missing', 500],
+      ['call_out_not_allowed', 409], ['receipt_required', 422], ['too_late_for_reason', 409], ['terms_missing', 500],
     ] as const) {
       const d = deps({ cancel: async () => { throw new DbError(code) } })
       const res = await call(d)

@@ -258,12 +258,13 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       { name: 'S1 Zuordnung', sql: `=(select cancel_reason from public.assignments where request_id = '${S1}')` },
       { name: 'S1 Firma sieht Pauschale', as: 'authenticated', claims: A2(U.pa), sql: `=${journal(S1, `kind = 'cancellation_fee'`)}` },
       { name: 'S1 Kunde sieht kein Journal', as: 'authenticated', claims: A1(U.cust), sql: `=${journal(S1)}` },
-      // scope_impossible ohne Beleg: kostenlos, keine Weitervermittlung
+      // scope_impossible ohne Beleg (S9h2-2, Beks): kostenlos, trotzdem Weitervermittlung, zählt im Qualitätszähler
       { name: 'Storno S3 ohne Beleg', as: 'service_role', sql: cancelCall(U.pa, 'aal2', S3, 'scope_impossible', 0) },
       { name: 'S3 Gebührensumme', sql: `=${feeSum(S3)}` },
       { name: 'S3 keine Pauschale', sql: `=${journal(S3, `kind = 'cancellation_fee'`)}` },
-      { name: 'S3 keine Folge', sql: `=${count(`public.service_requests where reissued_from = '${S3}'`)}` },
-      { name: 'S3 Mail ohne Pauschale', sql: `=${count(`public.outbox where kind = 'partner_cancelled' and request_id = '${S3}'`)} || ':' || ${count(`public.outbox where kind = 'partner_cancelled_fee' and request_id = '${S3}'`)}` },
+      { name: 'S3 Folge', sql: `=${count(`public.service_requests where reissued_from = '${S3}' and status = 'requested' and cancel_fee_waived`)}` },
+      { name: 'S3 Mails', sql: `=${count(`public.outbox where kind = 'request_reissued' and recipient_id = '${U.cust}' and request_id = ${follow(S3)}`)} || ':' || ${count(`public.outbox where kind in ('partner_cancelled', 'partner_cancelled_fee') and request_id = '${S3}'`)}` },
+      { name: 'S3 Zähler', sql: `=(select ended_reason::text || ':' || cancel_reason from public.assignments where request_id = '${S3}')` },
       // M2: nach der Meldung „nicht stattgefunden“ entscheidet admin, der Partner kann nicht zuvorkommen
       { name: 'S6 Meldung', sql: `update public.service_requests set not_done_reported_at = now() where id = '${S6}'` },
       { name: 'S6 Basis', as: 'service_role', sql: `perform * from ${basisOf(U.pb, 'aal2', S6)}` },
@@ -273,7 +274,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       { name: 'Firma b gesperrt', sql: `perform public.admin_set_partner_status('${U.adm}', ${P('b')}, 'suspended', 'Grund für den Test der Weitervermittlung')` },
       { name: 'Storno S7', as: 'service_role', sql: cancelCall(U.pa, 'aal2', S7, 'other', 0) },
       { name: 'S7 Folge unmatched', sql: `=(select status::text from public.service_requests where reissued_from = '${S7}')` },
-      { name: 'S7 Mails', sql: `=${count(`public.outbox where kind = 'partner_cancelled' and request_id = '${S7}'`)} || ':' || ${count(`public.outbox where kind = 'request_reissued' and recipient_id = '${U.cust}'`)} || ':' || ${count(`public.outbox where kind = 'request_unmatched' and request_id = (select id from public.service_requests where reissued_from = '${S7}')`)}` },
+      { name: 'S7 Mails', sql: `=${count(`public.outbox where kind = 'partner_cancelled' and request_id = '${S7}'`)} || ':' || ${count(`public.outbox where kind = 'request_reissued' and request_id = ${follow(S7)}`)} || ':' || ${count(`public.outbox where kind = 'request_unmatched' and request_id = (select id from public.service_requests where reissued_from = '${S7}')`)}` },
     ]
     const r = probes(setup, steps)
     err(r['ohne abgelehnten Nachtrag'], 'call_out_not_allowed')
@@ -296,7 +297,9 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
     val(r['S1 Zuordnung'], 'scope_impossible')
     val(r['S1 Firma sieht Pauschale'], '1')
     val(r['S1 Kunde sieht kein Journal'], '0')
-    val(r['S3 Mail ohne Pauschale'], '1:0')
+    val(r['S3 Folge'], '1')
+    val(r['S3 Mails'], '1:0')
+    val(r['S3 Zähler'], 'cancelled_by_partner:scope_impossible')
     err(r['S6 Basis'], 'under_review')
     err(r['S6 Storno'], 'under_review')
     val(r['S6 unverändert'], 'accepted:1')
@@ -307,6 +310,39 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
     expect(r['Storno S3 ohne Beleg']).toBe('ok')
     val(r['S3 Gebührensumme'], '0')
     val(r['S3 keine Pauschale'], '0')
-    val(r['S3 keine Folge'], '0')
+  })
+
+  it('ab Terminbeginn nur scope_impossible (S9h2-3, Beks), sonst too_late_for_reason', () => {
+    const [L1, L3, L4] = [newId(), newId(), newId()]
+    const setup = `${BASE} ${accepted(L1, "now() - interval '2 hours'")} ${accepted(L3, "now() + interval '1 hour'")}
+      ${accepted(L4, "now() - interval '2 hours'")}
+      select private.set_request_status('${L4}', 'in_progress', null, 'partner');`
+    const steps: Step[] = [
+      { name: 'L1 other', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L1, 'other', 0) },
+      { name: 'L1 unavailable', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L1, 'unavailable', 0) },
+      { name: 'L1 ungültiger Grund zuerst', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L1, 'bogus', 0) },
+      { name: 'L1 unverändert', sql: `=${status(L1)} || ':' || ${journal(L1)}` },
+      { name: 'L1 scope_impossible', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L1, 'scope_impossible', 0) },
+      { name: 'L1 Status', sql: `=${status(L1)}` },
+      { name: 'L1 keine Folge (Termin vorbei)', sql: `=${count(`public.service_requests where reissued_from = '${L1}'`)}` },
+      { name: 'L1 Mail', sql: `=${count(`public.outbox where kind = 'partner_cancelled' and request_id = '${L1}'`)}` },
+      { name: 'L4 in_progress other', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L4, 'other', 0) },
+      { name: 'L4 unverändert', sql: `=${status(L4)}` },
+      { name: 'L3 vor Terminbeginn other', as: 'service_role', sql: cancelCall(U.pa, 'aal2', L3, 'other', 0) },
+      { name: 'L3 Status', sql: `=${status(L3)}` },
+    ]
+    const r = probes(setup, steps)
+    err(r['L1 other'], 'too_late_for_reason')
+    err(r['L1 unavailable'], 'too_late_for_reason')
+    err(r['L1 ungültiger Grund zuerst'], 'reason_required')
+    val(r['L1 unverändert'], 'accepted:1')
+    expect(r['L1 scope_impossible']).toBe('ok')
+    val(r['L1 Status'], 'cancelled_by_partner')
+    val(r['L1 keine Folge (Termin vorbei)'], '0')
+    val(r['L1 Mail'], '1')
+    err(r['L4 in_progress other'], 'too_late_for_reason')
+    val(r['L4 unverändert'], 'in_progress')
+    expect(r['L3 vor Terminbeginn other']).toBe('ok')
+    val(r['L3 Status'], 'cancelled_by_partner')
   })
 })

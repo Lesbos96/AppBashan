@@ -1271,6 +1271,7 @@ export type Database = {
           from_point: unknown
           id: string
           not_done_reported_at: string | null
+          not_done_resolved_at: string | null
           preferred_date: string | null
           region: Database["public"]["Enums"]["region"] | null
           reissued_from: string | null
@@ -1297,6 +1298,7 @@ export type Database = {
           from_point?: unknown
           id?: string
           not_done_reported_at?: string | null
+          not_done_resolved_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
           reissued_from?: string | null
@@ -1323,6 +1325,7 @@ export type Database = {
           from_point?: unknown
           id?: string
           not_done_reported_at?: string | null
+          not_done_resolved_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
           reissued_from?: string | null
@@ -1437,6 +1440,40 @@ export type Database = {
           name: string
           phone: string
           stairs_door: string
+        }[]
+      }
+      admin_correct: {
+        Args: {
+          p_aal: string
+          p_action: string
+          p_actor: string
+          p_cancel_reason: string
+          p_fee: number
+          p_fee_base: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_payout: number
+          p_reason: string
+          p_request: string
+        }
+        Returns: string
+      }
+      admin_correct_basis: {
+        Args: { p_aal: string; p_actor: string; p_request: string }
+        Returns: {
+          call_out_cents: number
+          customer_fee_base_cents: number
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+          request_status: string
+          revision_id: string
+          total_cents: number
         }[]
       }
       admin_create_price_version: {
@@ -1956,6 +1993,18 @@ export type Database = {
       }
       reject_offers: { Args: { p_request: string }; Returns: undefined }
       report_not_done: { Args: { p_request: string }; Returns: undefined }
+      reported_jobs: {
+        Args: never
+        Returns: {
+          not_done_reported_at: string
+          partner_id: string
+          partner_name: string
+          request_id: string
+          status: string
+          termin_at: string
+          total_cents: number
+        }[]
+      }
       route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {
         Args: {

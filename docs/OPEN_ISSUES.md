@@ -446,8 +446,8 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 | S9g-2 | mittel | erledigt (Tests) | M2: Test mit zwei Endereignissen (keine Dubletten, Monat bleibt) und Export nach T15 |
 | S9g-3 | niedrig | erledigt (0043) | N1: Meldung und Bestätigung des Kunden schließen sich aus (`complete_job` lehnt nach der Meldung ab, `report_not_done` nach der Bestätigung); N2: Fristen in `hours => 24 * completion_days`; N4 Mail-Wortlaut; N7 CSV-Zeiten in Wiener Ortszeit; N8 BOM als Escape |
 | S9g-4 | niedrig | Betrieb | N3: Scheitert T15 für einen Auftrag dauerhaft, bleibt nur ein `WARNING`. Prüfabfrage fürs Runbook: Aufträge in `accepted`/`in_progress` ohne Meldung mit `termin_at + completion_days < now() - 1 Stunde` |
-| S9g-5 | niedrig | S9h | N5: Ein gemeldeter Auftrag bleibt offen, belegt das Limit `partner_open_jobs_max` und den Kontaktzugriff des Partners; admin braucht in S9h eine Liste (`not_done_reported_at is not null`, kein Endstatus) und `admin-correct` (T14) |
-| S9g-6 | niedrig | S9h | N6: `status_events.at` ist `now()` (Transaktionsbeginn); eine wartende T14-Transaktion kann ein Endereignis mit früherem `at` schreiben und `min(at)` verschieben. `admin-correct` muss das ausschließen (`clock_timestamp()` oder Ablehnung) |
+| S9g-5 | niedrig | erledigt in S9h-3 (0049) | N5: Ein gemeldeter Auftrag bleibt offen, belegt das Limit `partner_open_jobs_max` und den Kontaktzugriff des Partners; admin hat jetzt `reported_jobs()` (0049, 0051) und `admin-correct` (T14); die Meldung bleibt in der Liste, bis `complete`, ein Storno oder `dismiss_report` sie erledigt |
+| S9g-6 | niedrig | erledigt in S9h-3 (0049) | N6: `admin_correct` lehnt mit `retry` ab, wenn ein Statusereignis jünger als `now()` existiert (nach dem Auftragslock geprüft) |
 | S9g-7 | Pflicht | Beks (Tageszahl erledigt in S9h-1) | Mail-Texte `completion_ask` und `completion_auto` prüfen; die Tageszahl kommt seit S9h-1 aus `completion_days` (Unit-Test), Versand bleibt bis S9c-3 aus |
 
 ## S9h-1 · Abnahme (Berater `tmp/proof/s9h-1-abnahme.md`; hoch 1, mittel 2, niedrig 2, alle behoben) und offene Punkte
@@ -456,7 +456,7 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 |---|---|---|---|
 | S9h1-1 | Pflicht | erledigt in S9h-2 (Migration 0046) | Entscheidung Beks 2026-11-09: Kundenstorno nur bis Terminbeginn; ab `termin_at` 409 `too_late_use_report_not_done`, der Kunde nutzt `report_not_done`; nach der Meldung weiter `under_review` (Konzept 10.2 nennt weiter „am Termintag 100 %“: gilt nur noch bis Terminbeginn, Konzept-Text bei Gelegenheit anpassen) |
 | S9h1-2 | mittel | S9i | Die Oberfläche ruft `cancel-customer` zuerst mit `preview: true` (liefert `cancelFeeCents`) und dann mit `shownFeeCents`; bei 409 `cancel_fee_changed` neu bestätigen lassen. Keine eigene Stufenlogik im Client |
-| S9h1-3 | niedrig | S9h-3 | Gemeldete Aufträge (`under_review`) brauchen die admin-Liste und T14 (S9g-5, S9g-6) |
+| S9h1-3 | niedrig | erledigt in S9h-3 | Gemeldete Aufträge (`under_review`): admin-Liste und T14 (S9g-5, S9g-6) |
 
 ## S9h-2 · Abnahme (Berater `tmp/proof/s9h-2-abnahme.md`; hoch 0, mittel 2, niedrig 6; M1, M2, N1, N3, N4 behoben in 0047) und offene Punkte
 
@@ -465,10 +465,22 @@ Kontrollrunde S9h-1 (`tmp/proof/s9h-1-kontrolle.md`): H1 behoben, hoch 0; N1 (`s
 | Nr. | Schwere | Ziel | Punkt |
 |---|---|---|---|
 | S9h2-1 | niedrig | S9h-4 | N2: `photo_purge` (Teil c) löscht Originale in `request-photos`, sobald irgendeine Anfrage mit demselben Pfad `withdrawn` ist; zieht der Kunde die Folgeanfrage zurück, gehen auch die Originale der Quelle (Beweis für die Pauschale) verloren. Die Kopien in `job-photos` bleiben. Löschfrist-Regeln mit S9h-4 neu fassen |
-| S9h2-2 | Pflicht | Beks | N5: `scope_impossible` ohne Beleg und ohne abgelehnten Nachtrag unterdrückt T16 (Wortlaut Konzept). Soll es wie `other` behandelt werden (T16 läuft)? Bis zur Antwort gilt der Konzept-Wortlaut |
-| S9h2-3 | Pflicht | Beks | N6: Partner-Storno hat keine Zeitgrenze (auch `in_progress` nach Terminbeginn, Provision 0); der Kunde darf seit S9h1-1 nach Terminbeginn nicht mehr stornieren. Nach `termin_at` nur `scope_impossible` zulassen oder den Kunden fragen? Bis dahin fängt nur `partner_quality` ab |
+| S9h2-2 | Pflicht | erledigt in S9h-3 (0048) | Entscheidung Beks 2026-11-09: `scope_impossible` ohne Belegfotos löst die Weitervermittlung aus (kostenlos für den Kunden, keine Pauschale, zählt im Qualitätszähler); mit Pauschale bleibt es ohne Folgeanfrage (Konzept 4.4 T16, Bedingung 3, Text bei Gelegenheit anpassen) |
+| S9h2-3 | Pflicht | erledigt in S9h-3 (0048) | Entscheidung Beks 2026-11-09: ab `termin_at` nur `scope_impossible`, sonst 409 `too_late_for_reason`. Den Grund „Kunde nicht angetroffen“ gibt es nicht (Beks: „falls vorhanden“); der Fall läuft über die Meldung „nicht stattgefunden“ und T14 |
 | S9h2-4 | mittel | S9i | Oberfläche: Kunde sieht Pauschale und Widerspruchsweg (Support), Mail `partner_cancelled_fee` nennt keinen Betrag; Partner sieht den Betrag aus `cancel-partner` (`callOutCents`). Mail-Texte `partner_cancelled`, `partner_cancelled_fee`, `request_reissued` prüft Beks (Versand bleibt bis S9c-3 aus) |
-| S9h2-5 | niedrig | S9h-3 | `partner_quality()` ist eine Funktion (admin, `security definer`) statt einer Ansicht; die admin-Liste in S9h-3 nutzt sie. `admin-correct` (Pauschale negieren) und die admin-Liste gemeldeter Aufträge folgen |
+| S9h2-5 | niedrig | erledigt in S9h-3 | `partner_quality()` bleibt eine Funktion; `admin-correct` (Pauschale negieren) und `reported_jobs()` sind da (0049, 0051) |
+
+## S9h-3 · Abnahme (Berater `tmp/proof/S9h-3-abnahme.md`; hoch 1, mittel 3, niedrig 7; H1, M1, M2, M3, N1, N4, N7 behoben in Migration 0050 und Edge Function) und offene Punkte
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9h3-1 | mittel | S9i/Beks | Ein admin-Storno löst keine Weitervermittlung (T16) und keine Mail an Kunde oder Firma aus. Er ist deshalb nur nach der Meldung „nicht stattgefunden“ oder ab Terminbeginn möglich (0050, M2); vor dem Termin storniert die Firma oder der Kunde selbst. Beks informiert den Kunden über eine T14-Entscheidung manuell; Mail-Arten und Texte für T14 folgen mit der Mailfreigabe (S9c-3) |
+| S9h3-2 | niedrig | Beks | `npm run admin:call` braucht ein JWT mit aal2 in `ADMIN_JWT`; wie Beks es im Betrieb holt (Anmeldung mit TOTP über die Auth-API), ist offen. Bis eine Admin-Oberfläche existiert (Phase 2), läuft T14 und die Liste `reported_jobs` nur so |
+| S9h3-3 | niedrig | Doku | Konzept 4.4 T13/T16 (Bedingung 3, `scope_impossible`) und 10.3 sowie 10.2 (Kundenstorno bis Terminbeginn) an die Entscheidungen von Beks anpassen; T14 `negate_fee` gilt auch für die Stornogebühr des Kunden (N5, vertretbar mit Begründung und Audit) |
+| S9h3-4 | niedrig | spätestens S10 | `terms_missing` und `partner_mismatch` aus `admin_correct_basis`/`admin_correct` kommen als 500 `internal` an (N3); der Fehlercode steht im Log. `admin_correct_basis` rechnet beide Basen (Kunde und Pauschale), eine fehlende Bedingung blockiert also auch die andere |
+| S9h3-5 | niedrig | Phase 2 | N6: Ab Terminbeginn ist `scope_impossible` ohne Belege weiter kostenlos möglich („Storno melden, bar kassieren“); fängt nur `partner_quality` ab. Kundenrückfrage nach einem Partner-Storno ab dem Termin erwägen |
+| S9h3-7 | niedrig | Beks / S10 | Kontrollrunde (`tmp/proof/S9h-3-kontrolle.md`, hoch 0, mittel 0): (a) kein Live-Aufruf von `admin-correct` mit echtem aal2-JWT (braucht Anmeldung mit TOTP; die RPC-Parameter sind per Unit-Test mit Fake-`rpc` belegt); (b) die Abnahme-Fixes (M1, M2, N1) sind im selben Lauf wie die Tests entstanden, der Rot-Lauf scheiterte im Aufbau; (c) kein Einzeltest für das Leeren des Markers; (d) ein dauerhafter Zustand (z. B. `booking_missing`) kommt als `retry` an |
+| S9h3-6 | niedrig | Hinweis | T14 aus `completed` in einen Storno lässt `assignments.ended_at` unverändert (Zugriffsfenster der Firma, 0050); der Qualitätszähler zählt diesen Storno daher zum Zeitpunkt des Abschlusses, nicht der Korrektur |
 
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

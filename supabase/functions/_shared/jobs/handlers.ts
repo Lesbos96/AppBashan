@@ -43,6 +43,8 @@ export const STATUS: Record<string, number> = {
   under_review: 409,
   too_late_use_report_not_done: 409,
   call_out_not_allowed: 409,
+  too_late_for_reason: 409,
+  no_fee_line: 409,
   receipt_required: 422,
 }
 
