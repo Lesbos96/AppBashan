@@ -50,9 +50,9 @@ export async function authed(req: Request, deps: { getUser(jwt: string): Promise
   return { user }
 }
 
-export async function body(req: Request): Promise<Record<string, unknown> | null> {
+export async function body(req: Request, max = 2048): Promise<Record<string, unknown> | null> {
   try {
-    const v = JSON.parse(await readLimited(req, 2048))
+    const v = JSON.parse(await readLimited(req, max))
     return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
   } catch {
     return null
@@ -219,6 +219,11 @@ const TEXTS: Record<string, { subject: string; text: (url: string) => string }> 
   offer_new: { subject: 'Neues Angebot für deine Anfrage', text: (u) => `Ein Partner hat dir ein Festangebot gesendet. Du kannst es unter Aufträge ansehen und bestätigen: ${u}` },
   offer_withdrawn: { subject: 'Ein Angebot ist nicht mehr verfügbar', text: (u) => `Ein Angebot für deine Anfrage ist nicht mehr gültig. Unter Aufträge siehst du die übrigen Angebote: ${u}` },
   offer_confirmed: { subject: 'Dein Angebot wurde bestätigt', text: (u) => `Der Kunde hat dein Festangebot bestätigt. Alle Angaben findest du im Partner-Bereich: ${u}` },
+  change_proposed: { subject: 'Dein Partner schlägt einen Nachtrag vor', text: (u) => `Dein Partner hat einen Mehraufwand mit Fotos vorgeschlagen. Du siehst den neuen Gesamtbetrag unter Aufträge und entscheidest dort: ${u}` },
+  change_accepted: { subject: 'Dein Nachtrag wurde angenommen', text: (u) => `Der Kunde hat deinem Nachtrag zugestimmt. Alle Angaben findest du im Partner-Bereich: ${u}` },
+  change_declined: { subject: 'Dein Nachtrag wurde abgelehnt', text: (u) => `Der Kunde hat den Nachtrag abgelehnt. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
+  change_expired: { subject: 'Dein Nachtrag ist nicht mehr gültig', text: (u) => `Der Nachtrag wurde nicht rechtzeitig entschieden oder der Auftrag ist beendet. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
+  change_withdrawn: { subject: 'Ein Nachtrag ist nicht mehr verfügbar', text: (u) => `Ein vorgeschlagener Nachtrag wurde zurückgezogen. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }
 

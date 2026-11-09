@@ -470,6 +470,7 @@ describe('Rollen', () => {
       'reject_offers(uuid)',
       'send_offer(uuid,integer)',
       'start_job(uuid)',
+      'withdraw_change(uuid)',
       'withdraw_offer(uuid)',
       'withdraw(uuid):authenticated',
     ].map((s) => (s.endsWith(')') ? `${s}:authenticated` : s)))
@@ -482,7 +483,9 @@ describe('Rollen', () => {
     expect(svcOnly).toContain('admin_set_partner_master(uuid,uuid,text,text,text,boolean,text,text,text,text,text)')
     expect(svcOnly).toContain('admin_remove_partner_document(uuid,uuid,text)')
     // S9c: Annahme (Art A) und Verteilung nur service_role, Partner-Aufrufe nie mit p_actor aus der Anfrage
-    for (const f of ['partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'partner_accept_basis(uuid,uuid)', 'distribute_request(uuid)', 'distribute_pending()', 'expire_requests()', 'outbox_claim(integer)', 'outbox_mark(bigint,boolean,text)', 'admin_contact(uuid,uuid,text)', 'confirm_offer_basis(uuid,uuid)', 'confirm_offer(uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_offers()']) {
+    for (const f of ['partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'partner_accept_basis(uuid,uuid)', 'distribute_request(uuid)', 'distribute_pending()', 'expire_requests()', 'outbox_claim(integer)', 'outbox_mark(bigint,boolean,text)', 'admin_contact(uuid,uuid,text)', 'confirm_offer_basis(uuid,uuid)', 'confirm_offer(uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_offers()',
+      'propose_change_basis(uuid,text,uuid)', 'propose_change(uuid,text,uuid,uuid,jsonb,bigint,uuid[])', 'decide_change_basis(uuid,uuid)',
+      'decide_change(uuid,uuid,boolean,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_changes()']) {
       expect(svcOnly, f).toContain(f)
     }
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])

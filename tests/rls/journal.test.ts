@@ -59,11 +59,15 @@ function request(id: string, total: number | null = 68961): string {
 }
 
 /** Änderungs-Revision n = 2 (die Trigger für Revisionen und Zeiger öffnen erst S9h: hier nur im Rollback abgeschaltet). */
-const changeOrder = (id: string, total: number, source = 'change_order') =>
-  `set constraints all immediate; alter table public.price_revisions disable trigger guard_revision_insert; alter table public.service_requests disable trigger guard_request_pointer;
-   insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, content_hash, total_cents, low_cents, high_cents)
-   values ('${id}', 2, '${source}', '{}', '{"kind":"price","totalCents":${total},"lowCents":${total},"highCents":${total},"lines":[]}', 1, repeat('a', 64), ${total}, ${total}, ${total});
+const changeOrder = (id: string, total: number, source = 'change_order') => {
+  // Seit S9f verlangt ein Nachtrag die Spalten status, valid_until, base_revision_id, proposed_by, photos (Check price_revisions_change_cols).
+  const cols = source === 'change_order' ? ', status, valid_until, base_revision_id, proposed_by, decided_at, photos' : ''
+  const vals = source === 'change_order' ? `, 'accepted', now() + interval '2 hours', ${rev1(id)}, ${P('a')}, now(), array[gen_random_uuid()]` : ''
+  return `set constraints all immediate; alter table public.price_revisions disable trigger guard_revision_insert; alter table public.service_requests disable trigger guard_request_pointer;
+   insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, content_hash, total_cents, low_cents, high_cents${cols})
+   values ('${id}', 2, '${source}', '{}', '{"kind":"price","totalCents":${total},"lowCents":${total},"highCents":${total},"lines":[]}', 1, repeat('a', 64), ${total}, ${total}, ${total}${vals});
    update public.service_requests set current_revision = ${rev2(id)} where id = '${id}';`
+}
 
 function journal(RT: Rates) {
   const num = (v: number | null | undefined, d: number) => (v === undefined ? String(d) : v === null ? 'null' : String(v))
@@ -299,9 +303,10 @@ describe('Provisionsjournal', () => {
     P0001(r['change auf Revision aus partner_offer'], 'amount_mismatch')
     P0001(r['cancellation mit anderer Revision desselben Auftrags'], 'amount_mismatch')
     expect(r['cancellation mit der Revision der Buchung']).toBe('ok') // Gegenkontrolle: dieselbe Gegenbuchung mit der Revision der Buchung
-    for (const k of ['Positivkontrolle change', 'correction der change', 'erneuter change nach correction']) expect(r[k], k).toBe('ok')
-    expect(r['Summe aller Zeilen des Auftrags']).toBe(`= ${s.totalCents + diff.totalCents}`)
-    P0001(r['dritter change ohne neue Differenz'], 'amount_mismatch')
+    for (const k of ['Positivkontrolle change', 'correction der change']) expect(r[k], k).toBe('ok')
+    // Ab S9f (Index commission_change_once): höchstens eine change-Zeile je Nachtrag; eine Neubuchung braucht einen neuen Nachtrag (neue Revision)
+    for (const k of ['erneuter change nach correction', 'dritter change ohne neue Differenz']) expect(r[k]?.startsWith('23505: ') && r[k].includes('commission_change_once'), `${k}: ${r[k]}`).toBe(true)
+    expect(r['Summe aller Zeilen des Auftrags']).toBe(`= ${s.totalCents}`)
   }, 240_000)
 
   it('Sätze: höchste Version bei gleichem Datum, künftige Zeilen zählen nicht; current_fee_rates nennt die Versionen', () => {

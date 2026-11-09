@@ -423,5 +423,20 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 | S9e-6 | niedrig | Konzept | N7/N8: Fehlercode `amount_out_of_range` statt `offer_amount_invalid`/`offer_out_of_range`; `withdraw_offer` mit `my_member_partner_id()` (auch eine gesperrte Firma darf eigene Angebote zurückziehen). Konzept 5.5 angleichen |
 | S9e-7 | Pflicht | Beks | Mail-Texte `offer_new`, `offer_withdrawn`, `offer_confirmed` prüfen; der Versand bleibt bis zur Einrichtung (S9c-3) aus |
 
+## S9f · Abnahme (Berater `tmp/proof/s9f-abnahme.md`; hoch 0, mittel 3, niedrig 9) und offene Punkte
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9f-1 | mittel | erledigt (Test) | M1: Der Index `commission_change_once` erlaubt höchstens eine `change`-Zeile je Nachtrag. Der S4-N3-Test „erneuter change nach correction“ in `journal.test.ts` erwartet jetzt 23505; eine Neubuchung braucht einen neuen Nachtrag (neue Revision) |
+| S9f-2 | mittel | erledigt (0041) | M2: `expire_changes` schreibt Mail, Audit und Zähler nur, wenn das UPDATE eine Zeile getroffen hat (`get diagnostics`, nicht `found`) |
+| S9f-3 | mittel | erledigt (Tests) | M3: Hash-Fehler der gebuchten Version (Handler-Test), Satz eingefroren nach Satzwechsel (positiv und negativ), Annahme bei `payment_hold`. Nicht deterministisch nachstellbar: Annahme gegen Ablauf (Test misst nur, dass ein angenommener Nachtrag keine Ablauf-Mail auslöst) |
+| S9f-4 | niedrig | erledigt | N1 `p_accept` NULL → `invalid_input`; N2 Nachtrag nicht mehr offen → 409 statt 500; N3 Festangebot → `change_not_allowed` im Handler; N4 `decided_by` beim Rückzug leer; N5 Audit bei System-Rückzug, Rückzug, Ablauf, Auftragsende; N6 Snapshot aus fester Schlüsselliste (`kind`, Beträge, `lines`, `terms`, `changeOf`); N9 `svcOnly`-Liste |
+| S9f-5 | niedrig | bewusst | N7: `withdraw_change` nutzt `my_member_partner_id()` (auch eine gesperrte Firma darf ihren offenen Vorschlag zurückziehen; ein Rückzug senkt nie einen Betrag). Wie S9e-6 |
+| S9f-6 | niedrig | S9h | N8: T16 kopiert eine angenommene `change_order`; der Check `price_revisions_change_cols` und der Einfügezweig von `guard_revision_insert` brauchen dafür einen Kopierzweig (`copied_from_revision_id`) |
+| S9f-7 | mittel | S9i | Partner lesen ihre Vorschläge noch nicht (keine Policy auf `price_revisions` für `authenticated` außer Kunden); die Partner-Oberfläche braucht eine Leseform (RPC oder Policy mit `my_member_partner_id()`). Kunden sehen `proposed_by` (Firmen-UUID) und die Belegfoto-IDs ihrer Nachträge |
+| S9f-8 | mittel | S9i/S10 | Die Edge Functions `change-propose` und `change-decide` sind deployt und antworten ohne JWT mit 401. Ein Lauf mit echten Tokens fehlt (Partner braucht aal2/TOTP); Handler laufen nur mit Fakes (`tests/unit/change-handlers.test.ts`), die RPCs gegen die echte Datenbank (`tests/rls/change-orders*.test.ts`). `check:deno` umfasst jetzt auch `offer-confirm`, `change-propose`, `change-decide` (`offer-confirm` fehlte seit S9e) |
+| S9f-9 | niedrig | offen | Der Wettlauftest `change-orders-concurrency.test.ts` lässt Kunde, Aufträge, Nachträge, Journal und eine gesperrte Firma auf Dev stehen (wie S9c-7) |
+| S9f-10 | Pflicht | Beks | Mail-Texte `change_proposed`, `change_accepted`, `change_declined`, `change_expired`, `change_withdrawn` prüfen; Versand bleibt bis S9c-3 aus. `change_valid_hours` (2) steht im Seed und auf Dev |
+
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

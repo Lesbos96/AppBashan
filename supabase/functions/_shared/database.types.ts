@@ -821,48 +821,76 @@ export type Database = {
       }
       price_revisions: {
         Row: {
+          base_revision_id: string | null
           content_hash: string
           created_at: string
+          decided_at: string | null
+          decided_by: string | null
           high_cents: number | null
           id: string
           inputs: Json
           low_cents: number | null
           n: number
+          photos: string[] | null
           price_version: number
+          proposed_by: string | null
           request_id: string
           snapshot: Json
           source: string
+          status: string | null
           total_cents: number | null
+          valid_until: string | null
         }
         Insert: {
+          base_revision_id?: string | null
           content_hash: string
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           high_cents?: number | null
           id?: string
           inputs: Json
           low_cents?: number | null
           n: number
+          photos?: string[] | null
           price_version: number
+          proposed_by?: string | null
           request_id: string
           snapshot: Json
           source: string
+          status?: string | null
           total_cents?: number | null
+          valid_until?: string | null
         }
         Update: {
+          base_revision_id?: string | null
           content_hash?: string
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           high_cents?: number | null
           id?: string
           inputs?: Json
           low_cents?: number | null
           n?: number
+          photos?: string[] | null
           price_version?: number
+          proposed_by?: string | null
           request_id?: string
           snapshot?: Json
           source?: string
+          status?: string | null
           total_cents?: number | null
+          valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "price_revisions_base"
+            columns: ["base_revision_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id", "request_id"]
+          },
           {
             foreignKeyName: "price_revisions_price_version_fkey"
             columns: ["price_version"]
@@ -876,6 +904,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "price_versions"
             referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "price_revisions_proposed_by_fkey"
+            columns: ["proposed_by"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "price_revisions_request_id_fkey"
@@ -1498,9 +1533,43 @@ export type Database = {
           fee_vat_rate_version: number
         }[]
       }
+      decide_change: {
+        Args: {
+          p_accept: boolean
+          p_actor: string
+          p_fee: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_payout: number
+          p_revision: string
+          p_shown_total: number
+        }
+        Returns: string
+      }
+      decide_change_basis: {
+        Args: { p_actor: string; p_revision: string }
+        Returns: {
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+          prior_fee: number
+          prior_net: number
+          prior_payout: number
+          prior_total: number
+          prior_vat: number
+          status: string
+          total_cents: number
+        }[]
+      }
       decline_listing: { Args: { p_listing: string }; Returns: undefined }
       distribute_pending: { Args: never; Returns: number }
       distribute_request: { Args: { p_request: string }; Returns: number }
+      expire_changes: { Args: never; Returns: number }
       expire_offers: { Args: never; Returns: number }
       expire_requests: { Args: never; Returns: number }
       job_contact: {
@@ -1653,6 +1722,32 @@ export type Database = {
           started: boolean
         }[]
       }
+      propose_change: {
+        Args: {
+          p_aal: string
+          p_actor: string
+          p_base: string
+          p_inputs: Json
+          p_photos: string[]
+          p_request: string
+          p_total: number
+        }
+        Returns: string
+      }
+      propose_change_basis: {
+        Args: { p_aal: string; p_actor: string; p_request: string }
+        Returns: {
+          high_cents: number
+          inputs: Json
+          low_cents: number
+          price_version: number
+          revision_id: string
+          route: Json
+          service: string
+          source: string
+          total_cents: number
+        }[]
+      }
       publish_version: {
         Args: { p_actor: string; p_version: number }
         Returns: string
@@ -1756,7 +1851,7 @@ export type Database = {
         }[]
       }
       send_offer: {
-        Args: { p_amount: number; p_request: string }
+        Args: { p_amount: number; p_listing: string }
         Returns: string
       }
       start_job: { Args: { p_request: string }; Returns: undefined }
@@ -1766,6 +1861,7 @@ export type Database = {
         Args: { p_request: string }
         Returns: Database["public"]["Enums"]["request_status"]
       }
+      withdraw_change: { Args: { p_revision: string }; Returns: undefined }
       withdraw_offer: { Args: { p_offer: string }; Returns: undefined }
     }
     Enums: {
