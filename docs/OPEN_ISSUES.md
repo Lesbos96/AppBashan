@@ -454,9 +454,21 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 
 | Nr. | Schwere | Ziel | Punkt |
 |---|---|---|---|
-| S9h1-1 | Pflicht | Beks, Recht | Kundenstorno nach dem Termin ist mit 100 % möglich (T12 aus `accepted`/`in_progress`); nach der Meldung „nicht stattgefunden“ gesperrt (`under_review`). Ob ein Storno nach `termin_at` zulässig sein soll, klärt Beks (Konzept 10.2, Frage Recht 5) |
+| S9h1-1 | Pflicht | erledigt in S9h-2 (Migration 0046) | Entscheidung Beks 2026-11-09: Kundenstorno nur bis Terminbeginn; ab `termin_at` 409 `too_late_use_report_not_done`, der Kunde nutzt `report_not_done`; nach der Meldung weiter `under_review` (Konzept 10.2 nennt weiter „am Termintag 100 %“: gilt nur noch bis Terminbeginn, Konzept-Text bei Gelegenheit anpassen) |
 | S9h1-2 | mittel | S9i | Die Oberfläche ruft `cancel-customer` zuerst mit `preview: true` (liefert `cancelFeeCents`) und dann mit `shownFeeCents`; bei 409 `cancel_fee_changed` neu bestätigen lassen. Keine eigene Stufenlogik im Client |
 | S9h1-3 | niedrig | S9h-3 | Gemeldete Aufträge (`under_review`) brauchen die admin-Liste und T14 (S9g-5, S9g-6) |
+
+## S9h-2 · Abnahme (Berater `tmp/proof/s9h-2-abnahme.md`; hoch 0, mittel 2, niedrig 6; M1, M2, N1, N3, N4 behoben in 0047) und offene Punkte
+
+Kontrollrunde S9h-1 (`tmp/proof/s9h-1-kontrolle.md`): H1 behoben, hoch 0; N1 (`shownFeeCents` in `CancelCall`) und N2 (Tests der Vorschau-Eingabe) erledigt in S9h-2. Geschlossen mit S9h-2: S9d-7 (Fotos der Folgeanfrage: `request_photos` je Anfrage, Pipeline neu), S9f-6 (die Kopie eines angenommenen Nachtrags ist eine `submit`-Revision n = 1 mit `copied_from_revision_id`; die Quelle `change_order` behält die Quell-Anfrage).
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9h2-1 | niedrig | S9h-4 | N2: `photo_purge` (Teil c) löscht Originale in `request-photos`, sobald irgendeine Anfrage mit demselben Pfad `withdrawn` ist; zieht der Kunde die Folgeanfrage zurück, gehen auch die Originale der Quelle (Beweis für die Pauschale) verloren. Die Kopien in `job-photos` bleiben. Löschfrist-Regeln mit S9h-4 neu fassen |
+| S9h2-2 | Pflicht | Beks | N5: `scope_impossible` ohne Beleg und ohne abgelehnten Nachtrag unterdrückt T16 (Wortlaut Konzept). Soll es wie `other` behandelt werden (T16 läuft)? Bis zur Antwort gilt der Konzept-Wortlaut |
+| S9h2-3 | Pflicht | Beks | N6: Partner-Storno hat keine Zeitgrenze (auch `in_progress` nach Terminbeginn, Provision 0); der Kunde darf seit S9h1-1 nach Terminbeginn nicht mehr stornieren. Nach `termin_at` nur `scope_impossible` zulassen oder den Kunden fragen? Bis dahin fängt nur `partner_quality` ab |
+| S9h2-4 | mittel | S9i | Oberfläche: Kunde sieht Pauschale und Widerspruchsweg (Support), Mail `partner_cancelled_fee` nennt keinen Betrag; Partner sieht den Betrag aus `cancel-partner` (`callOutCents`). Mail-Texte `partner_cancelled`, `partner_cancelled_fee`, `request_reissued` prüft Beks (Versand bleibt bis S9c-3 aus) |
+| S9h2-5 | niedrig | S9h-3 | `partner_quality()` ist eine Funktion (admin, `security definer`) statt einer Ansicht; die admin-Liste in S9h-3 nutzt sie. `admin-correct` (Pauschale negieren) und die admin-Liste gemeldeter Aufträge folgen |
 
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

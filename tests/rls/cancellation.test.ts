@@ -19,6 +19,7 @@ const RT = (() => {
 })()
 const TOTAL = 68961
 const LATE = 34481 // round_half_up(68961 × 50 %)
+const SOON = "now() + interval '30 minutes'" // Termintag, Terminbeginn noch nicht erreicht (S9h1-1: danach kein Kundenstorno mehr)
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId() }
 const USERS = insertUsers(Object.values(U))
@@ -62,7 +63,7 @@ const feeSum = (req: string) => `(select coalesce(sum(fee_cents), 0) from public
 describe('cancel_by_customer (T12)', () => {
   it('Stufen frei, 50 %, 100 %, waived: Basis, Gegenbuchung aller Zeilen, Gebührenzeile, Folgen', () => {
     const [RF, RL, RT2, RW, RQ, RD, RN] = [newId(), newId(), newId(), newId(), newId(), newId(), newId()]
-    const setup = `${BASE} ${accepted(RF, "now() + interval '5 days'")} ${accepted(RL, "now() + interval '24 hours'")} ${accepted(RT2, 'now()')} ${accepted(RW, 'now()')} ${accepted(RD, "now() + interval '5 days'", true, 'b')} ${accepted(RN, "now() + interval '5 days'", false, 'b')}
+    const setup = `${BASE} ${accepted(RF, "now() + interval '5 days'")} ${accepted(RL, "now() + interval '24 hours'")} ${accepted(RT2, SOON)} ${accepted(RW, SOON)} ${accepted(RD, "now() + interval '5 days'", true, 'b')} ${accepted(RN, "now() + interval '5 days'", false, 'b')}
       select set_config('app.l_rl', ${LID(RL, 'a')}::text, true);
       update public.service_requests set cancel_fee_waived = true where id = '${RW}';
       select private.set_request_status('${RT2}', 'in_progress', null, 'partner');
@@ -220,7 +221,7 @@ describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
 
   it('angenommener Nachtrag: beide Zeilen gegengebucht (je mit eigener Revision), Gebühr auf den neuen Gesamtpreis; offener Nachtrag endet', () => {
     const [RC, RC2, RO] = [newId(), newId(), newId()]
-    const setup = `${BASE} ${withChange(RC, "now() + interval '5 days'")} ${withChange(RC2, 'now()')} ${accepted(RO, "now() + interval '5 days'")} ${receipt(RO)} ${propose(RO)}`
+    const setup = `${BASE} ${withChange(RC, "now() + interval '5 days'")} ${withChange(RC2, SOON)} ${accepted(RO, "now() + interval '5 days'")} ${receipt(RO)} ${propose(RO)}`
     const revStatus = (req: string) => `=(select status from public.price_revisions where request_id = '${req}' and source = 'change_order')`
     const steps: Step[] = [
       { name: 'Basis nach Nachtrag', as: 'service_role', sql: `=(select total_cents from ${basisOf(U.cust, RC2)})` },
@@ -285,6 +286,28 @@ describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
     err(r['Basis RU'], 'under_review')
     err(r['Storno RU'], 'under_review')
     val(r['RU unverändert'], 'accepted:1')
+  })
+
+  it('Kundenstorno nur bis Terminbeginn: kurz davor erlaubt (100 %), ab Terminbeginn too_late_use_report_not_done (S9h1-1)', () => {
+    const [RE, RP, RA] = [newId(), newId(), newId()]
+    const setup = `${BASE} ${accepted(RE, "now() + interval '1 minute'")} ${accepted(RP, "now() - interval '1 minute'")} ${accepted(RA, "now() - interval '3 hours'")}
+      select private.set_request_status('${RA}', 'in_progress', null, 'partner');`
+    const steps: Step[] = [
+      { name: 'Basis kurz vor Termin', as: 'service_role', sql: `=(select fee_base_cents from ${basisOf(U.cust, RE)})` },
+      { name: 'Basis nach Terminbeginn', as: 'service_role', sql: `perform * from ${basisOf(U.cust, RP)}` },
+      { name: 'Storno nach Terminbeginn', as: 'service_role', sql: cancelCall(U.cust, RP, TOTAL) },
+      { name: 'Storno in_progress nach Terminbeginn', as: 'service_role', sql: cancelCall(U.cust, RA, TOTAL) },
+      { name: 'Storno nach Terminbeginn ohne Gebühr', as: 'service_role', sql: cancelCall(U.cust, RP, 0) },
+      { name: 'RP RA unverändert', sql: `=${status(RP)} || ':' || ${status(RA)} || ':' || ${journal(RP)}` },
+      { name: 'Storno kurz vor Termin', as: 'service_role', sql: cancelCall(U.cust, RE, TOTAL) },
+      { name: 'RE Status', sql: `=${status(RE)}` },
+    ]
+    const r = probes(setup, steps)
+    val(r['Basis kurz vor Termin'], String(TOTAL))
+    for (const k of ['Basis nach Terminbeginn', 'Storno nach Terminbeginn', 'Storno in_progress nach Terminbeginn', 'Storno nach Terminbeginn ohne Gebühr']) err(r[k], 'too_late_use_report_not_done')
+    val(r['RP RA unverändert'], 'accepted:in_progress:1')
+    expect(r['Storno kurz vor Termin']).toBe('ok')
+    val(r['RE Status'], 'cancelled_by_customer')
   })
 
   it('Wertebereich der Stornoschlüssel: Prozent 0 bis 100, ganze Stunden und Tage (N1)', () => {

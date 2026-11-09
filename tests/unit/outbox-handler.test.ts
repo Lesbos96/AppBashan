@@ -97,4 +97,15 @@ describe('outbox-send Abschluss (S9g)', () => {
     await call(one)
     expect(mails[2]?.text).toContain('1 Tag nach dem Termin')
   })
+
+  it('S9h-2: partner_cancelled und request_reissued gehen an den Kunden, ohne Beträge, Gebühr oder Provision', async () => {
+    const mails: { to: string; subject: string; text: string }[] = []
+    const claimed: OutboxRow[] = ['partner_cancelled', 'request_reissued', 'partner_cancelled_fee'].map((kind, i) => ({ id: i + 1, kind, recipientKind: 'customer', recipientId: 'u', partnerEmail: null }))
+    const d = deps(claimed, { customerEmail: async () => 'kunde@example.test', send: async (m) => void mails.push(m) })
+    expect(await (await call(d)).json()).toEqual({ sent: 3, failed: 0 })
+    expect(mails.map((m) => m.to)).toEqual(Array(3).fill('kunde@example.test'))
+    expect(mails[2]?.text).toContain('Anfahrtspauschale')
+    expect(mails[1]?.text).toContain('kostenlos')
+    for (const m of mails) expect(m.subject + m.text).not.toMatch(/Gebühr|Provision|15 ?%|€|\d{2,} Cent/i)
+  })
 })

@@ -17,6 +17,7 @@ export type Database = {
       assignments: {
         Row: {
           accepted_at: string
+          cancel_reason: string | null
           ended_at: string | null
           ended_reason: Database["public"]["Enums"]["assignment_end"] | null
           id: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string
+          cancel_reason?: string | null
           ended_at?: string | null
           ended_reason?: Database["public"]["Enums"]["assignment_end"] | null
           id?: string
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string
+          cancel_reason?: string | null
           ended_at?: string | null
           ended_reason?: Database["public"]["Enums"]["assignment_end"] | null
           id?: string
@@ -823,6 +826,7 @@ export type Database = {
         Row: {
           base_revision_id: string | null
           content_hash: string
+          copied_from_revision_id: string | null
           created_at: string
           decided_at: string | null
           decided_by: string | null
@@ -844,6 +848,7 @@ export type Database = {
         Insert: {
           base_revision_id?: string | null
           content_hash: string
+          copied_from_revision_id?: string | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -865,6 +870,7 @@ export type Database = {
         Update: {
           base_revision_id?: string | null
           content_hash?: string
+          copied_from_revision_id?: string | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -890,6 +896,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "price_revisions"
             referencedColumns: ["id", "request_id"]
+          },
+          {
+            foreignKeyName: "price_revisions_copied_from_revision_id_fkey"
+            columns: ["copied_from_revision_id"]
+            isOneToOne: false
+            referencedRelation: "price_revisions"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "price_revisions_price_version_fkey"
@@ -1260,6 +1273,7 @@ export type Database = {
           not_done_reported_at: string | null
           preferred_date: string | null
           region: Database["public"]["Enums"]["region"] | null
+          reissued_from: string | null
           route: Json | null
           service: Database["public"]["Enums"]["service_type"]
           status: Database["public"]["Enums"]["request_status"]
@@ -1285,6 +1299,7 @@ export type Database = {
           not_done_reported_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
+          reissued_from?: string | null
           route?: Json | null
           service: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
@@ -1310,6 +1325,7 @@ export type Database = {
           not_done_reported_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
+          reissued_from?: string | null
           route?: Json | null
           service?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["request_status"]
@@ -1333,6 +1349,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_reissued_from_fkey"
+            columns: ["reissued_from"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -1541,6 +1564,38 @@ export type Database = {
           total_cents: number
         }[]
       }
+      cancel_by_partner: {
+        Args: {
+          p_aal: string
+          p_actor: string
+          p_fee: number
+          p_fee_base: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_payout: number
+          p_photos: string[]
+          p_reason: string
+          p_request: string
+        }
+        Returns: string
+      }
+      cancel_by_partner_basis: {
+        Args: { p_aal: string; p_actor: string; p_request: string }
+        Returns: {
+          call_out_cents: number
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+          request_status: string
+          revision_id: string
+          total_cents: number
+        }[]
+      }
       complete_due: { Args: never; Returns: number }
       complete_job: { Args: { p_request: string }; Returns: undefined }
       confirm_offer: {
@@ -1715,6 +1770,15 @@ export type Database = {
           fee_vat_rate_version: number
           revision_id: string
           total_cents: number
+        }[]
+      }
+      partner_quality: {
+        Args: never
+        Returns: {
+          cancels: number
+          last_cancel_at: string
+          needs_review: boolean
+          partner_id: string
         }[]
       }
       photo_claim: {

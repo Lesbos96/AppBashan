@@ -40,6 +40,10 @@ export const STATUS: Record<string, number> = {
   receipt_limit: 409,
   file_missing: 409,
   stale_claim: 409,
+  under_review: 409,
+  too_late_use_report_not_done: 409,
+  call_out_not_allowed: 409,
+  receipt_required: 422,
 }
 
 export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>, needAal2 = true) {
@@ -228,6 +232,9 @@ const TEXTS: Record<string, { subject: string; text: (url: string, days: number)
   change_withdrawn: { subject: 'Ein Nachtrag ist nicht mehr verfügbar', text: (u) => `Ein vorgeschlagener Nachtrag wurde zurückgezogen. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   request_cancelled: { subject: 'Ein Auftrag wurde storniert', text: (u) => `Der Kunde hat einen angenommenen Auftrag storniert. Alle Angaben findest du im Partner-Bereich: ${u}` },
   completion_ask: { subject: 'Hat dein Auftrag stattgefunden?', text: (u, d) => `Der Termin ist vorbei. Bestätige unter Aufträge, dass alles stattgefunden hat, oder melde, dass es nicht stattgefunden hat. Ohne Meldung gilt der Auftrag ${d} ${d === 1 ? 'Tag' : 'Tage'} nach dem Termin als durchgeführt: ${u}` },
+  partner_cancelled: { subject: 'Dein Partner hat den Auftrag abgesagt', text: (u) => `Dein Partner hat den Auftrag abgesagt. Für dich entstehen dadurch keine Stornokosten. Unter Aufträge siehst du die Einzelheiten und kannst eine neue Anfrage senden: ${u}` },
+  partner_cancelled_fee: { subject: 'Dein Partner hat den Auftrag abgesagt', text: (u) => `Dein Partner hat den Auftrag abgesagt, weil der Umfang nicht wie gebucht möglich war, und mit Fotos belegt. Er darf dir dafür eine Anfahrtspauschale berechnen. Die Einzelheiten stehen unter Aufträge, bei Fragen oder Widerspruch wende dich an den Support: ${u}` },
+  request_reissued: { subject: 'Wir suchen einen neuen Partner für deinen Auftrag', text: (u) => `Dein Partner hat den Auftrag abgesagt. Wir haben deine Anfrage zum gleichen Preis neu an passende Partner gesendet. Du kannst sie unter Aufträge kostenlos zurückziehen oder nach einer neuen Annahme kostenlos stornieren: ${u}` },
   completion_auto: { subject: 'Dein Auftrag gilt als durchgeführt', text: (u) => `Zu diesem Auftrag ist keine Meldung eingegangen, deshalb gilt er als durchgeführt. Alle Angaben findest du unter Aufträge: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }

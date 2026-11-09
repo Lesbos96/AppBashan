@@ -123,7 +123,7 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 
 - [ ] S9h Storno, Qualität, Konto (in vier Teile geschnitten, jeder gemergt und grün):
   - [x] S9h-1 Storno durch den Kunden (T12): `cancel_by_customer_basis`, `cancel_by_customer`, Stornostufen aus dem Snapshot, Edge Function `cancel-customer` mit Vorschau und gezeigter Gebühr, Mail `request_cancelled`, Tageszahl in den Mails (S9g-7) (Migrationen 0044, 0045, 2026-11-09)
-  - [ ] S9h-2 `cancel_by_partner` (T13, `scope_impossible`), T16 (`reissued_from`, Kopierzweig S9f-6, Fotos S9d-7), `partner_quality`
+  - [x] S9h-2 `cancel_by_partner` (T13, `scope_impossible`), T16 (`reissued_from`, Kopierzweig S9f-6, Fotos S9d-7), `partner_quality`, Kundenstorno nur bis Terminbeginn (S9h1-1) (Migrationen 0046, 0047, 2026-11-09)
   - [ ] S9h-3 `admin-correct` (T14), admin-Liste gemeldeter Aufträge (S9g-5, S9g-6)
   - [ ] S9h-4 Konto löschen mit Anonymisierung (S4-N8, S1-N2, S9d-6)
 

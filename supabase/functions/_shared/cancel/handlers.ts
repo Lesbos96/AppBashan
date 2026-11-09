@@ -14,7 +14,8 @@ export type CancelBasis = {
   feeRateVersion: number
   feeVatRateVersion: number
 }
-export type CancelCall = { requestId: string; basis: CancelBasis; split: FeeSplit }
+/** `shownFeeCents`: der Betrag, den der Kunde gesehen und bestätigt hat; nur er geht als Stornobasis in die Datenbank. */
+export type CancelCall = { requestId: string; shownFeeCents: number; basis: CancelBasis; split: FeeSplit }
 export type CancelDeps = {
   allowedOrigins: readonly string[]
   getUser(jwt: string): Promise<AuthUser | null>
@@ -51,10 +52,11 @@ export async function handleCancelCustomer(req: Request, deps: CancelDeps): Prom
       if (isPreview) return json(200, { cancelFeeCents: basis.feeBaseCents }, origin)
       // Gebucht wird nur, was der Kunde gesehen hat: wechselt die Stufe, muss er neu bestätigen
       if (basis.feeBaseCents !== shownFeeCents) return json(409, { error: 'cancel_fee_changed', cancelFeeCents: basis.feeBaseCents }, origin)
-      const split = basis.feeBaseCents > 0 ? splitFee(basis.feeBaseCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate }) : ZERO
+      const shown = shownFeeCents as number
+      const split = shown > 0 ? splitFee(shown, { feeRate: basis.feeRate, vatRate: basis.feeVatRate }) : ZERO
       try {
-        const status = await deps.cancel(a.user.id, { requestId, basis, split })
-        return json(200, { status, cancelFeeCents: basis.feeBaseCents }, origin)
+        const status = await deps.cancel(a.user.id, { requestId, shownFeeCents: shown, basis, split })
+        return json(200, { status, cancelFeeCents: shown }, origin)
       } catch (e) {
         const code = e instanceof DbError ? e.code : ''
         if (RETRY_CODES.has(code)) {
@@ -67,7 +69,7 @@ export async function handleCancelCustomer(req: Request, deps: CancelDeps): Prom
     throw new DbError('retry')
   } catch (e) {
     const code = e instanceof DbError ? e.code : ''
-    const status = RETRY_CODES.has(code) ? 409 : code === 'under_review' ? 409 : STATUS[code]
+    const status = RETRY_CODES.has(code) ? 409 : STATUS[code]
     if (status) return json(status, { error: RETRY_CODES.has(code) ? 'retry' : code }, origin)
     deps.log({ event: 'cancel_customer_failed', message: e instanceof Error ? e.message.slice(0, 200) : 'unknown' })
     return json(500, { error: 'internal' }, origin)

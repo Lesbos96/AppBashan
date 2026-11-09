@@ -40,6 +40,8 @@ describe('handleCancelCustomer', () => {
     expect(d.calls).toHaveLength(1)
     expect(d.calls[0]?.split).toEqual(splitFee(34481, { feeRate: 0.15, vatRate: 0.2 }))
     expect(d.calls[0]?.requestId).toBe(REQ)
+    // N1: Der bestätigte Betrag reist als eigenes Feld mit; die Datenbank bekommt genau diesen Wert als p_fee_base
+    expect(d.calls[0]?.shownFeeCents).toBe(34481)
   })
 
   it('ohne Stornogebühr: Aufteilung 0, aal1 genügt (Kunden haben keine MFA)', async () => {
@@ -75,6 +77,25 @@ describe('handleCancelCustomer', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ cancelFeeCents: 34481 })
     expect(d.calls).toHaveLength(0)
+  })
+
+  it('N2: Eingabe der Vorschau und Fehler der Grundlage: 400 bei Mischformen, 409 ohne Betrag bei under_review und Terminbeginn', async () => {
+    for (const bad of [
+      { requestId: REQ, preview: true, shownFeeCents: 0 },
+      { requestId: REQ, preview: false, shownFeeCents: 0 },
+      { requestId: REQ, preview: 'true' },
+      { requestId: REQ, shownFeeCents: '0' },
+    ]) {
+      const d = deps()
+      expect((await call(d, bad)).status).toBe(400)
+      expect(d.calls).toHaveLength(0)
+    }
+    for (const code of ['under_review', 'too_late_use_report_not_done']) {
+      const d = deps({ basis: async () => { throw new DbError(code) } })
+      const res = await call(d, { requestId: REQ, preview: true })
+      expect(res.status).toBe(409)
+      expect(await res.json()).toEqual({ error: code })
+    }
   })
 
   it('Satzcodes: einmal neu laden (gleiche Kundengebühr), danach neutral `retry`; kein fee_-Code geht an den Kunden', async () => {
