@@ -60,3 +60,14 @@ describe('outbox-send Markieren (K3)', () => {
     expect(JSON.stringify(d.logs)).not.toContain('example.test')
   })
 })
+
+describe('outbox-send Abschluss (S9g)', () => {
+  it('completion_ask und completion_auto gehen an den Kunden, ohne Gebühr oder Provision im Text', async () => {
+    const mails: { to: string; subject: string; text: string }[] = []
+    const claimed: OutboxRow[] = ['completion_ask', 'completion_auto'].map((kind, i) => ({ id: i + 1, kind, recipientKind: 'customer', recipientId: 'u', partnerEmail: null }))
+    const d = deps(claimed, { customerEmail: async () => 'kunde@example.test', send: async (m) => void mails.push(m) })
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0 })
+    expect(mails.map((m) => m.subject)).toEqual(['Hat dein Auftrag stattgefunden?', 'Dein Auftrag gilt als durchgeführt'])
+    for (const m of mails) expect(m.subject + m.text).not.toMatch(/Gebühr|Provision|15 ?%/i)
+  })
+})

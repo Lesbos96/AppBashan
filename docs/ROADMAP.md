@@ -119,6 +119,8 @@ Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jed
 - [x] S9f Nachtrag: `price_revisions` mit Status, Frist, Belegfotos (Spalten, Update-Guard mit Marker, Zeiger auf angenommene Nachträge), `propose_change`, `decide_change`, `withdraw_change`, `expire_changes`/`close_changes`, Journalzeile `change` mit Komponentenprüfung und Unique-Index, Edge Functions `change-propose` und `change-decide`, `pricing/change.ts` (Migrationen 0040, 0041, 2026-11-09)
 - [x] S9e Festangebot: `partner_offers`, `send_offer`, `withdraw_offer`, `reject_offers`, `my_request_offers`, `confirm_offer` (Edge Function `offer-confirm`), T4b/T7 (`expire_offers`), `admin_set_partner_status` schließt Listings und Angebote, `to_district` im Listing, gemeinsame Limit-Prüfung (Migrationen 0038, 0039, 2026-11-09; schließt S9c-1, S9c-2, S9c-10, S9c-12)
 
+- [x] S9g Abschluss und Export: `report_not_done`, `complete_due` (Frage nach dem Termin und T15, Cron), Abrechnungsmonat des Journals (`export_commissions`, `my_commissions`, Typ `commission_row`), CSV-Modul und Skript `npm run export:commissions`, Mails `completion_ask`/`completion_auto` (Migrationen 0042, 0043, 2026-11-09)
+
 ## S10 · Abnahme und Politur
 - [ ] Abnahme-Checkliste aus `docs/DESIGN_BRIEF.md`, Schritt D, vollständig grün (`shots:all`, Lighthouse, Preis-Stichproben über 10 Szenarien)
 - [ ] Politur-Loop aus Schritt E, höchstens 3 globale Runden

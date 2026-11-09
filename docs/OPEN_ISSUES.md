@@ -388,7 +388,7 @@ Mittel (Löschen-Test) behoben. Rest:
 | S9c-3 | mittel | Beks | Mailversand ist gebaut, aber nicht eingerichtet: Function-Secrets `OUTBOX_SECRET`, `SMTP_URL`, `MAIL_FROM`, `APP_URL`, Vault-Secrets `outbox_url`, `outbox_secret`. Bis dahin bleiben die Zeilen in `public.outbox` auf `pending`, `outbox_dispatch` sendet nichts (kein Fehler) |
 | S9c-4 | niedrig | erledigt in S9d (0035: Wartebedingung in `distribute_request`/`distribute_pending`, Kopien in `job_photos`, Zugriff über `job-photo`). Vor S9e und dem Setup der Foto-Pipeline (Beks, `npm run setup:photo-publish`) geht S9c nicht in Produktion | Listings tragen keine Fotos; die Verteilung wartet nicht auf die Foto-Endzustände (S9d ergänzt beides) |
 | S9c-5 | niedrig | erledigt in S9d (siehe S3-N6, S4-N3) | Testlücken: `partners_update_contact` mit aal1/aal2 (S3-N6) und die Punkte aus S4-N3 |
-| S9c-6 | niedrig | S9h | `complete_job` beendet die Zuordnung mit `completed`; T15 (automatisch nach 7 Tagen), `report_not_done` und Mails dazu folgen mit S9g. Mails kennen nur vier Arten (`listing_new`, `request_accepted`, `request_expired`, `request_unmatched`) |
+| S9c-6 | niedrig | S9h | `complete_job` beendet die Zuordnung mit `completed`; T15, `report_not_done` und Mails dazu sind mit S9g gebaut (Migration 0042, 0043) |
 | S9c-7 | niedrig | Beks | Reste auf Dev: Der Wettlauftest (`accept-concurrency.test.ts`) commitet Fixtures; die gewonnene Annahme bindet ein Journal (unlöschbar), daher bleiben je Lauf ein Kunde, ein Auftrag, eine Firma samt Nutzer und deren Zeilen stehen. Alles andere räumt der Test auf |
 | S9c-9 | niedrig | S9g | Abnahme N1: Der Journal-Trigger (0029) lässt bei exakt halbem Cent beide Rundungen zu (Toleranz ≤ 0,5 Cent); Tiefenverteidigung, die Werte rechnet nur `splitFee`. Halboffene Prüfung (entspricht half-up) mit dem Export prüfen |
 | S9c-10 | mittel | S9e | Abnahme N9, Pflicht für S9e: `admin_set_partner_status` und `confirm_offer` müssen betroffene Aufträge zuerst sperren (sortiert nach ID), dann die Firma (Deadlock mit `partner_accept` sonst); die Limit-Prüfung von `partner_accept` (Advisory-Lock `partner_jobs:<Firma>`) gehört in eine gemeinsame private Funktion, die auch `confirm_offer` aufruft |
@@ -437,6 +437,18 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 | S9f-8 | mittel | S9i/S10 | Die Edge Functions `change-propose` und `change-decide` sind deployt und antworten ohne JWT mit 401. Ein Lauf mit echten Tokens fehlt (Partner braucht aal2/TOTP); Handler laufen nur mit Fakes (`tests/unit/change-handlers.test.ts`), die RPCs gegen die echte Datenbank (`tests/rls/change-orders*.test.ts`). `check:deno` umfasst jetzt auch `offer-confirm`, `change-propose`, `change-decide` (`offer-confirm` fehlte seit S9e) |
 | S9f-9 | niedrig | offen | Der Wettlauftest `change-orders-concurrency.test.ts` lässt Kunde, Aufträge, Nachträge, Journal und eine gesperrte Firma auf Dev stehen (wie S9c-7) |
 | S9f-10 | Pflicht | Beks | Mail-Texte `change_proposed`, `change_accepted`, `change_declined`, `change_expired`, `change_withdrawn` prüfen; Versand bleibt bis S9c-3 aus. `change_valid_hours` (2) steht im Seed und auf Dev |
+
+## S9g · Abnahme (Berater `tmp/proof/S9g-abnahme.md`; hoch 0, mittel 2, niedrig 8) und offene Punkte
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9g-1 | mittel | erledigt (Skript) | M1: PostgREST kürzt auf `max_rows` (1000) ohne Fehler; `export-commissions.mjs` holt seitenweise. Dasselbe braucht die Portal-Liste mit `my_commissions` (S9i) |
+| S9g-2 | mittel | erledigt (Tests) | M2: Test mit zwei Endereignissen (keine Dubletten, Monat bleibt) und Export nach T15 |
+| S9g-3 | niedrig | erledigt (0043) | N1: Meldung und Bestätigung des Kunden schließen sich aus (`complete_job` lehnt nach der Meldung ab, `report_not_done` nach der Bestätigung); N2: Fristen in `hours => 24 * completion_days`; N4 Mail-Wortlaut; N7 CSV-Zeiten in Wiener Ortszeit; N8 BOM als Escape |
+| S9g-4 | niedrig | Betrieb | N3: Scheitert T15 für einen Auftrag dauerhaft, bleibt nur ein `WARNING`. Prüfabfrage fürs Runbook: Aufträge in `accepted`/`in_progress` ohne Meldung mit `termin_at + completion_days < now() - 1 Stunde` |
+| S9g-5 | niedrig | S9h | N5: Ein gemeldeter Auftrag bleibt offen, belegt das Limit `partner_open_jobs_max` und den Kontaktzugriff des Partners; admin braucht in S9h eine Liste (`not_done_reported_at is not null`, kein Endstatus) und `admin-correct` (T14) |
+| S9g-6 | niedrig | S9h | N6: `status_events.at` ist `now()` (Transaktionsbeginn); eine wartende T14-Transaktion kann ein Endereignis mit früherem `at` schreiben und `min(at)` verschieben. `admin-correct` muss das ausschließen (`clock_timestamp()` oder Ablehnung) |
+| S9g-7 | Pflicht | Beks | Mail-Texte `completion_ask` und `completion_auto` prüfen („7 Tage“ steht im Text, `completion_days` im Seed); Versand bleibt bis S9c-3 aus |
 
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

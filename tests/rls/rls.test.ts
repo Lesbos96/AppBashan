@@ -453,6 +453,7 @@ describe('Rollen', () => {
       'complete_job(uuid)',
       'decline_listing(uuid)',
       'job_contact(uuid)',
+      'my_commissions(date)',
       'my_job_partner(uuid)',
       'my_request_offers(uuid)',
       'private.assignment_access(uuid,uuid):authenticated',
@@ -468,6 +469,7 @@ describe('Rollen', () => {
       'private.staging_photo_count():authenticated',
       'register_partner(text,text,text,boolean,text,text,text,text,text,text,smallint[],text)',
       'reject_offers(uuid)',
+      'report_not_done(uuid)',
       'send_offer(uuid,integer)',
       'start_job(uuid)',
       'withdraw_change(uuid)',
@@ -485,7 +487,7 @@ describe('Rollen', () => {
     // S9c: Annahme (Art A) und Verteilung nur service_role, Partner-Aufrufe nie mit p_actor aus der Anfrage
     for (const f of ['partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'partner_accept_basis(uuid,uuid)', 'distribute_request(uuid)', 'distribute_pending()', 'expire_requests()', 'outbox_claim(integer)', 'outbox_mark(bigint,boolean,text)', 'admin_contact(uuid,uuid,text)', 'confirm_offer_basis(uuid,uuid)', 'confirm_offer(uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_offers()',
       'propose_change_basis(uuid,text,uuid)', 'propose_change(uuid,text,uuid,uuid,jsonb,bigint,uuid[])', 'decide_change_basis(uuid,uuid)',
-      'decide_change(uuid,uuid,boolean,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_changes()']) {
+      'decide_change(uuid,uuid,boolean,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_changes()', 'complete_due()', 'export_commissions(uuid,date)']) {
       expect(svcOnly, f).toContain(f)
     }
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])

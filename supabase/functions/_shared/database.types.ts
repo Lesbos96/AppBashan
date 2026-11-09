@@ -1256,6 +1256,7 @@ export type Database = {
           from_address: string | null
           from_point: unknown
           id: string
+          not_done_reported_at: string | null
           preferred_date: string | null
           region: Database["public"]["Enums"]["region"] | null
           route: Json | null
@@ -1279,6 +1280,7 @@ export type Database = {
           from_address?: string | null
           from_point?: unknown
           id?: string
+          not_done_reported_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
           route?: Json | null
@@ -1302,6 +1304,7 @@ export type Database = {
           from_address?: string | null
           from_point?: unknown
           id?: string
+          not_done_reported_at?: string | null
           preferred_date?: string | null
           region?: Database["public"]["Enums"]["region"] | null
           route?: Json | null
@@ -1506,6 +1509,7 @@ export type Database = {
         Returns: undefined
       }
       booking_terms: { Args: never; Returns: Json }
+      complete_due: { Args: never; Returns: number }
       complete_job: { Args: { p_request: string }; Returns: undefined }
       confirm_offer: {
         Args: {
@@ -1572,6 +1576,16 @@ export type Database = {
       expire_changes: { Args: never; Returns: number }
       expire_offers: { Args: never; Returns: number }
       expire_requests: { Args: never; Returns: number }
+      export_commissions: {
+        Args: { p_actor: string; p_month: string }
+        Returns: Database["public"]["CompositeTypes"]["commission_row"][]
+        SetofOptions: {
+          from: "*"
+          to: "commission_row"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       job_contact: {
         Args: { p_request: string }
         Returns: {
@@ -1597,6 +1611,16 @@ export type Database = {
           kind: string
           storage_path: string
         }[]
+      }
+      my_commissions: {
+        Args: { p_month?: string }
+        Returns: Database["public"]["CompositeTypes"]["commission_row"][]
+        SetofOptions: {
+          from: "*"
+          to: "commission_row"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       my_job_partner: {
         Args: { p_request: string }
@@ -1835,6 +1859,7 @@ export type Database = {
         Returns: string
       }
       reject_offers: { Args: { p_request: string }; Returns: undefined }
+      report_not_done: { Args: { p_request: string }; Returns: undefined }
       route_cleanup: { Args: never; Returns: undefined }
       route_geo_facts: {
         Args: {
@@ -1916,7 +1941,25 @@ export type Database = {
       user_role: "customer" | "rental_provider" | "admin" | "partner"
     }
     CompositeTypes: {
-      [_ in never]: never
+      commission_row: {
+        entry_id: string | null
+        request_id: string | null
+        partner_id: string | null
+        partner_name: string | null
+        kind: Database["public"]["Enums"]["commission_kind"] | null
+        reverses_entry_id: string | null
+        created_at: string | null
+        total_cents: number | null
+        fee_rate: number | null
+        fee_net_cents: number | null
+        fee_vat_cents: number | null
+        fee_cents: number | null
+        payout_cents: number | null
+        vat_rule: Database["public"]["Enums"]["partner_vat_rule"] | null
+        request_status: Database["public"]["Enums"]["request_status"] | null
+        ended_at: string | null
+        billing_month: string | null
+      }
     }
   }
 }

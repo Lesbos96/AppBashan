@@ -224,6 +224,8 @@ const TEXTS: Record<string, { subject: string; text: (url: string) => string }> 
   change_declined: { subject: 'Dein Nachtrag wurde abgelehnt', text: (u) => `Der Kunde hat den Nachtrag abgelehnt. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   change_expired: { subject: 'Dein Nachtrag ist nicht mehr gültig', text: (u) => `Der Nachtrag wurde nicht rechtzeitig entschieden oder der Auftrag ist beendet. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   change_withdrawn: { subject: 'Ein Nachtrag ist nicht mehr verfügbar', text: (u) => `Ein vorgeschlagener Nachtrag wurde zurückgezogen. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
+  completion_ask: { subject: 'Hat dein Auftrag stattgefunden?', text: (u) => `Der Termin ist vorbei. Bestätige unter Aufträge, dass alles stattgefunden hat, oder melde, dass es nicht stattgefunden hat. Ohne Meldung gilt der Auftrag 7 Tage nach dem Termin als durchgeführt: ${u}` },
+  completion_auto: { subject: 'Dein Auftrag gilt als durchgeführt', text: (u) => `Zu diesem Auftrag ist keine Meldung eingegangen, deshalb gilt er als durchgeführt. Alle Angaben findest du unter Aufträge: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }
 
