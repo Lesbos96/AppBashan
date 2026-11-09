@@ -107,5 +107,5 @@ describe('Nebenläufigkeit', () => {
     expect([Number(state.a1), Number(state.j1), state.s1, Number(state.l1)]).toEqual([1, 1, 'accepted', 1])
     // R2: entweder angenommen (Zuordnung und Journal je 1) oder zurückgezogen (nichts)
     expect(state.s2 === 'accepted' ? Number(state.x2) === 2 : state.s2 === 'withdrawn' && Number(state.x2) === 0, JSON.stringify(state)).toBe(true)
-  }, 180_000)
+  }, 480_000)
 })

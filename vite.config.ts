@@ -28,7 +28,8 @@ export default defineConfig({
           globalSetup: ['tests/support/dev-guard-setup.ts'],
           fileParallelism: false,
           testTimeout: 30_000,
-          hookTimeout: 180_000,
+          // Das Aufräumen der Wettlauftests (sweep, ein CLI-Aufruf je Firma und Nutzer) brauchte bei langsamer Management-API über 180 s.
+          hookTimeout: 480_000,
         },
       },
     ],

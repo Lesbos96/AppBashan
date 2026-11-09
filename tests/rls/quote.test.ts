@@ -174,7 +174,8 @@ describe('Anfrage anlegen (echte DB)', () => {
 
   it('Negativtest: quote bucht nichts ins Journal, die Antwort enthält keine Gebühr', async () => {
     const res = await call(a, moveCall())
-    expect(JSON.stringify(res.body).replaceAll('call_out_fee_cents', '')).not.toMatch(/fee|payout|platform/i) // Anfahrtspauschale ist eine Bedingung, keine Plattformgebühr
+    // Anfahrtspauschale ist eine Bedingung, keine Plattformgebühr. UUIDs und Hex-Hashes fallen vorher weg: eine ID auf „…977fee“ ließ den Test zufällig scheitern.
+    expect(JSON.stringify(res.body).replaceAll('call_out_fee_cents', '').replace(/[0-9a-f-]{16,}/gi, '')).not.toMatch(/fee|payout|platform/i)
     expect(await journalCount(res.body.id)).toBe(0)
     const rent = await call(a, rentalCall({ inputs: { ...rentalInput, pickupAt: `${dayAhead(10)}T09:00`, returnAt: `${dayAhead(12)}T09:00` } }))
     expect(rent.status).toBe(200)

@@ -117,5 +117,5 @@ describe('Nebenläufigkeit der Festangebote', () => {
     const done = st.sc === 'accepted' && Number(st.ac) === 1 && Number(st.jc) === 1 && st.oc === 'confirmed'
     const back = st.sc === 'awaiting_offer' && Number(st.ac) === 0 && Number(st.jc) === 0 && st.oc === 'withdrawn'
     expect(done || back, JSON.stringify(st)).toBe(true)
-  }, 180_000)
+  }, 480_000)
 })

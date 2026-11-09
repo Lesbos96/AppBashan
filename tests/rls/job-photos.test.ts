@@ -344,7 +344,7 @@ describe('Abnahme S9d: Lücken', () => {
     rows(r['admin_photo mit Kopie'], 3)
   })
 
-  it('photo_purge nach Status: accepted bleibt, completed bleibt 30 Tage nach Zugriffsende und fällt danach, expired und unmatched fallen sofort, Belege bleiben immer', () => {
+  it('photo_purge nach Status: accepted bleibt, completed bleibt 30 Tage nach Zugriffsende und fällt danach, expired und unmatched fallen sofort, ein frischer Beleg bleibt', () => {
     const [RA, R29, R31, RE, RU] = [newId(), newId(), newId(), newId(), newId()]
     const [PA, P29, P31, PE, PU, PRB] = Array.from({ length: 6 }, () => `${uid()}.jpg`) as [string, string, string, string, string, string]
     const one = (R: string, p: string) => `${request(R)} ${photo(R)} ${ready(R, p)} ${obj('job-photos', p)}`
@@ -374,6 +374,44 @@ describe('Abnahme S9d: Lücken', () => {
     rows(r['expired'], 1)
     rows(r['unmatched'], 1)
     rows(r['Beleg des alten Auftrags'], 0)
+  })
+
+  it('photo_purge Belege (0055): fallen 365 Tage nach dem Endstatus (auch withdrawn), davor und bei offenem Auftrag nicht; ohne receipt_retention_days setting_missing', () => {
+    const [R366, R364, RO, RW] = [newId(), newId(), newId(), newId()]
+    const [P366, P364, PO, PW] = Array.from({ length: 4 }, () => `${uid()}.jpg`) as [string, string, string, string]
+    const one = (R: string, p: string) => `${request(R)} ${receipt(R, 'a', 1, p)} ${obj('job-photos', p)}`
+    const assign = (R: string, ended?: string) =>
+      `insert into public.assignments (request_id, partner_id${ended ? ', ended_at, ended_reason' : ''}) values ('${R}', ${P('a')}${ended ? `, now() - interval '${ended}', 'completed'` : ''})`
+    const to = (R: string, status: string, actor: string = U.pa, role = 'partner') => `perform private.set_request_status('${R}', '${status}', '${actor}', '${role}')`
+    const age = (R: string, days: number) => `update public.status_events set at = now() - interval '${days} days' where request_id = '${R}'`
+    const purge = (name: string) => `=(select count(*) from public.photo_purge() where name = '${name}')`
+    const setup = `${BASE} ${one(R366, P366)} ${one(R364, P364)} ${one(RO, PO)} ${one(RW, PW)}`
+    const steps: Step[] = [
+      { name: 'R366', sql: `${to(R366, 'accepted')}; ${assign(R366, '366 days')}; ${to(R366, 'completed')}` },
+      { name: 'R364', sql: `${to(R364, 'accepted')}; ${assign(R364, '364 days')}; ${to(R364, 'completed')}` },
+      { name: 'RO', sql: `${to(RO, 'accepted')}; ${assign(RO)}` },
+      { name: 'RW', sql: to(RW, 'withdrawn', U.cust, 'customer') },
+      { name: 'frisch', as: 'service_role', sql: purge(P366) },
+      {
+        name: 'altern',
+        sql: `alter table public.status_events disable trigger append_only; ${age(R366, 366)}; ${age(R364, 364)}; ${age(RO, 400)}; ${age(RW, 366)}; alter table public.status_events enable trigger append_only`,
+      },
+      { name: 'completed, 366 Tage', as: 'service_role', sql: purge(P366) },
+      { name: 'completed, 364 Tage', as: 'service_role', sql: purge(P364) },
+      { name: 'accepted, 400 Tage', as: 'service_role', sql: purge(PO) },
+      { name: 'withdrawn, 366 Tage', as: 'service_role', sql: purge(PW) },
+      { name: 'mit Einstellung', as: 'service_role', sql: 'perform public.photo_purge()' },
+      { name: 'Einstellung entfernen', sql: `delete from public.platform_settings where key = 'receipt_retention_days'` },
+      { name: 'ohne Einstellung', as: 'service_role', sql: 'perform public.photo_purge()' },
+    ]
+    const r = probes(setup, steps)
+    for (const k of ['R366', 'R364', 'RO', 'RW', 'altern', 'mit Einstellung', 'Einstellung entfernen']) expect(r[k], k).toBe('ok')
+    rows(r['frisch'], 0)
+    rows(r['completed, 366 Tage'], 1)
+    rows(r['completed, 364 Tage'], 0)
+    rows(r['accepted, 400 Tage'], 0)
+    rows(r['withdrawn, 366 Tage'], 1)
+    err(r['ohne Einstellung'], 'setting_missing')
   })
 
   it('job_photo_list: ein Listing außerhalb der Zuständigkeit (Bezirk) liefert nichts, obwohl es noch offen ist', () => {

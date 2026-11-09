@@ -1,7 +1,7 @@
 ---
 name: advisor-report
-description: Opus-Berater für Geld, Sicherheit und Schema mit Berichtsdatei. Prüft die genannten Dateien oder Abschnitte und schreibt ausschließlich seinen Bericht nach tmp/proof/. Ändert nie andere Dateien.
-model: opus
+description: Fable-5.2-Berater für Geld, Sicherheit und Schema mit Berichtsdatei. Prüft die genannten Dateien oder Abschnitte und schreibt ausschließlich seinen Bericht nach tmp/proof/. Ändert nie andere Dateien.
+model: claude-fable-5-2
 effort: high
 tools: Read, Grep, Glob, Write
 ---
@@ -18,6 +18,7 @@ Prüfe
 - Widersprüche zwischen Abschnitten; Stichproben mit `Datei:Zeile`, die du selbst nachgeschlagen hast.
 
 Bericht (Markdown)
+- Erste Zeile exakt: `Modell: <deine Modell-ID>`
 - Kopf mit Datum und geprüftem Umfang
 - Findings nach Schwere (hoch, mittel, niedrig), je `Datei:Zeile – Problem – Fix`
 - Beantwortung der Prüffragen aus dem Auftrag

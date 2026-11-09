@@ -44,13 +44,13 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
   - `test-runner` (Haiku): `check`, `test:e2e`, `shots`, `shots:all`, `build`. Diese Befehle laufen nie im Hauptkontext.
   - `mech-editor` (Haiku): mechanische Arbeit nach exakter Vorgabe (SVG-Farben auf Tokens umstellen, Texte, Umbenennungen, Formatierung, Fixtures, Doku)
   - `reviewer` (Sonnet): prüft Diff und Screenshots gegen Spec, diese Regeln und die Referenz-Screens
-  - `advisor` (Opus): der Kopf. Entscheidet Architektur-, Geld- und Sicherheitsfragen und nimmt Geld- und Sicherheitslogik vor dem Commit ab, schreibt keinen Code
+  - `advisor` (Fable 5.2): der Kopf. Entscheidet Architektur-, Geld- und Sicherheitsfragen und nimmt Geld- und Sicherheitslogik vor dem Commit ab, schreibt keinen Code
 - Den `advisor` fragst du gebündelt, nicht je Einzelentscheidung:
   - Plan-Freigabe zu Beginn jeder Session, die Datenmodell, Migrationen, RLS und Rollen, Preis- und Gebührenlogik, Edge Functions mit Vertrauensbedarf oder Auth berührt: alle Entscheidungen dazu in einer Frage.
   - Abnahme vor dem Commit in S2, S8a und S9: nur die Dateien mit Geld- oder Sicherheitslogik, nicht der ganze Diff.
   - Wenn ein Fehler nach 2 Runden rot bleibt oder unterwegs eine solche Entscheidung auftaucht, die der Plan nicht abdeckt.
 - Gib ihm eine kurze Frage mit den betroffenen Dateien, nicht die ganze Session. Seine Entscheidung gilt; weichst du ab, sag mir warum. Für UI, Texte und Routinearbeit fragst du ihn nicht.
-  - `advisor-report` (Opus): derselbe Berater (Geld, Sicherheit, Schema), aber mit Write; schreibt ausschließlich seinen Bericht nach `tmp/proof/` und ändert nie andere Dateien. Immer, wenn der Berater eine Berichtsdatei liefern soll, nimmst du ihn; `general-purpose` bleibt verboten.
+  - `advisor-report` (Fable 5.2): derselbe Berater (Geld, Sicherheit, Schema), aber mit Write; schreibt ausschließlich seinen Bericht nach `tmp/proof/` und ändert nie andere Dateien. Immer, wenn der Berater eine Berichtsdatei liefern soll, nimmst du ihn; `general-purpose` bleibt verboten.
 - „advisor" meint immer diesen Subagent (Agent-Tool). Ein eingebautes `advisor`-Tool ohne Parameter, das den ganzen Verlauf weitergibt, benutzt du nicht; steht es in deiner Tool-Liste, sag es mir zu Beginn.
 - Jede Delegation hat eine schriftliche Spec: Ziel, Dateien, Akzeptanzkriterien, auszuführende Tests, passende Referenz-Screens.
 - Wenige große Delegationen statt vieler kleiner. Nur ein editierender Agent zur selben Zeit.

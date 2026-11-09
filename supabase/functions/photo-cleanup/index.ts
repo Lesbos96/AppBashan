@@ -1,5 +1,5 @@
 // Edge Function `photo-cleanup`: entfernt Foto-Dateien ohne Zeile in `request_photos` (Fehl-Uploads, gelöschte Anfragen und Konten) über die Storage-API
-// und räumt mit `photo_purge` beide Buckets auf (Kopien in `job-photos` nach Zugriffsende, Waisen, Originale zurückgezogener Anfragen; Belege nie).
+// und räumt mit `photo_purge` beide Buckets auf (Kopien in `job-photos` nach Zugriffsende, Waisen, Originale zurückgezogener Anfragen; Belege 365 Tage nach dem Endstatus).
 // Aufruf stündlich durch `public.photo_cleanup()` (pg_cron + pg_net) mit dem Header x-cleanup-secret. Function-Secrets: CLEANUP_SECRET, SECRET_KEY.
 // SUPABASE_URL setzt die Plattform. Die Antwort und das Log enthalten nur Zähler, nie Pfade.
 import { createClient } from 'npm:@supabase/supabase-js@2'

@@ -119,5 +119,5 @@ describe('Nebenläufigkeit des Nachtrags', () => {
     expect(Number(st.pa)).toBe(1)
     expect([Number(st.jb), Number(st.fb)]).toEqual([1, splitFee(80000, rates).feeCents])
     expect(accOk ? [st.sc, Number(st.jc)] : [st.sc, Number(st.jc)]).toEqual(accOk ? ['accepted', 1] : ['withdrawn', 0])
-  }, 180_000)
+  }, 480_000)
 })

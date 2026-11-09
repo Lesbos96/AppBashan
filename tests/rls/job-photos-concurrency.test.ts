@@ -59,7 +59,7 @@ describe('Foto-Pipeline unter Last', () => {
       (select count(*) from public.outbox where request_id = '${R}' and kind = 'listing_new') as listing_new,
       (select status::text from public.service_requests where id = '${R}') as status`)[0] as Record<string, string | number>
     expect([Number(s.failed), Number(s.listings), Number(s.photo_failed), Number(s.listing_new), s.status]).toEqual([2, 2, 1, 2, 'requested'])
-  }, 120_000)
+  }, 480_000)
 
   it('zwei Belege gleichzeitig beim achten: genau einer gewinnt, danach acht Belege, der andere meldet receipt_limit', async () => {
     const R = newId()
@@ -86,5 +86,5 @@ describe('Foto-Pipeline unter Last', () => {
     } catch {
       console.warn('Objekte der Probe bleiben im Bucket; photo_purge entfernt sie als Waisen.')
     }
-  }, 120_000)
+  }, 480_000)
 })

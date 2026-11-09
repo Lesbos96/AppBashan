@@ -224,7 +224,7 @@ describe('Journal, Revision und Kontakt', () => {
 
   it('der Kunde liest die Antwort ohne Gebühr; fremde Kontakte sieht er nicht', async () => {
     const own = await call(a, moveCall(), fresh())
-    expect(JSON.stringify(own.body).replaceAll('call_out_fee_cents', '')).not.toMatch(/fee|payout|platform|commission/i)
+    expect(JSON.stringify(own.body).replaceAll('call_out_fee_cents', '').replace(/[0-9a-f-]{16,}/gi, '')).not.toMatch(/fee|payout|platform|commission/i) // ohne UUIDs und Hex-Hashes (zufälliges „fee“)
     const b = await makeUser('hard-b')
     expect(must(await b.db.from('request_contacts').select('request_id'))).toEqual([])
     expect(must(await a.db.from('request_contacts').select('request_id').eq('request_id', own.body.id))).toHaveLength(1)

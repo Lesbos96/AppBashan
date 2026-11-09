@@ -61,7 +61,7 @@ const age = (req: string, days: number) => `update public.status_events set at =
 const R = { c: newId(), w: newId(), o: newId(), b: newId(), x: newId(), r: newId(), r2: newId() }
 const { c: RC, w: RW, o: RO, b: RB, x: RX, r: RR, r2: RR2 } = R
 const path = (cust: string) => `${cust}/${newId()}/a.jpg`
-const PATHS = { rc: path(U.cust), copy: `${newId()}.jpg`, s: path(U.cust2), x: path(U.cust2), rr: path(U.cust3), rr2: path(U.cust3) }
+const PATHS = { rc: path(U.cust), copy: `${newId()}.jpg`, rcpt: `${newId()}.jpg`, s: path(U.cust2), x: path(U.cust2), rr: path(U.cust3), rr2: path(U.cust3) }
 const inPaths = (...p: string[]) => `name in (${p.map((x) => `'${x}'`).join(', ')})`
 const purged = (...p: string[]) => `=${count(`public.photo_purge() where ${inPaths(...p)}`)}`
 
@@ -88,6 +88,9 @@ const SETUP = `${BASE}
   insert into storage.objects (bucket_id, name) values ('job-photos', '${PATHS.copy}');
   insert into public.job_photos (request_id, kind, source_photo_id, storage_path, sha256, status, decided_at)
     values ('${RC}', 'request', (select id from public.request_photos where request_id = '${RC}'), '${PATHS.copy}', repeat('a', 64), 'ready', now());
+  insert into storage.objects (bucket_id, name) values ('job-photos', '${PATHS.rcpt}');
+  insert into public.job_photos (request_id, kind, uploaded_partner_id, storage_path, sha256, status, decided_at)
+    values ('${RC}', 'receipt', ${P('a')}, '${PATHS.rcpt}', repeat('b', 64), 'ready', now());
   alter table public.status_events disable trigger append_only;
   ${age(RR, 91)} ${age(RR2, 89)}
   alter table public.status_events enable trigger append_only;`
@@ -228,6 +231,9 @@ describe('photo_purge (S9h-4: Konto, Kette S9h2-1, Aufbewahrung S9d-6)', () => {
       { name: 'Konto nicht gelöscht', as: 'service_role', sql: purged(PATHS.rc, PATHS.copy) },
       { name: 'Löschen', as: 'service_role', sql: del(U.cust) },
       { name: 'Konto gelöscht', as: 'service_role', sql: purged(PATHS.rc, PATHS.copy) },
+      { name: 'Beleg nach dem Löschen', as: 'service_role', sql: purged(PATHS.rcpt) },
+      { name: 'Auftrag gealtert', sql: `alter table public.status_events disable trigger append_only; ${age(RC, 366)} alter table public.status_events enable trigger append_only` },
+      { name: 'Beleg nach 366 Tagen', as: 'service_role', sql: purged(PATHS.rcpt) },
       { name: 'Kette bleibt', as: 'service_role', sql: purged(PATHS.s) },
       { name: 'Quelle endet, Kette löschbar', sql: `perform private.set_request_status('${RO}', 'in_progress', null, 'partner'); perform private.set_request_status('${RO}', 'completed', null, 'partner')` },
       { name: 'Kette nach Ende nicht vor der Frist', as: 'service_role', sql: purged(PATHS.s) },
@@ -244,6 +250,9 @@ describe('photo_purge (S9h-4: Konto, Kette S9h2-1, Aufbewahrung S9d-6)', () => {
     val(r['Konto nicht gelöscht'], '0')
     expect(r['Löschen']).toBe('ok')
     val(r['Konto gelöscht'], '2')
+    val(r['Beleg nach dem Löschen'], '0')
+    expect(r['Auftrag gealtert']).toBe('ok')
+    val(r['Beleg nach 366 Tagen'], '1')
     val(r['Kette bleibt'], '0')
     expect(r['Quelle endet, Kette löschbar']).toBe('ok')
     val(r['Kette nach Ende nicht vor der Frist'], '0')

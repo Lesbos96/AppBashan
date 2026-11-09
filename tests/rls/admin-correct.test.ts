@@ -69,6 +69,32 @@ const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
 const err = (v: string | undefined, part: string) => expect(v?.includes(part), `${part}: ${v}`).toBe(true)
 const val = (v: string | undefined, want: string) => expect(v, String(v)).toBe(`= ${want}`)
 
+describe('Belegfoto nach admin-Storno (0055)', () => {
+  it('ein Storno aus einem alten completed schreibt ein neues Statusereignis: der Beleg bleibt', () => {
+    const R = newId()
+    const path = `${crypto.randomUUID()}.jpg`
+    const purge = `=${count(`public.photo_purge() where name = '${path}'`)}`
+    const setup = `${BASE} ${accepted(R, 'completed', false)}
+      insert into storage.objects (bucket_id, name) values ('job-photos', '${path}');
+      insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
+        values ('${R}', 'receipt', ${P('a')}, 'ready', '${path}', repeat('b', 64), now());
+      alter table public.status_events disable trigger append_only;
+      update public.status_events set at = now() - interval '400 days' where request_id = '${R}';
+      alter table public.status_events enable trigger append_only;`
+    const steps: Step[] = [
+      { name: 'vor dem Storno', as: 'service_role', sql: purge },
+      { name: 'Storno', as: 'service_role', sql: call(U.adm, 'aal2', R, 'cancel_partner', 'other', 0) },
+      { name: 'Status', sql: `=${status(R)}` },
+      { name: 'nach dem Storno', as: 'service_role', sql: purge },
+    ]
+    const r = probes(setup, steps)
+    val(r['vor dem Storno'], '1')
+    expect(r['Storno']).toBe('ok')
+    val(r['Status'], 'cancelled_by_partner')
+    val(r['nach dem Storno'], '0')
+  })
+})
+
 describe('admin_correct (T14) und reported_jobs', () => {
   it('Liste, Verweigerungen, complete, Storno mit Gebühr, Pauschale negieren, Zuordnung, Zähler', () => {
     const [R1, R2, R3, R4, R5, R6, R7, R8] = [newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()]
