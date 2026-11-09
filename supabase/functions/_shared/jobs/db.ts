@@ -97,7 +97,18 @@ export const contactDb =(db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
   },
 })
 
-export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail'> => ({
+export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'completionDays'> => ({
+  // geltender Wert von completion_days (Wiener Datum, höchste Version); fehlt er: setting_missing, nie ein Standardwert
+  async completionDays() {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
+    const rows = must(
+      await db.from('platform_settings').select('value').eq('key', 'completion_days').lte('effective_from', today)
+        .order('effective_from', { ascending: false }).order('version', { ascending: false }).limit(1),
+    )
+    const v = Number(rows[0]?.value)
+    if (!Number.isInteger(v) || v < 1) throw new DbError('setting_missing')
+    return v
+  },
   async claim(limit) {
     const rows = must(await db.rpc('outbox_claim', { p_limit: limit }))
     return rows.map((r) => ({ id: Number(r.id), kind: r.kind, recipientKind: r.recipient_kind, recipientId: r.recipient_id, partnerEmail: r.partner_email }))

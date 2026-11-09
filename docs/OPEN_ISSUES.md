@@ -448,7 +448,15 @@ Geschlossen mit S9e: S9c-1 (Listing trägt `to_district`), S9c-2 (`admin_set_par
 | S9g-4 | niedrig | Betrieb | N3: Scheitert T15 für einen Auftrag dauerhaft, bleibt nur ein `WARNING`. Prüfabfrage fürs Runbook: Aufträge in `accepted`/`in_progress` ohne Meldung mit `termin_at + completion_days < now() - 1 Stunde` |
 | S9g-5 | niedrig | S9h | N5: Ein gemeldeter Auftrag bleibt offen, belegt das Limit `partner_open_jobs_max` und den Kontaktzugriff des Partners; admin braucht in S9h eine Liste (`not_done_reported_at is not null`, kein Endstatus) und `admin-correct` (T14) |
 | S9g-6 | niedrig | S9h | N6: `status_events.at` ist `now()` (Transaktionsbeginn); eine wartende T14-Transaktion kann ein Endereignis mit früherem `at` schreiben und `min(at)` verschieben. `admin-correct` muss das ausschließen (`clock_timestamp()` oder Ablehnung) |
-| S9g-7 | Pflicht | Beks | Mail-Texte `completion_ask` und `completion_auto` prüfen („7 Tage“ steht im Text, `completion_days` im Seed); Versand bleibt bis S9c-3 aus |
+| S9g-7 | Pflicht | Beks (Tageszahl erledigt in S9h-1) | Mail-Texte `completion_ask` und `completion_auto` prüfen; die Tageszahl kommt seit S9h-1 aus `completion_days` (Unit-Test), Versand bleibt bis S9c-3 aus |
+
+## S9h-1 · Abnahme (Berater `tmp/proof/s9h-1-abnahme.md`; hoch 1, mittel 2, niedrig 2, alle behoben) und offene Punkte
+
+| Nr. | Schwere | Ziel | Punkt |
+|---|---|---|---|
+| S9h1-1 | Pflicht | Beks, Recht | Kundenstorno nach dem Termin ist mit 100 % möglich (T12 aus `accepted`/`in_progress`); nach der Meldung „nicht stattgefunden“ gesperrt (`under_review`). Ob ein Storno nach `termin_at` zulässig sein soll, klärt Beks (Konzept 10.2, Frage Recht 5) |
+| S9h1-2 | mittel | S9i | Die Oberfläche ruft `cancel-customer` zuerst mit `preview: true` (liefert `cancelFeeCents`) und dann mit `shownFeeCents`; bei 409 `cancel_fee_changed` neu bestätigen lassen. Keine eigene Stufenlogik im Client |
+| S9h1-3 | niedrig | S9h-3 | Gemeldete Aufträge (`under_review`) brauchen die admin-Liste und T14 (S9g-5, S9g-6) |
 
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

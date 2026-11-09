@@ -246,6 +246,7 @@ describe('outbox-send photo_failed', () => {
       claim: async () => [{ id: 1, kind: 'photo_failed', recipientKind: 'customer', recipientId: 'u', partnerEmail: null }],
       mark: async () => {},
       customerEmail: async () => 'kunde@example.test',
+      completionDays: async () => 7,
       send: async (m) => void sent.push(m),
       appUrl: 'https://app.test',
       log: () => {},

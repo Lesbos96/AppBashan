@@ -119,6 +119,7 @@ describe('outbox-send', () => {
         claim: async () => rows,
         mark: async (id: number, ok: boolean) => { marks.push([id, ok]) },
         customerEmail: async () => 'kunde@movenow.test',
+        completionDays: async () => 7,
         send: async (m: { to: string; subject: string; text: string }) => { sent.push(m) },
         appUrl: 'https://app.movenow.test',
         log: () => {},

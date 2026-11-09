@@ -16,6 +16,7 @@ function deps(claimed: OutboxRow[], over: Partial<OutboxDeps> = {}): OutboxDeps 
     claim: async () => claimed,
     mark: async (id, ok, error) => void marks.push([id, ok, error]),
     customerEmail: async () => null,
+    completionDays: async () => 7,
     send: async (m) => void sent.push(m.to),
     appUrl: 'https://app.test',
     log: (e) => void logs.push(e),
@@ -69,5 +70,31 @@ describe('outbox-send Abschluss (S9g)', () => {
     expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0 })
     expect(mails.map((m) => m.subject)).toEqual(['Hat dein Auftrag stattgefunden?', 'Dein Auftrag gilt als durchgeführt'])
     for (const m of mails) expect(m.subject + m.text).not.toMatch(/Gebühr|Provision|15 ?%/i)
+  })
+
+  it('S9g-N2: fehlt completion_days, steht im Log setting_missing statt smtp_error', async () => {
+    const d = deps([{ id: 1, kind: 'completion_ask', recipientKind: 'customer', recipientId: 'u', partnerEmail: null }], {
+      customerEmail: async () => 'k@example.test',
+      completionDays: async () => { throw Object.assign(new Error('setting_missing'), { code: 'setting_missing' }) },
+    })
+    await call(d)
+    expect(d.marks).toEqual([[1, false, 'setting_missing']])
+  })
+
+  it('S9g-7: completion_ask nennt die Tageszahl aus completion_days, nicht eine feste 7; request_cancelled geht an die Firma ohne Gebühr', async () => {
+    const mails: { to: string; subject: string; text: string }[] = []
+    const claimed: OutboxRow[] = [
+      { id: 1, kind: 'completion_ask', recipientKind: 'customer', recipientId: 'u', partnerEmail: null },
+      { id: 2, kind: 'request_cancelled', recipientKind: 'partner', recipientId: 'p', partnerEmail: 'p@example.test' },
+    ]
+    const d = deps(claimed, { customerEmail: async () => 'kunde@example.test', completionDays: async () => 3, send: async (m) => void mails.push(m) })
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0 })
+    expect(mails[0]?.text).toContain('3 Tage nach dem Termin')
+    expect(mails[0]?.text).not.toContain('7 Tage')
+    expect(mails[1]?.to).toBe('p@example.test')
+    for (const m of mails) expect(m.subject + m.text).not.toMatch(/Gebühr|Provision|15 ?%/i)
+    const one = deps([{ id: 1, kind: 'completion_ask', recipientKind: 'customer', recipientId: 'u', partnerEmail: null }], { customerEmail: async () => 'k@example.test', completionDays: async () => 1, send: async (m) => void mails.push(m) })
+    await call(one)
+    expect(mails[2]?.text).toContain('1 Tag nach dem Termin')
   })
 })

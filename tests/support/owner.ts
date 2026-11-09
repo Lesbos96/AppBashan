@@ -2,19 +2,34 @@
 // Nur für Tests, die als Datenbank-Eigentümer laufen müssen: Rollen vergeben, Claims (aal) setzen, Rolle wechseln, TRUNCATE.
 // Verändernde Prüfungen laufen in begin … rollback. Die CLI liefert nur das Ergebnis des letzten Statements mit Zeilen.
 import { execFile, execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 type Row = Record<string, unknown>
 
+// Windows begrenzt die Befehlszeile (~32.000 Zeichen): lange Abfragen gehen über eine temporäre Datei (-f).
+function queryArgs(query: string): { args: string[]; cleanup: () => void } {
+  if (query.length < 12000) return { args: [query], cleanup: () => {} }
+  const dir = mkdtempSync(join(tmpdir(), 'mv-sql-'))
+  const file = join(dir, 'q.sql')
+  writeFileSync(file, query)
+  return { args: ['-f', file], cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+}
+
 export function ownerSql(query: string): Row[] {
   let out: string
+  const q = queryArgs(query)
   try {
-    out = execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'db', 'query', '--linked', query], {
+    out = execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'db', 'query', '--linked', ...q.args], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
   } catch (e) {
     out = (e as { stdout?: string }).stdout ?? ''
     if (!out) throw e
+  } finally {
+    q.cleanup()
   }
   const json = JSON.parse(out) as { _tag?: string; error?: { message: string }; rows?: Row[] }
   if (json._tag === 'Error') throw new Error(json.error?.message ?? 'Eigentümer-SQL fehlgeschlagen')

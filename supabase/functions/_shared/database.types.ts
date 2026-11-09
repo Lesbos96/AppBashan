@@ -1247,6 +1247,7 @@ export type Database = {
       service_requests: {
         Row: {
           accept_deadline: string
+          cancel_fee_waived: boolean
           client_ref: string
           created_at: string
           current_revision: string | null
@@ -1271,6 +1272,7 @@ export type Database = {
         }
         Insert: {
           accept_deadline: string
+          cancel_fee_waived?: boolean
           client_ref: string
           created_at?: string
           current_revision?: string | null
@@ -1295,6 +1297,7 @@ export type Database = {
         }
         Update: {
           accept_deadline?: string
+          cancel_fee_waived?: boolean
           client_ref?: string
           created_at?: string
           current_revision?: string | null
@@ -1509,6 +1512,35 @@ export type Database = {
         Returns: undefined
       }
       booking_terms: { Args: never; Returns: Json }
+      cancel_by_customer: {
+        Args: {
+          p_actor: string
+          p_fee: number
+          p_fee_base: number
+          p_fee_net: number
+          p_fee_rate: number
+          p_fee_rate_version: number
+          p_fee_vat: number
+          p_fee_vat_rate: number
+          p_fee_vat_rate_version: number
+          p_payout: number
+          p_request: string
+        }
+        Returns: string
+      }
+      cancel_by_customer_basis: {
+        Args: { p_actor: string; p_request: string }
+        Returns: {
+          fee_base_cents: number
+          fee_rate: number
+          fee_rate_version: number
+          fee_vat_rate: number
+          fee_vat_rate_version: number
+          request_status: string
+          revision_id: string
+          total_cents: number
+        }[]
+      }
       complete_due: { Args: never; Returns: number }
       complete_job: { Args: { p_request: string }; Returns: undefined }
       confirm_offer: {

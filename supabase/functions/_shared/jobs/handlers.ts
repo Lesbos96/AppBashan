@@ -205,13 +205,15 @@ export type OutboxDeps = {
   claim(limit: number): Promise<OutboxRow[]>
   mark(id: number, ok: boolean, error: string | null): Promise<void>
   customerEmail(userId: string): Promise<string | null>
+  /** `completion_days` aus den Einstellungen (S9g-7); nur für completion_ask abgefragt. */
+  completionDays(): Promise<number>
   send(mail: Mail): Promise<void>
   appUrl: string
   log: Log
 }
 
 // Texte ohne personenbezogene Angaben und ohne Gebühr; Details stehen in der App.
-const TEXTS: Record<string, { subject: string; text: (url: string) => string }> = {
+const TEXTS: Record<string, { subject: string; text: (url: string, days: number) => string }> = {
   listing_new: { subject: 'Neue Anfrage für dich', text: (u) => `Es gibt eine neue Anfrage in deinem Gebiet. Du findest sie im Partner-Bereich: ${u}` },
   request_accepted: { subject: 'Dein Auftrag wurde angenommen', text: (u) => `Ein Partner hat deine Anfrage angenommen. Alle Angaben findest du unter Aufträge: ${u}` },
   request_expired: { subject: 'Deine Anfrage ist abgelaufen', text: (u) => `Deine Anfrage wurde in der Frist nicht angenommen. Du kannst sie in der App neu senden: ${u}` },
@@ -224,7 +226,8 @@ const TEXTS: Record<string, { subject: string; text: (url: string) => string }> 
   change_declined: { subject: 'Dein Nachtrag wurde abgelehnt', text: (u) => `Der Kunde hat den Nachtrag abgelehnt. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   change_expired: { subject: 'Dein Nachtrag ist nicht mehr gültig', text: (u) => `Der Nachtrag wurde nicht rechtzeitig entschieden oder der Auftrag ist beendet. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
   change_withdrawn: { subject: 'Ein Nachtrag ist nicht mehr verfügbar', text: (u) => `Ein vorgeschlagener Nachtrag wurde zurückgezogen. Es gilt der gebuchte Umfang zum gebuchten Preis: ${u}` },
-  completion_ask: { subject: 'Hat dein Auftrag stattgefunden?', text: (u) => `Der Termin ist vorbei. Bestätige unter Aufträge, dass alles stattgefunden hat, oder melde, dass es nicht stattgefunden hat. Ohne Meldung gilt der Auftrag 7 Tage nach dem Termin als durchgeführt: ${u}` },
+  request_cancelled: { subject: 'Ein Auftrag wurde storniert', text: (u) => `Der Kunde hat einen angenommenen Auftrag storniert. Alle Angaben findest du im Partner-Bereich: ${u}` },
+  completion_ask: { subject: 'Hat dein Auftrag stattgefunden?', text: (u, d) => `Der Termin ist vorbei. Bestätige unter Aufträge, dass alles stattgefunden hat, oder melde, dass es nicht stattgefunden hat. Ohne Meldung gilt der Auftrag ${d} ${d === 1 ? 'Tag' : 'Tage'} nach dem Termin als durchgeführt: ${u}` },
   completion_auto: { subject: 'Dein Auftrag gilt als durchgeführt', text: (u) => `Zu diesem Auftrag ist keine Meldung eingegangen, deshalb gilt er als durchgeführt. Alle Angaben findest du unter Aufträge: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
 }
@@ -241,7 +244,7 @@ export async function sameSecret(a: string, b: string): Promise<boolean> {
 // Fehler werden auf feste Codes abgebildet: SMTP-Meldungen enthalten Empfängeradressen und gehören weder ins Log noch in die Outbox.
 function safeCode(e: unknown): string {
   const msg = e instanceof Error ? e.message : ''
-  if (msg === 'unknown_kind' || msg === 'no_recipient') return msg
+  if (msg === 'unknown_kind' || msg === 'no_recipient' || msg === 'setting_missing') return msg
   const rc = (e as { responseCode?: unknown } | null)?.responseCode
   if (typeof rc === 'number') return rc >= 500 ? 'smtp_rejected' : 'smtp_temp'
   return 'smtp_error'
@@ -268,7 +271,7 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
       const t = TEXTS[row.kind]
       const to = row.recipientKind === 'partner' ? row.partnerEmail : await deps.customerEmail(row.recipientId)
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
-      await deps.send({ to, subject: t.subject, text: t.text(deps.appUrl) })
+      await deps.send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
     } catch (e) {
       failed++
       const code = safeCode(e)
