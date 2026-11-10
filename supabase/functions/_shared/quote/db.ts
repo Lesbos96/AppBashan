@@ -15,7 +15,7 @@ const must = <T>(r: { data: T; error: unknown }): NonNullable<T> => {
   return r.data
 }
 
-type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'currentVersion' | 'loadPricing' | 'loadHold' | 'loadTerms' | 'geocodeCache' | 'district' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
+type DbDeps = Pick<QuoteDeps, 'getUserId' | 'takeTokens' | 'currentVersion' | 'loadPricing' | 'loadHold' | 'loadTerms' | 'bookingOpen' | 'geocodeCache' | 'district' | 'loadOffer' | 'findExisting' | 'saveRequest' | 'saveBooking'> & {
   route: Pick<QuoteDeps['route'], 'cache' | 'geoFacts'>
 }
 
@@ -50,6 +50,11 @@ export function quoteDb(db: Db): DbDeps {
       const { data, error } = await db.rpc('booking_terms')
       if (error) throw error
       return data as Record<string, unknown>
+    },
+    async bookingOpen() {
+      const { data, error } = await db.rpc('booking_open')
+      if (error) throw error
+      return data === true
     },
     geocodeCache: {
       async get(key) {

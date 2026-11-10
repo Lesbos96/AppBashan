@@ -1574,6 +1574,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      booking_open: { Args: never; Returns: boolean }
       booking_terms: { Args: never; Returns: Json }
       cancel_by_customer: {
         Args: {

@@ -117,6 +117,11 @@ where not exists (select 1 from public.platform_settings s where s.key = v.key a
 
 select private.publish_seed_version(1);
 
+-- Nur Dev: Buchung offen, damit die Integrationstests laufen. Produktion bekommt keine Zeile (Buchung zu, bis Beks öffnet).
+insert into public.platform_settings (key, version, value, note, effective_from)
+select 'booking_open', 1, 1, 'Buchungsschalter (nur Dev)', date '2026-10-28'
+where not exists (select 1 from public.platform_settings s where s.key = 'booking_open' and s.version = 1);
+
 -- Demo-Mietangebote aus sampleOffers (Prototyp Zeile 26). Ohne Vermieter-Konto, als Demo markiert.
 insert into public.rental_offers (
   id, provider_id, provider_name, name, station, size_m3, daily_cents, km_per_day, extra_km_cents,

@@ -490,5 +490,14 @@ Kontrollrunde S9h-1 (`tmp/proof/s9h-1-kontrolle.md`): H1 behoben, hoch 0; N1 (`s
 | S9h4-8 | niedrig | S9i | Negativtests, die `fee` im ganzen Antworttext suchen, treffen zufällig UUIDs und Hex-Hashes (Endlauf s9h-4-nach: ID auf „…977fee“). In `tests/rls/quote.test.ts` und `quote-hardening.test.ts` behoben (Hex-Folgen ab 16 Zeichen fallen vorher weg); dasselbe Muster steht noch in `tests/e2e/wege.spec.ts:91` und `tests/e2e/anfrage.spec.ts:81` |
 | S9h3-6 | niedrig | Hinweis | T14 aus `completed` in einen Storno lässt `assignments.ended_at` unverändert (Zugriffsfenster der Firma, 0050); der Qualitätszähler zählt diesen Storno daher zum Zeitpunkt des Abschlusses, nicht der Korrektur |
 
+## s9i-1 · Abnahme (Berater `tmp/proof/s9i-1-abnahme.md`; hoch 0, mittel 3, niedrig 6; M1, M2, N1, N2, N5 behoben) und offene Punkte
+| Nr. | Stufe | Ziel | Befund |
+|---|---|---|---|
+| S9i1-1 | mittel | GOLIVE 29 | M3: Der Schalter sperrt nur im `quote`-Handler, nicht in den Schreibfunktionen (bewusst, nur `service_role` ruft sie). Vor dem Start `quote` in Produktion deployen und ohne Zeile belegen (GOLIVE 29). Restfenster: ein Aufruf, der kurz vor dem Schließen durchkam, wird noch gespeichert |
+| S9i1-2 | niedrig | S9i | N3: Ein Ladefehler von `booking_open()` zeigt bis zum Neuladen den Text für „zu“ (Knopf bleibt gesperrt, sicher). Fehlerzustand mit „Erneut versuchen“ später |
+| S9i1-3 | niedrig | später | N4: `service_role` kann `booking_open` an `admin_set_setting` vorbei ändern oder löschen (kein `audit_log`). Trigger `guard_platform_setting` später um den Schlüssel erweitern (kein UPDATE, DELETE nur künftiger Zeilen) |
+| S9i1-4 | niedrig | Beks | N6: Kein Skript zum Umschalten (`admin:call` kennt `admin_set_setting` nicht, es braucht service_role). Weg über die SQL-Konsole steht in GOLIVE 29; ein Skript nur auf Wunsch |
+| S9i1-5 | niedrig | Hinweis | Der Schalter ist kein Notstopp: Weitervermittlung (`reissue_request`), Angebotsannahme und Nachträge laufender Aufträge bleiben bei „zu“ möglich. Keine `shots`/Reviewer-Bildsicht für den Hinweistext in s9i-1; Position per `boundingBox()` in `anfrage.spec.ts` (390, 430, 1280 px) gemessen |
+
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

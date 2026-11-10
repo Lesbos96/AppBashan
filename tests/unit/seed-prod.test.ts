@@ -9,7 +9,8 @@ const statements = (sql: string) => {
   const map = new Map<string, string>()
   for (const s of body.split(/;\s*(?:\n|$)/).map((x) => x.trim()).filter(Boolean)) {
     // das Veröffentlichen der Seed-Version ist das einzige Statement, das kein Insert ist
-    const table = /^insert into public\.(\w+)/.exec(s)?.[1] ?? (s === 'select private.publish_seed_version(1)' ? 'publish' : undefined)
+    // der Buchungsschalter (nur Dev, s9i-1) ist ein eigenes Insert in platform_settings
+    const table = s.includes("'booking_open'") ? 'platform_settings:booking_open' : /^insert into public\.(\w+)/.exec(s)?.[1] ?? (s === 'select private.publish_seed_version(1)' ? 'publish' : undefined)
     if (!table) throw new Error(`Unerwartetes Statement: ${s.slice(0, 60)}`)
     expect(map.has(table), `${table} doppelt`).toBe(false)
     map.set(table, s)
@@ -34,6 +35,8 @@ describe('seed.prod.sql', () => {
     expect(devOnly).toContain('rental_offers')
     for (const table of devOnly) expect(prod.has(table), table).toBe(false)
     const sql = read('seed.prod.sql')
+    expect(sql).not.toContain('booking_open') // Produktion: ohne Zeile ist die Buchung zu, bis Beks sie öffnet
+    expect(dev.has('platform_settings:booking_open')).toBe(true)
     expect(sql).not.toMatch(/is_demo|Beispielvermieter|auth\.|example\.(com|org)|test@/i)
   })
 

@@ -13,7 +13,7 @@ import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/phot
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { formatEuro } from '../../lib/money'
-import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
+import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadBookingOpen, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
@@ -135,6 +135,7 @@ function Strecke({ rows }: { rows: Row[] }) {
 export function Zusammenfassung({ path }: { path: Path }) {
   const [prices, retryPrices] = useLoad(loadPrices)
   const [terms, retryTerms] = useLoad(loadTerms)
+  const [open] = useLoad(loadBookingOpen)
   const retry = () => {
     retryPrices()
     retryTerms()
@@ -142,9 +143,9 @@ export function Zusammenfassung({ path }: { path: Path }) {
   return (
     <main>
       <NavBar title="Zusammenfassung" back={{ to: `/${path}/termin`, label: 'Termin' }} />
-      {(prices.status === 'loading' || terms.status === 'loading') && <Loading label="Angaben laden" />}
+      {(prices.status === 'loading' || terms.status === 'loading' || open.status === 'loading') && <Loading label="Angaben laden" />}
       {(prices.status === 'error' || terms.status === 'error') && <ErrorState text="Die Angaben konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />}
-      {prices.status === 'ready' && terms.status === 'ready' && <Inhalt path={path} tariffs={toTariffs(prices.data)} version={prices.data.version} terms={terms.data} />}
+      {prices.status === 'ready' && terms.status === 'ready' && open.status !== 'loading' && <Inhalt path={path} tariffs={toTariffs(prices.data)} version={prices.data.version} terms={terms.data} bookingOpen={open.status === 'ready' && open.data} />}
     </main>
   )
 }
@@ -163,7 +164,7 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const PHONE = /^[0-9+()/ .-]{5,40}$/
 const digits = (v: string) => (v.match(/[0-9]/g) ?? []).length
 
-function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record<string, number>; version: number; terms: Terms }) {
+function Inhalt({ path, tariffs, version, terms, bookingOpen }: { path: Path; tariffs: Record<string, number>; version: number; terms: Terms; bookingOpen: boolean }) {
   const navigate = useNavigate()
   const session = useSession()
   const config = services[path]
@@ -322,6 +323,11 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
   return (
     <>
       <div className="flex flex-col gap-5 px-5 pt-2 pb-48">
+        {!bookingOpen && (
+          <p role="status" data-testid="booking-closed" className="m-0 text-subhead text-text-secondary">
+            {errorText.booking_closed}
+          </p>
+        )}
         <Card className="flex items-center gap-4 p-4">
           <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded-icon-tile bg-tint p-2">
             <Illustration name={illustrations[path]} className="h-auto max-h-full max-w-full" />
@@ -477,7 +483,9 @@ function Inhalt({ path, tariffs, version, terms }: { path: Path; tariffs: Record
         {sending ? 'Anfrage wird gesendet' : ''}
       </p>
       <ActionBar>
-        {session === undefined ? (
+        {!bookingOpen ? (
+          <Button disabled>Anfrage senden</Button>
+        ) : session === undefined ? (
           <Button disabled>Anfrage senden</Button>
         ) : session === null ? (
           <Button disabled={!consent} onClick={toLogin}>

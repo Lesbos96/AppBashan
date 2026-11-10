@@ -78,6 +78,7 @@ function setup(over: Partial<QuoteDeps> = {}, geo: GeoFacts = AT_GRAZ, route: Pr
     loadPricing: async () => ({ version: 1, rows: seedRows }),
     loadHold: async (v) => (v === 1 ? { started: true, isCurrent: true, replacedAt: null, holdMinutes: 30 } : null),
     loadTerms: async () => ({ ...TERMS }),
+    bookingOpen: async () => true,
     geocodeCache: { get: async (k) => geoCache.get(k) ?? null, set: async (k, v) => void geoCache.set(k, v) },
     district: async (lon, lat) => {
       const inVienna = lat > 48.12 && lat < 48.32 && lon > 16.18 && lon < 16.58
@@ -484,6 +485,36 @@ describe('Zugang, Limits, Idempotenz, Bearbeiten', () => {
     const t = setup()
     expect((await t.run({ ...moveCall(), clientRef: undefined })).status).toBe(400)
     expect((await t.run(rentalCall({ clientRef: 'x' }))).status).toBe(400)
+  })
+
+  it('Buchung zu: 503 booking_closed für Anfrage und Miete, nichts wird gespeichert, kein Geocode, keine Route', async () => {
+    const t = setup({ bookingOpen: async () => false }, IN_VIENNA)
+    for (const call of [moveCall(), rentalCall()]) {
+      const res = await t.run(call)
+      expect(res.status).toBe(503)
+      expect(res.body).toEqual({ error: 'booking_closed' })
+    }
+    expect(t.requests).toHaveLength(0)
+    expect(t.bookings).toHaveLength(0)
+    expect(t.provider.calls).toBe(0)
+    expect(t.provider.geocodes).toBe(0)
+  })
+
+  it('Buchung zu und bookingOpen wirft: nichts wird gespeichert (500, nie offen)', async () => {
+    const t = setup({ bookingOpen: async () => { throw new Error('db down') } }, IN_VIENNA)
+    expect((await t.run(moveCall())).status).toBe(500)
+    expect(t.requests).toHaveLength(0)
+  })
+
+  it('Buchung zu: Wiederholung einer gespeicherten clientRef liefert weiter 200', async () => {
+    let open = true
+    const t = setup({ bookingOpen: async () => open }, IN_VIENNA)
+    const call = moveCall()
+    const first = await t.run(call)
+    expect(first.status).toBe(200)
+    t.existing.set(call.clientRef, first.body as QuoteResponse)
+    open = false
+    expect((await t.run(call)).status).toBe(200)
   })
 
   it('zweiter Aufruf mit derselben clientRef liefert die vorhandene Anfrage, ohne neu zu rechnen', async () => {

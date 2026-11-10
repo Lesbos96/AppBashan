@@ -264,6 +264,26 @@ test('Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser 
   expect(calls[0]!.body['termsHash']).toBe('c'.repeat(64))
 })
 
+test('Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf von quote (390, 430, 1280 px)', async ({ page, backend }) => {
+  backend.bookingOpen = false
+  const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
+  await anonymousPrices(page)
+  await mockAuth(page)
+  await toSummary(page)
+  const notice = page.getByTestId('booking-closed')
+  const button = page.getByRole('button', { name: 'Anfrage senden' })
+  for (const [width, height] of [[390, 844], [430, 932], [1280, 800]] as const) {
+    await page.setViewportSize({ width, height })
+    await expect(notice).toBeVisible()
+    await expect(notice).toHaveText('Anfragen sind noch nicht freigeschaltet. Dein Entwurf bleibt erhalten.')
+    await expect(button).toBeDisabled()
+    const n = (await notice.boundingBox())!
+    const b = (await button.boundingBox())!
+    expect(n.y + n.height, `Hinweis über dem Knopf bei ${width} px`).toBeLessThanOrEqual(b.y)
+  }
+  expect(calls).toHaveLength(0)
+})
+
 test('ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts', async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await anonymousPrices(page)

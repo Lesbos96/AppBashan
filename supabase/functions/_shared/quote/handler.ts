@@ -99,6 +99,8 @@ export type QuoteDeps = {
   loadHold(version: number): Promise<VersionHold | null>
   /** `booking_terms()`: Stornostufen, Anfahrtspauschale, `termsHash`. */
   loadTerms(): Promise<Record<string, unknown>>
+  /** `booking_open()`: Buchungsschalter; ohne Zeile zu. */
+  bookingOpen(): Promise<boolean>
   geocodeCache: { get(key: string): Promise<Candidate[] | null>; set(key: string, value: Candidate[], ttlSeconds: number): Promise<void> }
   /** Land und Bezirk am geprüften Punkt (Polygone in der DB). */
   district(lon: number, lat: number): Promise<{ inVienna: boolean; inAustria: boolean; district: number | null }>
@@ -240,6 +242,9 @@ export async function handleQuote(req: Request, deps: QuoteDeps): Promise<Respon
       const existing = await deps.findExisting(customerId, call.clientRef, call.kind)
       if (existing) return finish(200, existing)
     }
+
+    // Jeder Aufruf mit clientRef speichert: Schalter zu → nichts wird gerechnet oder gespeichert. Ein Fehler hier bleibt 500, nie offen.
+    if (!(await deps.bookingOpen())) throw new HttpError(503, 'booking_closed')
 
     const response = call.kind === 'rental' ? await quoteRental(call, customerId, deps) : await quoteRequest(call, customerId, req, deps)
     return finish(200, response)

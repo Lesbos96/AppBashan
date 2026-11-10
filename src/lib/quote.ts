@@ -80,7 +80,7 @@ export function refFor(path: Path, body: Body): string {
   return ref
 }
 
-export type QuoteErrorKind = 'invalid_input' | 'unauthorized' | 'rate_limited' | 'offline' | 'unavailable' | 'provider' | 'rejected' | 'price_changed' | 'terms_changed'
+export type QuoteErrorKind = 'invalid_input' | 'unauthorized' | 'rate_limited' | 'offline' | 'unavailable' | 'provider' | 'booking_closed' | 'rejected' | 'price_changed' | 'terms_changed'
 
 /** Antwort eines 409: nichts wurde gespeichert, der Kunde bestätigt den neuen Preis bzw. die neuen Bedingungen. */
 export type Conflict = { priceVersion?: number; snapshot?: Snapshot | null; terms?: Terms }
@@ -157,9 +157,9 @@ export async function sendQuote(body: Body, clientRef: string, accessToken: stri
       const status = error.context.status
       if (status === 401) throw new QuoteError('unauthorized')
       if (status === 429) throw new QuoteError('rate_limited')
-      if (status === 503) throw new QuoteError('provider')
-      const detail: unknown = status === 400 || status === 409 || status === 422 ? await error.context.json().catch(() => null) : null
+      const detail: unknown = status === 400 || status === 409 || status === 422 || status === 503 ? await error.context.json().catch(() => null) : null
       const d = detail && typeof detail === 'object' ? (detail as Record<string, unknown>) : {}
+      if (status === 503) throw new QuoteError(d.error === 'booking_closed' ? 'booking_closed' : 'provider')
       if (status === 409 && d.error === 'price_changed') throw new QuoteError('price_changed', null, null, { priceVersion: typeof d.priceVersion === 'number' ? d.priceVersion : undefined, snapshot: parseSnapshot(d.snapshot) })
       if (status === 409 && d.error === 'terms_changed') throw new QuoteError('terms_changed', null, null, { terms: parseTerms(d.terms) ?? undefined })
       if (status === 422) {
@@ -198,6 +198,16 @@ export async function loadTerms(): Promise<Terms> {
   return terms
 }
 
+/** Buchungsschalter: nur ein echtes `true` öffnet, Fehler und alles andere gelten als zu. Nicht zwischengespeichert. */
+export async function loadBookingOpen(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('booking_open')
+    return !error && data === true
+  } catch {
+    return false
+  }
+}
+
 /** Der Preis, den der Kunde vor dem Senden sieht (und mit `shown` bestätigt): Festpreis mit Cent, Spanne in ganzen Euro, beim Angebot „Preis nach Prüfung“. */
 export function shownLabel(s: Shown): string {
   return s.kind === 'offer' ? 'Preis nach Prüfung' : priceLabel({ kind: 'price', totalCents: s.totalCents, lowCents: s.lowCents, highCents: s.highCents, lines: [] }).main
@@ -231,6 +241,7 @@ export const rejectedText: Record<string, string> = {
 
 export const errorText: Record<Exclude<QuoteErrorKind, 'invalid_input' | 'rejected' | 'price_changed' | 'terms_changed'>, string> = {
   provider: 'Die Adressprüfung ist gerade nicht erreichbar. Dein Entwurf bleibt erhalten, versuche es in einer Minute erneut.',
+  booking_closed: 'Anfragen sind noch nicht freigeschaltet. Dein Entwurf bleibt erhalten.',
   unauthorized: 'Deine Anmeldung ist abgelaufen. Melde dich neu an, dein Entwurf bleibt erhalten.',
   rate_limited: 'Gerade sind zu viele Anfragen unterwegs. Warte etwa eine Minute und versuche es dann erneut.',
   offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut. Dein Entwurf bleibt erhalten.',

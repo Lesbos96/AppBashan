@@ -449,6 +449,7 @@ describe('Rollen', () => {
       .filter((r) => r.anon === true || r.auth === true)
       .map((r) => `${r.fn}:${[r.anon === true && 'anon', r.auth === true && 'authenticated'].filter(Boolean).join('+')}`)
     expect(open).toEqual([
+      'booking_open():anon+authenticated',
       'booking_terms():anon+authenticated',
       'complete_job(uuid)',
       'decline_listing(uuid)',

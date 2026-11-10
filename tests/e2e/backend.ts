@@ -58,11 +58,13 @@ export function rest(route: Route, rows: unknown[]) {
 export type Backend = {
   /** Aufrufe an fremde Hosts ohne Mock (Methode und URL); muss am Testende leer sein. */
   unmocked: string[]
+  /** Antwort von `booking_open()`; Standard offen, ein Test setzt `false` für den Zustand „zu“. */
+  bookingOpen: boolean
 }
 
 /** Legt die Schichten auf den Browser-Kontext (gilt auch für weitere Tabs desselben Tests). */
 export async function installBackend(context: BrowserContext, appOrigin: string): Promise<Backend> {
-  const backend: Backend = { unmocked: [] }
+  const backend: Backend = { unmocked: [], bookingOpen: true }
   await context.route(
     (url) => (url.protocol === 'http:' || url.protocol === 'https:') && url.origin !== appOrigin,
     (route) => {
@@ -77,6 +79,7 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   })
   // Eine Funktion mit jsonb-Ergebnis liefert PostgREST als einzelnes Objekt.
   await context.route('**/rest/v1/rpc/booking_terms**', (r) => reply(r, TERMS))
+  await context.route('**/rest/v1/rpc/booking_open**', (r) => reply(r, backend.bookingOpen))
   // Ohne eigenen Mock hat das Konto keine Anfragen.
   await context.route('**/rest/v1/service_requests**', (r) => rest(r, []))
   return backend

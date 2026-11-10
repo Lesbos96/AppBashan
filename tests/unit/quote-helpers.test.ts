@@ -5,7 +5,7 @@ const invoke = vi.fn()
 const rpc = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...a: unknown[]) => invoke(...a) }, rpc: (...a: unknown[]) => rpc(...a) } }))
 
-const { errorText, invalidTarget, invalidText, loadTerms, parseSnapshot, parseTerms, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } = await import('../../src/lib/quote')
+const { errorText, invalidTarget, invalidText, loadBookingOpen, loadTerms, parseSnapshot, parseTerms, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } = await import('../../src/lib/quote')
 const { paths } = await import('../../src/lib/draft')
 
 beforeEach(() => {
@@ -37,6 +37,20 @@ describe('parseTerms und loadTerms (Stornobedingungen)', () => {
     const dbError = { message: 'boom', code: 'XX000' }
     rpc.mockResolvedValueOnce({ data: null, error: dbError })
     await expect(loadTerms()).rejects.toBe(dbError)
+  })
+
+  it('loadBookingOpen: nur ein echtes true öffnet; Fehler und alles andere gelten als zu', async () => {
+    rpc.mockResolvedValueOnce({ data: true, error: null })
+    await expect(loadBookingOpen()).resolves.toBe(true)
+    expect(rpc).toHaveBeenCalledWith('booking_open')
+    rpc.mockResolvedValueOnce({ data: false, error: null })
+    await expect(loadBookingOpen()).resolves.toBe(false)
+    rpc.mockResolvedValueOnce({ data: 'true', error: null })
+    await expect(loadBookingOpen()).resolves.toBe(false)
+    rpc.mockResolvedValueOnce({ data: true, error: { message: 'boom' } })
+    await expect(loadBookingOpen()).resolves.toBe(false)
+    rpc.mockRejectedValueOnce(new Error('offline'))
+    await expect(loadBookingOpen()).resolves.toBe(false)
   })
 
   it('termsText: Tage 0, 1 und mehr in Worten, Anfahrtspauschale in Cent', () => {
@@ -89,7 +103,7 @@ describe('Fehlertexte', () => {
 
   it('jede Fehlerart hat einen Text ohne Code, Gebühr oder Fachbegriff', () => {
     const texts = [...Object.values(errorText), ...Object.values(rejectedText)]
-    expect(Object.keys(errorText).sort()).toEqual(['offline', 'provider', 'rate_limited', 'unauthorized', 'unavailable'])
+    expect(Object.keys(errorText).sort()).toEqual(['booking_closed', 'offline', 'provider', 'rate_limited', 'unauthorized', 'unavailable'])
     expect(Object.keys(rejectedText).sort()).toEqual(['address_imprecise', 'address_mismatch', 'address_point_required', 'district_required', 'offer_not_bookable', 'pickup_outside_vienna'])
     for (const t of texts) {
       expect(t).toMatch(/^[A-ZÄÖÜ]/)
@@ -112,6 +126,11 @@ describe('sendQuote: Fehlerfälle', () => {
   it('503: Anbieter der Adressprüfung gestört', async () => {
     invoke.mockResolvedValue({ data: null, error: http(503, '{"error":"provider_unavailable"}') })
     await expect(sendQuote({}, 'r', 't')).rejects.toMatchObject({ kind: 'provider' })
+  })
+
+  it('503 booking_closed: Buchung noch nicht freigegeben, eigene Fehlerart', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(503, '{"error":"booking_closed"}') })
+    await expect(sendQuote({}, 'r', 't')).rejects.toMatchObject({ kind: 'booking_closed' })
   })
 
   it('409 price_changed: neuer Preis und Version kommen mit, ein kaputter Snapshot wird null', async () => {
