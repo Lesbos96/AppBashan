@@ -95,6 +95,16 @@ Schon erledigt vor s9i-2: Fotos vor dem Absenden (S9d, `Fotos.tsx`), Tab-Bar Sta
 - Nicht Teil: Angebote, Nachtrag, Frage nach dem Termin (s9i-3), Konto löschen, Partner-Portal, Zurückziehen einer Anfrage, Shots.
 - Geld: Die Oberfläche rechnet nichts; der Betrag stammt aus `cancel-customer`, die Plattformgebühr kommt in keiner Antwort vor (Handler gibt nur `cancelFeeCents` aus).
 
+## Plan s9i-3 (Angebote, Nachtrag, Frage nach dem Termin)
+- Migration: nein (0057 bleibt frei). Alle Server-Wege gibt es: `my_request_offers`, `offer-confirm`, `change-decide`, `complete_job`, `report_not_done`, `job-photo`; Kunden lesen eigene `price_revisions` (RLS 0018). Keine Function ändert sich.
+- Detail `/auftraege/:id` (Auftrag.tsx) liest zusätzlich `termin_at`, `not_done_reported_at`. Neu `src/lib/jobs.ts` (Aufrufe, Fehlerzuordnung, Zeitpunkt der Frage) und `src/screens/auftrag/` (Angebote, Nachtrag, Termin).
+- Angebote (Status `offered`): Liste aus `my_request_offers` (Firma, Betrag, gültig bis), Annehmen im Sheet mit `shownAmountCents` genau wie gezeigt; 409 `amount_changed`, `offer_not_valid`, `offer_unavailable`, `retry` mit eigenen Texten, Liste lädt neu.
+- Nachtrag (Status `accepted`/`in_progress`, offene Revision `source=change_order`, `status=proposed`): neuer Gesamtpreis (aus `total_cents` der Revision), bisheriger Preis, Belegfotos (`job-photo`, nur `kind=receipt`), „Zustimmen“ (Sheet, `shownTotalCents`) und „Ablehnen“. Anzeige-Differenz = ganzzahlige Subtraktion der Server-Cent, keine Rundung, keine Gebühr.
+- Frage nach dem Termin (`accepted`/`in_progress`, `termin_at` erreicht, keine Meldung): „Hat der Auftrag stattgefunden?“ Ja → `complete_job`, Nein → `report_not_done`, je mit Bestätigung im Sheet; nach der Meldung Hinweis „Wir prüfen den Auftrag“. Storno-Knopf nur vor Terminbeginn und ohne Meldung (S9i2-2); Text bei begonnenem Termin nennt „Nicht stattgefunden“ (S9i2-3).
+- S9i2-1: Storno-Sheet nennt die Stufen in Worten aus `snapshot.terms` der gültigen Revision (`termsText`), nie aus den aktuellen Werten; fehlt `terms` im Snapshot, bleibt der Text weg.
+- Tests: Unit (`jobs.ts`, Terms aus Snapshot), E2E (Angebot annehmen, Betrag wechselt, Nachtrag zustimmen/ablehnen, Frage Ja/Nein, Tastatur, kein Gebührentext, Maße per `boundingBox()`, Konsole leer), RLS: keiner neu (kein neuer Serverweg; Kundenlesen von `price_revisions` ist in `revisions`-Tests belegt, wird geprüft).
+- Nicht Teil: Angebote ablehnen (`reject_offers`), Zurückziehen, Partner-Portal, Konto löschen, Shots, Mailtexte, Meldung bei `completed` durch den Partner (Status wird dem Kunden nicht als Meldefall gezeigt).
+
 ## Entscheidungen s9i-1
 38. Umfang: Das Konzept teilt S9i nicht auf. s9i-1 ist die erste Scheibe (Schalter hinter dem Buchungsbutton); Aufträge-Detail, Storno-Oberfläche, Partner-Portal, Tab-Bar und Konto löschen folgen in s9i-2 ff. (sicherste und kleinste Scheibe, Rechtsklärung bleibt offen).
 39. Schalter: eigene Einstellung `booking_open` statt Build-Variable, damit der Server sperrt (die App ist nur Anzeige); fehlt die Zeile, ist zu. Dev bekommt die Zeile über `seed.sql`, Produktion nie (Test `seed-prod.test.ts`). Es entscheidet die höchste Version; Öffnen immer mit heutigem Datum (GOLIVE 29).

@@ -5,15 +5,19 @@ import { Button } from '../components/Button'
 import { StatusChip } from '../components/Controls'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
-import { CancelError, cancelErrorText, cancelRequest, feeText, previewCancel, timeline } from '../lib/cancel'
+import { CancelError, cancelErrorText, cancelRequest, feeText, previewCancel, snapshotStorno, timeline } from '../lib/cancel'
+import { terminStarted } from '../lib/jobs'
 import { states, titles } from '../lib/orders'
 import { useLoad } from '../lib/prices'
 import { parseSnapshot, priceLabel } from '../lib/quote'
 import { useSession } from '../lib/session'
 import { supabase } from '../lib/supabase'
+import { Angebote } from './auftrag/Angebote'
+import { Nachtrag } from './auftrag/Nachtrag'
+import { Termin } from './auftrag/Termin'
 import { dayText } from './anfrage/format'
 
-const COLUMNS = 'id, service, status, preferred_date, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
+const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const windows: Record<string, string> = { morning: '8 bis 11 Uhr', midday: '11 bis 14 Uhr', afternoon: '14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
 
@@ -40,6 +44,12 @@ export function Auftrag() {
 
 function Detail({ userId, id }: { userId: string; id: string }) {
   const [result, retry] = useLoad(() => load(userId, id))
+  const [notice, setNotice] = useState<string>()
+  // Nach jeder Aktion neu laden; ein Hinweis (Preis geändert, nicht mehr möglich) bleibt sichtbar
+  const done = (n?: string) => {
+    setNotice(n)
+    retry()
+  }
   if (result.status === 'loading') return <Loading label="Auftrag laden" />
   if (result.status === 'error') return <ErrorState text="Der Auftrag konnte nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />
   const r = result.data
@@ -48,10 +58,17 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   const chip = states[r.status] ?? { chip: 'review' as const, label: 'In Prüfung', active: true }
   const snapshot = parseSnapshot(r.price_revisions?.snapshot)
   const line = timeline(r.status)
+  const live = r.status === 'accepted' || r.status === 'in_progress'
+  const started = live && terminStarted(r.termin_at)
   const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window] : undefined].filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
+      {notice && (
+        <p role="alert" className="m-0 text-body font-semibold">
+          {notice}
+        </p>
+      )}
       <section className="flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
         <span className="flex items-center justify-between gap-3">
           <h2 className="m-0 text-headline">{titles[r.service]}</h2>
@@ -84,7 +101,15 @@ function Detail({ userId, id }: { userId: string; id: string }) {
         )}
       </section>
 
-      {r.status === 'accepted' && <Cancel id={r.id} onDone={retry} />}
+      {r.status === 'offered' && <Angebote id={r.id} onDone={done} />}
+      {live && <Nachtrag id={r.id} onDone={done} />}
+      {live && started && !r.not_done_reported_at && <Termin id={r.id} onDone={done} />}
+      {live && r.not_done_reported_at && (
+        <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
+          Du hast gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
+        </p>
+      )}
+      {r.status === 'accepted' && !started && <Cancel id={r.id} storno={snapshotStorno(r.price_revisions?.snapshot)} onDone={retry} />}
     </div>
   )
 }
@@ -94,7 +119,7 @@ const retryable = (k: CancelError['kind']) => k === 'offline' || k === 'retry' |
 type Step ={ phase: 'loading' } | { phase: 'ready'; fee: number; notice?: string; error?: CancelError } | { phase: 'error'; error: CancelError }
 
 /** Storno: erst die Vorschau des Servers, dann Bestätigung mit genau diesem Betrag. Nichts wird gebucht, was der Kunde nicht gesehen hat. */
-function Cancel({ id, onDone }: { id: string; onDone: () => void }) {
+function Cancel({ id, storno, onDone }: { id: string; storno: string[]; onDone: () => void }) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>({ phase: 'loading' })
   const [busy, setBusy] = useState(false)
@@ -172,6 +197,12 @@ function Cancel({ id, onDone }: { id: string; onDone: () => void }) {
                 <span className="text-body">Stornokosten</span>
                 <span className="whitespace-nowrap text-headline tabular-nums">{feeText(step.fee)}</span>
               </span>
+              {storno.map((line) => (
+                <p key={line} className="m-0 text-subhead text-text-secondary">
+                  {line}
+                </p>
+              ))}
+              {step.fee > 0 && <p className="m-0 text-subhead text-text-secondary">Die Stornokosten stellt dir der Partner in Rechnung.</p>}
               {step.error && (
                 <p role="alert" className="m-0 text-body">
                   {cancelErrorText[step.error.kind]}

@@ -1,5 +1,6 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { formatEuro } from './money'
+import { termsText } from './quote'
 import { supabase } from './supabase'
 
 export type CancelErrorKind = 'fee_changed' | 'too_late' | 'under_review' | 'closed' | 'retry' | 'unauthorized' | 'offline' | 'unavailable'
@@ -62,7 +63,18 @@ export async function cancelRequest(requestId: string, shownFeeCents: number): P
   await call({ requestId, shownFeeCents })
 }
 
-export const feeText = (feeCents: number) => (feeCents === 0 ? 'Kostenlos' : formatEuro(feeCents))
+const int = (v: unknown, max = Infinity): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= max
+
+/** Stufen in Worten aus den Bedingungen im Snapshot der gültigen Revision (nie aus den aktuellen Werten). Fehlt etwas, ist es ungültig oder gilt `cancel_fee_waived`, gibt es keinen Text. */
+export function snapshotStorno(snapshot: unknown): string[] {
+  const t = snapshot && typeof snapshot === 'object' ? (snapshot as Record<string, unknown>).terms : undefined
+  const r = t && typeof t === 'object' ? (t as Record<string, unknown>) : null
+  if (!r || r.cancel_fee_waived === true) return []
+  if (!int(r.cancel_free_hours) || !int(r.cancel_late_percent, 100) || !int(r.cancel_full_percent, 100) || !int(r.cancel_full_days_before)) return []
+  return termsText({ termsHash: '', cancel_free_hours: r.cancel_free_hours, cancel_late_percent: r.cancel_late_percent, cancel_full_percent: r.cancel_full_percent, cancel_full_days_before: r.cancel_full_days_before, call_out_fee_cents: 0 }).storno
+}
+
+export const feeText =(feeCents: number) => (feeCents === 0 ? 'Kostenlos' : formatEuro(feeCents))
 
 const STEPS = ['Angefragt', 'Bestätigt', 'Läuft', 'Erledigt']
 const CURRENT: Record<string, number> = { requested: 0, awaiting_offer: 0, offered: 0, accepted: 1, in_progress: 2, completed: 3 }
