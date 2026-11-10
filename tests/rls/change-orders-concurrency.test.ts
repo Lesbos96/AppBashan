@@ -4,7 +4,8 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
-import { firm, grantAdmin, insertUsers, newId, ownerDeletePartner } from '../support/partner.ts'
+import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
+import { sweepTestResidue } from '../support/sweep.ts'
 
 const adm = newId()
 const cust = newId()
@@ -14,43 +15,12 @@ const BOOKED = 68961
 
 const startAt = (secs: number) => `select pg_sleep(greatest(0, extract(epoch from (timestamptz '${new Date(Date.now() + secs * 1000).toISOString()}' - clock_timestamp()))));`
 
-function sweep(admin: string) {
-  const rows = (q: string) => ownerSql(q) as Record<string, string>[]
-  try {
-    const firms = rows(`select distinct p.id, p.status::text as status,
-        exists (select 1 from public.assignments a where a.partner_id = p.id) as bound
-      from public.partners p join public.partner_members m on m.partner_id = p.id join auth.users u on u.id = m.user_id
-      where u.email like 'pt-%@movenow.test' and p.name <> 'Testabdeckung GmbH'`) as unknown as { id: string; status: string; bound: boolean }[]
-    for (const f of firms) {
-      if (!f.bound) ownerDeletePartner(f.id)
-      else if (f.status === 'active' || f.status === 'payment_hold') ownerSql(`select public.admin_set_partner_status('${admin}', '${f.id}', 'suspended', 'Testrest nach Wettlauftest ${f.id.slice(0, 8)}')`)
-    }
-    for (const u of rows(`select id from auth.users u where u.email like 'pt-%@movenow.test' and u.id <> '${admin}'
-      and not exists (select 1 from public.partner_members m join public.partners p on p.id = m.partner_id where m.user_id = u.id and p.name = 'Testabdeckung GmbH')`)) {
-      try {
-        ownerSql(`delete from auth.users where id = '${u.id}'`)
-      } catch {
-        // Kunde oder Firmenmitglied mit Journal: bleibt
-      }
-    }
-  } catch (e) {
-    console.warn('Aufräumen unvollständig:', (e as Error).message.slice(0, 200))
-  }
-}
-
-afterAll(() => {
-  sweep(adm)
-  try {
-    ownerSql(`delete from auth.users where id = '${adm}'`)
-  } catch {
-    // admin hat Audit-Einträge: bleibt
-  }
-})
+afterAll(() => sweepTestResidue(adm, true)) // admin hat Audit-Einträge und bleibt meist stehen
 
 describe('Nebenläufigkeit des Nachtrags', () => {
   it('zwei Vorschläge = einer; doppelte Annahme = eine Journalzeile; Annahme gegen Rückzug = genau ein Ergebnis', async () => {
     ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
-    sweep(adm)
+    sweepTestResidue(adm)
     const f = ownerSql(`select (select value::float8 from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as fr,
       (select value::float8 from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vr,
       (select version from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as frv,
@@ -70,25 +40,26 @@ describe('Nebenläufigkeit des Nachtrags', () => {
       values ('${id}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now());`
     const photos = (id: string) => `array(select id from public.job_photos where request_id = '${id}' and kind = 'receipt')`
     const propose = (id: string, total: number) => `public.propose_change('${pa}', 'aal2', '${id}', (select current_revision from public.service_requests where id = '${id}'), '{}'::jsonb, ${total}, ${photos(id)})`
-    const open = (id: string) => `(select id from public.price_revisions where request_id = '${id}' and status = 'proposed')`
     const c80 = splitChange(80000, rates, s0)
-    const decide = (id: string) =>
-      `public.decide_change('${cust}', ${open(id)}, true, 80000, ${f.fr}, ${f.vr}, ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv})`
+    // Die Revisions-ID steht vor dem Rennen fest: als Unterabfrage im Aufruf käme sie leer an (not_found), sobald der andere Aufruf schon angenommen hat
+    const decide = (rev: string) =>
+      `public.decide_change('${cust}', '${rev}', true, 80000, ${f.fr}, ${f.vr}, ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv})`
 
     ownerSql(`begin; ${insertUsers([cust, pa])} ${firm(pa, 'a', 'active', adm, { districts: 'array[21]::smallint[]' })} ${job(RA)} ${job(RB)} ${job(RC)}
       select ${propose(RB, 80000)}; select ${propose(RC, 80000)}; commit;`)
 
     // Partner dürfen Revisionen nicht lesen: die ID für den Rückzug kommt vorab als Eigentümer
-    const rcId = String(ownerSql(`select id from public.price_revisions where request_id = '${RC}' and status = 'proposed'`)[0]?.id)
+    const proposedOf = (id: string) => String(ownerSql(`select id from public.price_revisions where request_id = '${id}' and status = 'proposed'`)[0]?.id)
+    const [rbId, rcId] = [proposedOf(RB), proposedOf(RC)]
     const runs = await Promise.all([
       // Rennen 1: zwei Vorschläge auf RA
       ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${propose(RA, 80000)}; commit;`),
       ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${propose(RA, 90000)}; commit;`),
       // Rennen 2: doppelte Annahme auf RB
-      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(RB)}; commit;`),
-      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(RB)}; commit;`),
+      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(rbId)}; commit;`),
+      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(rbId)}; commit;`),
       // Rennen 3: Annahme gegen Rückzug auf RC
-      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(RC)}; commit;`),
+      ownerSqlAsync(`begin; ${startAt(9)} set local role service_role; select ${decide(rcId)}; commit;`),
       ownerSqlAsync(`begin; ${startAt(9)} set local role authenticated; select set_config('request.jwt.claims', '{"sub":"${pa}","role":"authenticated","aal":"aal2"}', true);
         select public.withdraw_change('${rcId}'); commit;`),
     ])
@@ -100,7 +71,7 @@ describe('Nebenläufigkeit des Nachtrags', () => {
     expect(lost?.error.includes('change_open'), lost?.error).toBe(true)
 
     // Rennen 2: beide Aufrufe ergeben accepted, eine Journalzeile
-    for (const r of runs.slice(2, 4)) expect('rows' in r, JSON.stringify(r)).toBe(true)
+    for (const r of runs.slice(2, 4)) expect('rows' in r && JSON.stringify(r.rows).includes('accepted'), JSON.stringify(r)).toBe(true)
 
     // Rennen 3: genau ein Ergebnis; Annahme und Rückzug schließen sich aus
     const [acc, wd] = [runs[4], runs[5]]
@@ -118,6 +89,6 @@ describe('Nebenläufigkeit des Nachtrags', () => {
       (select count(*) from public.commission_entries where request_id = '${RC}' and kind = 'change') as jc`)[0] as Record<string, string | number>
     expect(Number(st.pa)).toBe(1)
     expect([Number(st.jb), Number(st.fb)]).toEqual([1, splitFee(80000, rates).feeCents])
-    expect(accOk ? [st.sc, Number(st.jc)] : [st.sc, Number(st.jc)]).toEqual(accOk ? ['accepted', 1] : ['withdrawn', 0])
+    expect([st.sc, Number(st.jc)]).toEqual(accOk ? ['accepted', 1] : ['withdrawn', 0])
   }, 480_000)
 })

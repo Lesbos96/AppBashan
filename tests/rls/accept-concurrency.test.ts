@@ -5,7 +5,8 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
-import { firm, grantAdmin, insertUsers, newId, ownerDeletePartner } from '../support/partner.ts'
+import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
+import { sweepTestResidue } from '../support/sweep.ts'
 
 const N = 10
 const adm = newId()
@@ -24,46 +25,13 @@ const request = (id: string, customer: string) => `insert into public.service_re
 
 const startAt = (secs: number) => `select pg_sleep(greatest(0, extract(epoch from (timestamptz '${new Date(Date.now() + secs * 1000).toISOString()}' - clock_timestamp()))));`
 
-/**
- * Räumt Testfirmen und Testnutzer auf (E-Mail pt-*@movenow.test), auch Reste früherer Läufe: Firmen mit Zuordnung (Journal, unlöschbar)
- * werden gesperrt, damit sie nie Empfänger anderer Tests sind; alle übrigen samt Nutzer gelöscht. Nutzer einzeln, weil Kunden mit Journal bleiben.
- */
-function sweep(admin: string) {
-  const rows = (q: string) => ownerSql(q) as Record<string, string>[]
-  try {
-    const firms = rows(`select distinct p.id, p.status::text as status, (exists (select 1 from public.assignments a where a.partner_id = p.id) or exists (select 1 from public.partner_offers o where o.partner_id = p.id)) as bound
-      from public.partners p join public.partner_members m on m.partner_id = p.id join auth.users u on u.id = m.user_id where u.email like 'pt-%@movenow.test' and p.name <> 'Testabdeckung GmbH'`) as unknown as { id: string; status: string; bound: boolean }[]
-    for (const f of firms) {
-      if (!f.bound) ownerDeletePartner(f.id)
-      else if (f.status === 'active' || f.status === 'payment_hold') ownerSql(`select public.admin_set_partner_status('${admin}', '${f.id}', 'suspended', 'Testrest nach Wettlauftest ${f.id.slice(0, 8)}')`)
-    }
-    for (const u of rows(`select id from auth.users u where u.email like 'pt-%@movenow.test' and u.id <> '${admin}'
-      and not exists (select 1 from public.partner_members m join public.partners p on p.id = m.partner_id where m.user_id = u.id and p.name = 'Testabdeckung GmbH')`)) {
-      try {
-        ownerSql(`delete from auth.users where id = '${u.id}'`)
-      } catch {
-        // Kunde oder Firmenmitglied mit Journal: bleibt (OPEN_ISSUES S9c-7)
-      }
-    }
-  } catch (e) {
-    console.warn('Aufräumen unvollständig:', (e as Error).message.slice(0, 200))
-  }
-}
-
-afterAll(() => {
-  sweep(adm)
-  try {
-    ownerSql(`delete from auth.users where id = '${adm}'`)
-  } catch {
-    // admin hat Audit-Einträge: bleibt
-  }
-})
+afterAll(() => sweepTestResidue(adm, true)) // admin hat Audit-Einträge und bleibt meist stehen
 
 describe('Nebenläufigkeit', () => {
   it(`${N} parallele Annahmen = 1; Annahme gegen Rücknahme = genau eine`, async () => {
     // erst Admin anlegen und Reste früherer Läufe sperren/löschen, dann die Fixtures dieses Laufs
     ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
-    sweep(adm)
+    sweepTestResidue(adm)
     const setup = `begin; ${insertUsers([cust, cust2, ...pu])}
       ${pu.map((u, i) => firm(u, `w${i}`, 'active', adm)).join(' ')}
       ${request(R1, cust)} ${request(R2, cust2)} commit;`

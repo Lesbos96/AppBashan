@@ -28,7 +28,7 @@ export default defineConfig({
           globalSetup: ['tests/support/dev-guard-setup.ts'],
           fileParallelism: false,
           testTimeout: 30_000,
-          // Das Aufräumen der Wettlauftests (sweep, ein CLI-Aufruf je Firma und Nutzer) brauchte bei langsamer Management-API über 180 s.
+          // Das Aufräumen der Wettlauftests (`sweepTestResidue`, ein CLI-Aufruf) ist schnell; die Reserve bleibt für langsame Management-API.
           hookTimeout: 480_000,
         },
       },

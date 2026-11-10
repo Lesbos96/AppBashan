@@ -19,7 +19,10 @@ const RT = (() => {
 })()
 const TOTAL = 68961
 const LATE = 34481 // round_half_up(68961 × 50 %)
-const SOON = "now() + interval '30 minutes'" // Termintag, Terminbeginn noch nicht erreicht (S9h1-1: danach kein Kundenstorno mehr)
+// Termintag (Wiener Kalendertag von now()), Terminbeginn noch nicht erreicht (S9h1-1: danach kein Kundenstorno mehr). Zeitbasis ist die
+// Datenbankuhr desselben Aufrufs: höchstens 30 Minuten voraus, nie über das Ende des Wiener Tages hinaus (sonst kippte der Test nach 23:30 auf 50 %).
+const END_OF_DAY = `(((now() at time zone 'Europe/Vienna')::date + 1)::timestamp at time zone 'Europe/Vienna')`
+const SOON = `now() + least(interval '30 minutes', (${END_OF_DAY} - now()) / 2)`
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId() }
 const USERS = insertUsers(Object.values(U))
@@ -62,8 +65,9 @@ const feeSum = (req: string) => `(select coalesce(sum(fee_cents), 0) from public
 
 describe('cancel_by_customer (T12)', () => {
   it('Stufen frei, 50 %, 100 %, waived: Basis, Gegenbuchung aller Zeilen, Gebührenzeile, Folgen', () => {
-    const [RF, RL, RT2, RW, RQ, RD, RN] = [newId(), newId(), newId(), newId(), newId(), newId(), newId()]
-    const setup = `${BASE} ${accepted(RF, "now() + interval '5 days'")} ${accepted(RL, "now() + interval '24 hours'")} ${accepted(RT2, SOON)} ${accepted(RW, SOON)} ${accepted(RD, "now() + interval '5 days'", true, 'b')} ${accepted(RN, "now() + interval '5 days'", false, 'b')}
+    const [RF, RL, RT2, RW, RQ, RD, RN, RG1, RG2] = [newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()]
+    // Tagesgrenze (Wiener Zeit, unabhängig von der Uhrzeit des Laufs): letzte Sekunde des heutigen Tages = Termintag, erste des morgigen = nicht
+    const setup = `${BASE} ${accepted(RG1, `${END_OF_DAY} - interval '1 second'`, true, 'b')} ${accepted(RG2, END_OF_DAY, true, 'b')} ${accepted(RF, "now() + interval '5 days'")} ${accepted(RL, "now() + interval '24 hours'")} ${accepted(RT2, SOON)} ${accepted(RW, SOON)} ${accepted(RD, "now() + interval '5 days'", true, 'b')} ${accepted(RN, "now() + interval '5 days'", false, 'b')}
       select set_config('app.l_rl', ${LID(RL, 'a')}::text, true);
       update public.service_requests set cancel_fee_waived = true where id = '${RW}';
       select private.set_request_status('${RT2}', 'in_progress', null, 'partner');
@@ -82,6 +86,8 @@ describe('cancel_by_customer (T12)', () => {
       { name: 'Basis 50 %', as: 'service_role', sql: base(RL) },
       { name: 'Basis Termintag', as: 'service_role', sql: base(RT2) },
       { name: 'Basis waived', as: 'service_role', sql: base(RW) },
+      { name: 'Basis letzte Sekunde des Termintags', as: 'service_role', sql: base(RG1) },
+      { name: 'Basis erste Sekunde des Folgetags', as: 'service_role', sql: base(RG2) },
       { name: 'Basis Summe', as: 'service_role', sql: `=(select total_cents from ${basisOf(U.cust, RL)})` },
       { name: 'Basis ohne Stornostufen', as: 'service_role', sql: `perform * from ${basisOf(U.cust, RN)}` },
       { name: 'Basis fremder Kunde', as: 'service_role', sql: `perform * from ${basisOf(U.cust2, RL)}` },
@@ -145,6 +151,8 @@ describe('cancel_by_customer (T12)', () => {
     val(r['Basis 50 %'], String(LATE))
     val(r['Basis Termintag'], String(TOTAL))
     val(r['Basis waived'], '0')
+    val(r['Basis letzte Sekunde des Termintags'], String(TOTAL))
+    val(r['Basis erste Sekunde des Folgetags'], String(LATE))
     val(r['Basis Summe'], String(TOTAL))
     err(r['Basis ohne Stornostufen'], 'terms_missing')
     err(r['Basis fremder Kunde'], 'not_found')
@@ -290,7 +298,7 @@ describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
 
   it('Kundenstorno nur bis Terminbeginn: kurz davor erlaubt (100 %), ab Terminbeginn too_late_use_report_not_done (S9h1-1)', () => {
     const [RE, RP, RA] = [newId(), newId(), newId()]
-    const setup = `${BASE} ${accepted(RE, "now() + interval '1 minute'")} ${accepted(RP, "now() - interval '1 minute'")} ${accepted(RA, "now() - interval '3 hours'")}
+    const setup = `${BASE} ${accepted(RE, `now() + least(interval '1 minute', (${END_OF_DAY} - now()) / 2)`)} ${accepted(RP, "now() - interval '1 minute'")} ${accepted(RA, "now() - interval '3 hours'")}
       select private.set_request_status('${RA}', 'in_progress', null, 'partner');`
     const steps: Step[] = [
       { name: 'Basis kurz vor Termin', as: 'service_role', sql: `=(select fee_base_cents from ${basisOf(U.cust, RE)})` },

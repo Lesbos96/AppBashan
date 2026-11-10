@@ -50,13 +50,15 @@ export function firm(user: string, key: string, status: PStatus, admin: string, 
  * Committete, aktive Testfirma für alle Leistungen und Bezirke: Anfragen der quote-Tests bleiben `requested`/`awaiting_offer`, statt
  * sofort `unmatched` zu werden (S9c: `quote` verteilt beim Speichern). Rückgabe: Aufräumfunktion (Firma ohne Zuordnung, löschbar).
  */
+export const COVER_FIRM = 'Testabdeckung GmbH'
+
 export function committedCoverFirm(): () => void {
   // Reste eines abgebrochenen Laufs entfernen (Name ist eindeutig), dann neu anlegen
-  for (const old of ownerSql(`select id from public.partners where name = 'Testabdeckung GmbH'`)) ownerDeletePartner(String(old.id))
+  for (const old of ownerSql(`select id from public.partners where name = '${COVER_FIRM}'`)) ownerDeletePartner(String(old.id))
   const [adm, u] = [newId(), newId()]
   // Bezirke 17, 18 und 21 bleiben frei: tests/rls/listings.test.ts prüft dort Empfänger und „kein Partner passt“
   const all = `array[${Array.from({ length: 23 }, (_, i) => i + 1).filter((d) => ![17, 18, 21].includes(d)).join(',')}]::smallint[]`
-  ownerSql(`begin; ${insertUsers([adm, u])} ${grantAdmin(adm)} ${register(u, 'cover', { districts: all, name: "'Testabdeckung GmbH'" })}
+  ownerSql(`begin; ${insertUsers([adm, u])} ${grantAdmin(adm)} ${register(u, 'cover', { districts: all, name: `'${COVER_FIRM}'` })}
     select public.admin_approve_partner('${adm}', ${P('cover')}, array['transport','move','clearance','assembly']::public.partner_service[], 'standard_20', null); commit;`)
   const pid = String(ownerSql(`select partner_id from public.partner_members where user_id = '${u}'`)[0]?.partner_id)
   return () => {

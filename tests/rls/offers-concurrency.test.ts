@@ -4,7 +4,8 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
-import { firm, grantAdmin, insertUsers, newId, ownerDeletePartner } from '../support/partner.ts'
+import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
+import { sweepTestResidue } from '../support/sweep.ts'
 
 const adm = newId()
 const cust = newId()
@@ -25,43 +26,12 @@ const listingOf = (u: string, req: string) =>
   `select set_config('app.l', (select l.id::text from public.job_listings l join public.partner_members m on m.partner_id = l.partner_id where l.request_id = '${req}' and m.user_id = '${u}'), true);`
 const sendOffer = (u: string, req: string, amount: number) => `${listingOf(u, req)} ${asPartner(u)} select public.send_offer(current_setting('app.l')::uuid, ${amount}); reset role;`
 
-function sweep(admin: string) {
-  const rows = (q: string) => ownerSql(q) as Record<string, string>[]
-  try {
-    const firms = rows(`select distinct p.id, p.status::text as status,
-        (exists (select 1 from public.assignments a where a.partner_id = p.id) or exists (select 1 from public.partner_offers o where o.partner_id = p.id)) as bound
-      from public.partners p join public.partner_members m on m.partner_id = p.id join auth.users u on u.id = m.user_id
-      where u.email like 'pt-%@movenow.test' and p.name <> 'Testabdeckung GmbH'`) as unknown as { id: string; status: string; bound: boolean }[]
-    for (const f of firms) {
-      if (!f.bound) ownerDeletePartner(f.id)
-      else if (f.status === 'active' || f.status === 'payment_hold') ownerSql(`select public.admin_set_partner_status('${admin}', '${f.id}', 'suspended', 'Testrest nach Wettlauftest ${f.id.slice(0, 8)}')`)
-    }
-    for (const u of rows(`select id from auth.users u where u.email like 'pt-%@movenow.test' and u.id <> '${admin}'
-      and not exists (select 1 from public.partner_members m join public.partners p on p.id = m.partner_id where m.user_id = u.id and p.name = 'Testabdeckung GmbH')`)) {
-      try {
-        ownerSql(`delete from auth.users where id = '${u.id}'`)
-      } catch {
-        // Kunde oder Firmenmitglied mit Journal oder Angebot: bleibt
-      }
-    }
-  } catch (e) {
-    console.warn('Aufräumen unvollständig:', (e as Error).message.slice(0, 200))
-  }
-}
-
-afterAll(() => {
-  sweep(adm)
-  try {
-    ownerSql(`delete from auth.users where id = '${adm}'`)
-  } catch {
-    // admin hat Audit-Einträge: bleibt
-  }
-})
+afterAll(() => sweepTestResidue(adm, true)) // admin hat Audit-Einträge und bleibt meist stehen
 
 describe('Nebenläufigkeit der Festangebote', () => {
   it('4 parallele Angebote = 3; zwei Bestätigungen = eine; Bestätigung gegen Firmensperre ohne Deadlock', async () => {
     ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
-    sweep(adm)
+    sweepTestResidue(adm)
     ownerSql(`begin; ${insertUsers([cust, ...pu])} ${pu.map((u, i) => firm(u, `w${i}`, 'active', adm)).join(' ')}
       ${request(RA)} ${request(RB)} ${request(RC)}
       ${sendOffer(pu[0]!, RB, 150000)} ${sendOffer(pu[1]!, RB, 160000)} ${sendOffer(pu[4]!, RC, 170000)} commit;`)
