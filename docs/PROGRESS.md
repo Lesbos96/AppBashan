@@ -395,6 +395,11 @@ Wird eine Session wegen der Kontextgröße unterbrochen, steht hier „Weiter be
 - Rot `tmp/proof/s9i-2-rot.log` EXIT=1; check 776 Tests EXIT=0; test:e2e 323 grün, 1 rot (`anmelden.spec.ts:12` Desktop, Test gehärtet, danach grün, S9i2-6; ein Lauf vorher `anfrage.spec.ts:45` flaky, gehärtet); test:rls `s9i-2-rls-final.log` 287 Tests in 28 Dateien EXIT=0, 1200 s (uploads 151 s, job-photos 96 s).
 - Abnahme `tmp/proof/s9i-2-abnahme.md` (Fable 5.2): hoch 0, mittel 5 (M1, M2, M3, M5 behoben; M4 S9i2-1), niedrig 10; offen S9i2-1 bis S9i2-6.
 
+## 2026-11-10 · s9i-3 (Branch `s9i-3`, nach `main` gemergt)
+- Kunde im Auftrag: Angebote annehmen (`offer-confirm`), Nachtrag zustimmen/ablehnen (`change-decide`, Belegfotos), Frage nach dem Termin (`complete_job`/`report_not_done`, je mit Bestätigung im gesperrten Sheet), Storno-Stufen in Worten aus dem Snapshot; keine Migration, keine Function geändert (`src/lib/jobs.ts`, `src/screens/auftrag/`). Schließt S9i2-1, S9i2-2, S9i2-3.
+- check 820 Tests EXIT=0 (`s9i-3-check3.log`); test:e2e `s9i-3-e2e2.log` 380 grün, 2 übersprungen, EXIT=0 (Lauf 1 rot: Detail rief `price_revisions` ohne Mock, Standardmock ergänzt); test:rls `s9i-3-rls-final.log` 287 Tests in 28 Dateien EXIT=0, 1113 s; Dauer je Datei `tmp/proof/s9i-3-dauer.md`.
+- Abnahme `tmp/proof/s9i-3-abnahme.md` hoch 0, mittel 3; Kontrollrunde `tmp/proof/s9i-3-kontrolle.md` hoch 0, zwei neue mittlere (Doku-Einträge, Betrags-Locator) behoben; offen S9i3-1 bis S9i3-8 (S9i3-1 Pflicht vor s9i-6).
+
 ## 2026-11-10 · s9i-1 (Branch `s9i-1`, nach `main` gemergt)
 - Buchungsschalter: Migration 0056 (`booking_open` 0/1 in `platform_settings`, `public.booking_open()` security definer, nur true/false); `quote` antwortet bei „zu“ mit 503 `booking_closed` vor Rechnen und Speichern (Anfrage und Miete); ohne Zeile zu (Produktion), Dev offen über `seed.sql`; Zusammenfassung zeigt Hinweis und gesperrten Knopf. Deployt: `quote`.
 - Rot-Beweis `tmp/proof/s9i-1-rot.log` EXIT=1; `booking-open.test.ts` 10 Tests EXIT=0; check 759 Tests EXIT=0; test:e2e 296 Tests EXIT=0 (10,6 min); test:rls Lauf 1 EXIT=1 (Testliste `rls.test.ts`, 30-s-Timeout `uploads.test.ts`), Lauf 2 `s9i-1-rls-final2.log` 287 Tests in 28 Dateien EXIT=0, 983 s.
