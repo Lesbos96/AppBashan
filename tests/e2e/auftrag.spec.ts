@@ -177,7 +177,7 @@ test('Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste', async ({ pa
   expect(detail).toContain(`id=eq.${ID}`)
   expect(detail).toContain('customer_id=eq.u-1')
   expect(detail).not.toContain('select=*')
-  expect(detail).not.toMatch(/fee|commission|inputs/i)
+  expect(detail.replace('cancel_fee_waived', '')).not.toMatch(/fee|commission|inputs/i) // einzige erlaubte Spalte mit „fee“: das Storno-Flag
 })
 
 test('Beschriftung nennt den Betrag und wechselt mit ihm', async ({ page }) => {

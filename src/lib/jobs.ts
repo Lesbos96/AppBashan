@@ -25,7 +25,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
 
 const CODES: Record<string, JobErrorKind> = {
   amount_changed: 'changed',
-  revision_changed: 'changed',
+  revision_changed: 'closed',
   invalid_transition: 'closed',
   not_found: 'closed',
   change_not_valid: 'closed',
@@ -114,7 +114,7 @@ export async function loadReceipts(requestId: string, photoIds: string[]): Promi
   const data = await invoke('job-photo', { requestId })
   return (Array.isArray(data) ? data : []).flatMap((p: unknown) => {
     const r = p && typeof p === 'object' ? (p as Record<string, unknown>) : {}
-    return typeof r.id === 'string' && photoIds.includes(r.id) && typeof r.url === 'string' && r.url.startsWith('https://') ? [r.url] : []
+    return typeof r.id === 'string' && r.kind === 'receipt' && photoIds.includes(r.id) && typeof r.url === 'string' && r.url.startsWith('https://') ? [r.url] : []
   })
 }
 

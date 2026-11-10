@@ -17,7 +17,7 @@ import { Nachtrag } from './auftrag/Nachtrag'
 import { Termin } from './auftrag/Termin'
 import { dayText } from './anfrage/format'
 
-const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
+const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, cancel_fee_waived, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const windows: Record<string, string> = { morning: '8 bis 11 Uhr', midday: '11 bis 14 Uhr', afternoon: '14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
 
@@ -109,7 +109,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
           Du hast gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
         </p>
       )}
-      {r.status === 'accepted' && !started && <Cancel id={r.id} storno={snapshotStorno(r.price_revisions?.snapshot)} onDone={retry} />}
+      {r.status === 'accepted' && !started && !r.not_done_reported_at && <Cancel id={r.id} storno={r.cancel_fee_waived ? [] : snapshotStorno(r.price_revisions?.snapshot)} onDone={() => done()} />}
     </div>
   )
 }

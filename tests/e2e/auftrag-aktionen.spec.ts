@@ -26,6 +26,7 @@ type State = {
   offers: unknown[]
   change: unknown | null
   terms?: unknown
+  waived?: boolean
   calls: { name: string; body: unknown }[]
   answers: Record<string, Answer[]>
   /** Statuswechsel nach einer erfolgreichen Antwort */
@@ -52,6 +53,7 @@ async function mock(page: Page, s: State) {
     termin_at: s.termin,
     time_window: 'morning',
     not_done_reported_at: s.reported,
+    cancel_fee_waived: s.waived ?? false,
     from_address: 'Neubaugasse 12, 1070 Wien',
     to_address: 'Praterstraße 30, 1020 Wien',
     created_at: '2026-11-05T10:00:00Z',
@@ -286,6 +288,40 @@ test.describe('Frage nach dem Termin', () => {
     const sheet = page.getByRole('dialog', { name: 'Auftrag stornieren' })
     await expect(sheet.getByText('Kostenlos', { exact: true })).toBeVisible()
     await expect(sheet.getByText(/Stunden vor dem Termin/)).toHaveCount(0)
+  })
+
+  test('Folgeanfrage (Storno kostenlos): Betrag „Kostenlos“, kein Stufentext', async ({ page }) => {
+    await mock(page, state({ waived: true }))
+    await page.route('**/functions/v1/cancel-customer', (r) => (r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors }) : r.fulfill({ headers: cors, json: { cancelFeeCents: 0 } })))
+    await open(page)
+    await page.getByRole('button', { name: 'Stornieren' }).click()
+    const sheet = page.getByRole('dialog', { name: 'Auftrag stornieren' })
+    await expect(sheet.getByText('Kostenlos', { exact: true })).toBeVisible()
+    await expect(sheet.getByText(/Stunden vor dem Termin/)).toHaveCount(0)
+  })
+
+  test('gemeldet, Termin noch in der Zukunft: kein Storno-Knopf', async ({ page }) => {
+    await mock(page, state({ reported: '2026-01-02T08:00:00Z' }))
+    await open(page)
+    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Stornieren' })).toHaveCount(0)
+  })
+
+  test('Fehler im Sheet, schließen und neu öffnen: Fehler ist weg, Aktion geht', async ({ page }) => {
+    const s = started()
+    s.answers['complete_job'] = [{ status: 500, json: { message: 'retry' } }]
+    await mock(page, s)
+    await open(page)
+    await page.getByRole('button', { name: 'Ja, er hat stattgefunden' }).click()
+    const sheet = page.getByRole('dialog', { name: 'Auftrag bestätigen' })
+    await sheet.getByRole('button', { name: 'Ja, bestätigen' }).click()
+    await expect(sheet.getByRole('alert')).toBeVisible()
+    await sheet.getByRole('button', { name: 'Doch nicht' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Ja, er hat stattgefunden' }).click()
+    await expect(page.getByRole('dialog', { name: 'Auftrag bestätigen' }).getByRole('alert')).toHaveCount(0)
+    await page.getByRole('dialog', { name: 'Auftrag bestätigen' }).getByRole('button', { name: 'Ja, bestätigen' }).click()
+    await expect(page.getByRole('heading', { name: 'Hat der Auftrag stattgefunden?' })).toHaveCount(0)
   })
 
   test('nach Terminbeginn: Frage statt Storno-Knopf', async ({ page }) => {

@@ -11,6 +11,11 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<JobError | null>(null)
 
+  const close = () => {
+    setError(null)
+    onClose()
+  }
+
   async function confirm() {
     setBusy(true)
     setError(null)
@@ -30,7 +35,7 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
   }
 
   return (
-    <Sheet open={open} onClose={() => (setError(null), onClose())} locked={busy} title={title} detents={[0.6]}>
+    <Sheet open={open} onClose={close} locked={busy} title={title} detents={[0.6]}>
       <div className="flex flex-col gap-4 pt-2">
         {children}
         {error && (
@@ -39,7 +44,7 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
           </p>
         )}
         {error && !retryable(error.kind) ? (
-          <Button variant="plain" onClick={onClose}>
+          <Button variant="plain" onClick={close}>
             Schließen
           </Button>
         ) : (
@@ -47,7 +52,7 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
             <Button disabled={busy} onClick={() => void confirm()}>
               {label}
             </Button>
-            <Button variant="plain" disabled={busy} onClick={onClose}>
+            <Button variant="plain" disabled={busy} onClick={close}>
               Doch nicht
             </Button>
           </>

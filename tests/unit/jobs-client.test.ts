@@ -114,7 +114,7 @@ describe('Nachtrag', () => {
 
   it.each([
     [409, 'amount_changed', 'changed'],
-    [409, 'revision_changed', 'changed'],
+    [409, 'revision_changed', 'closed'],
     [409, 'change_not_valid', 'closed'],
     [409, 'invalid_transition', 'closed'],
     [409, 'partner_not_active', 'gone'],
@@ -195,7 +195,6 @@ describe('snapshotStorno (Stufen aus dem Snapshot)', () => {
     ['negativ', { terms: { ...terms, cancel_free_hours: -1 } }],
     ['Text statt Zahl', { terms: { ...terms, cancel_free_hours: '48' } }],
     ['Bruch', { terms: { ...terms, cancel_full_days_before: 0.5 } }],
-    ['Folgeanfrage kostenlos', { terms: { ...terms, cancel_fee_waived: true } }],
   ])('%s: kein Text', (_name, snapshot) => {
     expect(snapshotStorno(snapshot)).toEqual([])
   })

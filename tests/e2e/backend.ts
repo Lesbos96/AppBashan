@@ -82,6 +82,9 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   await context.route('**/rest/v1/rpc/booking_open**', (r) => reply(r, backend.bookingOpen))
   // Ohne eigenen Mock hat das Konto keine Anfragen.
   await context.route('**/rest/v1/service_requests**', (r) => rest(r, []))
+  // Auftrags-Detail: ohne eigenen Mock gibt es weder offenen Nachtrag noch Angebote.
+  await context.route('**/rest/v1/price_revisions**', (r) => rest(r, []))
+  await context.route('**/rest/v1/rpc/my_request_offers**', (r) => reply(r, []))
   return backend
 }
 
