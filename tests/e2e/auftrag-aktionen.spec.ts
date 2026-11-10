@@ -34,7 +34,7 @@ type State = {
 }
 
 const state = (over: Partial<State> = {}): State => ({ status: 'accepted', termin: FUTURE, reported: null, offers: [], change: null, calls: [], answers: {}, after: {}, ...over })
-const offer = (over: object = {}) => ({ offer_id: OFFER, amount_cents: 68961, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte', ...over })
+const offer = (over: object = {}) => ({ offer_id: OFFER, amount_cents: 72345, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte', ...over })
 const change = (over: object = {}) => ({
   id: REV,
   total_cents: 80000,
@@ -116,7 +116,7 @@ test.describe('Angebote', () => {
     const s = offered()
     await mock(page, s)
     await open(page)
-    const money = page.getByText(/^689,61.€$/).first()
+    const money = page.getByText(/^723,45.€$/)
     await expect(money).toBeVisible()
     expect(await money.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap')
     await expect(page.getByText('Muster Transporte').first()).toBeVisible()
@@ -126,13 +126,13 @@ test.describe('Angebote', () => {
     await page.getByRole('button', { name: 'Angebot von Muster Transporte annehmen' }).focus()
     await page.keyboard.press('Enter')
     const sheet = page.getByRole('dialog', { name: 'Angebot annehmen' })
-    const confirm = sheet.getByRole('button', { name: /^Für 689,61.€ annehmen$/ })
+    const confirm = sheet.getByRole('button', { name: /^Für 723,45.€ annehmen$/ })
     expect((await confirm.boundingBox())!.height).toBeGreaterThanOrEqual(44)
     await confirm.focus()
     await page.keyboard.press('Enter')
     await expect(page.getByText('Angebote', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('list', { name: 'Verlauf' }).getByRole('listitem').nth(1)).toHaveAttribute('aria-current', 'step')
-    expect(body(s, 'offer-confirm')).toEqual([{ offerId: OFFER, shownAmountCents: 68961 }])
+    expect(body(s, 'offer-confirm')).toEqual([{ offerId: OFFER, shownAmountCents: 72345 }])
     expect(errors).toEqual([])
   })
 
@@ -303,7 +303,7 @@ test.describe('Frage nach dem Termin', () => {
   test('gemeldet, Termin noch in der Zukunft: kein Storno-Knopf', async ({ page }) => {
     await mock(page, state({ reported: '2026-01-02T08:00:00Z' }))
     await open(page)
-    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: /Wir prüfen ihn/ })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Stornieren' })).toHaveCount(0)
   })
 
@@ -319,6 +319,7 @@ test.describe('Frage nach dem Termin', () => {
     await sheet.getByRole('button', { name: 'Doch nicht' }).click()
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await page.getByRole('button', { name: 'Ja, er hat stattgefunden' }).click()
+    await expect(page.getByRole('dialog', { name: 'Auftrag bestätigen' })).toBeVisible()
     await expect(page.getByRole('dialog', { name: 'Auftrag bestätigen' }).getByRole('alert')).toHaveCount(0)
     await page.getByRole('dialog', { name: 'Auftrag bestätigen' }).getByRole('button', { name: 'Ja, bestätigen' }).click()
     await expect(page.getByRole('heading', { name: 'Hat der Auftrag stattgefunden?' })).toHaveCount(0)
@@ -356,7 +357,7 @@ test.describe('Frage nach dem Termin', () => {
     await open(page)
     await page.getByRole('button', { name: 'Nein, er hat nicht stattgefunden' }).click()
     await page.getByRole('dialog', { name: 'Nicht stattgefunden' }).getByRole('button', { name: 'Meldung senden' }).click()
-    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: /Wir prüfen ihn/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Hat der Auftrag stattgefunden?' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Stornieren' })).toHaveCount(0)
     expect(body(s, 'report_not_done')).toEqual([{ p_request: ID }])
@@ -366,7 +367,7 @@ test.describe('Frage nach dem Termin', () => {
   test('schon gemeldet: nur der Hinweis', async ({ page }) => {
     await mock(page, started({ reported: '2026-01-02T08:00:00Z' }))
     await open(page)
-    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: /Wir prüfen ihn/ })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Ja, er hat stattgefunden' })).toHaveCount(0)
   })
 
@@ -411,7 +412,7 @@ for (const width of [390, 430, 1280]) {
     await open(page)
     await expect(page.getByRole('button', { name: /annehmen$/ })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-    const m = await page.getByText(/^689,61.€$/).first().boundingBox()
+    const m = await page.getByText(/^723,45.€$/).boundingBox()
     expect(m!.height).toBeLessThan(30)
   })
 }

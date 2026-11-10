@@ -137,7 +137,7 @@ test('zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt', async ({
   await mock(page, state)
   await open(page)
   await page.getByRole('button', { name: 'Stornieren' }).click()
-  await expect(page.getByRole('dialog', { name: 'Auftrag stornieren' }).getByRole('alert')).toContainText('Der Termin hat schon begonnen')
+  await expect(page.getByRole('dialog', { name: 'Auftrag stornieren' }).getByRole('alert')).toContainText(/Der Termin hat schon begonnen.*Nein, er hat nicht stattgefunden/)
   await expect(page.getByRole('button', { name: CONFIRM })).toHaveCount(0)
   expect(state.status).toBe('accepted')
 })

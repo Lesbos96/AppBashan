@@ -130,6 +130,7 @@ describe('Nachtrag', () => {
         { id: ID, kind: 'receipt', url: 'https://x.test/a.jpg' },
         { id: REV, kind: 'receipt', url: 'https://x.test/b.jpg' },
         { id: ID, kind: 'receipt', url: 'http://x.test/c.jpg' },
+        { id: ID, kind: 'job', url: 'https://x.test/d.jpg' },
       ],
       error: null,
     })
