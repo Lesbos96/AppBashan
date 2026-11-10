@@ -8,7 +8,7 @@ import { Icon } from './Icon'
  * `detents` sind Anteile der Fensterhöhe, aufsteigend; gezogen wird am Griff.
  * Unter die unterste Stufe ziehen, Esc oder Tippen auf den Hintergrund schließt.
  */
-export function Sheet({ open, onClose, title, detents = [0.6, 0.92], children }: { open: boolean; onClose: () => void; title: string; detents?: number[]; children: ReactNode }) {
+export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = false, children }: { open: boolean; onClose: () => void; title: string; detents?: number[]; /** Solange gesperrt, schließt weder Esc, Hintergrund, Ziehen noch das Symbol (laufende Aktion). */ locked?: boolean; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const controls = useDragControls()
   // animate() ist imperativ und folgt MotionConfig nicht
@@ -35,6 +35,10 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], children }:
   }, [open])
 
   async function dismiss() {
+    if (locked) {
+      animate(y, stops[0] ?? 0, move)
+      return
+    }
     await animate(y, height, move)
     onClose()
   }
@@ -75,7 +79,7 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], children }:
           <h2 tabIndex={-1} autoFocus className="m-0 truncate text-headline outline-none">
             {title}
           </h2>
-          <button type="button" aria-label="Schließen" onClick={() => void dismiss()} className="press absolute top-0 right-2 flex size-11 items-center justify-center">
+          <button type="button" aria-label="Schließen" disabled={locked} onClick={() => void dismiss()} className="press absolute top-0 right-2 flex size-11 items-center justify-center">
             <span className="flex size-8 items-center justify-center rounded-full bg-fill text-text-secondary">
               <Icon name="close" width={16} height={16} />
             </span>

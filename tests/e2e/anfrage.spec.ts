@@ -58,7 +58,8 @@ test('Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter
   await page.getByRole('button', { name: 'Zur Zusammenfassung' }).focus()
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/montage\/zusammenfassung$/)
-  await expect(page.getByText('Vormittag')).toBeVisible()
+  // Beim Seitenübergang steht die Termin-Seite kurz noch im DOM (Shell, AnimatePresence): die neue Seite ist die letzte
+  await expect(page.getByText('Vormittag').last()).toBeVisible()
 })
 
 test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung', async ({ page }) => {

@@ -499,5 +499,15 @@ Kontrollrunde S9h-1 (`tmp/proof/s9h-1-kontrolle.md`): H1 behoben, hoch 0; N1 (`s
 | S9i1-4 | niedrig | Beks | N6: Kein Skript zum Umschalten (`admin:call` kennt `admin_set_setting` nicht, es braucht service_role). Weg über die SQL-Konsole steht in GOLIVE 29; ein Skript nur auf Wunsch |
 | S9i1-5 | niedrig | Hinweis | Der Schalter ist kein Notstopp: Weitervermittlung (`reissue_request`), Angebotsannahme und Nachträge laufender Aufträge bleiben bei „zu“ möglich. Keine `shots`/Reviewer-Bildsicht für den Hinweistext in s9i-1; Position per `boundingBox()` in `anfrage.spec.ts` (390, 430, 1280 px) gemessen |
 
+## s9i-2 · Aufträge-Detail und Storno (Berater `tmp/proof/s9i-2-abnahme.md`, hoch 0, mittel 5: M1, M2, M3, M5 behoben; M4 hier)
+| Nr. | Stufe | Ziel | Befund |
+|---|---|---|---|
+| S9i2-1 | mittel | s9i-3 | M4: Das Storno-Sheet nennt nur den Betrag, nicht die Stufe in Worten und nicht, dass der Partner ihn berechnet. `termsText` mit `loadTerms()` wäre falsch (aktuelle Werte); richtig sind die Bedingungen aus dem Snapshot der Revision (R18). `parseSnapshot` verwirft `terms`; ein Parser für die Bedingungen im Snapshot und der Text gehören in s9i-3 |
+| S9i2-2 | niedrig | später | N5: Der Storno-Knopf erscheint bei `accepted` auch nach Terminbeginn und bei laufender Prüfung; die Absage kommt erst im Sheet (Server entscheidet). `termin_at`, `not_done_reported_at` ausblenden-Logik in s9i-3 mit „Nicht stattgefunden“ |
+| S9i2-3 | niedrig | s9i-3 | N1: Der Text bei „Termin hat begonnen“ verweist nicht auf „Nicht stattgefunden“, solange es diese Funktion in der App nicht gibt (s9i-3) |
+| S9i2-4 | niedrig | später | N7: Bei abgelaufener Anmeldung im Sheet nur „Schließen“, kein Weg zur Anmeldung. N6: 409 `cancel_fee_changed` ohne lesbaren Betrag endet als `unavailable` (sicher, aber ohne neue Vorschau). N8: Nach dem Storno nennt das Detail die gebuchten Stornokosten nicht (braucht eine Quelle am Server) |
+| S9i2-5 | niedrig | später | N3: Fokus nach Erfolg fällt auf `body`, „Du hast den Auftrag storniert.“ ist keine Live-Region; kein `shots`/Reviewer-Bildsicht in s9i-2 (Maße per `boundingBox()` bei 390, 430, 1280 px) |
+| S9i2-6 | niedrig | später | Wettlauf in der App: Meldet sich jemand ab, solange die Aufträge-Seite noch ausblendet (Seitenübergang), leitet sie zur Anmeldung um statt auf dem Profil zu bleiben (`anmelden.spec.ts:12` auf Desktop, nach s9i-2 deterministisch rot; der Test wartet jetzt auf ein einziges `main`). Ursache nicht mit einer Änderung von s9i-2 belegt (Router, Prefetch-Chunk verschieben nur das Timing). Lösung später: Aufträge-Seite leitet nur beim ersten Laden um |
+
 ## Rechtsfragen (S9-Konzept Abschnitt 11)
 - **Rechtsgrundlage der Adress-Geokodierung über ORS (S9a-3, 2026-11-02):** Einwilligung oder Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)? Eine Einwilligung, ohne die nicht gebucht werden kann, ist möglicherweise nicht freiwillig. Stand der App: Adresssuche und Buchung nur mit Einwilligung (Entscheidung S9a-3 Teil 2, nicht ändern). Frist: vor dem Buchungsbutton (S9i).

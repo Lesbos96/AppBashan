@@ -34,6 +34,8 @@ test('Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neulade
 
   await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByRole('link', { name: 'Profil' }).click()
   await expect(page.getByText(EMAIL)).toBeVisible()
+  // Seitenübergang fertig: die ausblendende Aufträge-Seite sähe sonst die Abmeldung und leitete zur Anmeldung um (OPEN_ISSUES S9i2-6)
+  await expect(page.locator('main')).toHaveCount(1)
   await page.getByRole('button', { name: 'Abmelden' }).press('Enter')
   await expect(page.getByRole('heading', { name: 'Noch kein Konto' })).toBeVisible()
   expect(calls.logout).toBe(1)

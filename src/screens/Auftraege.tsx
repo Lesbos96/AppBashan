@@ -4,6 +4,7 @@ import { NavBar } from '../components/Bars'
 import { Segmented, StatusChip } from '../components/Controls'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, Loading } from '../components/States'
+import { type Chip, states, titles } from '../lib/orders'
 import { useLoad } from '../lib/prices'
 import { parseSnapshot, priceLabel } from '../lib/quote'
 import { useSession } from '../lib/session'
@@ -11,23 +12,7 @@ import { supabase } from '../lib/supabase'
 import { shortDayText } from './anfrage/format'
 
 const COLUMNS = 'id, service, status, preferred_date, from_address, to_address, created_at, price_revisions!service_requests_current_revision(snapshot)'
-const titles = { transport: 'Möbeltransport', move: 'Umzug', clearance: 'Entrümpelung', assembly: 'Montage' }
 const icons = { transport: 'sofa', move: 'boxes', clearance: 'basket', assembly: 'drill' }
-type Chip = { chip: 'requested' | 'review' | 'confirmed' | 'done'; label: string; active: boolean }
-const states: Record<string, Chip> = {
-  requested: { chip: 'requested', label: 'Angefragt', active: true },
-  awaiting_offer: { chip: 'review', label: 'Wartet auf Angebot', active: true },
-  offered: { chip: 'review', label: 'Angebot liegt vor', active: true },
-  accepted: { chip: 'confirmed', label: 'Bestätigt', active: true },
-  in_progress: { chip: 'confirmed', label: 'Läuft', active: true },
-  completed: { chip: 'done', label: 'Erledigt', active: false },
-  withdrawn: { chip: 'done', label: 'Zurückgezogen', active: false },
-  expired: { chip: 'done', label: 'Abgelaufen', active: false },
-  declined: { chip: 'done', label: 'Abgelehnt', active: false },
-  unmatched: { chip: 'done', label: 'Kein Partner gefunden', active: false },
-  cancelled_by_customer: { chip: 'done', label: 'Storniert', active: false },
-  cancelled_by_partner: { chip: 'done', label: 'Storniert', active: false },
-}
 
 type Item = { id: string; icon: string; title: string; line: string; chip: Chip; price: string | null }
 const first = (a: string | null) => a?.split(',')[0]?.trim()
@@ -93,7 +78,8 @@ function Liste({ userId }: { userId: string }) {
           {shown.length === 0 && <p className="m-0 py-8 text-center text-body text-text-secondary">Hier ist nichts.</p>}
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {shown.map((i) => (
-              <li key={i.id} className="flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
+              <li key={i.id}>
+                <Link to={`/auftraege/${i.id}`} className="press flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
                 <span className="flex items-start gap-3">
                   <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-icon-tile bg-tint text-accent">
                     <Icon name={i.icon} width={22} height={22} />
@@ -107,6 +93,7 @@ function Liste({ userId }: { userId: string }) {
                   <StatusChip status={i.chip.chip}>{i.chip.label}</StatusChip>
                   {i.price ? <span className="whitespace-nowrap text-headline tabular-nums">{i.price}</span> : <span className="text-subhead text-text-secondary">Preis nach Prüfung</span>}
                 </span>
+                </Link>
               </li>
             ))}
           </ul>

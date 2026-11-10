@@ -1,0 +1,82 @@
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
+import { formatEuro } from './money'
+import { supabase } from './supabase'
+
+export type CancelErrorKind = 'fee_changed' | 'too_late' | 'under_review' | 'closed' | 'retry' | 'unauthorized' | 'offline' | 'unavailable'
+
+/** `cancelFeeCents` nur bei `fee_changed`: der Betrag, den der Server jetzt verlangt. */
+export class CancelError extends Error {
+  constructor(
+    readonly kind: CancelErrorKind,
+    readonly cancelFeeCents?: number,
+  ) {
+    super(kind)
+  }
+}
+
+export const cancelErrorText: Record<CancelErrorKind, string> = {
+  fee_changed: 'Die Stornokosten haben sich geändert. Prüfe den Betrag und bestätige erneut.',
+  too_late: 'Der Termin hat schon begonnen. Stornieren geht nicht mehr.',
+  under_review: 'Für diesen Auftrag läuft eine Prüfung. Stornieren geht gerade nicht.',
+  closed: 'Dieser Auftrag lässt sich nicht mehr stornieren.',
+  retry: 'Das hat nicht geklappt. Versuche es gleich noch einmal.',
+  unauthorized: 'Deine Anmeldung ist abgelaufen. Melde dich neu an.',
+  offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut.',
+  unavailable: 'Das hat nicht geklappt. Versuche es gleich noch einmal.',
+}
+
+const CODES: Record<string, CancelErrorKind> = {
+  too_late_use_report_not_done: 'too_late',
+  under_review: 'under_review',
+  invalid_transition: 'closed',
+  not_found: 'closed',
+  retry: 'retry',
+  unauthorized: 'unauthorized',
+}
+
+const cents = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
+
+async function call(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.functions.invoke('cancel-customer', { body })
+  if (!error) return data && typeof data === 'object' ? (data as Record<string, unknown>) : {}
+  if (error instanceof FunctionsFetchError) throw new CancelError('offline')
+  if (error instanceof FunctionsHttpError) {
+    const d: unknown = await error.context.json().catch(() => null)
+    const r = d && typeof d === 'object' ? (d as Record<string, unknown>) : {}
+    if (error.context.status === 409 && r.error === 'cancel_fee_changed' && cents(r.cancelFeeCents)) throw new CancelError('fee_changed', r.cancelFeeCents)
+    const kind = typeof r.error === 'string' ? CODES[r.error] : undefined
+    if (kind) throw new CancelError(kind)
+  }
+  throw new CancelError('unavailable')
+}
+
+/** Stornokosten, die der Server jetzt verlangen würde. Ein unlesbarer Betrag ist ein Fehler, nie „kostenlos“. */
+export async function previewCancel(requestId: string): Promise<number> {
+  const { cancelFeeCents } = await call({ requestId, preview: true })
+  if (!cents(cancelFeeCents)) throw new CancelError('unavailable')
+  return cancelFeeCents
+}
+
+/** Storno mit genau dem Betrag, den der Kunde gesehen hat; bei anderer Stufe antwortet der Server mit 409. */
+export async function cancelRequest(requestId: string, shownFeeCents: number): Promise<void> {
+  await call({ requestId, shownFeeCents })
+}
+
+export const feeText = (feeCents: number) => (feeCents === 0 ? 'Kostenlos' : formatEuro(feeCents))
+
+const STEPS = ['Angefragt', 'Bestätigt', 'Läuft', 'Erledigt']
+const CURRENT: Record<string, number> = { requested: 0, awaiting_offer: 0, offered: 0, accepted: 1, in_progress: 2, completed: 3 }
+const END: Record<string, string> = {
+  cancelled_by_customer: 'Du hast den Auftrag storniert.',
+  cancelled_by_partner: 'Der Partner hat den Auftrag storniert.',
+  withdrawn: 'Du hast die Anfrage zurückgezogen.',
+  expired: 'Die Anfrage ist abgelaufen.',
+  declined: 'Die Anfrage wurde abgelehnt.',
+  unmatched: 'Wir haben keinen passenden Partner gefunden.',
+}
+
+/** Verlauf aus dem Status: vier Schritte mit dem aktuellen, Endzustände nur als Text. */
+export function timeline(status: string): { steps: string[]; current: number } | { end: string } {
+  const current = CURRENT[status]
+  return current !== undefined ? { steps: STEPS, current } : { end: END[status] ?? 'Der Auftrag wird geprüft.' }
+}
