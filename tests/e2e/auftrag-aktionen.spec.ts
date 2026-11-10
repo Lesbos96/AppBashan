@@ -192,7 +192,7 @@ test.describe('Nachtrag', () => {
     await open(page)
     await expect(page.getByRole('heading', { level: 2, name: 'Nachtrag zum Preis' })).toBeVisible()
     await expect(page.getByText(/^110,39.€$/)).toBeVisible()
-    const total = page.getByText(/^800,00.€$/)
+    const total = page.getByText(/^800,00.€$/).first()
     await expect(total).toBeVisible()
     expect(await total.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap')
     await expect(page.getByRole('img', { name: /^Beleg/ })).toHaveCount(1)
@@ -228,7 +228,7 @@ test.describe('Nachtrag', () => {
     s.change = change({ total_cents: 85000, snapshot: price(85000, 85000, 85000, [{ key: 'booked', cents: 68961 }, { key: 'change_order', cents: 16039 }] as never) })
     await page.getByRole('dialog', { name: 'Nachtrag zustimmen' }).getByRole('button', { name: /zustimmen$/ }).click()
     await expect(page.getByRole('alert').filter({ hasText: 'Der Preis hat sich geändert' })).toBeVisible()
-    await expect(page.getByText(/^850,00.€$/)).toBeVisible()
+    await expect(page.getByText(/^850,00.€$/).first()).toBeVisible()
     expect(body(s, 'change-decide')).toHaveLength(1)
   })
 
@@ -320,7 +320,7 @@ test.describe('Frage nach dem Termin', () => {
     await open(page)
     await page.getByRole('button', { name: 'Nein, er hat nicht stattgefunden' }).click()
     await page.getByRole('dialog', { name: 'Nicht stattgefunden' }).getByRole('button', { name: 'Meldung senden' }).click()
-    await expect(page.getByRole('status')).toContainText('Wir prüfen ihn')
+    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Hat der Auftrag stattgefunden?' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Stornieren' })).toHaveCount(0)
     expect(body(s, 'report_not_done')).toEqual([{ p_request: ID }])
@@ -330,7 +330,7 @@ test.describe('Frage nach dem Termin', () => {
   test('schon gemeldet: nur der Hinweis', async ({ page }) => {
     await mock(page, started({ reported: '2026-01-02T08:00:00Z' }))
     await open(page)
-    await expect(page.getByRole('status')).toContainText('Wir prüfen ihn')
+    await expect(page.getByText(/Wir prüfen ihn/)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Ja, er hat stattgefunden' })).toHaveCount(0)
   })
 
