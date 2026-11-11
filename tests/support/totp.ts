@@ -15,6 +15,13 @@ export const withToken = (jwt: string): Db =>
 
 export const jwtAal = (jwt: string): string => (JSON.parse(Buffer.from(jwt.split('.')[1]!, 'base64url').toString()) as { aal: string }).aal
 
+/** Code erst erzeugen, wenn im 30-s-Fenster noch mindestens 6 s bleiben, sonst auf das nächste Fenster warten (Uhrabweichung, Laufzeit der Anfrage). */
+export async function freshCode(totp: OTPAuth.TOTP): Promise<string> {
+  const left = 30 - (Math.floor(Date.now() / 1000) % 30)
+  if (left < 6) await new Promise((resolve) => setTimeout(resolve, (left + 1) * 1000))
+  return totp.generate()
+}
+
 export async function tryAal2User(tag: string): Promise<{ user: Aal2User } | { reason: string }> {
   const base: TestUser = await makeUser(tag)
   const enroll = await base.db.auth.mfa.enroll({ factorType: 'totp', friendlyName: tag })
@@ -29,7 +36,7 @@ export async function tryAal2User(tag: string): Promise<{ user: Aal2User } | { r
   for (let attempt = 0; attempt < 2; attempt++) {
     const challenge = await base.db.auth.mfa.challenge({ factorId: enroll.data.id })
     if (challenge.error) throw challenge.error
-    const verify = await base.db.auth.mfa.verify({ factorId: enroll.data.id, challengeId: challenge.data.id, code: totp.generate() })
+    const verify = await base.db.auth.mfa.verify({ factorId: enroll.data.id, challengeId: challenge.data.id, code: await freshCode(totp) })
     await pause()
     if (!verify.error) {
       return { user: { id: base.id, aal1: withToken(base.jwt), aal2: withToken(verify.data.access_token), jwt1: base.jwt, jwt2: verify.data.access_token } }

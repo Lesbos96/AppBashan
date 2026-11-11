@@ -7,9 +7,14 @@ import { Card } from '../components/Surfaces'
 import { loadPartner, statusInfo, type Partner as Firm } from '../lib/partner'
 import { useLoad } from '../lib/prices'
 import { useSession } from '../lib/session'
+import { Dokumente } from './partner/Dokumente'
+import { MfaGate } from './partner/Mfa'
 import { Registrierung } from './partner/Registrierung'
 
-/** Partner-Portal 1a (s9i-5a): ohne Firma die Registrierung, mit Firma der Status. Der Rest des Portals folgt nach der MFA-Einrichtung (5b). */
+// Status, in denen die Firma Dokumente hochladen darf (wie `partner_document_slot` in 0024); dahinter folgt ab s9i-6 das übrige Portal
+const ACCESS: Firm['status'][] = ['pending', 'active', 'payment_hold']
+
+/** Partner-Portal (s9i-5a, 5b): ohne Firma die Registrierung, mit Firma der Status, dahinter die Schranke (aal2) und die Dokumente. */
 export function Partner() {
   const session = useSession()
   return (
@@ -43,17 +48,21 @@ function Firma({ userId }: { userId: string }) {
 function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
   const info = statusInfo[firm.status]
   return (
-    <div className="flex flex-col gap-4 px-5 pt-2 pb-8">
-      <Card className="flex flex-col gap-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <h2 ref={(el) => (focus ? el?.focus() : undefined)} tabIndex={-1} className="m-0 min-w-0 break-words text-headline outline-none">
-            {firm.name}
-          </h2>
-          <StatusChip status={info.chip}>{info.label}</StatusChip>
-        </div>
-        <p className="m-0 text-body">{info.text}</p>
-        {firm.status_reason && <p className="m-0 break-words text-body text-text-secondary">Begründung: {firm.status_reason}</p>}
-      </Card>
-    </div>
+    <>
+      <div className="flex flex-col gap-4 px-5 pt-2 pb-4">
+        <Card className="flex flex-col gap-3 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <h2 ref={(el) => (focus ? el?.focus() : undefined)} tabIndex={-1} className="m-0 min-w-0 break-words text-headline outline-none">
+              {firm.name}
+            </h2>
+            <StatusChip status={info.chip}>{info.label}</StatusChip>
+          </div>
+          <p className="m-0 text-body">{info.text}</p>
+          {firm.status_reason && <p className="m-0 break-words text-body text-text-secondary">Begründung: {firm.status_reason}</p>}
+        </Card>
+      </div>
+      {/* Abgelehnte und gesperrte Firmen haben dahinter nichts zu sehen; alle anderen brauchen aal2 (zweiter Faktor) für die Dokumente */}
+      {ACCESS.includes(firm.status) && <MfaGate>{(recheck) => <Dokumente partnerId={firm.id} onDenied={recheck} />}</MfaGate>}
+    </>
   )
 }

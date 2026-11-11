@@ -5,15 +5,20 @@ export const CODE = '12345678'
 export const HASH = 'abcdEFGH12345678_-xyz'
 
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url')
-const session = () => ({
-  access_token: `${b64({ alg: 'HS256' })}.${b64({ sub: 'u-1', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`,
+/** Antwort der Auth-API mit Token wie echt: `aal` und `amr` stehen im Token (aal1 nach Mail-Code, aal2 nach TOTP). */
+export const makeSession = (aal: 'aal1' | 'aal2' = 'aal1', factors: object[] = []) => ({
+  access_token: `${b64({ alg: 'HS256' })}.${b64({ sub: 'u-1', role: 'authenticated', aal, amr: [{ method: aal === 'aal2' ? 'totp' : 'otp', timestamp: 1 }], exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`,
   token_type: 'bearer',
   expires_in: 3600,
   refresh_token: 'refresh',
-  user: { id: 'u-1', aud: 'authenticated', role: 'authenticated', email: EMAIL, app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' },
+  user: { id: 'u-1', aud: 'authenticated', role: 'authenticated', email: EMAIL, app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z', factors },
 })
 
 export type AuthMock = {
+  /** Token der Anmeldung per Mail-Code oder Link; Standard aal1, ein Test mit schon bestätigtem Faktor kann aal2 setzen. */
+  aal?: 'aal1' | 'aal2'
+  /** Faktoren des Kontos in der Antwort der Anmeldung (`user.factors`). */
+  factors?: object[]
   /** Antwort von `/otp` (Code anfordern); 200 = Mail unterwegs. */
   otp?: { status: number; code?: string } | 'offline'
   /** Antwort von `/verify` (Code oder Link prüfen). */
@@ -39,9 +44,9 @@ export async function mockAuth(page: Page, mock: AuthMock = {}): Promise<AuthCal
   await page.route('**/auth/v1/verify**', (route) => {
     calls.verify++
     calls.verifyBodies.push(route.request().postData() ?? '')
-    return reply(route, mock.verify ?? { status: 200 }, session())
+    return reply(route, mock.verify ?? { status: 200 }, makeSession(mock.aal, mock.factors))
   })
-  await page.route('**/auth/v1/user**', (route) => route.fulfill({ json: session().user }))
+  await page.route('**/auth/v1/user**', (route) => route.fulfill({ json: makeSession(mock.aal, mock.factors).user }))
   await page.route('**/auth/v1/logout**', (route) => {
     calls.logout++
     return route.fulfill({ status: 204, body: '' })
