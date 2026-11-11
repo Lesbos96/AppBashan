@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MAX_BYTES, PhotoError, clearPhotos, getPhotos, preparePhoto, renewPhotoIds } from '../../src/lib/photos'
+import { MAX_BYTES, PhotoError, clearAllPhotos, clearPhotos, getPhotos, preparePhoto, renewPhotoIds } from '../../src/lib/photos'
 import { failureText, photoRejectedText, photoUrls } from '../../src/lib/uploads'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -36,6 +36,11 @@ describe('Foto-Speicher ohne Fotos', () => {
     expect(() => clearPhotos('movenow.photos.unbekannt')).not.toThrow()
     expect(() => renewPhotoIds('movenow.photos.unbekannt')).not.toThrow()
     expect(getPhotos('movenow.photos.unbekannt')).toEqual([])
+  })
+
+  // Die Wirkung mit echten Fotos misst das E2E in konto.spec.ts („Fotos eines Entwurfs …“).
+  it('clearAllPhotos wirft ohne Fotos nicht (Abmelden, s9i-4)', () => {
+    expect(() => clearAllPhotos()).not.toThrow()
   })
 })
 

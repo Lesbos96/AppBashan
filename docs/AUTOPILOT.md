@@ -84,7 +84,7 @@ Schon erledigt vor s9i-2: Fotos vor dem Absenden (S9d, `Fotos.tsx`), Tab-Bar Sta
 - s9i-2: Aufträge-Detail (Route `/auftraege/:id`, Verlauf aus dem Status, Termin, Preis) und Storno mit Stufen (Vorschau, Bestätigung, `cancel-customer`). Keine Migration.
 - s9i-3: Kunde: Angebote annehmen (`offer-confirm`), Nachtrag entscheiden (`change-decide`), Frage nach dem Termin (`report_not_done`, Bestätigung).
 - s9i-4: Konto löschen im Profil (`delete-account`, ausdrückliche Bestätigung, S9h4-2).
-- s9i-5: Partner-Portal 1: Anmeldung als Partner, Registrierung (`register_partner`), MFA-Einrichtung (TOTP), Status.
+- s9i-5: zuerst Serversignal für S9i3-1 (Meldung „nicht stattgefunden“ nach `completed`, Pflicht vor s9i-6) und „Anfrage zurückziehen“ (`withdraw`, ROADMAP S8b, S9i4-1; danach Texte in `src/lib/account.ts` und `KontoLoeschen.tsx` um „zurückziehen“ ergänzen); dann Partner-Portal 1: Anmeldung als Partner, Registrierung (`register_partner`), MFA-Einrichtung (TOTP), Status.
 - s9i-6: Partner-Portal 2: Listings, Annahme (`accept`), Angebot, Start und Abschluss.
 - s9i-7: Partner-Portal 3: Nachtrag vorschlagen, Journal-Liste mit CSV (`my_commissions`), Storno durch den Partner; E2E-Gesamtabläufe mit Tastatur.
 
@@ -106,6 +106,14 @@ Schon erledigt vor s9i-2: Fotos vor dem Absenden (S9d, `Fotos.tsx`), Tab-Bar Sta
 - Tests: Unit (`jobs.ts`, Terms aus Snapshot), E2E (Angebot annehmen, Betrag wechselt, Nachtrag zustimmen/ablehnen, Frage Ja/Nein, Tastatur, kein Gebührentext, Maße per `boundingBox()`, Konsole leer), RLS: keiner neu (kein neuer Serverweg; Kundenlesen von `price_revisions` ist in `revisions`-Tests belegt, wird geprüft).
 - Nicht Teil: Angebote ablehnen (`reject_offers`), Zurückziehen, Partner-Portal, Konto löschen, Shots, Mailtexte, Meldung bei `completed` durch den Partner (Status wird dem Kunden nicht als Meldefall gezeigt).
 
+## Plan s9i-4 (Konto löschen im Profil)
+- Umfang: Im Profil (nur angemeldet) eine Gruppe „Konto“ mit der Zeile „Konto löschen“ (Route `/profil/konto-loeschen`). Sie öffnet ein Sheet mit der E-Mail des Kontos: was gelöscht wird (Anmeldung, E-Mail, Telefon, Adressen, Fotos danach automatisch), was anonym bleibt (beendete Aufträge), nicht rückgängig, offene Aufträge vorher beenden (stornieren; Anfragen ohne Zusage laufen ab). Ausdrückliche Bestätigung: Kontrollkästchen mit Label, erst dann ist „Konto endgültig löschen“ aktiv; während des Aufrufs gesperrt (`Sheet` `locked`).
+- Aufruf: neu `src/lib/account.ts` `deleteAccount()` ruft `delete-account` mit genau `{ "confirm": true }`; Erfolg nur bei 200 `{ deleted: true }`. Fehler: 409 `open_requests` (Text mit Link zu „Aufträge“), 403 `role_not_allowed` (Partner/admin: nicht in der App), 401 `unauthorized` (neu anmelden), Netzfehler (offline), sonst „hat nicht geklappt“.
+- Nach Erfolg und bei 401: `signOut('local')` (leert sessionStorage, Rücksprungziel, Übergabe, Fotos im Speicher), Sheet zu, Profil zeigt „Dein Konto ist gelöscht.“ bzw. den neutralen 401-Text (Rolle `status`) und den Zustand „Noch kein Konto“.
+- Migration: nein (0057 bleibt frei). Functions, RLS, Tabellen: keine Änderung (`delete-account`, `delete_account` aus S9h-4, deployt).
+- Tests: Unit `tests/unit/account-client.test.ts` (Body, Fehlerzuordnung, Erfolg nur mit `deleted: true`); E2E `tests/e2e/konto.spec.ts` (Mock `delete-account`: Knopf gesperrt ohne Häkchen, „Doch nicht“ sendet nichts, Erfolg meldet ab, 409/403/Netzfehler mit Text, Tastaturablauf, Touch-Ziele per `boundingBox()`, abgemeldet keine Zeile, kein Gebührentext, Konsole leer). RLS: keiner neu (kein neuer Serverweg; `account-deletion.test.ts` und `delete-account-handler.test.ts` decken den Server).
+- Nicht Teil: erneute Anmeldung vor dem Löschen (S9h4-2, Serveränderung), Firmenanonymisierung (S9h4-1), Partner-Ansicht „Konto gelöscht“ (S9h4-4), S9i3-1 (s9i-5), Partner-Portal, Shots.
+
 ## Entscheidungen s9i-1
 38. Umfang: Das Konzept teilt S9i nicht auf. s9i-1 ist die erste Scheibe (Schalter hinter dem Buchungsbutton); Aufträge-Detail, Storno-Oberfläche, Partner-Portal, Tab-Bar und Konto löschen folgen in s9i-2 ff. (sicherste und kleinste Scheibe, Rechtsklärung bleibt offen).
 39. Schalter: eigene Einstellung `booking_open` statt Build-Variable, damit der Server sperrt (die App ist nur Anzeige); fehlt die Zeile, ist zu. Dev bekommt die Zeile über `seed.sql`, Produktion nie (Test `seed-prod.test.ts`). Es entscheidet die höchste Version; Öffnen immer mit heutigem Datum (GOLIVE 29).
@@ -126,6 +134,12 @@ Schon erledigt vor s9i-2: Fotos vor dem Absenden (S9d, `Fotos.tsx`), Tab-Bar Sta
 50. Abnahme-Befund M2 (Meldung bei `completed`) braucht ein Serversignal und steht als Pflichtpunkt vor s9i-6 in OPEN_ISSUES (S9i3-1), nicht in der App umgangen.
 51. Vorlauf 4a (e2e Volllauf auf unverändertem `main`): 323 grün, 1 rot (`dienste.spec.ts:13`, einzeln 8/8 grün), 2 übersprungen; Vorlauf 4b (Testreste um `uploads.test.ts`): keine Zunahme. Beides in OPEN_ISSUES S9i3-6/S9i3-7.
 52. Drei Locator wurden angepasst und der Kontrollrunde vorgelegt (Betrag mit `.first()`, Rolle `status` jetzt wieder mit Textfilter, Spaltenprüfung mit Ausnahme für `cancel_fee_waived`); Urteil: nicht schwächer bzw. geringfügig, Gegenmaßnahmen für die Angebotsliste (eindeutiger Betrag) und die Rolle umgesetzt.
+
+## Entscheidungen s9i-4
+53. Modell: Die Session lief als Opus 5.5 (CLAUDE.md sieht Sonnet 5.5 vor), und ein eingebautes `advisor`-Tool ohne Parameter stand in der Tool-Liste. Wegen „keine Rückfragen“ weitergearbeitet; das eingebaute Tool wurde nicht benutzt, Berater war der Subagent (`Modell: claude-fable-5-2`).
+54. Vorprüfung: e2e-Volllauf auf unverändertem `main` grün (380, 2 übersprungen, EXIT=0, 14,1 min); S9i3-7 trat nicht auf. 821 → 820 in s9i-3: Weggefallen ist der Fall „Folgeanfrage kostenlos“ in `snapshotStorno` (`jobs-client.test.ts`, Commit 023f12d). Gewollt: Das Storno-Flag kommt seit dem Abnahme-Fix aus der Spalte `cancel_fee_waived` der Anfrage, nicht aus dem Snapshot; der Fall ist im E2E-Test `auftrag-aktionen.spec.ts` (`waived: true`) abgedeckt.
+55. S9i3-1 stand nur als „vor s9i-6“ ohne Scheibe; zugeordnet als erster Teil von s9i-5 (Serversignal; S9i-4 baut nur Konto löschen).
+56. Plan-Freigabe (Berater): keine Migration, keine Function-Änderung. S9h4-2 bleibt offen (UI-Bestätigung reicht für jetzt; `iat` ist kein Beleg einer neuen Anmeldung, Korrektur in OPEN_ISSUES). Nach Erfolg nur lokal abmelden; `signOut()` leert jetzt auch die Fotos im Speicher (`clearAllPhotos`); 401-Text neutral („gilt nicht mehr … ist es gelöscht“), weil ein zweiter Versuch nach verlorener Antwort 401 liefert; Sheet nennt die E-Mail, verspricht keine sofortige Fotolöschung; 403 nur mit Verweis aufs Impressum. Zusätzlich ein Live-Test gegen die deployte Function mit Wegwerfkonten.
 
 ## Aufgaben für Beks
 - S9h-4: vor dem Produktivstart die Zeilen `photo_retention_days` (90) und `receipt_retention_days` (365) in die Produktions-DB einspielen, sonst scheitert `photo_purge` (GOLIVE Punkt 28); in der Datenschutzerklärung beide Fristen nennen, auch dass Belegfotos nach dem Löschen des Kundenkontos bis zur Frist bleiben (S9h4-7); Firmenanonymisierung der Partner (S9h4-1) einplanen.

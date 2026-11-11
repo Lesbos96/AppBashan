@@ -64,6 +64,11 @@ export function clearPhotos(key: string): void {
   set(key, empty)
 }
 
+/** Beim Abmelden und nach dem Löschen des Kontos: alle Flows leeren, keine Fotos bleiben im Tab. */
+export function clearAllPhotos(): void {
+  for (const key of [...store.keys()]) clearPhotos(key)
+}
+
 /** Neue Dateinamen für alle Fotos (nach `photo_missing`/`photo_expired`): die alte Staging-Datei lässt sich nicht überschreiben. */
 export function renewPhotoIds(key: string): void {
   set(key, getPhotos(key).map((p) => ({ ...p, id: crypto.randomUUID() })))

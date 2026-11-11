@@ -1,5 +1,6 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { clearHandover, clearSent } from './draft'
+import { clearAllPhotos } from './photos'
 import { supabase } from './supabase'
 
 export type AuthErrorKind = 'invalid_email' | 'invalid_code' | 'rate_limited' | 'offline' | 'unavailable'
@@ -71,10 +72,14 @@ export async function signInWithApple(): Promise<void> {
   if (error) throw requestFailure(error)
 }
 
-/** Meldet ab; scheitert der Dienst (kein Netz), fällt die Sitzung wenigstens auf diesem Gerät weg. Entwürfe mit Adressen verschwinden. */
-export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut()
-  if (error) await supabase.auth.signOut({ scope: 'local' })
+/**
+ * Meldet ab und leert Entwürfe mit Adressen, Rücksprungziel, Übergabe und Fotos im Speicher. Standard global; scheitert der Dienst (kein Netz),
+ * fällt die Sitzung wenigstens auf diesem Gerät weg. `local` nach dem Löschen des Kontos: Der Server hat die Sitzungen schon entfernt.
+ */
+export async function signOut(scope?: 'local'): Promise<void> {
+  const { error } = await (scope ? supabase.auth.signOut({ scope }) : supabase.auth.signOut())
+  if (error && !scope) await supabase.auth.signOut({ scope: 'local' })
+  clearAllPhotos()
   try {
     sessionStorage.clear()
     localStorage.removeItem(NEXT_KEY)

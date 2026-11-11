@@ -65,6 +65,7 @@ export const router = createBrowserRouter([
       // Info-Sheet „Wie rechnet MoveNow?" liegt über dem Profil und teilt dessen Seite
       page('profil', <Profil />, { key: 'profil', title: 'Profil', root: true }),
       page('profil/preise', <Profil />, { key: 'profil', title: 'Wie rechnet MoveNow?', root: true }),
+      page('profil/konto-loeschen', <Profil />, { key: 'profil', title: 'Konto löschen', root: true }),
       page('profil/datenschutz', <Datenschutz />, { key: 'datenschutz', title: 'Datenschutz' }),
       page('profil/impressum', <Impressum />, { key: 'impressum', title: 'Impressum & AGB' }),
       page('willkommen', <Onboarding />, { key: 'willkommen', title: 'Willkommen', bar: false }),

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMatch, useNavigate } from 'react-router'
+import { useLocation, useMatch, useNavigate } from 'react-router'
 import { version } from '../../package.json'
 import { signOut } from '../lib/auth'
 import { useSession } from '../lib/session'
@@ -7,7 +7,11 @@ import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { Card, GroupedList, ListRow } from '../components/Surfaces'
+import { accountErrorText } from '../lib/account'
+import { KontoLoeschen, type AccountNotice } from './KontoLoeschen'
 import { PreiseSheet } from './PreiseSheet'
+
+const NOTICE: Record<AccountNotice, string> = { deleted: 'Dein Konto ist gelöscht.', unauthorized: accountErrorText.unauthorized }
 
 const value = (text: string) => <span className="text-body text-text-secondary">{text}</span>
 
@@ -15,6 +19,9 @@ export function Profil() {
   const navigate = useNavigate()
   const sheet = useMatch('/profil/preise') !== null
   const session = useSession()
+  const deleting = useMatch('/profil/konto-loeschen') !== null && !!session
+  const account = (useLocation().state as { account?: AccountNotice } | null)?.account
+  const notice = session === null && account && Object.hasOwn(NOTICE, account) ? NOTICE[account] : ''
   const [busy, setBusy] = useState(false)
   const out = async () => {
     setBusy(true)
@@ -29,6 +36,10 @@ export function Profil() {
     <main>
       <NavBar title="Profil" />
       <div className="flex flex-col gap-6 px-5 pt-4">
+        {/* dauerhaft vorhanden, damit Screenreader die Meldung nach dem Löschen ansagen */}
+        <p role="status" className="m-0 text-body empty:sr-only">
+          {notice}
+        </p>
         <Card className="flex flex-col gap-4 p-4">
           <div className="flex items-center gap-4">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-tint text-accent">
@@ -68,9 +79,16 @@ export function Profil() {
           <ListRow icon="document" tileClassName="bg-[#4a5f63]" label="Impressum & AGB" to="/profil/impressum" />
         </GroupedList>
 
+        {session && (
+          <GroupedList title="Konto">
+            <ListRow icon="profile" tileClassName="bg-[#4a5f63]" label="Konto löschen" to="/profil/konto-loeschen" />
+          </GroupedList>
+        )}
+
         <p className="m-0 text-center text-footnote text-text-secondary">MoveNow · Version {version}</p>
       </div>
       <PreiseSheet open={sheet} onClose={() => void navigate('/profil')} />
+      <KontoLoeschen open={deleting} email={session?.user.email ?? ''} onClose={() => void navigate('/profil')} onDone={(n) => void navigate('/profil', { replace: true, state: { account: n } })} />
     </main>
   )
 }

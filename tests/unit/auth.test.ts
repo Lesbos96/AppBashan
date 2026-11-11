@@ -7,9 +7,31 @@ const auth = vi.hoisted(() => ({
   signOut: vi.fn(),
 }))
 vi.mock('../../src/lib/supabase', () => ({ supabase: { auth } }))
+const clearAllPhotos = vi.hoisted(() => vi.fn())
+vi.mock('../../src/lib/photos', () => ({ clearAllPhotos }))
 
 import { AuthRetryableFetchError } from '@supabase/supabase-js'
-import { AuthError, digitsOnly, rememberNext, requestSignIn, safeNext, signInWithApple, takeNext, verifyCode, verifyLink } from '../../src/lib/auth.ts'
+import { AuthError, digitsOnly, rememberNext, requestSignIn, safeNext, signInWithApple, signOut, takeNext, verifyCode, verifyLink } from '../../src/lib/auth.ts'
+
+describe('Abmelden (s9i-4)', () => {
+  beforeEach(() => clearAllPhotos.mockReset())
+
+  it('Standard: global abmelden, Fotos im Speicher leeren', async () => {
+    auth.signOut.mockReset().mockResolvedValue({ error: null })
+    await signOut()
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(auth.signOut).toHaveBeenCalledWith()
+    expect(clearAllPhotos).toHaveBeenCalledTimes(1)
+  })
+
+  it('nach dem Löschen nur lokal (Sitzungen sind am Server schon weg), Fotos leeren', async () => {
+    auth.signOut.mockReset().mockResolvedValue({ error: null })
+    await signOut('local')
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+    expect(clearAllPhotos).toHaveBeenCalledTimes(1)
+  })
+})
 
 beforeEach(() => {
   vi.stubGlobal('window', { location: { origin: 'https://app.test' } })
