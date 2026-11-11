@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test'
-import { mockAuth, signInWithCode } from './auth-helpers'
-import { expect, rest, test } from './backend'
+import { makeSession } from './auth-helpers'
+import { expect, test } from './backend'
 import { collectErrors } from './console'
-import { factor, freshCode, mockDocs, mockMfa, noSecret, PNG_1PX, pgError, pub, storageError, type DocRow, type Factor } from './mfa-helpers'
+import { factor, freshCode, noSecret, openPartner, PNG_1PX, pgError, storageError, type DocRow, type OpenOpts } from './mfa-helpers'
 
 /*
  * Partner-Portal 1b (s9i-5b): MFA-Einrichtung und Code-Abfrage (TOTP), Zugangsweg nach Firmenstatus, Dokumente.
@@ -10,28 +10,12 @@ import { factor, freshCode, mockDocs, mockMfa, noSecret, PNG_1PX, pgError, pub, 
  * Was der Server erzwingt (Typ, Größe, aal2, fremde Firma), belegen die RLS-Tests (tests/rls/partner-documents.test.ts); hier: die Oberfläche reagiert richtig.
  */
 
-type Status = 'pending' | 'active' | 'payment_hold' | 'suspended' | 'rejected'
-const firm = (status: Status) => ({ id: 'p-1', name: 'Transporte Huber GmbH', status, status_reason: status === 'rejected' ? 'Unterlagen unvollständig' : null })
 const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|Gebühr|15 ?%/)
 // Browser meldet jede 4xx-Antwort als console.error; die Mock-Fehler sind gewollt
 const real = (errors: string[]) => errors.filter((e) => !e.startsWith('Failed to load resource'))
 
-type Opts = { status?: Status; factors?: Factor[]; aal?: 'aal1' | 'aal2'; rows?: DocRow[]; files?: string[] }
-
-async function open(page: Page, o: Opts = {}) {
-  const mfa = { factors: o.factors ?? [], aal: o.aal ?? 'aal1' }
-  await mockAuth(page, { aal: mfa.aal, factors: mfa.factors.map(pub) })
-  const state = await mockMfa(page, mfa)
-  const docs = await mockDocs(page, 'p-1', o.rows, o.files)
-  await page.route('**/rest/v1/partner_members**', (r) => rest(r, [{ partners: firm(o.status ?? 'pending') }]))
-  await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
-  await page.goto('/anmelden?next=%2Fpartner')
-  await signInWithCode(page)
-  await expect(page).toHaveURL(/\/partner$/)
-  // Das Codefeld der Anmeldung steht beim Seitenübergang kurz neben dem der Abfrage
-  await expect(page.getByPlaceholder('Ziffern')).toHaveCount(0)
-  return { mfa: state, docs }
-}
+type Opts = OpenOpts
+const open = openPartner
 
 /** Zeile der Dokumentliste nach ihrer Bezeichnung (nicht die Option im Auswahlfeld, nicht der Erklärtext). */
 const entry = (page: Page, label: string) => page.locator('span', { hasText: new RegExp(`^${label}$`) })
@@ -49,6 +33,21 @@ async function box(locator: ReturnType<Page['getByRole']>) {
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 }
+
+test('320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, keine Überbreite (S9i5-3)', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await open(page, { noFirm: true })
+  await expect(page.getByRole('heading', { name: 'Firma registrieren' })).toBeVisible()
+  for (const n of [1, 5, 23]) {
+    const b = await box(page.getByRole('checkbox', { name: `Bezirk ${n}`, exact: true }))
+    expect(b.width, `Bezirk ${n} breit`).toBeGreaterThanOrEqual(44)
+    expect(b.height, `Bezirk ${n} hoch`).toBeGreaterThanOrEqual(44)
+  }
+  const first = await box(page.getByRole('checkbox', { name: 'Bezirk 1', exact: true }))
+  const sixth = await box(page.getByRole('checkbox', { name: 'Bezirk 6', exact: true }))
+  expect(sixth.y, 'Bezirk 6 steht in der zweiten Zeile').toBeGreaterThan(first.y + 40)
+  await noOverflow(page)
+})
 
 test.describe('Einrichtung', () => {
   test('ohne Faktor: Karte „In Prüfung“ und Einrichtung; vor dem Klick entsteht kein Faktor; keine Dokumente', async ({ page }) => {
@@ -73,6 +72,8 @@ test.describe('Einrichtung', () => {
     const qr = page.getByRole('img', { name: /QR-Code/ })
     await expect(qr).toBeVisible()
     expect(await qr.getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
+    // das Bild lädt wirklich (ein kaputtes Bild mit fester Größe wäre auch „sichtbar“)
+    expect(await qr.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
     const secret = mfa.lastSecret
     expect(secret).toMatch(/^[A-Z2-7]{20,}$/)
     await expect(page.getByText(secret, { exact: true })).toBeVisible()
@@ -333,9 +334,13 @@ test.describe('Dokumente', () => {
     await pick(page, 'trade_license', pdf())
     await send(page).click()
     await expect(page.getByRole('alert')).toContainText('PDF oder ein Foto')
+    await expect(page.getByRole('alert')).toContainText('Erneut hochladen')
     await expect(page.getByText('Datei fehlt')).toBeVisible()
     const id = String(docs.inserts[0]!.id)
     expect(docs.files.size).toBe(0)
+    // Die Auswahl ist leer: ein zweiter Klick auf „Hochladen“ würde einen weiteren (unlöschbaren) Platz verbrauchen
+    await expect(send(page)).toBeDisabled()
+    expect(docs.inserts).toHaveLength(1)
 
     const chooser = page.waitForEvent('filechooser')
     await page.getByRole('button', { name: /Datei erneut hochladen: Gewerbeberechtigung/ }).click()
@@ -397,6 +402,27 @@ test.describe('Dokumente', () => {
     await send(page).click()
     await expect(page.getByRole('alert')).toContainText('Keine Verbindung')
     expect(docs.inserts).toHaveLength(1)
+    // wie beim abgelehnten Upload: nur noch der Weg über „Erneut hochladen“, keine zweite Zeile
+    await expect(send(page)).toBeDisabled()
+    await expect(page.getByText('Datei fehlt')).toBeVisible()
+  })
+
+  test('verweigert und die Sitzung steht nur noch auf aal1: zurück zur Code-Abfrage, keine Einrichtung', async ({ page }) => {
+    const { docs, mfa } = await open(page, ready())
+    // gespeichertes Token auf aal1 setzen (abgelaufene Stufe), die Seite liest es beim nächsten Aufruf
+    const aal1 = makeSession('aal1').access_token
+    await page.evaluate((token) => {
+      const key = Object.keys(localStorage).find((k) => /auth-token$/.test(k))!
+      const s = JSON.parse(localStorage.getItem(key)!)
+      s.access_token = token
+      localStorage.setItem(key, JSON.stringify(s))
+    }, aal1)
+    docs.insertAnswers.push(pgError(403, '42501', 'not_partner_member'))
+    await pick(page, 'other', pdf())
+    await send(page).click()
+    await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
+    await expect(docsHeading(page)).toHaveCount(0)
+    expect(mfa.log).not.toContain('enroll')
   })
 
   test('Maße: Touch-Ziele mindestens 44 px, keine Überbreite, Konsole leer, Tastatur bis zum Absenden', async ({ page }) => {

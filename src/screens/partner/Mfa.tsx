@@ -63,7 +63,7 @@ function useConfirm(factorId: string | null, onDone: () => void, onLost: (kind: 
 
 const Alert = ({ text }: { text: string }) =>
   text ? (
-    <p role="alert" className="m-0 px-1 text-body text-destructive">
+    <p role="alert" className="m-0 px-4 text-body text-destructive">
       {text}
     </p>
   ) : null
@@ -98,7 +98,12 @@ function Einrichtung({ onDone }: { onDone: (message?: string) => void }) {
   const [startError, setStartError] = useState('')
   const running = useRef(false)
   // Verliert das Gerät den Faktor (anderes Gerät war schneller), beginnt die Einrichtung von vorn bzw. fragt den Code ab
-  const c = useConfirm(enrollment?.factorId ?? null, () => onDone(), (kind) => (kind === 'factor_gone' ? setEnrollment(null) : onDone(mfaErrorText[kind])))
+  const c = useConfirm(enrollment?.factorId ?? null, () => onDone(), (kind) => {
+    if (kind === 'factor_gone') {
+      setEnrollment(null)
+      setStartError(mfaErrorText.factor_gone)
+    } else onDone(mfaErrorText[kind])
+  })
 
   async function start() {
     if (running.current) return
@@ -139,7 +144,7 @@ function Einrichtung({ onDone }: { onDone: (message?: string) => void }) {
       <Card className="flex flex-col items-center gap-3 p-4 text-center">
         <h2 className="m-0 w-full text-left text-title3">Sicherheitscode einrichten</h2>
         <p className="m-0 w-full text-left text-body text-text-secondary">Scanne den QR-Code mit deiner Authenticator-App und gib danach den Code ein, den die App anzeigt.</p>
-        <img src={enrollment.qr} alt="QR-Code für deine Authenticator-App" width={176} height={176} className="size-44 max-w-full rounded-card bg-white p-2" />
+        <img src={enrollment.qr} alt="QR-Code für deine Authenticator-App" width={176} height={176} className="size-44 max-w-full rounded-card border-[0.5px] border-separator bg-white p-2" />
         <p className="m-0 w-full text-left text-footnote text-text-secondary">Kein Scan möglich? Gib diesen Schlüssel in der App von Hand ein:</p>
         <code className="w-full break-all text-left font-mono text-body select-all">{enrollment.secret}</code>
       </Card>

@@ -118,7 +118,8 @@ export function Registrierung({ onDone }: { onDone: () => void }) {
       <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
         <legend className="mb-2 px-4 text-section-header text-text-secondary">Bezirke</legend>
         <p className="m-0 px-4 text-footnote text-text-secondary">Wähle alle Wiener Bezirke, in denen du Aufträge annimmst.</p>
-        <div className="grid grid-cols-6 gap-2">
+        {/* unter 360 px fünf Spalten: sechs ergäben Felder unter 44 px (S9i5-3) */}
+        <div className="grid grid-cols-6 gap-2 max-[359px]:grid-cols-5">
           {DISTRICTS.map((n) => (
             <label
               key={n}

@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Button } from '../../components/Button'
 import { ErrorState, Loading } from '../../components/States'
-import { Card, GroupedList, ListRow, SelectField } from '../../components/Surfaces'
+import { Card, GroupedList, SelectField } from '../../components/Surfaces'
 import { createDocument, DOC_KINDS, DocError, docErrorMessage, kindLabel, loadDocuments, MAX_DOCS, prepareDocument, uploadDocument, type DocKind } from '../../lib/partnerDocs'
 import { loadMfaState } from '../../lib/mfa'
 import { useLoad } from '../../lib/prices'
@@ -32,14 +32,21 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
     setBusy(true)
     setError('')
     setDone('')
+    // Ob dieser Lauf eine Zeile angelegt hat: sie bleibt (Partner löschen nichts), ein zweiter Klick auf „Hochladen“ würde einen weiteren Platz verbrauchen
+    let created = false
+    const clearChoice = () => {
+      setFile(null)
+      setFileKey((k) => k + 1)
+    }
     try {
       const { blob, contentType } = await prepareDocument(f)
       const id = existing ?? (await createDocument(kind))
+      created = existing === null
       await uploadDocument(partnerId, id, blob, contentType)
       setDone('Dokument hochgeladen.')
-      setFile(null)
-      setFileKey((k) => k + 1)
+      clearChoice()
     } catch (e) {
+      if (created) clearChoice()
       if (e instanceof DocError && e.kind === 'denied') {
         // Nicht blind „kein aal2“ annehmen: erst den Token lesen, sonst entsteht eine Schleife
         const state = await loadMfaState().catch(() => null)
@@ -48,7 +55,7 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
           return
         }
       }
-      setError(docErrorMessage(e))
+      setError(created ? `${docErrorMessage(e)} Tippe beim Eintrag in der Liste auf „Erneut hochladen“.` : docErrorMessage(e))
     } finally {
       running.current = false
       setBusy(false)
@@ -78,27 +85,25 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
         ) : (
           <GroupedList title="Hochgeladen">
             {docs.data.map((d) => (
-              <ListRow
-                key={d.id}
-                label={kindLabel(d.kind)}
-                detail={d.hasFile ? `Hochgeladen am ${day(d.uploaded_at)}` : 'Datei fehlt'}
-                trailing={
-                  d.hasFile ? undefined : (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      aria-label={`Datei erneut hochladen: ${kindLabel(d.kind)}`}
-                      onClick={() => {
-                        retryId.current = d.id
-                        retryInput.current?.click()
-                      }}
-                      className="press min-h-11 shrink-0 rounded-button-secondary px-3 text-[16px] font-medium text-accent disabled:opacity-40"
-                    >
-                      Erneut hochladen
-                    </button>
-                  )
-                }
-              />
+              // Untereinander statt nebeneinander: Name, Zustand, Knopf überlagern sich so auch bei 320 px nie
+              <li key={d.id} className="flex flex-col items-start gap-0.5 border-t-[0.5px] border-separator px-4 py-3 first:border-t-0">
+                <span className="break-words text-body">{kindLabel(d.kind)}</span>
+                <span className="text-footnote text-text-secondary">{d.hasFile ? `Hochgeladen am ${day(d.uploaded_at)}` : 'Datei fehlt'}</span>
+                {!d.hasFile && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    aria-label={`Datei erneut hochladen: ${kindLabel(d.kind)}`}
+                    onClick={() => {
+                      retryId.current = d.id
+                      retryInput.current?.click()
+                    }}
+                    className="press -ml-3 mt-1 min-h-11 rounded-button-secondary px-3 text-[16px] font-medium text-accent disabled:opacity-40"
+                  >
+                    Erneut hochladen
+                  </button>
+                )}
+              </li>
             ))}
           </GroupedList>
         ))}
@@ -144,11 +149,11 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
           </li>
         </GroupedList>
         {full && <p className="m-0 px-4 text-footnote text-text-secondary">Du hast das Maximum erreicht. Mehr Dokumente gehen nicht.</p>}
-        <p role="status" className="m-0 px-1 text-body empty:sr-only">
+        <p role="status" className="m-0 px-4 text-body empty:sr-only">
           {done}
         </p>
         {error && (
-          <p role="alert" className="m-0 px-1 text-body text-destructive">
+          <p role="alert" className="m-0 px-4 text-body text-destructive">
             {error}
           </p>
         )}

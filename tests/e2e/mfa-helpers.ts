@@ -2,7 +2,7 @@ import { crc32, deflateSync } from 'node:zlib'
 import type { Page, Route } from '@playwright/test'
 import * as OTPAuth from 'otpauth'
 import { expect } from '@playwright/test'
-import { makeSession } from './auth-helpers'
+import { makeSession, mockAuth, signInWithCode } from './auth-helpers'
 import { cors, rest } from './backend'
 
 /*
@@ -55,7 +55,9 @@ export async function mockMfa(page: Page, init: { factors?: Factor[]; aal?: 'aal
       s.factors.push(f)
       s.lastSecret = f.secret
       const uri = `otpauth://totp/MoveNow:kunde%40movenow.test?secret=${f.secret}&issuer=MoveNow`
-      return r.fulfill({ status: 200, headers: cors, json: { id: f.id, type: 'totp', friendly_name: f.name, totp: { qr_code: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#000"/></svg>`, secret: f.secret, uri } } })
+      // roh wie GoTrue: supabase-js setzt `data:image/svg+xml;utf-8,` davor (Probe s9i-5b: die echte Antwort lädt ohne Escapen)
+      const qr_code = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="black"/></svg>'
+      return r.fulfill({ status: 200, headers: cors, json: { id: f.id, type: 'totp', friendly_name: f.name, totp: { qr_code, secret: f.secret, uri } } })
     }
     const f = s.factors.find((x) => x.id === id)
     if (req.method() === 'DELETE' && id) {
@@ -142,6 +144,26 @@ export async function mockDocs(page: Page, partnerId: string, rows: DocRow[] = [
     return r.fulfill({ status: 200, headers: cors, json: { Id: 'obj-1', Key: `partner-documents/${path}` } })
   })
   return s
+}
+
+export type Status = 'pending' | 'active' | 'payment_hold' | 'suspended' | 'rejected'
+export const firm = (status: Status) => ({ id: 'p-1', name: 'Transporte Huber GmbH', status, status_reason: status === 'rejected' ? 'Unterlagen unvollständig' : null })
+export type OpenOpts = { status?: Status; noFirm?: boolean; factors?: Factor[]; aal?: 'aal1' | 'aal2'; rows?: DocRow[]; files?: string[] }
+
+/** Meldet mit dem Mail-Code an und öffnet `/partner` (Konto mit der Firma im Status, den Faktoren und dem Token-Niveau aus `o`). Auch für die Shots. */
+export async function openPartner(page: Page, o: OpenOpts = {}) {
+  const mfa = { factors: o.factors ?? [], aal: o.aal ?? 'aal1' }
+  await mockAuth(page, { aal: mfa.aal, factors: mfa.factors.map(pub) })
+  const state = await mockMfa(page, mfa)
+  const docs = await mockDocs(page, 'p-1', o.rows, o.files)
+  await page.route('**/rest/v1/partner_members**', (r) => rest(r, o.noFirm ? [] : [{ partners: firm(o.status ?? 'pending') }]))
+  await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+  await page.goto('/anmelden?next=%2Fpartner')
+  await signInWithCode(page)
+  await expect(page).toHaveURL(/\/partner$/)
+  // Das Codefeld der Anmeldung steht beim Seitenübergang kurz neben dem der Abfrage
+  await expect(page.getByPlaceholder('Ziffern')).toHaveCount(0)
+  return { mfa: state, docs }
 }
 
 /** Kleinstes gültiges PNG (1×1) für den Bild-Upload. */

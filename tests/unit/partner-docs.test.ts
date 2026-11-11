@@ -58,6 +58,10 @@ describe('prepareDocument', () => {
     await expect(prepareDocument(file(big.slice(0, MAX_DOC_BYTES), 'a.pdf', 'application/pdf'))).resolves.toBeDefined()
   })
 
+  it('zu große Bilder werden vor der Neu-Kodierung abgelehnt (nicht erst am Text der Bildprüfung erkannt)', async () => {
+    await expect(prepareDocument(file(new Uint8Array(MAX_DOC_BYTES + 1), 'foto.png', 'image/png'))).rejects.toMatchObject({ kind: 'too_big' })
+  })
+
   it('andere Typen werden abgelehnt (HEIC, Word, Text, unbekannt)', async () => {
     for (const [n, t] of [['a.heic', 'image/heic'], ['a.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'], ['a.txt', 'text/plain'], ['a', '']] as const) {
       await expect(prepareDocument(file('x', n, t))).rejects.toMatchObject({ kind: 'bad_type' })

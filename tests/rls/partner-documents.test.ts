@@ -12,7 +12,11 @@ const PDF = new Blob(['%PDF-1.4 test'], { type: 'application/pdf' })
 // kleinste Bytefolge mit JPEG-Kopf; der Bucket prüft den Content-Type, nicht den Inhalt
 const JPEG = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1])], { type: 'image/jpeg' })
 
-const probe = await tryAal2User('doc-a')
+// Wirft die Einrichtung (z. B. Rate-Limit), ist `afterAll` noch nicht registriert: das Konto hier selbst entfernen
+const probe = await tryAal2User('doc-a').catch(async (e: unknown) => {
+  await deleteUsers()
+  throw e
+})
 const reason = 'reason' in probe ? probe.reason : null
 if (reason) console.warn(`partner-documents: TOTP nicht nutzbar, Tests übersprungen (${reason})`)
 
@@ -28,17 +32,27 @@ const exists = async (path: string) => {
   if (error) throw error
   return (data ?? []).some((o) => o.name === path.split('/')[1])
 }
+// Fehler beim Aufräumen werfen: ein Lauf mit Resten ist nicht grün
 const removeFiles = async (partnerId: string) => {
-  const { data } = await service.storage.from(BUCKET).list(partnerId, { limit: 100 })
-  if (data?.length) await service.storage.from(BUCKET).remove(data.map((o) => `${partnerId}/${o.name}`))
+  const { data, error } = await service.storage.from(BUCKET).list(partnerId, { limit: 100 })
+  if (error) throw error
+  if (data.length) {
+    const rm = await service.storage.from(BUCKET).remove(data.map((o) => `${partnerId}/${o.name}`))
+    if (rm.error) throw rm.error
+  }
 }
 const code = (e: { code?: string } | null) => e?.code ?? (e as { statusCode?: string } | null)?.statusCode ?? 'ok'
+const status = (e: unknown) => String((e as { statusCode?: string } | null)?.statusCode)
 
-// Reste eines abgebrochenen Laufs (Firmen mit diesem Namensanfang) samt Dateien entfernen
+// Reste eines abgebrochenen Laufs (Firmen mit diesem Namensanfang, Konten `doc-*` anderer Läufe) samt Dateien entfernen
 beforeAll(async () => {
   for (const old of ownerSql(`select id from public.partners where name like '${PREFIX}%'`)) {
     await removeFiles(String(old.id))
     ownerDeletePartner(String(old.id))
+  }
+  for (const u of ownerSql(`select id from auth.users where email like 'doc-%@movenow.test' and email not like '%-${run}@movenow.test'`)) {
+    const rm = await service.auth.admin.deleteUser(String(u.id))
+    if (rm.error) throw rm.error
   }
 }, 120_000)
 
@@ -51,11 +65,18 @@ afterAll(async () => {
   } finally {
     await deleteUsers()
   }
+  // Messung nach dem Lauf (Ist-Werte): keine Firma, keine Datei, kein Konto dieses Laufs
+  const left = ownerSql(
+    `select (select count(*) from public.partners where name like '${PREFIX}${run}%') as firms, (select count(*) from auth.users where email like 'doc-%-${run}@movenow.test') as users`,
+  )[0]
+  expect(left, 'Reste dieses Laufs auf Dev').toMatchObject({ firms: 0, users: 0 })
+  for (const id of firms) expect((await service.storage.from(BUCKET).list(id, { limit: 10 })).data, `Dateien von ${id}`).toEqual([])
 }, 120_000)
 
 describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () => {
   const a = 'user' in probe ? probe.user : (undefined as unknown as Aal2User)
   let b: Aal2User
+  let cust: Aal2User
   let aFirm = ''
   let bFirm = ''
   const docs: Record<string, string> = {}
@@ -81,6 +102,7 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
 
     const denied = await up(a.jwt1, path, PDF)
     expect(denied.error, 'aal1-Upload muss scheitern').not.toBeNull()
+    expect(status(denied.error), 'die App ordnet 401/403 als „verweigert“ zu (partnerDocs.ts)').toMatch(/^(401|403)$/)
     expect(await exists(path)).toBe(false)
 
     const ok = await up(a.jwt2, path, PDF)
@@ -95,6 +117,7 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
     expect((await up(a.jwt2, path, JPEG)).error).toBeNull()
     const again = await up(a.jwt2, path, PDF)
     expect(again.error, 'ohne Upsert darf der Pfad nicht überschrieben werden').not.toBeNull()
+    expect(status(again.error), 'die App ordnet 409 als „liegt schon vor“ zu (partnerDocs.ts)').toBe('409')
     const { data } = await service.storage.from(BUCKET).download(path)
     expect(data?.type).toBe('image/jpeg')
   }, 60_000)
@@ -131,12 +154,28 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
     expect(await exists(path)).toBe(false)
   }, 60_000)
 
-  it('Lesen: Firma A sieht mit aal2 ihre vier Dateien, mit aal1 keine; Metadaten mit aal1 und aal2', async () => {
+  // Der Fall, den `partner_document_slot` abwehrt: eine fremde Sitzung auf einen freien Platz von A (Zeile da, Datei fehlt)
+  it('freier Platz von A: B, ein Kunde mit aal2 und A mit aal1 können ihn nicht belegen, A mit aal2 schon', async () => {
+    docs.free = crypto.randomUUID()
+    expect((await insert(a.aal2, docs.free)).error).toBeNull()
+    const path = `${aFirm}/${docs.free}`
+    const c = await tryAal2User('doc-cust')
+    if ('reason' in c) throw new Error(c.reason)
+    cust = c.user
+    for (const [who, jwt] of [['B', b.jwt2], ['Kunde', cust.jwt2], ['A mit aal1', a.jwt1]] as const) {
+      expect((await up(jwt, path, PDF)).error, `${who} darf den freien Platz nicht belegen`).not.toBeNull()
+      expect(await exists(path), `${who}: Datei darf nicht liegen`).toBe(false)
+    }
+    expect((await up(a.jwt2, path, PDF)).error).toBeNull()
+    expect(await exists(path)).toBe(true)
+  }, 90_000)
+
+  it('Lesen: Firma A sieht mit aal2 ihre fünf Dateien, mit aal1 keine; Metadaten mit aal1 und aal2', async () => {
     const list = (jwt: string, dir: string) => withToken(jwt).storage.from(BUCKET).list(dir, { limit: 50 })
-    expect((must(await list(a.jwt2, aFirm))).map((o) => o.name).sort()).toEqual([docs.pdf, docs.jpeg, docs.png, docs.big].sort())
+    expect((must(await list(a.jwt2, aFirm))).map((o) => o.name).sort()).toEqual([docs.pdf, docs.jpeg, docs.png, docs.big, docs.free].sort())
     expect(must(await list(a.jwt1, aFirm))).toEqual([])
-    expect(must(await a.aal1.from('partner_documents').select('id')).length).toBe(4)
-    expect(must(await a.aal2.from('partner_documents').select('id')).length).toBe(4)
+    expect(must(await a.aal1.from('partner_documents').select('id')).length).toBe(5)
+    expect(must(await a.aal2.from('partner_documents').select('id')).length).toBe(5)
   }, 60_000)
 
   it('Firma B: sieht, liest und beschreibt nichts von A; auch nicht über eine eigene Zeile', async () => {
@@ -151,20 +190,21 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
     const foreign = `${aFirm}/${own}`
     expect((await up(b.jwt2, foreign, PDF)).error).not.toBeNull()
     expect(await exists(foreign)).toBe(false)
+    // A auf den freien Platz von B (Zeile da, Datei fehlt): verweigert, Datei liegt nicht
+    expect((await up(a.jwt2, `${bFirm}/${own}`, JPEG)).error).not.toBeNull()
+    expect(await exists(`${bFirm}/${own}`)).toBe(false)
     // eigener Pfad klappt (Gegenfall)
     expect((await up(b.jwt2, `${bFirm}/${own}`, PDF)).error).toBeNull()
-    // A überschreibt oder liest nichts von B
+    expect(await exists(`${bFirm}/${own}`)).toBe(true)
+    // A liest nichts von B
     expect(must(await withToken(a.jwt2).storage.from(BUCKET).list(bFirm, { limit: 50 }))).toEqual([])
-    expect((await up(a.jwt2, `${bFirm}/${own}`, JPEG)).error).not.toBeNull()
   }, 60_000)
 
   it('Kunde ohne Firmenmitgliedschaft (auch mit echtem aal2): keine Zeile, kein Upload, keine Liste', async () => {
-    const cust = await tryAal2User('doc-cust')
-    if ('reason' in cust) throw new Error(cust.reason)
-    expect(code((await insert(cust.user.aal2, crypto.randomUUID())).error)).toBe('42501')
-    expect(must(await cust.user.aal2.from('partner_documents').select('id'))).toEqual([])
-    expect((await up(cust.user.jwt2, `${aFirm}/${docs.pdf}`, PDF)).error).not.toBeNull()
-    expect(must(await withToken(cust.user.jwt2).storage.from(BUCKET).list(aFirm, { limit: 50 }))).toEqual([])
+    expect(code((await insert(cust.aal2, crypto.randomUUID())).error)).toBe('42501')
+    expect(must(await cust.aal2.from('partner_documents').select('id'))).toEqual([])
+    expect((await up(cust.jwt2, `${aFirm}/${docs.pdf}`, PDF)).error).not.toBeNull()
+    expect(must(await withToken(cust.jwt2).storage.from(BUCKET).list(aFirm, { limit: 50 }))).toEqual([])
     const plain = await makeUser('doc-plain')
     expect((await up(plain.jwt, `${aFirm}/${crypto.randomUUID()}`, PDF)).error).not.toBeNull()
   }, 90_000)
@@ -174,7 +214,7 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
     ownerGrantRole(adm.id, 'admin')
     const rm = await service.rpc('admin_remove_partner_document', { p_actor: adm.id, p_document: docs.jpeg!, p_note: 'Test s9i-5b' })
     expect(rm.error).toBeNull()
-    expect(must(await a.aal2.from('partner_documents').select('id')).length).toBe(3)
+    expect(must(await a.aal2.from('partner_documents').select('id')).length).toBe(4)
     const blocked = await insert(a.aal2, docs.jpeg!)
     expect(blocked.error?.message).toBe('slot_taken')
     await service.storage.from(BUCKET).remove([`${aFirm}/${docs.jpeg}`])

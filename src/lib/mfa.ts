@@ -68,7 +68,9 @@ export async function startEnrollment(): Promise<Enrollment> {
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'MoveNow', issuer: 'MoveNow' })
   if (error) throw new MfaError(kindOf(error))
   if (!data.id || !data.totp.qr_code || !data.totp.secret) throw new MfaError('unavailable')
-  return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret }
+  // supabase-js setzt `data:image/svg+xml;utf-8,` vor den Rohtext des SVG; neu verpackt hängt die Darstellung nicht an dessen Zeichen (z. B. `#`)
+  const svg = data.totp.qr_code.replace(/^data:image\/svg\+xml;utf-8,/, '')
+  return { factorId: data.id, qr: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, secret: data.totp.secret }
 }
 
 /** Challenge und Bestätigung in einem Schritt (je Versuch ein neues Challenge). Danach trägt die Sitzung aal2. */

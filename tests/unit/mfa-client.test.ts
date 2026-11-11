@@ -47,13 +47,14 @@ describe('loadMfaState: Schranke aus Token und Faktoren, nie aus Fehlern', () =>
 })
 
 describe('startEnrollment: liegengebliebene Einrichtung wird ersetzt', () => {
-  const enrolled = { data: { id: 'f2', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf8,QR', secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://x' } }, error: null }
+  const enrolled = { data: { id: 'f2', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,<svg fill="#000"/>', secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://x' } }, error: null }
 
   it('entfernt alle unverifizierten Faktoren, dann enroll mit festem Namen und Aussteller', async () => {
     mfa.listFactors.mockResolvedValue(factors(factor('u1', 'unverified'), factor('u2', 'unverified')))
     mfa.unenroll.mockResolvedValue({ data: {}, error: null })
     mfa.enroll.mockResolvedValue(enrolled)
-    await expect(startEnrollment()).resolves.toEqual({ factorId: 'f2', qr: 'data:image/svg+xml;utf8,QR', secret: 'JBSWY3DPEHPK3PXP' })
+    // das `#` des SVG ist maskiert (sonst bricht das Bild als URL-Fragment ab)
+    await expect(startEnrollment()).resolves.toEqual({ factorId: 'f2', qr: 'data:image/svg+xml;charset=utf-8,%3Csvg%20fill%3D%22%23000%22%2F%3E', secret: 'JBSWY3DPEHPK3PXP' })
     expect(mfa.unenroll.mock.calls).toEqual([[{ factorId: 'u1' }], [{ factorId: 'u2' }]])
     expect(mfa.enroll).toHaveBeenCalledWith({ factorType: 'totp', friendlyName: 'MoveNow', issuer: 'MoveNow' })
   })

@@ -118,10 +118,11 @@ export function Field({ label, className = '', hint, hintId, ...props }: { label
 export function SelectField({ label, children, ...props }: { label: string } & SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <li className={separator('not-first:before:left-4')}>
-      <label className="flex min-h-12 items-center gap-3 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
+      {/* Reicht die Breite nicht für einen langen Wert (320 px), rutscht die Auswahl unter das Label statt abgeschnitten zu werden */}
+      <label className="flex min-h-12 flex-wrap items-center gap-x-3 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
         <span className="shrink-0 text-body">{label}</span>
         {/* aria-label: der Name soll nicht den Text aller Optionen aus dem umgebenden Label übernehmen */}
-        <select aria-label={label} className="min-h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-right text-body text-text-tertiary outline-none" {...props}>
+        <select aria-label={label} className="min-h-11 min-w-[11rem] flex-1 border-0 bg-transparent p-0 text-right text-body text-text-tertiary outline-none" {...props}>
           {children}
         </select>
       </label>

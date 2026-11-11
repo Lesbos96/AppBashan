@@ -49,9 +49,9 @@ const PDF_HEAD = '%PDF-'
 
 /** Ein PDF läuft unverändert durch (Kopfzeile als Eingabehilfe, keine Sicherheitsgrenze); Bilder werden als JPEG neu kodiert (EXIF, Standort fallen weg). */
 export async function prepareDocument(file: File): Promise<{ blob: Blob; contentType: 'application/pdf' | 'image/jpeg' }> {
+  if (file.size > MAX_DOC_BYTES) throw new DocError('too_big')
   const isPdf = file.type === 'application/pdf' || (file.type === '' && /\.pdf$/i.test(file.name))
   if (isPdf) {
-    if (file.size > MAX_DOC_BYTES) throw new DocError('too_big')
     if ((await file.slice(0, PDF_HEAD.length).text()) !== PDF_HEAD) throw new DocError('bad_type')
     return { blob: new Blob([file], { type: 'application/pdf' }), contentType: 'application/pdf' }
   }
@@ -59,7 +59,7 @@ export async function prepareDocument(file: File): Promise<{ blob: Blob; content
   try {
     return { blob: await preparePhoto(file), contentType: 'image/jpeg' }
   } catch (e) {
-    if (e instanceof PhotoError) throw new DocError(/größer als 10 MB/.test(e.message) ? 'too_big' : 'bad_type', /größer als 10 MB/.test(e.message) ? undefined : e.message)
+    if (e instanceof PhotoError) throw new DocError('bad_type', e.message)
     throw new DocError('unavailable')
   }
 }
