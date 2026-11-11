@@ -15,7 +15,7 @@ type State = { bodies: Record<string, unknown>[]; answers: Answer[]; firm: Firm 
 
 const PENDING: Firm = { id: 'p-1', name: 'Transporte Huber GmbH', status: 'pending', status_reason: null }
 const pgError = (status: number, code: string, message: string) => ({ status, json: { code, message, details: null, hint: null } })
-const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|15 ?%|MoveNow-Gebühr/)
+const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|Gebühr|15 ?%/)
 
 async function mock(page: Page, opts: { firm?: Firm | null; answers?: Answer[]; failLoads?: number } = {}): Promise<State> {
   const state: State = { bodies: [], answers: opts.answers ?? [], firm: opts.firm ?? null, loads: 0, failLoads: opts.failLoads ?? 0 }
@@ -118,6 +118,7 @@ test('Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf E
   await expect(page.getByText(/Entwurf/)).toBeVisible()
   await expect(page.getByText(/nicht zurückziehen/)).toBeVisible()
   await expect(page.getByText(/endgültig/)).toBeVisible()
+  await expect(page.getByText(/Konto nicht mehr in der App löschen/)).toBeVisible()
   expect(state.bodies).toEqual([])
   await noFee(page)
   expect(errors).toEqual([])
@@ -157,6 +158,8 @@ test('Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „I
   await expect(page.getByRole('heading', { name: 'Transporte Huber GmbH' })).toBeVisible()
   await expect(page.getByText('In Prüfung', { exact: true })).toBeVisible()
   await expect(field(page, 'Firmenname')).toHaveCount(0)
+  // das Formular ist weg, der Fokus liegt auf der Statuskarte statt auf body
+  await expect(page.getByRole('heading', { name: 'Transporte Huber GmbH' })).toBeFocused()
   expect(state.bodies).toEqual([BODY])
   await noFee(page)
   expect(errors).toEqual([])
@@ -257,7 +260,7 @@ for (const [status, label, reason, text] of [
 
 test('Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Registrierformular', async ({ page }) => {
   const errors = collectErrors(page)
-  // Der Entwicklungs-Build startet Effekte doppelt (StrictMode): die Lesefehler gelten bis zum Klick, nicht für eine feste Zahl Aufrufe
+  // Der Lesefehler gilt bis zum Klick, nicht für eine feste Zahl Aufrufe (der Entwicklungs-Build startet Effekte doppelt)
   const state = await mock(page, { firm: PENDING, failLoads: 1000 })
   await open(page)
   await expect(page.getByRole('alert')).toContainText('Das hat nicht geklappt')

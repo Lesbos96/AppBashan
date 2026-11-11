@@ -1,0 +1,25 @@
+s9i-5a e2e Dauer je Testdatei (Lauf 2, Quelle: tmp/reports/playwright.json, Summe Testdauern beide Projekte)
+Basis: Vorlauf tmp/proof/s9i-5-vor-e2e.log (Dauern aus Zeilen "(Xs)" geparst, Summe je Datei)
+Markierung: >150 s = [>150s]; >2x Basis = [>2x]; neue Datei ohne Basis = [neu]
+
+Datei                        Lauf2 (s)   Basis (s)   Markierung
+anfrage.spec.ts               547.1       557.4      [>150s]
+fotos.spec.ts                 201.9       187.7      [>150s]
+wege.spec.ts                  161.7       162.6      [>150s]
+auftrag-aktionen.spec.ts      129.5       131.5
+barrierefreiheit.spec.ts       91.6        96.9
+konto.spec.ts                  85.8        82.6
+auftrag.spec.ts                81.0        80.5
+partner.spec.ts                50.8         -         [neu]
+konfigurator.spec.ts           47.6        45.7
+dienste.spec.ts                26.9        26.0
+shell.spec.ts                  26.4        24.9
+anmelden.spec.ts               20.6        20.7
+komponenten.spec.ts             4.5         4.4
+smoke.spec.ts                   1.8         1.5
+backend.spec.ts                 1.8         1.5
+--------------------------------------------------
+SUMME Testdauer              1478.9      1423.9 (Basis-Summe ohne partner.spec.ts)
+Gesamtdauer (stats.duration)  787.0 s (13.1 min)   Basis: 12.7 min (Log-Zeile "414 passed (12.7m)")
+
+Keine Datei hat mehr als doppelte Basisdauer. Drei Dateien liegen über 150 s (anfrage, fotos, wege); gegenüber der Basis ohne Auffälligkeit (max. +7,5 % bei fotos.spec.ts).

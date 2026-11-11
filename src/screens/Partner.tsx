@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { StatusChip } from '../components/Controls'
@@ -23,18 +24,31 @@ export function Partner() {
 
 function Firma({ userId }: { userId: string }) {
   const [result, retry] = useLoad(() => loadPartner(userId))
+  // Nach der Registrierung fällt der Fokus mit dem Formular weg: die Statuskarte übernimmt ihn (WCAG 2.4.3)
+  const [registered, setRegistered] = useState(false)
   if (result.status === 'loading') return <Loading label="Partner laden" />
   if (result.status === 'error') return <ErrorState text="Der Status konnte nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />
-  return result.data ? <Status firm={result.data} /> : <Registrierung onDone={retry} />
+  return result.data ? (
+    <Status firm={result.data} focus={registered} />
+  ) : (
+    <Registrierung
+      onDone={() => {
+        setRegistered(true)
+        retry()
+      }}
+    />
+  )
 }
 
-function Status({ firm }: { firm: Firm }) {
+function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
   const info = statusInfo[firm.status]
   return (
     <div className="flex flex-col gap-4 px-5 pt-2 pb-8">
       <Card className="flex flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="m-0 min-w-0 break-words text-headline">{firm.name}</h2>
+          <h2 ref={(el) => (focus ? el?.focus() : undefined)} tabIndex={-1} className="m-0 min-w-0 break-words text-headline outline-none">
+            {firm.name}
+          </h2>
           <StatusChip status={info.chip}>{info.label}</StatusChip>
         </div>
         <p className="m-0 text-body">{info.text}</p>

@@ -107,7 +107,7 @@ describe('register_partner', () => {
 
   it('zwei parallele Aufrufe: genau eine Firma, der zweite already_member; aal1 sieht die eigene Firma, ändert aber nur mit aal2', async () => {
     const u = await makeUser('par')
-    const args = { p_name: `mvtest-${runTag} Wettlauf GmbH`, p_legal_form: 'gmbh', p_uid: 'ATU12345678', p_small_business: false, p_street: 'Teststraße 1', p_postcode: '1010', p_city: 'Wien', p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: 'firma@movenow.test', p_districts: [1], p_terms_version: 'partner-2026-11-entwurf' }
+    const args = { p_name: `mvtest-${runTag} Wettlauf GmbH`, p_legal_form: 'gmbh', p_uid: null, p_small_business: true, p_street: 'Teststraße 1', p_postcode: '1010', p_city: 'Wien', p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: 'firma@movenow.test', p_districts: [1], p_terms_version: 'partner-2026-11-entwurf' } // Kleinunternehmer ohne UID: so sendet es die App über PostgREST (s9i-5a)
     const calls = await Promise.all([u.db.rpc('register_partner' as never, args as never), u.db.rpc('register_partner' as never, args as never)])
     const ok = calls.filter((c) => !c.error)
     const bad = calls.filter((c) => c.error)

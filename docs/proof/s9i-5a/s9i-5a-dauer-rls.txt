@@ -1,0 +1,40 @@
+s9i-5a test:rls Dauer je Testdatei (Lauf 3, Quelle: tmp/reports/vitest-rls.json, endTime-startTime je Datei)
+Basis: tmp/proof/s9i-4-dauer.txt (Abschnitt test:rls, "vorher s")
+Markierung: >150 s = [>150s]; >2x Basis = [>2x]; neue Datei ohne Basis = [neu]
+
+Datei                                Lauf3 (s)   Basis (s)   Markierung
+quote-hardening.test.ts                80.5        79.0
+uploads.test.ts                        62.3       103.5
+change-orders.test.ts                  55.7         8.3      [>2x]
+quote.test.ts                          52.5        46.6
+cancellation.test.ts                   31.0         4.0      [>2x]
+accept-concurrency.test.ts             26.6        18.6
+status.test.ts                         25.4        85.9
+job-photos-concurrency.test.ts         19.8        17.9
+partners.test.ts                       19.1        50.1
+account-deletion.test.ts               17.5        14.5
+change-orders-concurrency.test.ts      15.5        13.6
+job-photos.test.ts                     14.0        79.6
+offers-concurrency.test.ts             13.9        11.9
+partner-mfa.test.ts                    13.1        53.5
+rls.test.ts                            11.9        22.0
+journal.test.ts                        10.1        10.0
+offers.test.ts                          9.9        68.2
+listings.test.ts                        9.8        76.1
+partner-admin.test.ts                   8.3        58.7
+booking-open.test.ts                    7.8        54.8
+settings.test.ts                        7.1        26.8
+route.test.ts                           6.0         6.7
+delete-account-live.test.ts             5.8         -          [neu]
+auth.test.ts                            2.8         2.5
+cancellation-partner.test.ts            2.8        17.7
+completion.test.ts                      2.4        17.4
+admin-correct.test.ts                   2.4         2.1
+outbox.test.ts                          2.1         2.2
+partner-fee-read.test.ts                0.9         5.8
+--------------------------------------------------------
+SUMME Dateidauern                     537.1       (Basis-Summe s9i-4 nicht vergleichbar: Tabelle ohne Summenzeile)
+Gesamtdauer (Log "Duration")         622.4 s (10.4 min)
+
+Keine Datei über 150 s. Zwei Dateien über doppelter Basisdauer: change-orders.test.ts (8,3 auf 55,7 s) und cancellation.test.ts (4,0 auf 31,0 s). Die Basis dieser beiden Dateien ist klein, der Anstieg ist absolut moderat. Keine Datei fehlt im Lauf; delete-account-live.test.ts ist neu.
+Transport error: im Log nicht vorhanden, keine Wiederholung nötig.

@@ -22,6 +22,7 @@ function Check({ checked, onChange, invalid, describedBy, children }: { checked:
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-required={describedBy ? true : undefined}
         aria-invalid={invalid || undefined}
         aria-describedby={invalid ? describedBy : undefined}
         className="size-5 shrink-0 accent-[var(--accent)]"
@@ -46,7 +47,7 @@ export function Registrierung({ onDone }: { onDone: () => void }) {
   const errors = submitted ? validate(form) : {}
   const set = <K extends keyof PartnerForm>(key: K, value: PartnerForm[K]) => setForm((f) => ({ ...f, [key]: value }))
   const text = (key: Exclude<FieldKey, 'districts' | 'terms'>, label: string, extra: object = {}) => (
-    <Field label={label} name={key} value={form[key]} onChange={(e) => set(key, e.target.value)} hint={errors[key]} hintId={`partner-${key}-hint`} {...extra} />
+    <Field label={label} name={key} value={form[key]} onChange={(e) => set(key, e.target.value)} hint={errors[key]} hintId={`partner-${key}-hint`} aria-required={key !== 'uid' || !form.smallBusiness} {...extra} />
   )
 
   // Nach einem Absenden mit Fehlern: Fokus auf das erste fehlerhafte Feld (WCAG 3.3.1)
@@ -149,7 +150,7 @@ export function Registrierung({ onDone }: { onDone: () => void }) {
         <p className="m-0 px-4 text-footnote text-text-secondary">Die Partnerbedingungen sind ein Entwurf und werden vor dem Start verbindlich festgelegt.</p>
       </section>
 
-      <p className="m-0 px-4 text-footnote text-text-secondary">Nach dem Absenden kannst du die Registrierung nicht zurückziehen. Eine abgelehnte Registrierung ist endgültig.</p>
+      <p className="m-0 px-4 text-footnote text-text-secondary">Nach dem Absenden kannst du die Registrierung nicht zurückziehen. Eine abgelehnte Registrierung ist endgültig. Mit einer Firma kannst du dein Konto nicht mehr in der App löschen.</p>
 
       {error && (
         <p role="alert" className="m-0 px-1 text-body text-destructive">
@@ -157,7 +158,7 @@ export function Registrierung({ onDone }: { onDone: () => void }) {
         </p>
       )}
       <Button type="submit" disabled={busy}>
-        Registrierung senden
+        {busy ? 'Wird gesendet …' : 'Registrierung senden'}
       </Button>
     </form>
   )

@@ -45,6 +45,11 @@ describe('validate (Partner-Registrierung)', () => {
   it.each([
     ['name', 'A'],
     ['name', 'x'.repeat(121)],
+    ['street', 'x'.repeat(121)],
+    ['city', 'x'.repeat(81)],
+    ['contactName', 'x'.repeat(101)],
+    ['phone', '1'.repeat(41)],
+    ['email', `${'x'.repeat(250)}@a.at`],
     ['street', 'S'],
     ['city', 'W'],
     ['contactName', 'M'],
@@ -132,6 +137,8 @@ describe('registerPartner', () => {
     ['P0001', 'scope_incomplete', 400, 'invalid_input'],
     ['23514', 'new row for relation "partners" violates check constraint', 400, 'invalid_input'],
     ['23505', 'duplicate key value violates unique constraint', 409, 'invalid_input'],
+    ['42501', 'permission denied for function register_partner', 403, 'not_authenticated'],
+    ['XX000', 'Token abgelaufen (anderer Code)', 401, 'not_authenticated'],
     ['XX000', 'etwas anderes', 500, 'unavailable'],
     ['P0001', 'unbekannter_code', 400, 'unavailable'],
   ])('Server %s %s (%i) wird %s', async (code, message, status, kind) => {

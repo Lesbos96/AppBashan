@@ -112,7 +112,7 @@ function kindOf({ code, message }: Failure, status: number): PartnerErrorKind {
   if (status === 0) return 'offline'
   if (message === 'already_member') return 'already_member'
   if (message === 'not_customer') return 'not_customer'
-  if (message === 'not_authenticated' || code === 'PGRST301' || code === '42501') return 'not_authenticated'
+  if (message === 'not_authenticated' || code === 'PGRST301' || code === '42501' || status === 401) return 'not_authenticated'
   if (message === 'scope_incomplete' || code === '23514' || code === '23505') return 'invalid_input'
   return 'unavailable'
 }

@@ -3,6 +3,8 @@
 // GOLIVE_ORIGIN           echte App-Origin, z. B. https://app.example.at (Pflicht)
 // GOLIVE_PUBLISHABLE_KEY  Publishable Key, ist öffentlich (optional; schaltet die REST-Prüfungen frei)
 // Aufruf: GOLIVE_URL=... GOLIVE_ORIGIN=... node scripts/golive-check.mjs   (Exit 1 bei jedem FAIL)
+import { readFileSync } from 'node:fs'
+
 const base = process.env.GOLIVE_URL?.replace(/\/+$/, '')
 const appOrigin = process.env.GOLIVE_ORIGIN
 const key = process.env.GOLIVE_PUBLISHABLE_KEY
@@ -17,6 +19,9 @@ const check = (name, ok, detail = '') => {
   if (!ok) failed++
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? `: ${detail}` : ''}`)
 }
+// Partnerbedingungen: Solange die App den Entwurfs-Platzhalter trägt, darf die Partner-Registrierung nicht live gehen (GOLIVE 30)
+const terms = /TERMS_VERSION = '([^']+)'/.exec(readFileSync(new URL('../src/lib/partner.ts', import.meta.url), 'utf8'))?.[1]
+check('Partnerbedingungen: App trägt keine Entwurfsversion', !!terms && !/entwurf/i.test(terms), terms ?? 'TERMS_VERSION nicht gefunden')
 const call = (path, { method = 'GET', headers = {}, body } = {}) =>
   fetch(`${base}${path}`, { method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...headers }, body: body && JSON.stringify(body) })
 const acao = (res) => res.headers.get('access-control-allow-origin')
