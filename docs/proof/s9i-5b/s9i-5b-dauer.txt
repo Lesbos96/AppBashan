@@ -1,0 +1,58 @@
+s9i-5b Dauer je Testdatei gegen s9i-5a (Quellen: tmp/proof/s9i-5b-e2e-1.json, tmp/proof/s9i-5b-rls-1.json; Basis: tmp/proof/s9i-5a-dauer-e2e.txt, s9i-5a-dauer-rls.txt)
+Markierung: >150 s = [>150s]; >2x Basis = [>2x]; neue Datei = [neu]
+
+== e2e (Summe der Testdauern beider Projekte; Gesamt 14,4 min, Basis 5a 13,1 min) ==
+Datei                        5b (s)   5a (s)   Markierung
+anfrage.spec.ts               572     547      [>150s]
+fotos.spec.ts                 201     202      [>150s]
+wege.spec.ts                  162     162      [>150s]
+auftrag-aktionen.spec.ts      131     130
+partner-mfa.spec.ts           112      -       [neu]
+barrierefreiheit.spec.ts      100      92
+konto.spec.ts                  85      86
+auftrag.spec.ts                83      81
+partner.spec.ts                50      51
+konfigurator.spec.ts           50      48
+dienste.spec.ts                27      27
+shell.spec.ts                  25      26
+anmelden.spec.ts               22      21
+komponenten.spec.ts             5       5
+smoke.spec.ts                   1       2
+backend.spec.ts                 2       2
+Keine Datei über doppelter Dauer. anfrage, fotos, wege liegen wie in 5a über 150 s.
+Testzahl: 528 = 466 (5a) + 62; partner-mfa.spec.ts hat 31 Tests, jeder läuft in den zwei Projekten e2e (390 px) und e2e-desktop (1280 px).
+
+== test:rls (Dateidauer endTime-startTime; Gesamt 799 s, Basis 5a 622 s) ==
+Datei                                5b (s)   5a (s)   Markierung
+uploads.test.ts                       111.6    62.3
+quote-hardening.test.ts                78.8    80.5
+status.test.ts                         79.6    25.4    [>2x]
+partners.test.ts                       75.3    19.1    [>2x]
+listings.test.ts                       61.3     9.8    [>2x]
+quote.test.ts                          48.7    52.5
+offers.test.ts                         30.6     9.9    [>2x] (enthält den Transportfehler, Einzelwiederholung 17 s)
+job-photos-concurrency.test.ts         20.4    19.8
+accept-concurrency.test.ts             15.7    26.6
+change-orders-concurrency.test.ts      15.0    15.5
+offers-concurrency.test.ts             13.1    13.9
+partner-documents.test.ts              13.0     -      [neu]
+partner-mfa.test.ts                    12.7    13.1
+job-photos.test.ts                     12.4    14.0
+rls.test.ts                            10.6    11.9
+booking-open.test.ts                    9.8     7.8
+journal.test.ts                         9.5    10.1
+partner-admin.test.ts                   8.7     8.3
+change-orders.test.ts                   7.9    55.7
+route.test.ts                           7.3     6.0
+settings.test.ts                        6.8     7.1
+cancellation.test.ts                    5.1    31.0   (S9i5-6: wieder niedrig)
+delete-account-live.test.ts             5.1     5.8
+account-deletion.test.ts                2.7    17.5
+completion.test.ts                      2.9     2.4
+cancellation-partner.test.ts            2.9     2.8
+auth.test.ts                            2.6     2.8
+admin-correct.test.ts                   2.0     2.4
+outbox.test.ts                          2.8     2.1
+partner-fee-read.test.ts                1.0     0.9
+Keine Datei über 150 s. Vier Dateien über doppelter Dauer von 5a (status, partners, listings, offers); in 5a lagen sie auf sehr niedrigen Werten, die Basis s9i-4 war 85,9 / 50,1 / 76,1 / 68,2 s (status, partners, listings, offers): gegen s9i-4 liegen sie darunter. Das Muster ist Schwankung der Management-API je Tageszeit, keine Codeänderung dort (keine dieser Dateien oder ihrer Quellen wurde geändert).
+Transport error im Volllauf: offers.test.ts:314 (POST api.supabase.com .../database/query), Einzelwiederholung 11 Tests EXIT=0 (tmp/proof/s9i-5b-offers-einzel.log).
