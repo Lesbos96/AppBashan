@@ -3,7 +3,23 @@ import { parseSnapshot } from './quote'
 import { supabase } from './supabase'
 
 /** Fehlerarten der Kunden-Aktionen (Angebot, Nachtrag, Termin). Die App zeigt eigene Texte, nie Servercodes. */
-export type JobErrorKind = 'changed' | 'closed' | 'gone' | 'too_early' | 'window_closed' | 'retry' | 'unauthorized' | 'offline' | 'unavailable'
+export type JobErrorKind =
+  | 'changed'
+  | 'closed'
+  | 'gone'
+  | 'too_early'
+  | 'window_closed'
+  | 'retry'
+  | 'unauthorized'
+  | 'offline'
+  | 'unavailable'
+  // Partner (s9i-6a, src/lib/partnerJobs.ts)
+  | 'taken'
+  | 'job_limit'
+  | 'have_offer'
+  | 'offer_limit'
+  | 'amount'
+  | 'vat_rule'
 
 export class JobError extends Error {
   constructor(readonly kind: JobErrorKind) {
@@ -21,6 +37,12 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   unauthorized: 'Deine Anmeldung ist abgelaufen. Melde dich neu an.',
   offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut.',
   unavailable: 'Das hat nicht geklappt. Versuche es gleich noch einmal.',
+  taken: 'Diese Anfrage ist nicht mehr verfügbar. Die Liste wurde neu geladen.',
+  job_limit: 'Du hast die höchste Zahl offener Aufträge erreicht. Schließe zuerst einen ab.',
+  have_offer: 'Du hast für diese Anfrage schon ein Angebot abgegeben.',
+  offer_limit: 'Für diese Anfrage liegen schon so viele Angebote vor. Versuche es später noch einmal.',
+  amount: 'Der Betrag liegt nicht im erlaubten Bereich. Prüfe deine Eingabe.',
+  vat_rule: 'Für deine Firma fehlt eine Steuerangabe. Wende dich an den Support.',
 }
 
 const CODES: Record<string, JobErrorKind> = {
@@ -40,18 +62,19 @@ const CODES: Record<string, JobErrorKind> = {
 }
 
 /** Wie lange ein Fehler die Anzeige veraltet: danach lädt der Auftrag neu. */
-export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed'
+export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'taken' || k === 'have_offer'
 export const retryable = (k: JobErrorKind) => k === 'offline' || k === 'retry' || k === 'unavailable'
 
-const asKind = (code: unknown): JobErrorKind => (typeof code === 'string' ? CODES[code] : undefined) ?? 'unavailable'
+export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' ? codes[code] : undefined) ?? 'unavailable'
 
-async function invoke(name: string, body: Record<string, unknown>): Promise<unknown> {
+/** Edge Function aufrufen; Fehlercodes des Servers ordnet `codes` den Fehlerarten zu (Kunde: `CODES`, Partner: eigene Tabelle). */
+export async function invoke(name: string, body: Record<string, unknown>, codes: Record<string, JobErrorKind> = CODES): Promise<unknown> {
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (!error) return data
   if (error instanceof FunctionsFetchError) throw new JobError('offline')
   if (error instanceof FunctionsHttpError) {
     const d: unknown = await error.context.json().catch(() => null)
-    throw new JobError(asKind(d && typeof d === 'object' ? (d as Record<string, unknown>).error : undefined))
+    throw new JobError(asKind(d && typeof d === 'object' ? (d as Record<string, unknown>).error : undefined, codes))
   }
   throw new JobError('unavailable')
 }

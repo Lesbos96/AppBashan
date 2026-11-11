@@ -7,6 +7,7 @@ import { Card } from '../components/Surfaces'
 import { loadPartner, statusInfo, type Partner as Firm } from '../lib/partner'
 import { useLoad } from '../lib/prices'
 import { useSession } from '../lib/session'
+import { Anfragen } from './partner/Anfragen'
 import { Dokumente } from './partner/Dokumente'
 import { MfaGate } from './partner/Mfa'
 import { Registrierung } from './partner/Registrierung'
@@ -62,7 +63,17 @@ function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
         </Card>
       </div>
       {/* Abgelehnte und gesperrte Firmen haben dahinter nichts zu sehen; alle anderen brauchen aal2 (zweiter Faktor) für die Dokumente */}
-      {ACCESS.includes(firm.status) && <MfaGate>{(recheck) => <Dokumente partnerId={firm.id} onDenied={recheck} />}</MfaGate>}
+      {ACCESS.includes(firm.status) && (
+        <MfaGate>
+          {(recheck) => (
+            <>
+              {/* Anfragen sehen und annehmen darf nur eine aktive Firma (pending, payment_hold: der Server liefert nichts); der Abruf bleibt dort aus */}
+              {firm.status === 'active' && <Anfragen />}
+              <Dokumente partnerId={firm.id} onDenied={recheck} />
+            </>
+          )}
+        </MfaGate>
+      )}
     </>
   )
 }
