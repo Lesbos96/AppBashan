@@ -9,7 +9,7 @@ import { test as base, expect, type BrowserContext, type Route } from '@playwrig
  * - Darüber Standardantworten für die öffentlichen Lesezugriffe (Tarife, Bedingungen) und eine leere Auftragsliste.
  * - Tests legen ihre eigenen Mocks mit `page.route` an (Auth, `route`, `quote`, Storage, Auftragsliste);
  *   Seiten-Routen gehen vor Kontext-Routen, `route.fallback()` reicht an diese Schicht weiter.
- * Die Muster sind hostunabhängig (`**\/rest/v1/…`): auch ein wiederverwendeter Dev-Server mit echter URL erreicht nichts.
+ * Die Muster sind hostunabhängig (`**\/rest/v1/…`): auch ein Build mit echter URL erreicht nichts.
  */
 
 // Tarife und Bedingungen wie in supabase/seed.sql (Version 1). Der Seed ist die Quelle, keine Kopie der Werte im Test.

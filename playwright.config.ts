@@ -17,7 +17,7 @@ export default defineConfig({
   timeout: 60_000,
   reporter: [['list'], ['json', { outputFile: 'tmp/reports/playwright.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:4180',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // Anfragen eines Service Workers sähe die Mock-Schicht (tests/e2e/backend.ts) nicht; die App registriert heute keinen
@@ -26,12 +26,17 @@ export default defineConfig({
     ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   webServer: {
-    command: 'npx vite --host 127.0.0.1 --port 5173 --strictPort',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: true,
+    // Fertiger Build statt Dev-Server: Der Dev-Server liefert jede Seite als rund 150 Einzelmodule, und unter Windows scheiterte im
+    // Volllauf gelegentlich eines davon (net::ERR_NO_BUFFER_SPACE); dann startete die App nie (S9i3-7). Der Build braucht wenige Chunks.
+    // NODE_ENV=development behält den Entwicklungsstand der App (React-Warnungen, /dev/fundament), nur gebündelt.
+    // Eigener Port und keine Wiederverwendung: ein laufender `npm run dev` (5173) oder `vite preview` (4173) wird nie mitgetestet.
+    command: 'npx vite build --outDir tmp/e2e-dist --logLevel warn && npx vite preview --host 127.0.0.1 --port 4180 --strictPort --outDir tmp/e2e-dist',
+    url: 'http://127.0.0.1:4180',
+    reuseExistingServer: false,
+    timeout: 180_000,
     // Tests laufen nur gegen die Mock-Schicht (tests/e2e/backend.ts): Platzhalter statt echter Werte, `.invalid` löst nie auf.
-    // Umgebungsvariablen gehen in Vite vor `.env.local`; ein wiederverwendeter Dev-Server behält seine Werte, die Mock-Schicht fängt trotzdem alles ab.
-    env: { NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter' },
+    // Umgebungsvariablen gehen in Vite vor `.env*`-Dateien und werden beim Build eingesetzt.
+    env: { NODE_ENV: 'development', NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter' },
   },
   projects: [
     // Handy (Breite der Referenz) und Desktop; Screenshot und Trace nur bei Fehlschlag (oben), Ablage unter tmp/playwright/
