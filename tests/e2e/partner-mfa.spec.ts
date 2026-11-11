@@ -407,6 +407,33 @@ test.describe('Dokumente', () => {
     await expect(page.getByText('Datei fehlt')).toBeVisible()
   })
 
+  test('Netz weg beim Hochladen und beim Neuladen der Liste: Formular gesperrt, keine zweite Zeile, nach „Erneut versuchen“ lädt „Erneut hochladen“ auf dieselbe id', async ({ page }) => {
+    const { docs } = await open(page, ready())
+    let blockList = false
+    await page.route('**/rest/v1/partner_documents**', (r) => (blockList && r.request().method() === 'GET' ? r.abort('failed') : r.fallback()))
+    await page.route('**/storage/v1/object/partner-documents/**', (r) => (blockList && r.request().method() !== 'OPTIONS' ? r.abort('failed') : r.fallback()))
+    await page.route('**/storage/v1/object/list/**', (r) => (blockList ? r.abort('failed') : r.fallback()))
+    await pick(page, 'trade_license', pdf())
+    blockList = true
+    await send(page).click()
+    await expect(page.getByRole('alert').filter({ hasText: 'Erneut hochladen' })).toBeVisible()
+    // supabase-js wiederholt GET-Abrufe bei Netzfehlern mit Pausen (rund 7 s), erst danach steht der Fehlerzustand
+    await expect(page.getByText('konnten nicht geladen werden')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByLabel('Datei', { exact: true })).toBeDisabled()
+    await expect(page.getByLabel('Art', { exact: true })).toBeDisabled()
+    await expect(send(page)).toBeDisabled()
+    expect(docs.inserts).toHaveLength(1)
+    blockList = false
+    await page.getByRole('button', { name: 'Erneut versuchen' }).click()
+    await expect(page.getByText('Datei fehlt')).toBeVisible()
+    const chooser = page.waitForEvent('filechooser')
+    await page.getByRole('button', { name: /Datei erneut hochladen: Gewerbeberechtigung/ }).click()
+    await (await chooser).setFiles(pdf())
+    await expect(page.getByText(/Hochgeladen am/)).toBeVisible()
+    expect(docs.inserts).toHaveLength(1)
+    expect(docs.uploads.map((u) => u.path).every((p) => p === `p-1/${String(docs.inserts[0]!.id)}`)).toBe(true)
+  })
+
   test('verweigert und die Sitzung steht nur noch auf aal1: zurück zur Code-Abfrage, keine Einrichtung', async ({ page }) => {
     const { docs, mfa } = await open(page, ready())
     // gespeichertes Token auf aal1 setzen (abgelaufene Stufe), die Seite liest es beim nächsten Aufruf

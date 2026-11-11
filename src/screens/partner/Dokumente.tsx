@@ -68,6 +68,8 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
     if (file) void run(file, null)
   }
   const full = docs.status === 'ready' && docs.data.length >= MAX_DOCS
+  // Solange die Liste fehlt (lädt oder Fehler), ist das Formular gesperrt: ohne Liste sähe man eine Zeile ohne Datei nicht und würde mit einem zweiten Klick einen weiteren Platz verbrauchen
+  const locked = busy || full || docs.status !== 'ready'
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-8">
@@ -124,7 +126,7 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
 
       <form noValidate onSubmit={submit} className="flex flex-col gap-4">
         <GroupedList title="Neues Dokument">
-          <SelectField label="Art" value={kind} disabled={busy || full} onChange={(e) => setKind(e.target.value as DocKind)}>
+          <SelectField label="Art" value={kind} disabled={locked} onChange={(e) => setKind(e.target.value as DocKind)}>
             {DOC_KINDS.map((k) => (
               <option key={k.value} value={k.value}>
                 {k.label}
@@ -141,7 +143,7 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
                 type="file"
                 aria-label="Datei"
                 accept="application/pdf,image/jpeg,image/png,image/webp"
-                disabled={busy || full}
+                disabled={locked}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 className="sr-only"
               />
@@ -157,7 +159,7 @@ export function Dokumente({ partnerId, onDenied }: { partnerId: string; onDenied
             {error}
           </p>
         )}
-        <Button type="submit" disabled={!file || busy || full}>
+        <Button type="submit" disabled={!file || locked}>
           {busy ? 'Wird hochgeladen …' : 'Hochladen'}
         </Button>
       </form>
