@@ -65,6 +65,7 @@ export function Profil() {
         </Card>
 
         <GroupedList>
+          <ListRow icon="truck" label="Als Partner arbeiten" detail="Firma registrieren und Aufträge übernehmen" to="/partner" />
           <ListRow icon="key" label="Für Vermieter" detail="Fahrzeuge und Tarife verwalten" to="/profil/vermieter" />
         </GroupedList>
 

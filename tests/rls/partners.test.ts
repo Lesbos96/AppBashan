@@ -90,6 +90,21 @@ describe('register_partner', () => {
     expect(r['country ≠ AT nur per Eigentümer-Insert, Check greift']).toMatch(/^23514:/)
   })
 
+  // s9i-5a: ein Konto hat höchstens eine Firma, in jedem Status (auch abgelehnt: keine Neuregistrierung, die Firma bleibt, der Server legt keine zweite an)
+  it('Konto mit Firma in jedem Status: zweiter Aufruf already_member, keine zweite Firma', () => {
+    const steps: Step[] = STATUSES.flatMap((s): Step[] => [
+      { name: `${s} erneut`, sql: `perform public.register_partner(${regArgs({ name: "'Zweitfirma GmbH'" })})`, ...auth(U[s], 'aal1') },
+      { name: `${s} Firmen`, sql: `=(select count(*) from public.partner_members where user_id = '${U[s]}')` },
+    ])
+    steps.push({ name: 'Zweitfirmen', sql: "=(select count(*) from public.partners where name = 'Zweitfirma GmbH')" })
+    const r = run(world(), steps)
+    for (const s of STATUSES) {
+      expect(r[`${s} erneut`], s).toBe('P0001: already_member')
+      expect(r[`${s} Firmen`], s).toBe('= 1')
+    }
+    expect(r['Zweitfirmen']).toBe('= 0')
+  })
+
   it('zwei parallele Aufrufe: genau eine Firma, der zweite already_member; aal1 sieht die eigene Firma, ändert aber nur mit aal2', async () => {
     const u = await makeUser('par')
     const args = { p_name: `mvtest-${runTag} Wettlauf GmbH`, p_legal_form: 'gmbh', p_uid: 'ATU12345678', p_small_business: false, p_street: 'Teststraße 1', p_postcode: '1010', p_city: 'Wien', p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: 'firma@movenow.test', p_districts: [1], p_terms_version: 'partner-2026-11-entwurf' }

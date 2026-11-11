@@ -23,6 +23,7 @@ const screens = {
   anmelden: () => import('../screens/Anmelden'),
   auftraege: () => import('../screens/Auftraege'),
   auftrag: () => import('../screens/Auftrag'),
+  partner: () => import('../screens/Partner'),
 }
 
 const page = (path: string, element: RouteObject['element'], handle: Handle, extra?: Partial<RouteObject>): RouteObject => ({ path, element, handle, ...extra })
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
       page('miete', <Folgt title="Transporter mieten" />, { key: 'miete', title: 'Transporter mieten', root: true }),
       lazyPage('auftraege', async () => { const { Auftraege } = await screens.auftraege(); return <Auftraege /> }, { key: 'auftraege', title: 'Aufträge', root: true }, { loader: requireSession }),
       lazyPage('auftraege/:id', async () => { const { Auftrag } = await screens.auftrag(); return <Auftrag /> }, { key: 'auftrag', title: 'Auftrag', bar: false }, { loader: requireSession }),
+      lazyPage('partner', async () => { const { Partner } = await screens.partner(); return <Partner /> }, { key: 'partner', title: 'Partner', bar: false }, { loader: requireSession }),
       lazyPage('anmelden', async () => { const { Anmelden } = await screens.anmelden(); return <Anmelden /> }, { key: 'anmelden', title: 'Anmelden', bar: false }),
       // Info-Sheet „Wie rechnet MoveNow?" liegt über dem Profil und teilt dessen Seite
       page('profil', <Profil />, { key: 'profil', title: 'Profil', root: true }),
