@@ -7,6 +7,13 @@ export type PStatus = (typeof STATUSES)[number]
 
 export const newId = () => crypto.randomUUID()
 
+/**
+ * Marker der Testfirmen: ihre Kontaktadresse. Die Domain .test ist reserviert (RFC 2606) und nie zustellbar, `pt-firma-` und die Lauf-ID
+ * hängen nur Tests an. `sweepTestResidue` findet Testfirmen daran und nicht an der Mitgliedschaft (die geht mit dem Nutzer verloren).
+ */
+export const FIRM_MAIL_RE = '^pt-firma-[0-9a-f]{8}@movenow[.]test$' // PostgreSQL-Regex; [.] statt \. (Template-Literal)
+export const FIRM_MAIL = `pt-firma-${crypto.randomUUID().slice(0, 8)}@movenow.test`
+
 export const insertUsers = (ids: string[]) =>
   ids.map((id) => `insert into auth.users (id, email) values ('${id}', 'pt-${id.slice(0, 8)}@movenow.test');`).join(' ')
 
@@ -15,7 +22,7 @@ export const P = (key: string) => `current_setting('app.p_${key}')::uuid`
 export const regArgs = (o: Partial<Record<string, string>> = {}) => {
   const a = {
     name: "'Testfirma GmbH'", legal: "'gmbh'", uid: "'ATU12345678'", small: 'false', street: "'Teststraße 1'", zip: "'1010'", city: "'Wien'",
-    cname: "'Max Test'", phone: "'+43 660 1234567'", email: "'firma@movenow.test'", districts: 'array[1,2]::smallint[]', terms: "'partner-2026-11-entwurf'", ...o,
+    cname: "'Max Test'", phone: "'+43 660 1234567'", email: `'${FIRM_MAIL}'`, districts: 'array[1,2]::smallint[]', terms: "'partner-2026-11-entwurf'", ...o,
   }
   return `${a.name}, ${a.legal}, ${a.uid}, ${a.small}, ${a.street}, ${a.zip}, ${a.city}, ${a.cname}, ${a.phone}, ${a.email}, ${a.districts}, ${a.terms}`
 }

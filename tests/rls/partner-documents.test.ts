@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { deleteUsers, makeUser, must, run, service } from '../support/db.ts'
 import { ownerGrantRole, ownerSql } from '../support/owner.ts'
-import { ownerDeletePartner } from '../support/partner.ts'
+import { FIRM_MAIL, ownerDeletePartner } from '../support/partner.ts'
 import { tryAal2User, withToken, type Aal2User } from '../support/totp.ts'
 
 const BUCKET = 'partner-documents'
@@ -22,7 +22,7 @@ if (reason) console.warn(`partner-documents: TOTP nicht nutzbar, Tests überspru
 
 const reg = (name: string) => ({
   p_name: name, p_legal_form: 'gmbh', p_uid: 'ATU12345678', p_small_business: false, p_street: 'Teststraße 1', p_postcode: '1010', p_city: 'Wien',
-  p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: 'firma@movenow.test', p_districts: [1], p_terms_version: 'partner-2026-11-entwurf',
+  p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: FIRM_MAIL, p_districts: [1], p_terms_version: 'partner-2026-11-entwurf',
 })
 const PREFIX = 'mvtest-docs-'
 const firms: string[] = []

@@ -3,7 +3,7 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { deleteUsers, must } from '../support/db.ts'
 import { ownerGrantRole, ownerSql } from '../support/owner.ts'
-import { ownerDeletePartner } from '../support/partner.ts'
+import { FIRM_MAIL, ownerDeletePartner } from '../support/partner.ts'
 import { jwtAal, tryAal2User, type Aal2User } from '../support/totp.ts'
 
 const probe = await tryAal2User('mfa-probe')
@@ -22,7 +22,7 @@ afterAll(async () => {
 
 const reg = {
   p_name: `mvtest-mfa-${Date.now().toString(36)} GmbH`, p_legal_form: 'gmbh', p_uid: 'ATU12345678', p_small_business: false, p_street: 'Teststraße 1',
-  p_postcode: '1010', p_city: 'Wien', p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: 'firma@movenow.test',
+  p_postcode: '1010', p_city: 'Wien', p_contact_name: 'Max Test', p_contact_phone: '+43 660 1234567', p_contact_email: FIRM_MAIL,
   p_districts: [1], p_terms_version: 'partner-2026-11-entwurf',
 }
 

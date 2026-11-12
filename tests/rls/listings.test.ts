@@ -422,8 +422,8 @@ describe('Outbox und Zuordnung: Rechte', () => {
       { name: 'INSERT', as: 'authenticated', claims: A2(U.pa), sql: `insert into public.assignments (request_id, partner_id) values ('${R}', ${P('a')})` },
       { name: 'service_role INSERT', as: 'service_role', sql: `insert into public.assignments (request_id, partner_id) values ('${R}', ${P('a')})` },
       { name: 'zweite aktive Zuordnung', sql: `insert into public.assignments (request_id, partner_id) values ('${R}', ${P('a')})` },
-      { name: 'DELETE', sql: `delete from public.assignments` },
-      { name: 'UPDATE Firma', sql: `update public.assignments set accepted_at = now() - interval '1 day'` },
+      { name: 'DELETE', sql: `delete from public.assignments where request_id = '${R}'` },
+      { name: 'UPDATE Firma', sql: `update public.assignments set accepted_at = now() - interval '1 day' where request_id = '${R}'` },
     ]
     const r = probes(setup, steps)
     rows(r['Kunde outbox'], 0)

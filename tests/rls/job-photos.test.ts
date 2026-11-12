@@ -63,6 +63,8 @@ const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
 const err = (v: string | undefined, part: string) => expect(v?.includes(part), `${part}: ${v}`).toBe(true)
 const rows = (v: string | undefined, n: number) => expect(v, String(v)).toBe(`= ${n}`)
 const uid = () => crypto.randomUUID()
+// photo_claim liefert höchstens 50 Fotos je Aufruf, beginnend bei der ältesten offenen Anfrage: fremde Reste dürfen das Ergebnis nicht bestimmen
+const CLAIM_ALL = `for _i in 1..100 loop exit when (select count(*) from public.photo_claim(50)) = 0; end loop`
 
 describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
   it('Wartebedingung, Claim mit Lease, Mark nur mit gültigem Versuch, Verteilung nach dem letzten Foto, Mail bei failed', () => {
@@ -80,7 +82,7 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
       { name: 'Dispatch ohne Secrets', sql: `perform public.photo_publish_dispatch()` },
       { name: 'kein Versuch gezählt', sql: `=${count(`public.job_photos where request_id = '${R1}'`)}` },
       { name: 'claim als service_role', as: 'service_role', sql: `perform count(*) from public.photo_claim(50)` }, // nur der Cron (Eigentümer) claimt, S9d-Abnahme N4
-      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'claim', sql: CLAIM_ALL },
       { name: 'beide pending', sql: `=${count(`public.job_photos where request_id = '${R1}' and status = 'pending' and attempts = 1`)}` },
       { name: 'zweiter claim in der Lease', sql: `perform count(*) from public.photo_claim(50)` },
       { name: 'Versuche bleiben 1', sql: `=(select max(attempts) from public.job_photos where request_id = '${R1}')` },
@@ -129,7 +131,7 @@ describe('Verteilung wartet auf Fotos, Claim und Mark', () => {
   it('Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung', () => {
     const R = newId()
     const expire = `update public.job_photos set lease_until = now() - interval '1 second' where request_id = '${R}'`
-    const claim = { sql: `perform count(*) from public.photo_claim(50)` }
+    const claim = { sql: CLAIM_ALL }
     const att = `=(select attempts from public.job_photos where request_id = '${R}')`
     const steps: Step[] = [
       { name: 'c1', ...claim }, { name: 'a1', sql: att }, { name: 'e1', sql: expire },
@@ -435,7 +437,7 @@ describe('Abnahme S9d: Lücken', () => {
     const r = probes(setup, [
       { name: 'zurückziehen', sql: `perform private.set_request_status('${RW}', 'withdrawn', '${U.cust}', 'customer')` },
       { name: 'abgelaufen', sql: `perform private.set_request_status('${RX}', 'expired', null, 'system')` },
-      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'claim', sql: CLAIM_ALL },
       {
         name: 'geclaimt',
         sql: `=(select count(*) filter (where request_id = '${RO}')::text || '/' || count(*) filter (where request_id in ('${RW}', '${RD}', '${RX}'))::text from public.job_photos)`,
@@ -445,10 +447,23 @@ describe('Abnahme S9d: Lücken', () => {
     expect(r['geclaimt']).toBe('= 1/0')
   })
 
+  it('photo_claim: viele fremde offene Fotos davor ändern das Ergebnis für die eigene Anfrage nicht (Reste auf Dev)', () => {
+    // 8 fremde Anfragen mit je 8 Fotos (= 64 > 50) sortieren vor der eigenen (gleiches created_at in der Transaktion, kleinere ID)
+    const foreign = Array.from({ length: 8 }, (_, i) => `00000000-0000-4000-8000-00000000000${i + 1}`)
+    const RO = newId()
+    const setup = `${BASE} ${foreign.map((f) => `${request(f)} ${Array.from({ length: 8 }, () => photo(f)).join(' ')}`).join(' ')} ${request(RO)} ${photo(RO)}`
+    const r = probes(setup, [
+      { name: 'claim', sql: CLAIM_ALL },
+      { name: 'eigene geclaimt', sql: `=(select count(*) from public.job_photos where request_id = '${RO}')` },
+    ])
+    expect(r['claim']).toBe('ok')
+    rows(r['eigene geclaimt'], 1)
+  })
+
   it('Mark nach dem Zurückziehen: Foto wird failed, aber keine Mail und keine Verteilung', () => {
     const R = newId()
     const r = probes(`${BASE} ${request(R)} ${photo(R)}`, [
-      { name: 'claim', sql: `perform count(*) from public.photo_claim(50)` },
+      { name: 'claim', sql: CLAIM_ALL },
       { name: 'zurückziehen', sql: `perform private.set_request_status('${R}', 'withdrawn', '${U.cust}', 'customer')` },
       { name: 'mark', as: 'service_role', sql: `perform public.photo_publish_mark(${JP(R, 0)}, 1, false, null, null, 'decode_failed')` },
       { name: 'Foto', sql: `=(select status from public.job_photos where request_id = '${R}')` },
