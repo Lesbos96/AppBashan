@@ -81,7 +81,8 @@ export type JobsState = {
 const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors }) : null)
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, ...init }
+  // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o

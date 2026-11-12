@@ -16,7 +16,7 @@ const FIRM = {
 }
 const BASE = (...keys: (keyof typeof FIRM)[]) => `${USERS} ${grantAdmin(U.adm)} ${keys.map((k) => FIRM[k]).join(' ')}`
 const hold = (key: string, to: 'payment_hold' | 'suspended') =>
-  `select set_config('app.mv_partner_status', ${P(key)}::text || ':active>${to}', true); update public.partners set status = '${to}', status_reason = 'Probe' where id = ${P(key)}; select set_config('app.mv_partner_status', '', true);`
+  `select set_config('app.mv_partner_status', ${P(key)}::text || ':active>${to}', true); update public.partners set status = '${to}', status_reason = 'Status für den Test' where id = ${P(key)}; select set_config('app.mv_partner_status', '', true);`
 
 /** Spanne 1000,00 bis 2000,00 € (range) bzw. Angebot ohne Spanne (free), Status awaiting_offer, Frist in einem Tag. */
 function request(id: string, kind: 'range' | 'free'): string {
@@ -121,7 +121,8 @@ describe('Beträge des Clients (send_offer)', () => {
 describe('Fremde Angebote und Firmenstatus', () => {
   it('Firma B liest, ändert und zieht Angebote von A nicht zurück; der Kunde liest die Tabelle nicht; payment_hold und suspended bieten nicht und sehen keine Listings', () => {
     const R = newId()
-    const setup = `${BASE('a', 'b', 'h', 's')} ${request(R, 'range')} ${stash(R, 'a', 'h', 's')}`
+    // Die Listings entstehen, solange alle Firmen aktiv sind; danach wechseln h und s den Status (Marker wie in der Statusfunktion)
+    const setup = `${BASE('a', 'b', 'h', 's')} ${request(R, 'range')} ${stash(R, 'a', 'h', 's')} ${hold('h', 'payment_hold')} ${hold('s', 'suspended')}`
     const as = (name: string, sub: string, sql: string): Step => ({ name, as: 'authenticated', claims: A2(sub), sql })
     const steps: Step[] = [
       as('a sendet', U.pa, `perform public.send_offer(${LID('a')}, 150000)`),
@@ -134,8 +135,6 @@ describe('Fremde Angebote und Firmenstatus', () => {
       as('b ändert den Betrag', U.pb, `update public.partner_offers set amount_cents = 1`),
       as('a ändert den Betrag', U.pa, `update public.partner_offers set amount_cents = 1`),
       as('a löscht', U.pa, `delete from public.partner_offers`),
-      { name: 'Status wird payment_hold', sql: hold('h', 'payment_hold') },
-      { name: 'Status wird suspended', sql: hold('s', 'suspended') },
       as('payment_hold sendet', U.ph, `perform public.send_offer(${LID('h')}, 150000)`),
       as('suspended sendet', U.ps, `perform public.send_offer(${LID('s')}, 150000)`),
       as('payment_hold sieht Listings', U.ph, `=(select count(*) from public.job_listings)`),

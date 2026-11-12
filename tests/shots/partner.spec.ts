@@ -1,6 +1,10 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect, test } from '../e2e/backend'
+import { fixed, mockJobs, O1, range, REV1, type JobsState } from '../e2e/jobs-helpers'
 import { factor, openPartner, pgError, storageError, type DocRow, type OpenOpts } from '../e2e/mfa-helpers'
+
+const O2 = '7c6f8a91-2d3e-4f40-b12c-1d0e9f8a7b6c'
+const O3 = '8d7a9ba2-3e4f-4051-a23d-2e1f0a9b8c7d'
 
 /*
  * Bildsicht für das Partner-Portal (s9i-5a, 5b): Registrierung, Statuskarten je Status, Einrichtung, Code-Abfrage, Dokumente.
@@ -11,7 +15,9 @@ import { factor, openPartner, pgError, storageError, type DocRow, type OpenOpts 
 const row = (id: string, kind: string, day: string): DocRow => ({ id, partner_id: 'p-1', kind, uploaded_at: `2026-11-${day}T10:00:00Z` })
 const PDF = { name: 'gewerbe.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 test') }
 
-type Shot = { name: string; open: OpenOpts; steps?: (page: Page, ctx: Awaited<ReturnType<typeof openPartner>>) => Promise<void>; wait: (page: Page) => Promise<unknown> }
+const ACTIVE: OpenOpts = { status: 'active', factors: [factor('v1', 'verified')], aal: 'aal2' }
+type Ctx = Awaited<ReturnType<typeof openPartner>> & { jobs: JobsState }
+type Shot = { name: string; open: OpenOpts; jobs?: Partial<JobsState>; steps?: (page: Page, ctx: Ctx) => Promise<void>; wait: (page: Page) => Promise<unknown> }
 
 const heading = (name: string) => (page: Page) => expect(page.getByRole('heading', { name })).toBeVisible()
 
@@ -110,6 +116,91 @@ const shots: Shot[] = [
     wait: heading('Dokumente'),
   },
   { name: 'status-active', open: { status: 'active', factors: [factor('v1', 'verified')], aal: 'aal2' }, wait: heading('Dokumente') },
+  // Anfragen (s9i-6a): aktive Firma mit aal2; Platzhalter-Daten, keine echten Personen (die Mock-Inputs tragen absichtlich fremde Schlüssel, die nie erscheinen)
+  { name: 'anfragen-leer', open: ACTIVE, wait: heading('Offene Anfragen') },
+  { name: 'anfragen-liste', open: ACTIVE, jobs: { listings: [fixed(), range()] }, wait: heading('Offene Anfragen') },
+  {
+    name: 'anfragen-fotos',
+    open: ACTIVE,
+    jobs: { listings: [fixed()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Fotos ansehen' }).click()
+      await expect(page.getByAltText('Foto der Anfrage')).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'annahme-sheet',
+    open: ACTIVE,
+    jobs: { listings: [fixed()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Annehmen' }).click()
+      await expect(page.getByRole('button', { name: 'Verbindlich annehmen' })).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'annahme-wettlauf',
+    open: ACTIVE,
+    jobs: { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] },
+    steps: async (page, { jobs }) => {
+      await page.getByRole('button', { name: 'Annehmen' }).click()
+      await page.getByRole('button', { name: 'Verbindlich annehmen' }).click()
+      jobs.listings = []
+      await expect(page.getByText('Diese Anfrage ist nicht mehr verfügbar')).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'angenommen',
+    open: ACTIVE,
+    jobs: { listings: [fixed({ status: 'accepted' })] },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'angebot-eingabe-fehler',
+    open: ACTIVE,
+    jobs: { listings: [range()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Angebot abgeben' }).click()
+      await page.getByLabel('Dein Angebot in Euro').fill('1,005')
+      await page.getByRole('button', { name: 'Weiter' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'angebot-bestaetigung',
+    open: ACTIVE,
+    jobs: { listings: [range()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Angebot abgeben' }).click()
+      await page.getByLabel('Dein Angebot in Euro').fill('700,50')
+      await page.getByRole('button', { name: 'Weiter' }).click()
+      await expect(page.getByRole('button', { name: 'Verbindlich senden' })).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'meine-angebote',
+    open: ACTIVE,
+    jobs: {
+      listings: [range()],
+      offers: [
+        { id: O1, base_revision_id: range().revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' },
+        { id: O2, base_revision_id: REV1, amount_cents: 55000, status: 'withdrawn', valid_until: '2026-12-02T10:00:00Z' },
+        { id: O3, base_revision_id: REV1, amount_cents: 61000, status: 'superseded', valid_until: '2026-12-02T10:00:00Z' },
+      ],
+    },
+    wait: heading('Meine Angebote'),
+  },
+  {
+    name: 'anfragen-ladefehler',
+    open: ACTIVE,
+    jobs: { listStatus: [500, 500, 500, 500, 500, 500] },
+    wait: (page) => expect(page.getByText('Die Anfragen konnten nicht geladen werden')).toBeVisible({ timeout: 30_000 }),
+  },
+  { name: 'status-payment-hold', open: { ...ACTIVE, status: 'payment_hold' }, wait: heading('Dokumente') },
   { name: 'status-rejected', open: { status: 'rejected' }, wait: heading('Transporte Huber GmbH') },
   { name: 'status-suspended', open: { status: 'suspended' }, wait: heading('Transporte Huber GmbH') },
 ]
@@ -127,7 +218,8 @@ for (const width of [0, 320]) {
     test(`Partner ${width ? `${width} px ` : ''}${s.name}`, async ({ page }, testInfo) => {
       test.skip(width === 320 && !testInfo.project.name.startsWith('shots-390'), 'die 320-px-Aufnahmen entstehen einmal je Farbschema')
       if (width) await page.setViewportSize({ width, height: 640 })
-      const ctx = await openPartner(page, s.open)
+      const jobs = await mockJobs(page, s.jobs)
+      const ctx = { ...(await openPartner(page, s.open)), jobs }
       await s.wait(page)
       await s.steps?.(page, ctx)
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), { message: 'keine Überbreite' }).toBe(true)

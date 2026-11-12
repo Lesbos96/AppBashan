@@ -40,11 +40,13 @@ test('Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse 
 })
 
 test('leere Liste und Ladefehler mit erneutem Versuch', async ({ page }) => {
-  const { jobs } = await openJobs(page, { listings: [], listStatus: [500] })
-  await expect(page.getByText('Die Anfragen konnten nicht geladen werden')).toBeVisible()
+  // supabase-js wiederholt GET-Abrufe bei 5xx mehrfach (rund 7 s); alle Versuche scheitern lassen
+  const { jobs } = await openJobs(page, { listings: [], listStatus: [500, 500, 500, 500, 500, 500] })
+  await expect(page.getByText('Die Anfragen konnten nicht geladen werden')).toBeVisible({ timeout: 30_000 })
+  jobs.listStatus = []
   await page.getByRole('button', { name: /Erneut|Nochmal|Wiederholen/ }).click()
   await expect(page.getByText('Gerade gibt es keine offenen Anfragen')).toBeVisible()
-  expect(jobs.listingReads).toBe(2)
+  expect(jobs.listingReads).toBeGreaterThanOrEqual(2)
 })
 
 test('Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gezeigte Auszahlung, danach steht die Anfrage unter „Angenommen“', async ({ page }) => {
@@ -200,6 +202,22 @@ test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', async ({ p
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
   expect(jobs.accepts).toHaveLength(1)
+})
+
+test('320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erreichbar (Bildsicht s9i-6a, mittel 4)', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await openJobs(page, { listings: [range()] })
+  await card(page).getByRole('button', { name: 'Angebot abgeben' }).click()
+  await dialog(page).getByLabel('Dein Angebot in Euro').fill('700,50')
+  await dialog(page).getByRole('button', { name: 'Weiter' }).click()
+  for (const name of ['Verbindlich senden', 'Doch nicht']) {
+    const b = dialog(page).getByRole('button', { name })
+    await b.scrollIntoViewIfNeeded()
+    const box = await b.boundingBox()
+    expect(box!.y, `${name} oben`).toBeGreaterThanOrEqual(0)
+    expect(box!.y + box!.height, `${name} unten`).toBeLessThanOrEqual(640)
+    expect(box!.height, `${name} hoch`).toBeGreaterThanOrEqual(44)
+  }
 })
 
 test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)', async ({ page }) => {

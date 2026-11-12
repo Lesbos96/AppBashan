@@ -85,6 +85,10 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   // Auftrags-Detail: ohne eigenen Mock gibt es weder offenen Nachtrag noch Angebote.
   await context.route('**/rest/v1/price_revisions**', (r) => rest(r, []))
   await context.route('**/rest/v1/rpc/my_request_offers**', (r) => reply(r, []))
+  // Partner-Anfragen (s9i-6a): ohne eigenen Mock hat die aktive Firma keine Anfragen und keine Angebote; der Satz ist 15 % und 20 % (tests/e2e/jobs-helpers.ts überschreibt)
+  await context.route('**/rest/v1/job_listings**', (r) => rest(r, []))
+  await context.route('**/rest/v1/partner_offers**', (r) => rest(r, []))
+  await context.route('**/rest/v1/current_fee_rates**', (r) => rest(r, [{ fee_rate: 0.15, fee_vat_rate: 0.2 }]))
   return backend
 }
 

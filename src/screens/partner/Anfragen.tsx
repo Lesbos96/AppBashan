@@ -31,9 +31,9 @@ const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums"
 
 function Zeile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <p className="m-0 flex items-baseline justify-between gap-3 text-body">
+    <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-body">
       <span className="min-w-0 text-text-secondary">{label}</span>
-      <span className="text-right font-semibold">{children}</span>
+      <span className="ml-auto text-right font-semibold">{children}</span>
     </p>
   )
 }
@@ -63,9 +63,11 @@ export function Anfragen() {
   return (
     <>
       {notice && (
-        <p role="status" className="m-0 px-5 pb-2 text-body">
-          {notice}
-        </p>
+        <div className="px-5 pb-4">
+          <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
+            {notice}
+          </p>
+        </div>
       )}
       <section aria-labelledby="anfragen" className="flex flex-col gap-3 px-5 pb-4">
         <h2 id="anfragen" className="m-0 text-headline">
@@ -131,7 +133,9 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
         l.lowCents !== null &&
         l.highCents !== null && (
           <Zeile label="Preisspanne">
-            {euro(l.lowCents)} bis {euro(l.highCents)}
+            <span className="whitespace-nowrap">
+              {euro(l.lowCents)} bis {euro(l.highCents)}
+            </span>
           </Zeile>
         )
       )}
@@ -236,9 +240,7 @@ function AngebotSheet({ l, rates, open, onClose, onDone }: { l: Listing; rates: 
           <>
             <Zeile label="Dein Angebot">{euro(cents)}</Zeile>
             {rates && <Zeile label="Du erhältst voraussichtlich">{euro(payoutCents(cents, rates))}</Zeile>}
-            <p className="m-0 text-subhead text-text-secondary">
-              Der Satz gilt heute; bei der Annahme durch den Kunden zählt der dann geltende Satz. Das Angebot ist verbindlich, bis du es zurückziehst oder es abläuft.
-            </p>
+            <p className="m-0 text-subhead text-text-secondary">Dein Anteil kann sich bis zur Annahme ändern. Verbindlich, bis du das Angebot zurückziehst oder es abläuft.</p>
           </>
         )}
       </Bestaetigen>
@@ -261,10 +263,8 @@ function Angebote({ offers, onDone }: { offers: MyOffer[]; onDone: (notice?: str
     <div className={box}>
       {offers.map((o) => (
         <div key={o.id} className="flex flex-col gap-2 border-t-[0.5px] border-separator pt-3 first:border-t-0 first:pt-0">
-          <span className="flex items-baseline justify-between gap-3 text-headline">
-            <span>{euro(o.amountCents)}</span>
-            <span className="text-right text-body font-normal">{o.status === 'sent' ? `Offen bis ${viennaTime(o.validUntil)}` : OFFER_TEXT[o.status]}</span>
-          </span>
+          <span className="text-headline">{euro(o.amountCents)}</span>
+          <span className="text-subhead text-text-secondary">{o.status === 'sent' ? `Offen bis ${viennaTime(o.validUntil)}` : OFFER_TEXT[o.status]}</span>
           {o.status === 'sent' && (
             <Button variant="tinted" onClick={() => setPick(o)}>
               Zurückziehen
