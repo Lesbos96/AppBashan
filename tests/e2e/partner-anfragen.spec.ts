@@ -89,7 +89,7 @@ test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch 
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   jobs.rates = { fee_rate: 0.2, fee_vat_rate: 0.2 }
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
-  await expect(page.getByText(/Preis|Auszahlung/).filter({ hasText: /geändert/ })).toBeVisible()
+  await expect(page.getByText('Deine Auszahlung hat sich geändert')).toBeVisible()
   await expect(card(page)).toContainText('551,69 €') // 689,61 − 20 % (137,92)
   expect(jobs.accepts).toHaveLength(1)
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
@@ -184,9 +184,9 @@ for (const [status, anchor] of [
     const { jobs } = await openJobs(page, { listings: [fixed()] }, { status, aal: 'aal2', factors: [factor('f-1', 'verified')] })
     await expect(page.getByRole('heading', { name: anchor, level: 2 })).toBeVisible()
     await page.waitForLoadState('networkidle')
+    noJobReads(jobs) // zuerst die Zähler (Abnahme-Kontrolle K3): ein Abruf ohne sichtbare Überschrift würde hier rot
     await expect(heading(page)).toHaveCount(0)
     await expect(page.getByRole('article')).toHaveCount(0)
-    noJobReads(jobs)
   })
 }
 
@@ -194,8 +194,8 @@ test('aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste', async (
   const { jobs } = await openJobs(page, { listings: [fixed()] }, { aal: 'aal1', factors: [factor('f-1', 'verified')] })
   await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
   await page.waitForLoadState('networkidle')
-  await expect(heading(page)).toHaveCount(0)
   noJobReads(jobs)
+  await expect(heading(page)).toHaveCount(0)
 })
 
 test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)', async ({ page }) => {
