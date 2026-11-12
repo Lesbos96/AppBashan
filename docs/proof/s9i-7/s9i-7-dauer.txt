@@ -1,0 +1,62 @@
+s9i-7 Dauer je Testdatei gegen s9i-6b (Quellen: tmp/proof/s9i-7-e2e.json, tmp/proof/s9i-7-rls-2.json; Basis docs/proof/s9i-6b/s9i-6b-dauer.txt; Auswertung tmp/dauer-s9i-7.mjs)
+Markierung: >150 s = [>150s]; >2x Basis (Basis ab 5 s) = [>2x]; neue Datei = [neu]
+
+e2e: 662 Tests im JSON (beide Projekte)
+== e2e (Summe der Testdauern beider Projekte) ==
+Datei                           s9i-7 (s)  s9i-6b (s)  Markierung
+anfrage.spec.ts                    562         542  [>150s]
+fotos.spec.ts                      200         191  [>150s]
+wege.spec.ts                       160         161  [>150s]
+auftrag-aktionen.spec.ts           133         126  
+partner-mfa.spec.ts                113         105  
+partner-anfragen.spec.ts           109         108  
+partner-nachtrag.spec.ts           106           -  [neu]
+barrierefreiheit.spec.ts            87          85  
+konto.spec.ts                       86          82  
+auftrag.spec.ts                     83          80  
+partner-auftraege.spec.ts           79          77  
+partner.spec.ts                     51          49  
+konfigurator.spec.ts                49          45  
+dienste.spec.ts                     28          25  
+shell.spec.ts                       26          26  
+anmelden.spec.ts                    19          20  
+komponenten.spec.ts                  4           4  
+smoke.spec.ts                        2           2  
+backend.spec.ts                      2           2  
+
+rls: 33 Dateien, Summe der Dateidauern 627 s
+== rls ==
+Datei                           s9i-7 (s)  s9i-6b (s)  Markierung
+status.test.ts                      96          70  
+quote-hardening.test.ts             75          74  
+uploads.test.ts                     53         106  
+booking-open.test.ts                51          24  [>2x]
+quote.test.ts                       46          45  
+accept-concurrency.test.ts          37          40  
+partner-documents.test.ts           25          18  
+partner-admin.test.ts               23           8  [>2x]
+job-photos.test.ts                  23          59  
+partners.test.ts                    20          85  
+job-photos-concurrency.test.ts      19          49  
+cancellation-partner.test.ts        18           3  
+offers-concurrency.test.ts          18          18  
+change-orders-concurrency.test.ts    14          20  
+partner-mfa.test.ts                 12          14  
+rls.test.ts                         11          21  
+listings.test.ts                    11          25  
+offers.test.ts                      10          10  
+journal.test.ts                     10           9  
+change-orders.test.ts                9           9  
+settings.test.ts                     6           7  
+route.test.ts                        6           6  
+delete-account-live.test.ts          5           5  
+cancellation.test.ts                 4          15  
+completion.test.ts                   4          19  
+partner-my-jobs.test.ts              3          24  
+partner-jobs.test.ts                 3           3  
+partner-my-job-changes.test.ts       3           -  [neu]
+outbox.test.ts                       3          17  
+account-deletion.test.ts             3          14  
+auth.test.ts                         3           3  
+admin-correct.test.ts                2          12  
+partner-fee-read.test.ts             1           6  

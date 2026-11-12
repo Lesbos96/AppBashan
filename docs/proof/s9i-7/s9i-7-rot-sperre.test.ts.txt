@@ -1,0 +1,44 @@
+// Lockerungsprobe s9i-7a (nicht committen): my_job_changes() mit gelockerten Sperren; Ist-Werte der Prüfungen.
+import { expect, it } from 'vitest'
+import { splitFee } from '@pricing'
+import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
+
+const TODAY = "(now() at time zone 'Europe/Vienna')::date"
+const cur = (key: string, col: string) => `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
+const RT = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
+const s0 = splitFee(68961, { feeRate: RT.fr, vatRate: RT.vr })
+const U = { adm: newId(), cust: newId(), pa: newId(), pb: newId() }
+const OV = { districts: 'array[17, 18]::smallint[]' }
+const BASE = `${insertUsers(Object.values(U))} ${grantAdmin(U.adm)} ${firm(U.pa, 'a', 'active', U.adm, OV)} ${firm(U.pb, 'b', 'active', U.adm, OV)}`
+const rev1 = (id: string) => `(select id from public.price_revisions where request_id = '${id}' and n = 1)`
+const LID = (id: string, key: string) => `(select id from public.job_listings where request_id = '${id}' and partner_id = ${P(key)})`
+const accepted = (id: string, key: string, user: string) =>
+  `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline) values ('${id}', '${U.cust}', gen_random_uuid(), 'move', 'requested', 17, now() + interval '14 days', now() + interval '1 day');
+   insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents) values ('${id}', 1, 'submit', '{}', '{"kind":"price","totalCents":68961,"lowCents":68961,"highCents":68961,"lines":[],"terms":{"x":1}}', 1, 68961, 68961, 68961);
+   update public.service_requests set current_revision = ${rev1(id)} where id = '${id}';
+   select public.distribute_request('${id}');
+   select public.partner_accept('${user}', ${LID(id, key)}, ${rev1(id)}, ${s0.payoutCents}, ${RT.fr}, ${RT.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${RT.frv}, ${RT.vrv});`
+const loosen = (from: string, to: string) => `; do $z$ begin execute replace(pg_get_functiondef('public.my_job_changes()'::regprocedure), '${from}', '${to}'); end $z$;`
+const as = (name: string, sub: string, sql: string): Step => ({ name, as: 'authenticated', claims: { sub, aal: 'aal2' }, sql })
+
+it('Fenster gelockert: A sieht den Auftrag außerhalb des Zugriffsfensters', () => {
+  const [R, RB] = [newId(), newId()]
+  const setup = `${BASE} ${accepted(R, 'a', U.pa)} ${accepted(RB, 'b', U.pb)} update public.assignments set ended_at = now() - interval '40 days', ended_reason = 'completed' where request_id = '${R}'`
+  const fest = probes(setup, [as('Fenster', U.pa, `=(select count(*) from public.my_job_changes() where request_id = '${R}')`)])
+  const locker = probes(`${setup} ${loosen('and private.assignment_access(a.request_id, pid)', '')}`, [as('Fenster', U.pa, `=(select count(*) from public.my_job_changes() where request_id = '${R}')`)])
+  console.log('ABSICHERUNG Fenster:', fest['Fenster'], '| gelockert:', locker['Fenster'])
+  expect(fest['Fenster']).toBe('= 0')
+  expect(locker['Fenster']).toBe('= 1')
+})
+
+it('Firmenfilter gelockert: B sieht den Auftrag von A', () => {
+  const [R] = [newId()]
+  const setup = `${BASE} ${accepted(R, 'a', U.pa)}`
+  const step = as('B', U.pb, `=(select count(*) from public.my_job_changes() where request_id = '${R}')`)
+  const fest = probes(setup, [step])
+  const locker = probes(`${setup} ${loosen('where a.partner_id = pid and private.assignment_access(a.request_id, pid)', 'where true')}`, [step])
+  console.log('ABSICHERUNG Firma:', fest['B'], '| gelockert:', locker['B'])
+  expect(fest['B']).toBe('= 0')
+  expect(locker['B']).toBe('= 1')
+})
