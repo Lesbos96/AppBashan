@@ -11,18 +11,20 @@ const basis = (over: Partial<PartnerBasis> = {}): PartnerBasis => ({
   status: 'accepted', totalCents: 68961, callOutCents: 6900, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1, ...over,
 })
 
-type Fake = PartnerDeps & { calls: PartnerCall[]; basisCalls: number; aals: string[]; logs: Record<string, unknown>[] }
+type Fake = PartnerDeps & { calls: PartnerCall[]; basisCalls: number; aals: string[]; reasons: string[]; logs: Record<string, unknown>[] }
 function deps(over: Partial<PartnerDeps> = {}, aal = 'aal2'): Fake {
   const d: Fake = {
     calls: [] as PartnerCall[],
     basisCalls: 0,
     aals: [] as string[],
+    reasons: [] as string[],
     logs: [] as Record<string, unknown>[],
     allowedOrigins: [],
     getUser: async (jwt: string) => (jwt === 'ok' ? { id: 'u1', aal } : null),
-    basis: async (_u: string, a: string) => {
+    basis: async (_u: string, a: string, _r: string, reason: string) => {
       d.basisCalls++
       d.aals.push(a)
+      d.reasons.push(reason)
       return basis()
     },
     cancel: async (_u: string, _a: string, c: PartnerCall) => {
@@ -34,7 +36,7 @@ function deps(over: Partial<PartnerDeps> = {}, aal = 'aal2'): Fake {
   }
   return d
 }
-const call = (d: PartnerDeps, body: unknown = { requestId: REQ, reason: 'unavailable' }, jwt = 'ok') =>
+const call = (d: PartnerDeps, body: unknown = { requestId: REQ, reason: 'unavailable', shownCallOutCents: 0 }, jwt = 'ok') =>
   handleCancelPartner(new Request('https://x.test/cancel', { method: 'POST', headers: jwt ? { authorization: `Bearer ${jwt}` } : {}, body: JSON.stringify(body) }), d)
 
 describe('handleCancelPartner', () => {
@@ -50,19 +52,83 @@ describe('handleCancelPartner', () => {
 
   it('mit Belegen: Pauschale aus der Grundlage, Aufteilung mit dem Satz der Buchung', async () => {
     const d = deps()
-    const res = await call(d, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO] })
+    const res = await call(d, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 6900 })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ status: 'cancelled_by_partner', callOutCents: 6900 })
     expect(d.calls[0]?.feeBaseCents).toBe(6900)
     expect(d.calls[0]?.split).toEqual(splitFee(6900, { feeRate: 0.15, vatRate: 0.2 }))
     expect(d.calls[0]?.photoIds).toEqual([PHOTO])
+    expect(d.reasons).toEqual(['scope_impossible'])
   })
 
-  it('Pauschale 0 in den Bedingungen: keine Gebührenzeile, Aufteilung 0', async () => {
-    const d = deps({ basis: async () => basis({ callOutCents: 0 }) })
-    expect((await call(d, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO] })).status).toBe(200)
-    expect(d.calls[0]?.feeBaseCents).toBe(0)
-    expect(d.calls[0]?.split.feeCents).toBe(0)
+  it('Vorschau: Betrag und Auszahlung der Pauschale für die Firma, nichts wird geschrieben', async () => {
+    const d = deps()
+    const res = await call(d, { requestId: REQ, reason: 'scope_impossible', preview: true })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ callOutCents: 6900, payoutCents: splitFee(6900, { feeRate: 0.15, vatRate: 0.2 }).payoutCents })
+    expect(d.calls).toEqual([])
+    expect(d.basisCalls).toBe(1)
+    const none = deps({ basis: async () => basis({ callOutCents: 0 }) })
+    expect(await (await call(none, { requestId: REQ, reason: 'other', preview: true })).json()).toEqual({ callOutCents: 0, payoutCents: 0 })
+  })
+
+  it('Vorschau: aal1 403, Fehler der Datenbank wie beim Storno, keine fremden Felder', async () => {
+    expect((await call(deps({}, 'aal1'), { requestId: REQ, reason: 'other', preview: true })).status).toBe(403)
+    const d = deps({ basis: async () => { throw new DbError('under_review') } })
+    expect((await call(d, { requestId: REQ, reason: 'other', preview: true })).status).toBe(409)
+    for (const bad of [
+      { requestId: REQ, reason: 'other', preview: true, photoIds: [] },
+      { requestId: REQ, reason: 'other', preview: true, shownCallOutCents: 0 },
+      { requestId: REQ, reason: 'other', preview: 'yes' },
+      { requestId: REQ, reason: 'other', preview: true, amount: 5 },
+    ]) {
+      expect((await call(deps(), bad)).status, JSON.stringify(bad)).toBe(400)
+    }
+  })
+
+  it('gezeigter Betrag weicht ab: 409 amount_changed, nichts wird gebucht (Belege oder nicht)', async () => {
+    const d = deps({ basis: async () => basis({ callOutCents: 7000 }) })
+    const res = await call(d, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 6900 })
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'amount_changed' })
+    expect(d.calls).toEqual([])
+    const e = deps({ basis: async () => basis({ callOutCents: 0 }) })
+    expect((await call(e, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 6900 })).status).toBe(409)
+    expect(e.calls).toEqual([])
+  })
+
+  it('zweiter Durchlauf nach Satzwechsel vergleicht erneut: neuer Betrag, nie ein ungezeigter', async () => {
+    let n = 0
+    let sent = 0
+    const d = deps({
+      basis: async () => basis({ callOutCents: ++n === 1 ? 6900 : 7000 }),
+      cancel: async () => {
+        sent++
+        throw new DbError('fee_basis_changed')
+      },
+    })
+    const res = await call(d, { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 6900 })
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'amount_changed' })
+    expect(n).toBe(2)
+    expect(sent).toBe(1)
+  })
+
+  it('Belege und gezeigte Pauschale gehören zusammen: sonst 400', async () => {
+    for (const bad of [
+      { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 0 },
+      { requestId: REQ, reason: 'scope_impossible', shownCallOutCents: 6900 },
+      { requestId: REQ, reason: 'scope_impossible', photoIds: [], shownCallOutCents: 6900 },
+      { requestId: REQ, reason: 'other' },
+      { requestId: REQ, reason: 'other', shownCallOutCents: -1 },
+      { requestId: REQ, reason: 'other', shownCallOutCents: 1.5 },
+      { requestId: REQ, reason: 'other', shownCallOutCents: '0' },
+      { requestId: REQ, reason: 'other', shownCallOutCents: Number.MAX_SAFE_INTEGER + 2 },
+    ]) {
+      const d = deps()
+      expect((await call(d, bad)).status, JSON.stringify(bad)).toBe(400)
+      expect(d.basisCalls).toBe(0)
+    }
   })
 
   it('aal1: 403 mfa_required, nichts wird geladen', async () => {
@@ -112,15 +178,15 @@ describe('handleCancelPartner', () => {
   })
 
   it('Eingabe: 401, 400 (Grund, Belege, Felder), 405', async () => {
-    expect((await call(deps(), { requestId: REQ, reason: 'other' }, '')).status).toBe(401)
+    expect((await call(deps(), { requestId: REQ, reason: 'other', shownCallOutCents: 0 }, '')).status).toBe(401)
     for (const bad of [
-      { requestId: 'x', reason: 'other' },
-      { requestId: REQ },
-      { requestId: REQ, reason: 'bogus' },
-      { requestId: REQ, reason: 'other', photoIds: 'x' },
-      { requestId: REQ, reason: 'other', photoIds: ['x'] },
-      { requestId: REQ, reason: 'other', photoIds: Array(9).fill(PHOTO) },
-      { requestId: REQ, reason: 'other', amount: 5 },
+      { requestId: 'x', reason: 'other', shownCallOutCents: 0 },
+      { requestId: REQ, shownCallOutCents: 0 },
+      { requestId: REQ, reason: 'bogus', shownCallOutCents: 0 },
+      { requestId: REQ, reason: 'other', photoIds: 'x', shownCallOutCents: 0 },
+      { requestId: REQ, reason: 'other', photoIds: ['x'], shownCallOutCents: 6900 },
+      { requestId: REQ, reason: 'other', photoIds: Array(9).fill(PHOTO), shownCallOutCents: 6900 },
+      { requestId: REQ, reason: 'other', shownCallOutCents: 0, amount: 5 },
     ]) {
       expect((await call(deps(), bad)).status).toBe(400)
     }

@@ -454,6 +454,7 @@ describe('Rollen', () => {
       'complete_job(uuid)',
       'decline_listing(uuid)',
       'job_contact(uuid)',
+      'my_cancel_info(uuid)', // s9i-7b: nur der Kunde der Anfrage (auth.uid() in der Funktion), nur die Pauschale in Cent, nie die Gebühr
       'my_commissions(date)',
       'my_job_changes()', // s9i-7a: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen, keine Personendaten und keine Gebühr
       'my_job_partner(uuid)',
@@ -493,7 +494,7 @@ describe('Rollen', () => {
     for (const f of ['partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'partner_accept_basis(uuid,uuid)', 'distribute_request(uuid)', 'distribute_pending()', 'expire_requests()', 'outbox_claim(integer)', 'outbox_mark(bigint,boolean,text)', 'admin_contact(uuid,uuid,text)', 'confirm_offer_basis(uuid,uuid)', 'confirm_offer(uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_offers()',
       'propose_change_basis(uuid,text,uuid)', 'propose_change(uuid,text,uuid,uuid,jsonb,bigint,uuid[])', 'decide_change_basis(uuid,uuid)',
       'decide_change(uuid,uuid,boolean,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)', 'expire_changes()', 'complete_due()', 'export_commissions(uuid,date)',
-      'cancel_by_partner_basis(uuid,text,uuid)', 'cancel_by_partner(uuid,text,uuid,text,uuid[],bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)']) {
+      'cancel_by_partner_basis(uuid,text,uuid,text)', 'cancel_by_partner(uuid,text,uuid,text,uuid[],bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)']) {
       expect(svcOnly, f).toContain(f)
     }
     expect(rows.filter((r) => String(r.fn).startsWith('admin_') && (r.anon === true || r.auth === true))).toEqual([])

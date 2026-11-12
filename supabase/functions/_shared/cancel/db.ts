@@ -7,8 +7,8 @@ import type { PartnerDeps } from './partner.ts'
 
 export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' | 'cancel'> => ({
   getUser: (jwt) => getUser(db, jwt),
-  async basis(userId, aal, requestId) {
-    const row = must(await db.rpc('cancel_by_partner_basis', { p_actor: userId, p_aal: aal, p_request: requestId }))[0]
+  async basis(userId, aal, requestId, reason) {
+    const row = must(await db.rpc('cancel_by_partner_basis', { p_actor: userId, p_aal: aal, p_request: requestId, p_reason: reason }))[0]
     if (!row) throw new DbError('not_found')
     return {
       status: row.request_status,

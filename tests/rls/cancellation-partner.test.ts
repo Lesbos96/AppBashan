@@ -72,7 +72,8 @@ function cancelCall(actor: string, aal: string, req: string, reason: string | nu
   return `perform public.cancel_by_partner('${actor}', '${aal}', '${req}', ${rsn}, ${over.photos ?? 'null'}, ${over.base ?? base}, ${over.rate ?? RT.fr}, ${RT.vr}, ${fee}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
 }
 const RECEIPTS = (req: string) => `array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt')`
-const basisOf = (actor: string, aal: string, req: string) => `public.cancel_by_partner_basis('${actor}', '${aal}', '${req}')`
+const basisOf = (actor: string, aal: string, req: string, reason: string | null = 'other') =>
+  `public.cancel_by_partner_basis('${actor}', '${aal}', '${req}', ${reason === null ? 'null' : `'${reason}'`})`
 
 const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
 const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
@@ -88,7 +89,8 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       select private.set_request_status('${R6}', 'in_progress', null, 'partner');`
     const steps: Step[] = [
       // Grundlage und Verweigerungen
-      { name: 'Basis', as: 'service_role', sql: `=(select call_out_cents from ${basisOf(U.pa, 'aal2', R1)})` },
+      // s9i-7b (M1): ohne abgelehnten Nachtrag gibt die Grundlage keine Pauschale an (vorher immer call_out_fee_cents)
+      { name: 'Basis', as: 'service_role', sql: `=(select call_out_cents from ${basisOf(U.pa, 'aal2', R1, 'scope_impossible')})` },
       { name: 'Basis aal1', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal1', R1)}` },
       { name: 'Basis fremde Firma', as: 'service_role', sql: `perform * from ${basisOf(U.pb, 'aal2', R1)}` },
       { name: 'Basis Kunde', as: 'service_role', sql: `perform * from ${basisOf(U.cust, 'aal2', R1)}` },
@@ -160,7 +162,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       { name: 'Zähler anon', as: 'anon', sql: `perform * from public.partner_quality()` },
     ]
     const r = probes(setup, steps)
-    val(r['Basis'], String(CALL_OUT))
+    val(r['Basis'], '0')
     err(r['Basis aal1'], 'mfa_required')
     err(r['Basis fremde Firma'], 'not_found')
     err(r['Basis Kunde'], 'not_found')
