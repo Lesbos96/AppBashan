@@ -455,6 +455,7 @@ describe('Rollen', () => {
       'decline_listing(uuid)',
       'job_contact(uuid)',
       'my_commissions(date)',
+      'my_job_changes()', // s9i-7a: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen, keine Personendaten und keine Gebühr
       'my_job_partner(uuid)',
       'my_jobs()', // s9i-6b: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen
       'my_request_offers(uuid)',
