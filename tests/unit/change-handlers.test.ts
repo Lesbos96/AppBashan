@@ -57,20 +57,78 @@ function pdeps(over: Partial<ProposeDeps> = {}): ProposeDeps & { calls: ProposeC
     ...over,
   }
 }
-const okBody = { requestId: REQ, changes: { hours: 7 }, photoIds: [PH] }
+const NEW7 = priceOf({ hours: 7 }) // gebuchter Preis + Modul(neu) − Modul(alt) mit dem gebuchten Preis BOOKED
+const okBody = { requestId: REQ, changes: { hours: 7 }, photoIds: [PH], shownTotalCents: NEW7 }
+const previewBody = { requestId: REQ, changes: { hours: 7 }, preview: true }
 
 describe('change-propose', () => {
-  it('Erfolg: gebuchter Preis + Modul(neu) − Modul(alt), mit der gebuchten Preisversion; es gibt kein Betragsfeld', async () => {
+  it('Erfolg: gebuchter Preis + Modul(neu) − Modul(alt), mit der gebuchten Preisversion; der Betrag kommt vom Server, der Aufrufer bestätigt ihn nur', async () => {
     const d = pdeps()
     const res = await handleProposeChange(post(okBody), d)
     expect(res.status).toBe(200)
-    expect(await json(res)).toEqual({ revisionId: 'rev-new', totalCents: BOOKED + priceOf({ hours: 7 }) - BOOKED })
+    expect(await json(res)).toEqual({ revisionId: 'rev-new', totalCents: NEW7 })
     expect(d.versions).toEqual([7])
-    expect(d.calls[0]).toMatchObject({ requestId: REQ, baseRevisionId: REV, photoIds: [PH] })
+    expect(d.calls[0]).toMatchObject({ requestId: REQ, baseRevisionId: REV, photoIds: [PH], totalCents: NEW7 })
     expect(d.calls[0]?.inputs).toMatchObject({ hours: 7, crew: 3, service: 'move' })
     // gebuchter Preis zählt, nicht der Modulpreis: abweichender Buchungspreis verschiebt das Ergebnis um genau die Abweichung
+    const shifted = BOOKED - 1000 + NEW7 - BOOKED
     const d2 = pdeps({ basis: async () => ({ ...BASIS, totalCents: BOOKED - 1000 }) })
-    expect((await json(await handleProposeChange(post(okBody), d2)))['totalCents']).toBe(BOOKED - 1000 + priceOf({ hours: 7 }) - BOOKED)
+    expect((await json(await handleProposeChange(post({ ...okBody, shownTotalCents: shifted }), d2)))['totalCents']).toBe(shifted)
+  })
+
+  it('Vorschau: rechnet und prüft das Tor, legt nichts an; Antwort mit Gesamtpreis und gebuchtem Preis', async () => {
+    const d = pdeps()
+    const res = await handleProposeChange(post(previewBody), d)
+    expect([res.status, await json(res)]).toEqual([200, { totalCents: NEW7, baseCents: BOOKED }])
+    expect(d.calls).toHaveLength(0)
+    expect(d.versions).toEqual([7])
+    // dieselben Sperren wie beim Anlegen: nur erhöhend, Festpreis, Festangebot, Tor
+    for (const [body, deps, status, code] of [
+      [{ ...previewBody, changes: { hours: 5 } }, pdeps(), 409, 'change_not_increasing'],
+      [{ ...previewBody, changes: { goods: 'piano' } }, pdeps(), 409, 'not_fixed_price'],
+      [previewBody, pdeps({ basis: async () => ({ ...BASIS, source: 'partner_offer' }) }), 409, 'change_not_allowed'],
+      [previewBody, pdeps({ basis: async () => { throw new DbError('partner_not_active') } }), 403, 'partner_not_active'],
+      [previewBody, pdeps({ getUser: async () => ({ id: 'p1', aal: 'aal1' }) }), 403, 'mfa_required'],
+    ] as const) {
+      const res2 = await handleProposeChange(post(body), deps)
+      expect([res2.status, (await json(res2))['error']]).toEqual([status, code])
+      expect(deps.calls).toHaveLength(0)
+    }
+  })
+
+  it('anderer gezeigter Betrag: 409 amount_changed ohne Anlegen, auch in der zweiten Runde', async () => {
+    for (const shown of [NEW7 - 1, NEW7 + 1]) {
+      const d = pdeps()
+      const res = await handleProposeChange(post({ ...okBody, shownTotalCents: shown }), d)
+      expect([res.status, (await json(res))['error']]).toEqual([409, 'amount_changed'])
+      expect(d.calls).toHaveLength(0)
+    }
+  })
+
+  it('Vorschau und Betrag: preview nur boolean, ohne Belege und ohne gezeigten Betrag; beim Anlegen ist der Betrag Pflicht, eine sichere positive Ganzzahl', async () => {
+    const bad: unknown[] = [
+      { ...previewBody, preview: 'true' },
+      { ...previewBody, preview: 1 },
+      { ...previewBody, photoIds: [PH] },
+      { ...previewBody, shownTotalCents: NEW7 },
+      { ...okBody, preview: false, shownTotalCents: undefined },
+      { requestId: REQ, changes: { hours: 7 }, photoIds: [PH] },
+      { ...okBody, shownTotalCents: 0 },
+      { ...okBody, shownTotalCents: -5 },
+      { ...okBody, shownTotalCents: 1.5 },
+      { ...okBody, shownTotalCents: String(NEW7) },
+      { ...okBody, shownTotalCents: Number.MAX_SAFE_INTEGER + 10 },
+    ]
+    for (const body of bad) {
+      const d = pdeps()
+      const res = await handleProposeChange(post(body), d)
+      expect([res.status, (await json(res))['error'], JSON.stringify(body)]).toEqual([400, 'invalid_input', JSON.stringify(body)])
+      expect(d.calls).toHaveLength(0)
+      expect(d.versions).toHaveLength(0)
+    }
+    // preview: false ist wie ohne Vorschau
+    const ok = await handleProposeChange(post({ ...okBody, preview: false }), pdeps())
+    expect(ok.status).toBe(200)
   })
 
   it('401 ohne gültiges JWT, 403 mfa_required bei aal1', async () => {

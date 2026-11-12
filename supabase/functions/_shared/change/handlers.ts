@@ -78,7 +78,11 @@ function priced(service: string, raw: unknown, tariffs: ReturnType<typeof buildT
 
 const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 
-/** Nachtrag vorschlagen (N1). Der Partner nennt nur geänderte Preisfelder und Belegfotos; den Betrag rechnet allein das Preismodul. */
+/**
+ * Nachtrag vorschlagen (N1). Der Partner nennt nur geänderte Preisfelder und Belegfotos; den Betrag rechnet allein das Preismodul.
+ * `preview: true` rechnet und prüft das Tor, legt aber nichts an (keine Mail, kein offener Platz, keine Belege); Belege und gezeigter Betrag sind dann verboten.
+ * Ohne Vorschau ist `shownTotalCents` Pflicht: der Aufrufer bestätigt nur den vorher gezeigten Betrag, abweichend 409 `amount_changed` ohne Anlegen.
+ */
 export async function handleProposeChange(req: Request, deps: ProposeDeps): Promise<Response> {
   const origin = corsHeaders(req, deps.allowedOrigins)
   const early = preflight(req, origin)
@@ -87,12 +91,17 @@ export async function handleProposeChange(req: Request, deps: ProposeDeps): Prom
     const a = await authed(req, deps, origin)
     if (a.res) return a.res
     const b = (await body(req, 8192)) ?? {}
-    const { requestId, changes, photoIds } = b
-    const extra = Object.keys(b).some((k) => !['requestId', 'changes', 'photoIds'].includes(k))
-    if (
-      extra || typeof requestId !== 'string' || !UUID.test(requestId) || !isRecord(changes) ||
-      !Array.isArray(photoIds) || photoIds.length < 1 || photoIds.length > 8 || !photoIds.every((p) => typeof p === 'string' && UUID.test(p))
-    ) {
+    const { requestId, changes, photoIds, preview, shownTotalCents } = b
+    const extra = Object.keys(b).some((k) => !['requestId', 'changes', 'photoIds', 'preview', 'shownTotalCents'].includes(k))
+    const isPreview = preview === true
+    const modeOk =
+      preview === undefined || typeof preview === 'boolean'
+        ? isPreview
+          ? photoIds === undefined && shownTotalCents === undefined
+          : Array.isArray(photoIds) && photoIds.length >= 1 && photoIds.length <= 8 && photoIds.every((p) => typeof p === 'string' && UUID.test(p)) &&
+            Number.isSafeInteger(shownTotalCents) && (shownTotalCents as number) > 0
+        : false
+    if (extra || typeof requestId !== 'string' || !UUID.test(requestId) || !isRecord(changes) || !modeOk) {
       return json(400, { error: 'invalid_input' }, origin)
     }
     if (Object.keys(changes).some((k) => ROUTE_KEYS.has(k))) return json(422, { error: 'route_locked' }, origin)
@@ -107,6 +116,8 @@ export async function handleProposeChange(req: Request, deps: ProposeDeps): Prom
     const before = priced(basis.service, basis.inputs, tariffs, route)
     const after = priced(basis.service, { ...basis.inputs, ...changes }, tariffs, route)
     const totalCents = changeTotal(basis.totalCents, after.price, before.price)
+    if (isPreview) return json(200, { totalCents, baseCents: basis.totalCents }, origin)
+    if (totalCents !== shownTotalCents) throw new DbError('amount_changed')
     const revisionId = await deps.propose(a.user.id, a.user.aal, { requestId, baseRevisionId: basis.revisionId, inputs: after.inputs, totalCents, photoIds: photoIds as string[] })
     return json(200, { revisionId, totalCents }, origin)
   } catch (e) {

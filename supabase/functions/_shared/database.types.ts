@@ -1751,6 +1751,22 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      my_job_changes: {
+        Args: never
+        Returns: {
+          change_decided_at: string
+          change_id: string
+          change_status: string
+          change_total_cents: number
+          change_valid_until: string
+          inputs: Json
+          receipt_ids: string[]
+          request_id: string
+          service: Database["public"]["Enums"]["service_type"]
+          source: string
+          total_cents: number
+        }[]
+      }
       my_job_partner: {
         Args: { p_request: string }
         Returns: {
