@@ -1,0 +1,45 @@
+// TEMPORÄR (s9i-6b, Rot-Beweis M3): my_jobs() mit gelockerter Firmenprüfung (my_member_partner_id statt my_job_partner_id) und gelockertem Zugriffsfenster. Wird nicht committet.
+import { readFileSync } from 'node:fs'
+import { expect, it } from 'vitest'
+import { probes, type Step } from '../support/owner.ts'
+import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
+import { splitFee } from '@pricing'
+import { ownerSql } from '../support/owner.ts'
+
+const sql = readFileSync(new URL('../../supabase/migrations/20261112100000_0057_my_jobs.sql', import.meta.url), 'utf8')
+const body = sql.slice(0, sql.indexOf('revoke all')).replace('create function', 'create or replace function')
+const LOOSE_STATUS = body.replaceAll('my_job_partner_id', 'my_member_partner_id')
+const LOOSE_WINDOW = body.replace('and private.assignment_access(a.request_id, pid)', '')
+
+const U = { adm: newId(), cust: newId(), ps: newId(), pa: newId() }
+const OV = { districts: 'array[17]::smallint[]' }
+const cur = (key: string) => `(select value::float8 from public.platform_settings where key = '${key}' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1)`
+const ver = (key: string) => `(select version from public.platform_settings where key = '${key}' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1)`
+const r = ownerSql(`select ${cur('fee_rate')} fr, ${cur('fee_vat_rate')} vr, ${ver('fee_rate')} frv, ${ver('fee_vat_rate')} vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
+const s = splitFee(68961, { feeRate: r.fr, vatRate: r.vr })
+
+function fixture(id: string, key: string, user: string, termin = "now() + interval '14 days'") {
+  return `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline) values ('${id}', '${U.cust}', gen_random_uuid(), 'move', 'requested', 17, ${termin}, now() + interval '1 day');
+    insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents) values ('${id}', 1, 'submit', '{}', '{"kind":"price","totalCents":68961,"lowCents":68961,"highCents":68961,"lines":[]}', 1, 68961, 68961, 68961);
+    update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
+    select public.distribute_request('${id}');
+    select public.partner_accept('${user}', (select id from public.job_listings where request_id = '${id}' and partner_id = ${P(key)}), (select id from public.price_revisions where request_id = '${id}' and n = 1), ${s.payoutCents}, ${r.fr}, ${r.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${r.frv}, ${r.vrv});`
+}
+const hold = (key: string) => `select set_config('app.mv_partner_status', ${P(key)}::text || ':active>suspended', true); update public.partners set status = 'suspended', status_reason = 'Status für den Test' where id = ${P(key)}; select set_config('app.mv_partner_status', '', true);`
+const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+
+it('Firmenstatus gelockert: suspended sieht Zeilen (Ist-Wert 1 statt Fehler partner_not_active)', () => {
+  const R = newId()
+  const setup = `${insertUsers(Object.values(U))} ${grantAdmin(U.adm)} ${firm(U.ps, 's', 'active', U.adm, OV)} ${fixture(R, 's', U.ps)} ${hold('s')} ${LOOSE_STATUS}`
+  const steps: Step[] = [{ name: 'suspended', as: 'authenticated', claims: A2(U.ps), sql: `=(select count(*) from public.my_jobs())` }]
+  expect(probes(setup, steps)['suspended']).toContain('partner_not_active')
+})
+
+it('Zugriffsfenster gelockert: ein vor 40 Tagen beendeter Auftrag erscheint (Ist-Wert 1 statt 0)', () => {
+  const R = newId()
+  const setup = `${insertUsers(Object.values(U))} ${grantAdmin(U.adm)} ${firm(U.pa, 'a', 'active', U.adm, OV)} ${fixture(R, 'a', U.pa)}
+    select private.set_request_status('${R}', 'in_progress', null, 'partner'); select private.set_request_status('${R}', 'completed', null, 'partner');
+    update public.assignments set ended_at = now() - interval '40 days', ended_reason = 'completed' where request_id = '${R}'; ${LOOSE_WINDOW}`
+  const steps: Step[] = [{ name: 'a', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.my_jobs())` }]
+  expect(probes(setup, steps)['a']).toBe('= 0')
+})
