@@ -363,9 +363,9 @@ describe('Abwicklung (start_job, complete_job, job_contact, my_job_partner)', ()
       { name: 'Kontakt Kunde', as: 'authenticated', claims: A2(U.cust), sql: `perform * from public.job_contact('${R}')` },
       { name: 'Direktzugriff Kontakt', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.request_contacts)` },
       { name: 'Protokoll', sql: `=${count(`public.audit_log where action = 'contact_read' and entity_id = '${R}' and actor_id = '${U.pa}'`)}` },
-      { name: 'Ende vor 29 Tagen', sql: `alter table public.assignments disable trigger user; update public.assignments set ended_at = now() - interval '29 days', ended_reason = 'completed'; alter table public.assignments enable trigger user` },
+      { name: 'Ende vor 29 Tagen', sql: `alter table public.assignments disable trigger user; update public.assignments set ended_at = now() - interval '29 days', ended_reason = 'completed' where request_id = '${R}'; alter table public.assignments enable trigger user` },
       { name: 'Tag 29', as: 'authenticated', claims: A2(U.pa), sql: `=(${contact})` },
-      { name: 'Ende vor 31 Tagen', sql: `alter table public.assignments disable trigger user; update public.assignments set ended_at = now() - interval '31 days'; alter table public.assignments enable trigger user` },
+      { name: 'Ende vor 31 Tagen', sql: `alter table public.assignments disable trigger user; update public.assignments set ended_at = now() - interval '31 days' where request_id = '${R}'; alter table public.assignments enable trigger user` },
       { name: 'Tag 31', as: 'authenticated', claims: A2(U.pa), sql: `perform * from public.job_contact('${R}')` },
       { name: 'my_job_partner nach completed', as: 'authenticated', claims: A1(U.cust), sql: `=(select name from public.my_job_partner('${R}'))` },
     ]
