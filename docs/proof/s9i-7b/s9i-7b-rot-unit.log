@@ -1,0 +1,62 @@
+commit 3f23e25 Arbeitsbaum sauber: nein (Tests neu, noch nicht committet)
+- Expected
++ Received
+
+- 400
++ 200
+
+ ❯ tests/unit/cancel-partner-handler.test.ts:129:64
+    127|     ]) {
+    128|       const d = deps()
+    129|       expect((await call(d, bad)).status, JSON.stringify(bad)).toBe(40…
+       |                                                                ^
+    130|       expect(d.basisCalls).toBe(0)
+    131|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  |unit| tests/unit/cancel-partner-handler.test.ts > handleCancelPartner > Satzcodes: einmal neu laden, danach neutral `retry` (409)
+AssertionError: expected 400 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 400
+
+ ❯ tests/unit/cancel-partner-handler.test.ts:152:36
+    150|       },
+    151|     })
+    152|     expect((await call(d)).status).toBe(200)
+       |                                    ^
+    153|     expect(d.basisCalls).toBe(2)
+    154|     for (const code of ['fee_basis_changed', 'rate_mismatch', 'amount_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  |unit| tests/unit/cancel-partner-handler.test.ts > handleCancelPartner > Fehlercodes der Datenbank: Status; unbekannter Fehler 500 ohne Details
+AssertionError: not_found: expected 400 to be 404 // Object.is equality
+
+- Expected
++ Received
+
+- 404
++ 400
+
+ ❯ tests/unit/cancel-partner-handler.test.ts:170:32
+    168|       const d = deps({ cancel: async () => { throw new DbError(code) }…
+    169|       const res = await call(d)
+    170|       expect(res.status, code).toBe(status)
+       |                                ^
+    171|       if (status !== 500) expect(await res.json()).toEqual({ error: co…
+    172|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 2 passed (11)
+   Start at  17:09:49
+   Duration  336ms (transform 48%, tests 26%, import 22%, worker 4%)
+
+EXIT=1

@@ -1,0 +1,8 @@
+commit 33c3e59 Arbeitsbaum sauber: nein
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  18:47:58
+   Duration  176.10s (tests 100%)
+[vitest-pool]: Timeout terminating forks worker for test files C:/Users/gesch/Music/MoveNow/tests/rls/partner-functions-live.test.ts.
+EXIT=0

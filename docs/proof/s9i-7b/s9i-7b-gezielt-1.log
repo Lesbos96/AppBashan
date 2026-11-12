@@ -1,0 +1,7 @@
+commit b6cccec Arbeitsbaum sauber: nein (listings.test.ts geändert)
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  20:18:10
+   Duration  15.04s (tests 86%, import 13%, transform 1%)
+EXIT=0

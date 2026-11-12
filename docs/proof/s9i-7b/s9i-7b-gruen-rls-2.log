@@ -1,0 +1,27 @@
+commit 33c3e59 Arbeitsbaum sauber: nein (Test geändert)
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+ ❯ |rls| tests/rls/cancellation-partner-preview.test.ts (3 tests | 1 failed) 17448ms
+   ❯ Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) (3)
+     × Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag 5868ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |rls| tests/rls/cancellation-partner-preview.test.ts > Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) > Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag
+AssertionError: reason_required: P0001: under_review: expected false to be true // Object.is equality
+- Expected
++ Received
+- true
++ false
+ ❯ err tests/rls/cancellation-partner-preview.test.ts:75:97
+     73|   `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_…
+     74| const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
+     75| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     76| const val = (v: string | undefined, want: string) => expect(v, String(…
+     77| const snapshot = (req: string) =>
+ ❯ tests/rls/cancellation-partner-preview.test.ts:117:5
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  18:10:27
+   Duration  40.48s (tests 75%, import 25%)
+[vitest-pool]: Timeout terminating forks worker for test files C:/Users/gesch/Music/MoveNow/tests/rls/cancellation-partner-preview.test.ts.
+EXIT=1

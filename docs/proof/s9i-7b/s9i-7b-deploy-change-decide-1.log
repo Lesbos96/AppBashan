@@ -1,0 +1,28 @@
+Commit 33c3e59
+git status (tracked): 0 Änderungen; untracked: ?? docs/VERBESSERUNGSVORSCHLAEGE.md 
+Befehl: npx dotenv -e .env.local -- supabase functions deploy change-decide --use-api --project-ref vcpbbzdyltvffvzjrzdi
+{"project_ref":"vcpbbzdyltvffvzjrzdi","functions":["change-decide"],"dashboard_url":"https://supabase.com/dashboard/project/vcpbbzdyltvffvzjrzdi/functions","message":"Deployed Functions."}
+A new version of Supabase CLI is available: v3.1.0 (currently installed v2.122.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+EXIT=0
+--- functions list danach
+"ezbr_sha256":"62171521641b4b084607f382950136d062bb62362014ae97af81bc4f34c6a9a2"
+"ezbr_sha256":"f3efcae82849d5c6c907b107b16e5b5fc61e2a39a067fcf071869bcd8bcc35d1"
+"ezbr_sha256":"5cde39a65ed5f7b41ad8427da0fea826eb3830d657f3ad1e7d421ba9cbe139cb"
+"ezbr_sha256":"de59c13a4adc523f7210e329d9739915be40500223bf2c60f8ad3f0a62af8481"
+"ezbr_sha256":"73a5497c187ebfa2b5673d9c2ddc09575cb0d709388c7e32bbcc5de1b8e1c0ec"
+"ezbr_sha256":"d0c65184fd8d06cdf09c58597e377cbe63c2ada52cee7e47ef688f3ae6967814"
+"ezbr_sha256":"2dd84062fb1f9801dd1a0b5c49ef41e3cd3de2bdab47d1dbaf5c8f23657c368e"
+"ezbr_sha256":"c26edf1ae0998d17ceb4c24b4ca8962d5f1af46658fe50aa6546af394c9b4a8c"
+"ezbr_sha256":"001392e800e9f7c463aa8ae8fb99e62f6cc3632d9af001781f3a4340aa5664fb"
+"ezbr_sha256":"42826432e4ee26fed0ca3e1b509878c2d9a5a84da2df001d19e2cf056ce981ec"
+"ezbr_sha256":"8d7e5dd1fed7801398b5fee5f3593c10b23d8b3a16eb492a349542ab25d57769"
+"slug":"change-propose","name":"change-propose","status":"ACTIVE","version":4,"created_at":1794219697366,"updated_at":1794460019265
+"ezbr_sha256":"1477b05d9b810378b8b1e6d2aad82ef64356aead04c3ac8549e4793bd08e3526"
+"slug":"change-decide","name":"change-decide","status":"ACTIVE","version":4,"created_at":1794219703266,"updated_at":1794502226437
+"ezbr_sha256":"a14d5a8309ea34946c9af7b6399069170229a097660c1839acd60c722be97b80"
+"ezbr_sha256":"eb790854e6c28baa4ad6a084d7990103ad57bd8c3f8f69eeed72e8262f0bcbe9"
+"slug":"cancel-partner","name":"cancel-partner","status":"ACTIVE","version":3,"created_at":1794236967074,"updated_at":1794501926125
+"ezbr_sha256":"e15548ae1bf5ee8f92488863b376aead05d7090b2442b5e3b096258c2cfe9e67"
+"ezbr_sha256":"19e4c26dd51a6e3b4c685d5d587832462f69e992c2d90af457ee070b64895692"
+"ezbr_sha256":"40ccb7616f84f5a8d7a385036cfab6af7b4409232a4a6c58056a5b98a046d55f"

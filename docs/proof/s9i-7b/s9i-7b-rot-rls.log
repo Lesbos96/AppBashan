@@ -1,0 +1,72 @@
+commit 3f23e25 Arbeitsbaum sauber: nein (Tests neu)
+Error: unexpected status 400: {"message":"Failed to run sql query: ERROR:  P0001: partner_job_limit\nCONTEXT:  PL/pgSQL function private.check_partner_job_limit(uuid) line 8 at RAISE\nSQL statement \"SELECT private.check_partner_job_limit(pid)\"\nPL/pgSQL function public.partner_accept(uuid,uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer) line 32 at PERFORM\n"}
+ ❯ ownerSql tests/support/owner.ts:35:36
+     33|   }
+     34|   const json = JSON.parse(out) as { _tag?: string; error?: { message: …
+     35|   if (json._tag === 'Error') throw new Error(json.error?.message ?? 'E…
+       |                                    ^
+     36|   return json.rows ?? []
+     37| }
+ ❯ probes tests/support/owner.ts:113:16
+ ❯ tests/rls/cancellation-partner-preview.test.ts:122:15
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+ FAIL  |rls| tests/rls/cancellation-partner-preview.test.ts > Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) > Vorschau schreibt nichts: Status, Journal, Outbox, Audit und Revisionen bleiben gleich
+AssertionError: expected '42883: function public.cancel_by_part…' to be 'ok' // Object.is equality
+Expected: "ok"
+Received: "42883: function public.cancel_by_partner_basis(unknown, unknown, unknown, unknown) does not exist"
+ ❯ tests/rls/cancellation-partner-preview.test.ts:162:27
+    160|     ]
+    161|     const r = probes(setup, steps)
+    162|     expect(r['Vorschau']).toBe('ok')
+       |                           ^
+    163|     err(r['Vorschau Fehler'], 'reason_required')
+    164|     expect(r['nachher']).toBe(r['vorher'])
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+ FAIL  |rls| tests/rls/cancellation-partner-preview.test.ts > Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) > my_cancel_info: nur der Kunde, nur nach Firmen-Storno, nur der Betrag der Pauschale
+AssertionError: not_found: 42883: function public.my_cancel_info(unknown) does not exist: expected false to be true // Object.is equality
+- Expected
++ Received
+- true
++ false
+ ❯ err tests/rls/cancellation-partner-preview.test.ts:75:97
+     73|   `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_…
+     74| const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
+     75| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     76| const val = (v: string | undefined, want: string) => expect(v, String(…
+     77| const snapshot = (req: string) =>
+ ❯ tests/rls/cancellation-partner-preview.test.ts:188:5
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+ FAIL  |rls| tests/rls/cancellation-partner.test.ts > cancel_by_partner (T13) und Weitervermittlung (T16) > Gegenbuchung, Zuordnung, Zähler, Folgeanfrage mit Kopien und Ausschluss, Mails
+AssertionError: 42883: function public.cancel_by_partner_basis(unknown, unknown, unknown, unknown) does not exist: expected '42883: function public.cancel_by_part…' to be '= 0' // Object.is equality
+Expected: "= 0"
+Received: "42883: function public.cancel_by_partner_basis(unknown, unknown, unknown, unknown) does not exist"
+ ❯ val tests/rls/cancellation-partner.test.ts:81:75
+     79| const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
+     80| const err = (v: string | undefined, part: string) => expect(v?.include…
+     81| const val = (v: string | undefined, want: string) => expect(v, String(…
+       |                                                                           ^
+     82|
+     83| describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
+ ❯ tests/rls/cancellation-partner.test.ts:165:5
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+ FAIL  |rls| tests/rls/cancellation-partner.test.ts > cancel_by_partner (T13) und Weitervermittlung (T16) > scope_impossible: Pauschale nur mit Beleg nach abgelehntem Nachtrag, keine Weitervermittlung
+AssertionError: under_review: 42883: function public.cancel_by_partner_basis(unknown, unknown, unknown, unknown) does not exist: expected false to be true // Object.is equality
+- Expected
++ Received
+- true
++ false
+ ❯ err tests/rls/cancellation-partner.test.ts:80:97
+     78| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     79| const A1 = (sub: string) => ({ sub, aal: 'aal1' as const })
+     80| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     81| const val = (v: string | undefined, want: string) => expect(v, String(…
+     82|
+ ❯ tests/rls/cancellation-partner.test.ts:305:5
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+ Test Files  2 failed (2)
+      Tests  5 failed | 1 passed (6)
+   Start at  17:24:03
+   Duration  22.59s (tests 73%, import 26%, transform 1%)
+EXIT=1

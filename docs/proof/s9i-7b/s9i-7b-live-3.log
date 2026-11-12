@@ -1,0 +1,82 @@
+commit 33c3e59 Arbeitsbaum sauber: nein
+ ❯ live tests/rls/partner-functions-live.test.ts:93:82
+     91| }, 120_000)
+     92|
+     93| const live = (name: string, body: (c: { skip: () => void }) => Promise…
+       |                                                                                  ^
+     94|
+     95| describe('cancel-partner live (Dev, echte Tokens)', () => {
+ ❯ tests/rls/partner-functions-live.test.ts:136:3
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Vorschau: Betrag aus der Gebuchten-Version, nichts angelegt
+AssertionError: {"status":422,"body":{"error":"invalid_input"}}: expected 422 to be 200 // Object.is equality
+- Expected
++ Received
+- 200
++ 422
+ ❯ tests/rls/partner-functions-live.test.ts:147:41
+    145|     const before = await state(J3)
+    146|     const r = await fn('change-propose', pa.jwt2, { ...change, preview…
+    147|     expect(r.status, JSON.stringify(r)).toBe(200)
+       |                                         ^
+    148|     total = Number(r.body.totalCents)
+    149|     expect(total).toBeGreaterThan(BOOKED)
+ ❯ tests/rls/partner-functions-live.test.ts:93:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > abweichender gezeigter Betrag: 409 amount_changed, nichts angelegt
+AssertionError: expected { status: 422, …(1) } to deeply equal { status: 409, …(1) }
+- Expected
++ Received
+  {
+    "body": {
+-     "error": "amount_changed",
++     "error": "invalid_input",
+    },
+-   "status": 409,
++   "status": 422,
+  }
+ ❯ tests/rls/partner-functions-live.test.ts:156:15
+    154|     const before = await state(J3)
+    155|     const r = await fn('change-propose', pa.jwt2, { ...change, photoId…
+    156|     expect(r).toEqual({ status: 409, body: { error: 'amount_changed' }…
+       |               ^
+    157|     expect(await state(J3)).toEqual(before)
+    158|   })
+ ❯ tests/rls/partner-functions-live.test.ts:93:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 409 change_open, genau ein offener Nachtrag
+AssertionError: {"status":400,"body":{"error":"invalid_input"}}: expected 400 to be 200 // Object.is equality
+- Expected
++ Received
+- 200
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:163:49
+    161|     const body = { ...change, photoIds: (photo.data ?? []).map((p) => …
+    162|     const first = await fn('change-propose', pa.jwt2, body)
+    163|     expect(first.status, JSON.stringify(first)).toBe(200)
+       |                                                 ^
+    164|     expect(first.body.totalCents).toBe(total)
+    165|     const again = await fn('change-propose', pa.jwt2, body)
+ ❯ tests/rls/partner-functions-live.test.ts:93:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile
+AssertionError: expected 400 to be 404 // Object.is equality
+- Expected
++ Received
+- 404
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:173:65
+    171|     const accept = { revisionId: rev, decision: 'accept', shownTotalCe…
+    172|     expect(await fn('change-decide', null, accept)).toEqual({ status: …
+    173|     expect((await fn('change-decide', pa.jwt2, accept)).status).toBe(4…
+       |                                                                 ^
+    174|     expect((await fn('change-decide', cust2.jwt, accept)).status).toBe…
+    175|     expect(await fn('change-decide', cust.jwt, { ...accept, shownTotal…
+ ❯ tests/rls/partner-functions-live.test.ts:93:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+ Test Files  1 failed (1)
+      Tests  5 failed | 5 passed (10)
+   Start at  18:29:25
+   Duration  381.63s (tests 100%)
+[vitest-pool]: Timeout terminating forks worker for test files C:/Users/gesch/Music/MoveNow/tests/rls/partner-functions-live.test.ts.
+EXIT=1

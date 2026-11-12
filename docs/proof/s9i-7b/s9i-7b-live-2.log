@@ -1,0 +1,82 @@
+commit 33c3e59 Arbeitsbaum sauber: nein
+       |                      ^
+     34|   return r.count ?? 0
+     35| }
+ ❯ state tests/rls/partner-functions-live.test.ts:42:13
+ ❯ tests/rls/partner-functions-live.test.ts:116:20
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > cancel-partner live (Dev, echte Tokens) > zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung
+Error: outbox.request_id: {"message":""}
+ ❯ count tests/rls/partner-functions-live.test.ts:33:22
+     31|   for (const [k, v] of Object.entries(extra)) q = q.eq(k, v)
+     32|   const r = await q
+     33|   if (r.error) throw new Error(`${table}.${col}: ${JSON.stringify(r.er…
+       |                      ^
+     34|   return r.count ?? 0
+     35| }
+ ❯ state tests/rls/partner-functions-live.test.ts:42:13
+ ❯ tests/rls/partner-functions-live.test.ts:127:15
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Vorschau: Betrag aus der Gebuchten-Version, nichts angelegt
+Error: outbox.request_id: {"message":""}
+ ❯ count tests/rls/partner-functions-live.test.ts:33:22
+     31|   for (const [k, v] of Object.entries(extra)) q = q.eq(k, v)
+     32|   const r = await q
+     33|   if (r.error) throw new Error(`${table}.${col}: ${JSON.stringify(r.er…
+       |                      ^
+     34|   return r.count ?? 0
+     35| }
+ ❯ state tests/rls/partner-functions-live.test.ts:42:13
+ ❯ tests/rls/partner-functions-live.test.ts:147:20
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > abweichender gezeigter Betrag: 409 amount_changed, nichts angelegt
+Error: outbox.request_id: {"message":""}
+ ❯ count tests/rls/partner-functions-live.test.ts:33:22
+     31|   for (const [k, v] of Object.entries(extra)) q = q.eq(k, v)
+     32|   const r = await q
+     33|   if (r.error) throw new Error(`${table}.${col}: ${JSON.stringify(r.er…
+       |                      ^
+     34|   return r.count ?? 0
+     35| }
+ ❯ state tests/rls/partner-functions-live.test.ts:42:13
+ ❯ tests/rls/partner-functions-live.test.ts:156:20
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 409 change_open, genau ein offener Nachtrag
+AssertionError: {"status":400,"body":{"error":"invalid_input"}}: expected 400 to be 200 // Object.is equality
+- Expected
++ Received
+- 200
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:165:49
+    163|     const body = { ...change, photoIds: (photo.data ?? []).map((p) => …
+    164|     const first = await fn('change-propose', pa.jwt2, body)
+    165|     expect(first.status, JSON.stringify(first)).toBe(200)
+       |                                                 ^
+    166|     expect(first.body.totalCents).toBe(total)
+    167|     const again = await fn('change-propose', pa.jwt2, body)
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile
+AssertionError: expected 400 to be 404 // Object.is equality
+- Expected
++ Received
+- 404
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:175:65
+    173|     const accept = { revisionId: rev, decision: 'accept', shownTotalCe…
+    174|     expect(await fn('change-decide', null, accept)).toEqual({ status: …
+    175|     expect((await fn('change-decide', pa.jwt2, accept)).status).toBe(4…
+       |                                                                 ^
+    176|     expect((await fn('change-decide', cust2.jwt, accept)).status).toBe…
+    177|     expect(await fn('change-decide', cust.jwt, { ...accept, shownTotal…
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+ Test Files  1 failed (1)
+      Tests  8 failed | 2 passed (10)
+   Start at  18:24:52
+   Duration  59.70s (tests 99%)
+EXIT=1

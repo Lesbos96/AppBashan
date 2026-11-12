@@ -1,0 +1,141 @@
+Commit f4e76e3
+Arbeitsbaum sauber: ja
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+tests/rls/cancellation-partner-preview.test.ts(84,39): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(84,55): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(84,71): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(84,87): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(84,102): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(84,117): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(85,18): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(85,33): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(85,48): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(85,72): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(86,18): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(86,34): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(86,49): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(86,73): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,40): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,55): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,70): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,94): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,129): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(87,153): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(88,18): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(88,34): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(88,49): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(89,18): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(89,34): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(89,49): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(90,18): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(90,34): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(93,73): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(95,80): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(96,75): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(97,79): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(99,76): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(99,119): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(102,74): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(102,117): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(103,49): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(103,74): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(105,95): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(106,94): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(107,94): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(108,95): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(109,99): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(128,48): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(129,68): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(130,64): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(131,68): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(132,71): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(133,65): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(134,80): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(136,74): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(136,117): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(137,80): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(137,118): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(138,49): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(138,74): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(140,140): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(141,86): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(142,94): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(143,102): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(144,97): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(149,121): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/rls/cancellation-partner-preview.test.ts(152,70): error TS2345: Argument of type '`${string}-${string}-${string}-${string}-${string}` | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+EXIT=2

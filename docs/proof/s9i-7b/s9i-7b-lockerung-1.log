@@ -1,0 +1,6 @@
+Lockerungsprobe: call_out_eligible in der Rollback-Transaktion auf die Regel von 0048 gelockert (irgendein declined/expired).
+commit 33c3e59
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: = 6900: expected '= 6900' to be '= 0' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)

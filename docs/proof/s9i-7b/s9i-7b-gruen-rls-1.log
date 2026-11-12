@@ -1,0 +1,24 @@
+commit 33c3e59 Arbeitsbaum sauber: ja
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+ ❯ |rls| tests/rls/cancellation-partner-preview.test.ts (3 tests | 1 failed) 2759ms
+   ❯ Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) (3)
+     × Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag 1110ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |rls| tests/rls/cancellation-partner-preview.test.ts > Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) > Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag
+AssertionError: expected 'P0001: not_found' to be 'ok' // Object.is equality
+Expected: "ok"
+Received: "P0001: not_found"
+ ❯ tests/rls/cancellation-partner-preview.test.ts:106:36
+    104|     ]
+    105|     const r2 = probes(setup2, steps2)
+    106|     expect(r2['E7 zurückgezogen']).toBe('ok')
+       |                                    ^
+    107|     val(r2['E5 angenommen dann abgelehnt'], String(CALL_OUT))
+    108|     val(r2['E6 abgelehnt dann offen'], '0')
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 44 passed (45)
+   Start at  18:07:15
+   Duration  67.47s (tests 87%, import 13%)
+[vitest-pool]: Timeout terminating forks worker for test files C:/Users/gesch/Music/MoveNow/tests/rls/rls.test.ts.
+EXIT=1

@@ -1,0 +1,62 @@
+commit 33c3e59 Arbeitsbaum sauber: nein (Test neu)
+     × abweichender gezeigter Betrag: 409 amount_changed, nichts geschrieben 338ms
+     × zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung 1261ms
+   ❯ change-propose und change-decide live (Dev, echte Tokens) (5)
+     × Vorschau: Betrag aus der Gebuchten-Version, nichts angelegt 491ms
+     × abweichender gezeigter Betrag: 409 amount_changed, nichts angelegt 412ms
+     × Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 409 change_open, genau ein offener Nachtrag 288ms
+     × change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile 1475ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > cancel-partner live (Dev, echte Tokens) > fremde Firma 404; pending, rejected, suspended 403 partner_not_active; nichts geschrieben
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > cancel-partner live (Dev, echte Tokens) > Vorschau schreibt nichts: ohne Nachtrag keine Pauschale
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > cancel-partner live (Dev, echte Tokens) > abweichender gezeigter Betrag: 409 amount_changed, nichts geschrieben
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > cancel-partner live (Dev, echte Tokens) > zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Vorschau: Betrag aus der Gebuchten-Version, nichts angelegt
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > abweichender gezeigter Betrag: 409 amount_changed, nichts angelegt
+{ message: '', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 409 change_open, genau ein offener Nachtrag
+AssertionError: {"status":400,"body":{"error":"invalid_input"}}: expected 400 to be 200 // Object.is equality
+- Expected
++ Received
+- 200
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:165:49
+    163|     const body = { ...change, photoIds: (photo.data ?? []).map((p) => …
+    164|     const first = await fn('change-propose', pa.jwt2, body)
+    165|     expect(first.status, JSON.stringify(first)).toBe(200)
+       |                                                 ^
+    166|     expect(first.body.totalCents).toBe(total)
+    167|     const again = await fn('change-propose', pa.jwt2, body)
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+ FAIL  |rls| tests/rls/partner-functions-live.test.ts > change-propose und change-decide live (Dev, echte Tokens) > change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile
+AssertionError: expected 400 to be 404 // Object.is equality
+- Expected
++ Received
+- 404
++ 400
+ ❯ tests/rls/partner-functions-live.test.ts:175:65
+    173|     const accept = { revisionId: rev, decision: 'accept', shownTotalCe…
+    174|     expect(await fn('change-decide', null, accept)).toEqual({ status: …
+    175|     expect((await fn('change-decide', pa.jwt2, accept)).status).toBe(4…
+       |                                                                 ^
+    176|     expect((await fn('change-decide', cust2.jwt, accept)).status).toBe…
+    177|     expect(await fn('change-decide', cust.jwt, { ...accept, shownTotal…
+ ❯ tests/rls/partner-functions-live.test.ts:95:137
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+ Test Files  1 failed (1)
+      Tests  8 failed | 2 passed (10)
+   Start at  18:22:44
+   Duration  55.85s (tests 99%, import 1%)
+EXIT=1

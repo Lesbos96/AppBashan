@@ -1,0 +1,682 @@
+Commit f4e76e3
+Arbeitsbaum sauber: ja
+Start 19:07:31
+
+> movenow@0.1.0 test:e2e
+> playwright test --project=e2e --project=e2e-desktop --reporter=line,json
+
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+
+Running 662 tests using 2 workers
+
+[1/662] [e2e] › tests\e2e\anmelden.spec.ts:12:1 › Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden
+[2/662] [e2e] › tests\e2e\anfrage.spec.ts:30:1 › Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge
+[3/662] [e2e] › tests\e2e\anmelden.spec.ts:47:1 › Link-Weg: Token verschwindet sofort aus der URL, Prüfung erst nach Tipp, danach E-Mail sichtbar
+[4/662] [e2e] › tests\e2e\anmelden.spec.ts:65:1 › Link bei bestehender Sitzung meldet nicht ohne Tipp in einem anderen Konto an
+[5/662] [e2e] › tests\e2e\anmelden.spec.ts:77:1 › Rücksprung überlebt einen neuen Tab (Link aus dem Mailprogramm)
+[6/662] [e2e] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: //evil.com
+[7/662] [e2e] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: https://evil.com
+[8/662] [e2e] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: javascript:alert(1)
+[9/662] [e2e] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: /\evil.com
+[10/662] [e2e] › tests\e2e\anmelden.spec.ts:101:1 › Fehler beim Code: eigener Text statt Dienstmeldung, Erneut senden erst nach Countdown
+[11/662] [e2e] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: zu viele Versuche
+[12/662] [e2e] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: offline
+[13/662] [e2e] › tests\e2e\anfrage.spec.ts:45:1 › Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter
+[14/662] [e2e] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: Dienst gestört
+[15/662] [e2e] › tests\e2e\anmelden.spec.ts:136:1 › Fehler beim Anfordern: Adresse, 429, offline
+[16/662] [e2e] › tests\e2e\anmelden.spec.ts:156:1 › Abgelaufener oder benutzter Link: eigener Text und Weg zum neuen Code
+[17/662] [e2e] › tests\e2e\anmelden.spec.ts:167:1 › Standard-Link von Supabase mit Fehler im Fragment zeigt denselben Text
+[18/662] [e2e] › tests\e2e\anmelden.spec.ts:174:1 › Präparierter Link mit fremder Sitzung im Fragment wird nicht übernommen (Login-CSRF)
+[19/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:114:3 › Angebote › Liste zeigt Firma, Betrag in einer Zeile und Frist; Annahme per Tastatur sendet genau den Betrag
+[20/662] [e2e] › tests\e2e\anfrage.spec.ts:65:1 › Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung
+[21/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:139:3 › Angebote › Betrag hat sich geändert: Hinweis, neue Liste, nichts wird still gebucht
+[22/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:153:3 › Angebote › Angebot nicht mehr verfügbar: neutraler Hinweis ohne Firmenstatus
+[23/662] [e2e] › tests\e2e\anfrage.spec.ts:85:1 › Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)
+[24/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:164:3 › Angebote › Netzfehler: Fehlertext im Sheet, zweiter Versuch klappt, Doppelklick sendet einmal
+[25/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:180:3 › Angebote › kein gültiges Angebot: Hinweis statt Liste
+[26/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:190:3 › Nachtrag › zeigt Mehraufwand, neuen Gesamtpreis und nur die Belege dieses Nachtrags; Zustimmen sendet genau den Gesamtpreis
+[27/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:214:3 › Nachtrag › Ablehnen sendet keinen Betrag
+[28/662] [e2e] › tests\e2e\anfrage.spec.ts:96:1 › Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur
+[29/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:224:3 › Nachtrag › Gesamtpreis hat sich geändert: Hinweis und neuer Betrag, erneute Bestätigung nötig
+[30/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:237:3 › Nachtrag › Belege nicht ladbar: Entscheidung bleibt möglich
+[31/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:246:3 › Nachtrag › kein offener Nachtrag: keine Karte
+[32/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:252:3 › Nachtrag › Abfrage: eigene Anfrage, nur offene Nachträge, feste Spalten
+[33/662] [e2e] › tests\e2e\anfrage.spec.ts:107:1 › Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen
+[34/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:271:3 › Frage nach dem Termin › vor Terminbeginn gibt es keine Frage, aber den Storno-Knopf mit Stufen in Worten
+[35/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:283:3 › Frage nach dem Termin › Storno-Sheet ohne Bedingungen im Snapshot: kein Stufentext, Betrag bleibt
+[36/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:293:3 › Frage nach dem Termin › Folgeanfrage (Storno kostenlos): Betrag „Kostenlos“, kein Stufentext
+[37/662] [e2e] › tests\e2e\anfrage.spec.ts:117:1 › Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt
+[38/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:303:3 › Frage nach dem Termin › gemeldet, Termin noch in der Zukunft: kein Storno-Knopf
+[39/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:310:3 › Frage nach dem Termin › Fehler im Sheet, schließen und neu öffnen: Fehler ist weg, Aktion geht
+[40/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:328:3 › Frage nach dem Termin › nach Terminbeginn: Frage statt Storno-Knopf
+[41/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:335:3 › Frage nach dem Termin › „Ja“: Bestätigung per Tastatur, Auftrag ist erledigt
+[42/662] [e2e] › tests\e2e\anfrage.spec.ts:129:1 › Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf
+[43/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:354:3 › Frage nach dem Termin › „Nein“: Meldung, danach Hinweis „Wir prüfen“ und keine Frage mehr
+[44/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:367:3 › Frage nach dem Termin › schon gemeldet: nur der Hinweis
+[45/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:374:3 › Frage nach dem Termin › Server lehnt ab (invalid_transition): Sheet schließt, Hinweis, Detail lädt neu
+[46/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:385:3 › Frage nach dem Termin › Meldefrist abgelaufen: eigener Text
+[47/662] [e2e] › tests\e2e\anfrage.spec.ts:139:1 › Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis
+[48/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 390 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[49/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 390 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[50/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 430 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[51/662] [e2e] › tests\e2e\anfrage.spec.ts:154:1 › Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef
+[52/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 430 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[53/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[54/662] [e2e] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 1280 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[55/662] [e2e] › tests\e2e\auftrag.spec.ts:62:1 › Detail: Status, Verlauf, Termin, Adressen und Preis
+[56/662] [e2e] › tests\e2e\auftrag.spec.ts:81:1 › Storno kostenlos: Vorschau, Bestätigung per Tastatur, Detail zeigt danach den Endzustand
+[57/662] [e2e] › tests\e2e\auftrag.spec.ts:101:1 › Storno mit Kosten: der Betrag der Vorschau wird gezeigt und genau so gesendet
+[58/662] [e2e] › tests\e2e\anfrage.spec.ts:170:1 › Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“
+[59/662] [e2e] › tests\e2e\auftrag.spec.ts:116:1 › Stufe wechselt zwischen Vorschau und Bestätigung: neuer Betrag, nichts wird still gebucht
+[60/662] [e2e] › tests\e2e\auftrag.spec.ts:135:1 › zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt
+[61/662] [e2e] › tests\e2e\anfrage.spec.ts:180:1 › Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent
+[62/662] [e2e] › tests\e2e\anfrage.spec.ts:187:1 › Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis
+[63/662] [e2e] › tests\e2e\auftrag.spec.ts:145:1 › Netzfehler bei der Vorschau: Fehlertext, erneut versuchen möglich
+[64/662] [e2e] › tests\e2e\auftrag.spec.ts:155:1 › Storno nur bei „Bestätigt“: andere Status haben keinen Knopf
+[65/662] [e2e] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 390 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[66/662] [e2e] › tests\e2e\anfrage.spec.ts:195:1 › Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet
+[67/662] [e2e] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 430 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[68/662] [e2e] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[69/662] [e2e] › tests\e2e\auftrag.spec.ts:172:1 › Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste
+[70/662] [e2e] › tests\e2e\anfrage.spec.ts:209:1 › „Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt
+[71/662] [e2e] › tests\e2e\auftrag.spec.ts:183:1 › Beschriftung nennt den Betrag und wechselt mit ihm
+[72/662] [e2e] › tests\e2e\auftrag.spec.ts:195:1 › Während die Buchung läuft, schließt nichts das Sheet
+[73/662] [e2e] › tests\e2e\anfrage.spec.ts:218:1 › Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet
+[74/662] [e2e] › tests\e2e\auftrag.spec.ts:209:1 › Antwort verloren, Server hat gebucht: zweiter Versuch gleicht das Detail an
+[75/662] [e2e] › tests\e2e\anfrage.spec.ts:227:1 › Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit
+[76/662] [e2e] › tests\e2e\backend.spec.ts:7:1 › Ungemockte Aufrufe werden abgebrochen und gemeldet, auch an einen echten Supabase-Host
+[77/662] [e2e] › tests\e2e\backend.spec.ts:17:1 › Tarife und Bedingungen kommen aus seed.sql: 28 Zeilen, Bedingungen mit gültigem Hash
+[78/662] [e2e] › tests\e2e\backend.spec.ts:32:1 › Rot-Beweis: ungemockter Aufruf lässt den Test scheitern
+[79/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:48:5 › Fokusrahmen (1.4.11, 2.4.7) › Rahmen in voller Akzentfarbe, mindestens 3:1 zum Hintergrund (light)
+[80/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:48:5 › Fokusrahmen (1.4.11, 2.4.7) › Rahmen in voller Akzentfarbe, mindestens 3:1 zum Hintergrund (dark)
+[81/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:58:3 › Fokusrahmen (1.4.11, 2.4.7) › Zeilen in Listen mit overflow-hidden: Rahmen liegt innen und wird nicht abgeschnitten
+[82/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:65:3 › Fokusrahmen (1.4.11, 2.4.7) › Onboarding: „Überspringen" auf dunklem Grund mit hellem Rahmen
+[83/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:112:3 › Fokus nicht verdeckt (2.4.11) › Umzug-Konfigurator: kein fokussiertes Element unter Kopf- oder Preisleiste
+[84/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:120:3 › Fokus nicht verdeckt (2.4.11) › Zusammenfassung: Kontaktfelder und Einwilligung nicht unter den Leisten
+[85/662] [e2e] › tests\e2e\anfrage.spec.ts:249:1 › Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash
+[86/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:132:3 › Fokus nicht verdeckt (2.4.11) › Start: Mietkarte nicht unter der Tab-Leiste
+[87/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:151:3 › Fokus in Freitextfeldern sichtbar (2.4.7) › Transport: „Gegenstände & Umfang"
+[88/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:159:3 › Fokus in Freitextfeldern sichtbar (2.4.7) › Entrümpelung: „Was sollten wir noch wissen?"
+[89/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:171:3 › Seitentitel (2.4.2) › jede Seite hat einen eigenen Titel, auch nach dem Wechsel
+[90/662] [e2e] › tests\e2e\anfrage.spec.ts:268:1 › Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf von quote (390, 430, 1280 px)
+[91/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:198:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Fokus liegt nach dem Wechsel auf der Überschrift der neuen Seite, nicht auf body
+[92/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:210:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Seite mit nachgeladener Überschrift (Entrümpelung, Richtwert): Fokus kommt nach dem Laden
+[93/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:221:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Erster Aufruf: Fokus bleibt beim Browser (keine Überschrift fokussiert)
+[94/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:229:3 › Anmeldung: Fokus beim Schrittwechsel (2.4.3) › nach „Code senden" im Codefeld, nach „Andere Adresse" wieder im E-Mail-Feld
+[95/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:239:3 › Anmeldung: Fokus beim Schrittwechsel (2.4.3) › erster Aufruf: kein automatischer Fokus im E-Mail-Feld
+[96/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:247:3 › Wartezeit nach 429 (4.1.3) › die Live-Region enthält nur die Meldung, der Zähler läuft daneben
+[97/662] [e2e] › tests\e2e\anfrage.spec.ts:288:1 › ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts
+[98/662] [e2e] › tests\e2e\anfrage.spec.ts:298:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich
+[99/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:271:3 › Geänderter Richtpreis wird angesagt (4.1.3) › Montage: Statusmeldung trägt den neuen Endbetrag
+[100/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:288:3 › Sichtbarer Text im Namen (2.5.3) › Fotoknöpfe: Name beginnt mit „Kamera" bzw. „Galerie"
+[101/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:300:3 › Foto-Zähler wird angesagt (4.1.3) › Überschrift und Zähler bilden eine höfliche Live-Region, ohne zweites Element „Fotos"
+[102/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:316:3 › Überschriften ohne Sprung (1.3.1) › Entrümpelung, letzter Schritt: „Fotos" ist h2 unter dem h1; im Konfigurator h3 unter h2
+[103/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:330:3 › Fehlerseite (1.3.1, 2.4.6) › hat genau eine h1 mit dem Fehler
+[104/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:339:5 › Textkontrast der Adressmarker (1.4.3) › Marker „A" und „B" mindestens 4,5:1 (light)
+[105/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:339:5 › Textkontrast der Adressmarker (1.4.3) › Marker „A" und „B" mindestens 4,5:1 (dark)
+[106/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:373:3 › Textabstände (1.4.12) › Preisleiste: Betrag nicht abgeschnitten (Montage)
+[107/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:380:3 › Textabstände (1.4.12) › Preisleiste: „Persönliches Angebot" nicht abgeschnitten (Umzug mit Klavier)
+[108/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:390:3 › Onboarding: neue Seite wird angesagt (4.1.3) › Titel und Text stehen in einer höflichen Live-Region, der Fokus bleibt auf „Weiter"
+[109/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:401:3 › Fokus nach Seitenwechsel: kein Wegziehen (2.4.3) › setzt der Nutzer den Fokus vor dem Nachladen der Überschrift woandershin, bleibt er dort
+[110/662] [e2e] › tests\e2e\anfrage.spec.ts:317:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen
+[111/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:430:3 › Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2) › Pflichtfelder sind markiert; ungültige Eingabe zeigt nach dem Verlassen einen verknüpften Hinweis
+[112/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:457:3 › Eingabezweck (1.3.5) › Kontaktfelder der Zusammenfassung tragen autocomplete
+[113/662] [e2e] › tests\e2e\anfrage.spec.ts:336:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn
+[114/662] [e2e] › tests\e2e\barrierefreiheit.spec.ts:467:3 › Fortschritt mit Wertetext (4.1.2) › Entrümpelung und Onboarding nennen Schritt bzw. Seite statt Prozent
+[115/662] [e2e] › tests\e2e\dienste.spec.ts:13:1 › Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Gebührenzeile
+[116/662] [e2e] › tests\e2e\dienste.spec.ts:42:1 › Entrümpelung nur mit der Tastatur: alle Schritte bis zum Ergebnis
+[117/662] [e2e] › tests\e2e\dienste.spec.ts:60:1 › Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis
+[118/662] [e2e] › tests\e2e\dienste.spec.ts:73:1 › Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis
+[119/662] [e2e] › tests\e2e\anfrage.spec.ts:354:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash
+[120/662] [e2e] › tests\e2e\dienste.spec.ts:93:1 › Ergebnis ohne Angaben führt zurück zum Wizard
+[121/662] [e2e] › tests\e2e\dienste.spec.ts:98:1 › Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile
+[122/662] [e2e] › tests\e2e\dienste.spec.ts:114:1 › Standardmontage: Mindestmenge 2 lfm, Weiter per Tastatur
+[123/662] [e2e] › tests\e2e\dienste.spec.ts:125:1 › Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt den Fehlerzustand
+[124/662] [e2e] › tests\e2e\dienste.spec.ts:138:1 › Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten
+[125/662] [e2e] › tests\e2e\anfrage.spec.ts:376:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte
+[126/662] [e2e] › tests\e2e\fotos.spec.ts:15:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber
+[127/662] [e2e] › tests\e2e\fotos.spec.ts:58:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen
+[128/662] [e2e] › tests\e2e\anfrage.spec.ts:386:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt
+[129/662] [e2e] › tests\e2e\fotos.spec.ts:66:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging
+[130/662] [e2e] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[131/662] [e2e] › tests\e2e\fotos.spec.ts:81:1 › Fortschritt: x von 2 hochgeladen, dann gesendet
+[132/662] [e2e] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[133/662] [e2e] › tests\e2e\fotos.spec.ts:89:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet
+[134/662] [e2e] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[135/662] [e2e] › tests\e2e\fotos.spec.ts:102:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild
+[136/662] [e2e] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[137/662] [e2e] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › offline
+[138/662] [e2e] › tests\e2e\anfrage.spec.ts:430:1 › 422 pickup_outside_vienna: klare Meldung, Link zu den Angaben
+[139/662] [e2e] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy)
+[140/662] [e2e] › tests\e2e\anfrage.spec.ts:438:1 › Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise
+[141/662] [e2e] › tests\e2e\anfrage.spec.ts:467:1 › Die App liest nie das Journal oder Einstellungen und keine Antwort enthält Gebührenfelder
+[142/662] [e2e] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › 413 (zu groß)
+[143/662] [e2e] › tests\e2e\anfrage.spec.ts:496:1 › Kontowechsel in einem anderen Tab hebt die Einwilligung auf
+[144/662] [e2e] › tests\e2e\fotos.spec.ts:141:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing
+[145/662] [e2e] › tests\e2e\anfrage.spec.ts:514:1 › Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px
+[146/662] [e2e] › tests\e2e\fotos.spec.ts:141:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired
+[147/662] [e2e] › tests\e2e\anfrage.spec.ts:525:1 › Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag
+[148/662] [e2e] › tests\e2e\fotos.spec.ts:159:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt
+[149/662] [e2e] › tests\e2e\anfrage.spec.ts:536:1 › Serverpreis gleich der Vorschau: kein Hinweis
+[150/662] [e2e] › tests\e2e\fotos.spec.ts:185:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben
+[151/662] [e2e] › tests\e2e\anfrage.spec.ts:546:1 › Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel
+[152/662] [e2e] › tests\e2e\fotos.spec.ts:192:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt
+[153/662] [e2e] › tests\e2e\fotos.spec.ts:202:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert
+[154/662] [e2e] › tests\e2e\komponenten.spec.ts:4:1 › Komponenten per Tastatur bedienbar
+[155/662] [e2e] › tests\e2e\komponenten.spec.ts:32:1 › Touch-Ziele, Beträge und Tab-Bar
+[156/662] [e2e] › tests\e2e\konfigurator.spec.ts:18:1 › Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile
+[157/662] [e2e] › tests\e2e\konto.spec.ts:48:1 › abgemeldet: keine Zeile „Konto löschen“, der Pfad öffnet kein Sheet
+[158/662] [e2e] › tests\e2e\konto.spec.ts:60:1 › Löschen per Tastatur: erst nach dem Häkchen, sendet genau { confirm: true }, meldet ab
+[159/662] [e2e] › tests\e2e\konto.spec.ts:95:1 › Fotos eines Entwurfs sind nach dem Löschen nicht mehr im Speicher
+[160/662] [e2e] › tests\e2e\konto.spec.ts:116:1 › Schließen über Zurück: beim nächsten Öffnen kein Häkchen, Knopf gesperrt, nichts gesendet
+[161/662] [e2e] › tests\e2e\konfigurator.spec.ts:45:1 › Hauptflow nur mit der Tastatur: Adressen bestätigen, Preis, Weiter
+[162/662] [e2e] › tests\e2e\konto.spec.ts:132:1 › 409 open_requests: Weg zu den Aufträgen
+[163/662] [e2e] › tests\e2e\konfigurator.spec.ts:74:1 › Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis
+[164/662] [e2e] › tests\e2e\konto.spec.ts:144:1 › 401: Sitzung gilt nicht mehr, lokal abgemeldet, neutraler Hinweis im Profil, kein zweiter Aufruf
+[165/662] [e2e] › tests\e2e\konfigurator.spec.ts:88:1 › Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt
+[166/662] [e2e] › tests\e2e\konfigurator.spec.ts:99:1 › Treffer ohne Hausnummer sind nicht wählbar
+[167/662] [e2e] › tests\e2e\konto.spec.ts:163:1 › Doppelklick sendet genau einen Aufruf
+[168/662] [e2e] › tests\e2e\konfigurator.spec.ts:112:3 › Routenfunktion antwortet 429: verständliche Meldung, keine Kilometer, kein Preis
+[169/662] [e2e] › tests\e2e\konfigurator.spec.ts:112:3 › Routenfunktion antwortet 500: verständliche Meldung, keine Kilometer, kein Preis
+[170/662] [e2e] › tests\e2e\konto.spec.ts:173:1 › „Doch nicht“ sendet nichts und bleibt angemeldet
+[171/662] [e2e] › tests\e2e\konfigurator.spec.ts:124:1 › Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer
+[172/662] [e2e] › tests\e2e\konto.spec.ts:197:3 › 409 open_requests: Text im Sheet, bleibt angemeldet
+[173/662] [e2e] › tests\e2e\konfigurator.spec.ts:135:1 › Fotos: Standort-EXIF ist nach der Aufbereitung entfernt, Entfernen und Limit funktionieren
+[174/662] [e2e] › tests\e2e\konfigurator.spec.ts:166:1 › Änderung von Adresse oder Rückfahrt verwirft die Route
+[175/662] [e2e] › tests\e2e\konto.spec.ts:197:3 › 403 role_not_allowed: Text im Sheet, bleibt angemeldet
+[176/662] [e2e] › tests\e2e\konfigurator.spec.ts:180:1 › Mehr als 8 Fotos werden abgelehnt, 8 bleiben
+[177/662] [e2e] › tests\e2e\konfigurator.spec.ts:190:1 › Kaputter gespeicherter Zustand wird verworfen, der Konfigurator lädt leer
+[178/662] [e2e] › tests\e2e\konto.spec.ts:197:3 › 500 internal: Text im Sheet, bleibt angemeldet
+[179/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:19:1 › Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse im DOM, auch nicht versteckt
+[180/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:42:1 › leere Liste und Ladefehler mit erneutem Versuch
+[181/662] [e2e] › tests\e2e\konto.spec.ts:197:3 › 200 kein deleted: Text im Sheet, bleibt angemeldet
+[182/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:52:1 › Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gezeigte Auszahlung, danach steht die Anfrage unter „Angenommen“
+[183/662] [e2e] › tests\e2e\konto.spec.ts:213:1 › Netzfehler: Hinweis, zweiter Versuch löscht
+[184/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:66:1 › Doppelklick sendet nur einen Aufruf
+[185/662] [e2e] › tests\e2e\konto.spec.ts:228:1 › Während das Löschen läuft, schließt nichts das Sheet und der Knopf ist gesperrt
+[186/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:74:1 › Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die Liste lädt neu und die Anfrage ist weg
+[187/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:87:1 › geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden
+[188/662] [e2e] › tests\e2e\konto.spec.ts:243:3 › Maße bei 390 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[189/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:101:1 › ohne Sätze keine Auszahlung und keine Annahme
+[190/662] [e2e] › tests\e2e\konto.spec.ts:243:3 › Maße bei 430 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[191/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:108:1 › Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht es unter „Meine Angebote“
+[192/662] [e2e] › tests\e2e\konto.spec.ts:243:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[193/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › offer_exists
+[194/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:20:1 › Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebühr, keine Kontaktdaten, keine Auftrags-ID im DOM
+[195/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:40:1 › Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DOM, nachher im Sheet, nach dem Schließen wieder weg; jeder Abruf zählt
+[196/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › offer_limit
+[197/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:61:1 › Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein Fehler lässt sich wiederholen
+[198/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › amount_out_of_range
+[199/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:76:1 › Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener Zeit, kein Aufruf
+[200/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:85:1 › Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Status wechselt, der Auftrag wandert nach „Beendet“
+[201/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › vat_rule_missing
+[202/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:107:1 › Doppelklick auf die Bestätigung sendet nur einen Aufruf
+[203/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:154:1 › Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“
+[204/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:115:1 › Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, nie Servercodes
+[205/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:164:1 › Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download
+[206/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status pending: keine Anfragen und kein Abruf der Liste
+[207/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status payment_hold: keine Anfragen und kein Abruf der Liste
+[208/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status suspended: keine Anfragen und kein Abruf der Liste
+[209/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:143:1 › Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftung „Preis für den Kunden“
+[210/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status rejected: keine Anfragen und kein Abruf der Liste
+[211/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:167:1 › Beträge nicht lesbar: der Auftrag bleibt sichtbar, es erscheint kein Betrag (nie 0 €)
+[212/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:193:1 › aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste
+[213/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:173:1 › pausierte Firma (payment_hold) sieht ihre angenommenen Aufträge, aber keine offenen Anfragen; pending ruft nichts ab
+[214/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:201:1 › aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)
+[215/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:181:1 › pending: weder Aufträge noch Anfragen werden abgerufen
+[216/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:209:1 › Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)
+[217/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:189:1 › Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund lässt die Anzeige stehen
+[218/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:203:1 › Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwindet die Liste (Abnahme N6)
+[219/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:221:1 › angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)
+[220/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:212:1 › Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird „Auftrag starten“ frei (Entscheidung der Serveruhr, nicht der Geräteuhr)
+[221/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:232:1 › Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt
+[222/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:221:1 › Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erscheint unter „Angenommen“ mit den Beträgen des Servers
+[223/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:249:1 › 320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erreichbar (Bildsicht s9i-6a, mittel 4)
+[224/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:231:1 › Tastatur: Start, Abschluss und Kontakt ohne Maus; Escape schließt das Sheet ohne Aufruf
+[225/662] [e2e] › tests\e2e\partner-anfragen.spec.ts:265:1 › Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)
+[226/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:260:1 › Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)
+[227/662] [e2e] › tests\e2e\partner-mfa.spec.ts:37:1 › 320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, keine Überbreite (S9i5-3)
+[228/662] [e2e] › tests\e2e\partner-auftraege.spec.ts:278:1 › 320 × 640 px: im Kontakt-Sheet ist „Schließen“ erreichbar
+[229/662] [e2e] › tests\e2e\partner-mfa.spec.ts:53:3 › Einrichtung › ohne Faktor: Karte „In Prüfung“ und Einrichtung; vor dem Klick entsteht kein Faktor; keine Dokumente
+[230/662] [e2e] › tests\e2e\partner-mfa.spec.ts:66:3 › Einrichtung › QR und Schlüssel erscheinen, falscher Code wird abgelehnt, richtiger führt zu den Dokumenten und gilt nach dem Neuladen weiter
+[231/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:43:1 › Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag
+[232/662] [e2e] › tests\e2e\partner-mfa.spec.ts:110:3 › Einrichtung › abgebrochene Einrichtung: der liegengebliebene Faktor wird ersetzt, der neue Versuch klappt (auch nach Neuladen mitten drin)
+[233/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:80:1 › Doppelklick auf Senden: ein Foto, ein Nachtrag
+[234/662] [e2e] › tests\e2e\partner-mfa.spec.ts:126:3 › Einrichtung › Zu viele Versuche und kein Netz bekommen eigene Texte; der Code bleibt im Feld
+[235/662] [e2e] › tests\e2e\partner-mfa.spec.ts:144:3 › Einrichtung › Tastatur: Einrichtung ohne Maus (Tab zum Knopf, Code tippen, Enter)
+[236/662] [e2e] › tests\e2e\partner-mfa.spec.ts:157:3 › Anmeldung mit Faktor › aal1 mit verifiziertem Faktor: Code-Abfrage statt Einrichtung; falscher Code, dann richtiger Code führt zu den Dokumenten
+[237/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:90:1 › Tastatur: Hauptweg nur mit Tastatur
+[238/662] [e2e] › tests\e2e\partner-mfa.spec.ts:186:3 › Anmeldung mit Faktor › verifizierter Faktor bleibt unangetastet, auch wenn ein unverifizierter daneben liegt
+[239/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:108:1 › Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet
+[240/662] [e2e] › tests\e2e\partner-mfa.spec.ts:193:3 › Anmeldung mit Faktor › Faktor des anderen Geräts bei der Einrichtung (insufficient_aal): Hinweis statt Absturz
+[241/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:121:1 › Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft)
+[242/662] [e2e] › tests\e2e\partner-mfa.spec.ts:203:3 › Anmeldung mit Faktor › Tastatur: Code tippen und mit Enter bestätigen, Touch-Ziele und Breite
+[243/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „declined“: eigener Text, danach darf ein neuer folgen
+[244/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „expired“: eigener Text, danach darf ein neuer folgen
+[245/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „accepted“: eigener Text, danach darf ein neuer folgen
+[246/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „withdrawn“: eigener Text, danach darf ein neuer folgen
+[247/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:144:1 › Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen
+[248/662] [e2e] › tests\e2e\partner-mfa.spec.ts:216:3 › Anmeldung mit Faktor › Codefeld: Ziffern-Tastatur und Autofill für Einmalcodes
+[249/662] [e2e] › tests\e2e\partner-mfa.spec.ts:225:5 › Zugang je Firmenstatus › rejected mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente
+[250/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:169:1 › Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text
+[251/662] [e2e] › tests\e2e\partner-mfa.spec.ts:225:5 › Zugang je Firmenstatus › suspended mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente
+[252/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:188:1 › Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt
+[253/662] [e2e] › tests\e2e\partner-mfa.spec.ts:237:3 › Zugang je Firmenstatus › rejected ohne Faktor (aal1): ebenfalls nur die Karte, keine Einrichtung
+[254/662] [e2e] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › pending mit aal2: Karte und Dokumente
+[255/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:206:1 › Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen
+[256/662] [e2e] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › active mit aal2: Karte und Dokumente
+[257/662] [e2e] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › payment_hold mit aal2: Karte und Dokumente
+[258/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:220:1 › Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu)
+[259/662] [e2e] › tests\e2e\partner-mfa.spec.ts:253:3 › Zugang je Firmenstatus › pending mit aal1 und Faktor: Karte bleibt sichtbar, Dokumente erst nach dem Code
+[260/662] [e2e] › tests\e2e\partner-mfa.spec.ts:270:3 › Dokumente › leere Liste; Hochladen bleibt gesperrt, bis eine Datei gewählt ist; Hinweis auf Grenzen
+[261/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:230:1 › Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag
+[262/662] [e2e] › tests\e2e\partner-mfa.spec.ts:281:3 › Dokumente › PDF hochladen: Zeile mit id und kind, dann Datei auf {firma}/{id} mit application/pdf, Liste zeigt „Hochgeladen“
+[263/662] [e2e] › tests\e2e\partner-mfa.spec.ts:303:3 › Dokumente › Bild: wird als JPEG hochgeladen (EXIF und Original fallen weg), nie als PNG
+[264/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:252:1 › Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1)
+[265/662] [e2e] › tests\e2e\partner-mfa.spec.ts:313:3 › Dokumente › unerlaubter Typ und zu große Datei: Text in Worten, es entsteht weder Zeile noch Upload
+[266/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:269:1 › Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2)
+[267/662] [e2e] › tests\e2e\partner-mfa.spec.ts:331:3 › Dokumente › Server lehnt den Upload ab (415): die Zeile bleibt, „Datei fehlt“ mit „Erneut hochladen“ auf dieselbe id, ohne neue Zeile
+[268/662] [e2e] › tests\e2e\partner-mfa.spec.ts:354:3 › Dokumente › verwaiste Zeile aus einer früheren Sitzung: „Datei fehlt“ ohne Datum der Datei, Erneut-Hochladen klappt per Tastatur
+[269/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:287:1 › Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6)
+[270/662] [e2e] › tests\e2e\partner-mfa.spec.ts:368:3 › Dokumente › fünf Dokumente: Hochladen gesperrt mit Erklärung
+[271/662] [e2e] › tests\e2e\partner-mfa.spec.ts:376:3 › Dokumente › Server meldet limit_reached und partner_not_active: eigene Texte, kein Upload
+[272/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:299:1 › Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter
+[273/662] [e2e] › tests\e2e\partner-mfa.spec.ts:387:3 › Dokumente › 42501 trotz aal2: allgemeiner Fehler, keine Schleife zurück in die Abfrage
+[274/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:312:1 › Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen
+[275/662] [e2e] › tests\e2e\partner-mfa.spec.ts:398:3 › Dokumente › kein Netz beim Hochladen: Text „Keine Verbindung“, Zeile bleibt zum Wiederholen
+[276/662] [e2e] › tests\e2e\partner-mfa.spec.ts:410:3 › Dokumente › Netz weg beim Hochladen und beim Neuladen der Liste: Formular gesperrt, keine zweite Zeile, nach „Erneut versuchen“ lädt „Erneut hochladen“ auf dieselbe id
+[277/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:323:1 › Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt
+[278/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:336:1 › Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum
+[279/662] [e2e] › tests\e2e\partner-nachtrag.spec.ts:350:1 › Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen
+[280/662] [e2e] › tests\e2e\partner.spec.ts:96:1 › nicht angemeldet: /partner führt zur Anmeldung und danach zurück
+[281/662] [e2e] › tests\e2e\partner.spec.ts:109:1 › Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf Endgültigkeit
+[282/662] [e2e] › tests\e2e\partner-mfa.spec.ts:437:3 › Dokumente › verweigert und die Sitzung steht nur noch auf aal1: zurück zur Code-Abfrage, keine Einrichtung
+[283/662] [e2e] › tests\e2e\partner.spec.ts:127:1 › Pflichtfelder: leeres Absenden zeigt je Feld einen Text, sendet nichts und setzt den Fokus auf das erste Feld
+[284/662] [e2e] › tests\e2e\partner-mfa.spec.ts:455:3 › Dokumente › Maße: Touch-Ziele mindestens 44 px, keine Überbreite, Konsole leer, Tastatur bis zum Absenden
+[285/662] [e2e] › tests\e2e\partner.spec.ts:151:1 › Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „In Prüfung“
+[286/662] [e2e] › tests\e2e\shell.spec.ts:5:1 › Erster Start: Onboarding per Tastatur, danach direkt Start
+[287/662] [e2e] › tests\e2e\partner.spec.ts:168:1 › Kleinunternehmer ohne UID: p_uid null, p_small_business true
+[288/662] [e2e] › tests\e2e\partner.spec.ts:177:1 › Doppelklick sendet genau einen Aufruf
+[289/662] [e2e] › tests\e2e\shell.spec.ts:23:1 › Überspringen beendet das Onboarding
+[290/662] [e2e] › tests\e2e\shell.spec.ts:34:3 › App-Shell › Tab-Bar erreicht alle Tabs mit der Tastatur
+[291/662] [e2e] › tests\e2e\shell.spec.ts:55:3 › App-Shell › Service-Karte öffnet den Flow ohne Tab-Bar, Zurück führt zum Start
+[292/662] [e2e] › tests\e2e\partner.spec.ts:186:1 › already_member (zweites Gerät, Firma existiert schon): lädt den Status neu, kein Fehler
+[293/662] [e2e] › tests\e2e\shell.spec.ts:64:3 › App-Shell › Info-Sheet zeigt die Tarife (Mock aus seed.sql), ohne Gebühr
+[294/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler not_customer: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[295/662] [e2e] › tests\e2e\shell.spec.ts:81:3 › App-Shell › Info-Sheet: Ladefehler zeigt Fehlerzustand mit erneutem Versuch
+[296/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler not_authenticated: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[297/662] [e2e] › tests\e2e\shell.spec.ts:91:3 › App-Shell › Offline-Hinweis erscheint und verschwindet
+[298/662] [e2e] › tests\e2e\shell.spec.ts:99:3 › App-Shell › Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf
+[299/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler JWT abgelaufen: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[300/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler scope_incomplete: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[301/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler Check 23514: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[302/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler Unique 23505: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[303/662] [e2e] › tests\e2e\partner.spec.ts:207:3 › Serverfehler 500: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[304/662] [e2e] › tests\e2e\shell.spec.ts:109:3 › App-Shell › Unbekannte Adresse zeigt die Fehlerseite
+[305/662] [e2e] › tests\e2e\partner.spec.ts:224:1 › Netzfehler: Hinweis „Keine Verbindung“, zweiter Versuch klappt
+[306/662] [e2e] › tests\e2e\shell.spec.ts:116:3 › App-Shell › Datenschutz und Impressum sind als Platzhalter markiert
+[307/662] [e2e] › tests\e2e\smoke.spec.ts:4:1 › Start lädt ohne Konsolenfehler
+[308/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status pending: In Prüfung
+[309/662] [e2e] › tests\e2e\smoke.spec.ts:13:1 › Erfassung sieht console.error und nicht abgefangene Fehler
+[310/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status active: Aktiv
+[311/662] [e2e] › tests\e2e\wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis
+[312/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status payment_hold mit Begründung: Pausiert
+[313/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status suspended mit Begründung: Gesperrt
+[314/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status rejected mit Begründung: Abgelehnt
+[315/662] [e2e] › tests\e2e\partner.spec.ts:245:3 › Status rejected: Abgelehnt
+[316/662] [e2e] › tests\e2e\partner.spec.ts:261:1 › Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Registrierformular
+[317/662] [e2e] › tests\e2e\partner.spec.ts:274:1 › Profil: Zeile „Als Partner arbeiten“ führt zu /partner
+[318/662] [e2e] › tests\e2e\partner.spec.ts:283:3 › Maße bei 390 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[319/662] [e2e] › tests\e2e\partner.spec.ts:283:3 › Maße bei 430 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[320/662] [e2e] › tests\e2e\partner.spec.ts:283:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[321/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:30:1 › Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge
+[322/662] [e2e] › tests\e2e\wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts
+[323/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:45:1 › Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter
+[324/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:65:1 › Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung
+[325/662] [e2e] › tests\e2e\wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef
+[326/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:85:1 › Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)
+[327/662] [e2e] › tests\e2e\wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis
+[328/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:96:1 › Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur
+[329/662] [e2e] › tests\e2e\wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt
+[330/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:107:1 › Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen
+[331/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:117:1 › Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt
+[332/662] [e2e] › tests\e2e\wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert
+[333/662] [e2e] › tests\e2e\wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt
+[334/662] [e2e] › tests\e2e\wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung
+[335/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:129:1 › Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf
+[336/662] [e2e] › tests\e2e\wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend
+[337/662] [e2e] › tests\e2e\wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil
+[338/662] [e2e] › tests\e2e\wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung
+[339/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:139:1 › Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis
+[340/662] [e2e] › tests\e2e\wege.spec.ts:341:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge
+[341/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:154:1 › Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef
+[342/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:12:1 › Code-Weg per Tastatur: Schutz leitet um, Anmeldung führt zurück, Neuladen behält die Sitzung, Abmelden
+[343/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:47:1 › Link-Weg: Token verschwindet sofort aus der URL, Prüfung erst nach Tipp, danach E-Mail sichtbar
+[344/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:65:1 › Link bei bestehender Sitzung meldet nicht ohne Tipp in einem anderen Konto an
+[345/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:77:1 › Rücksprung überlebt einen neuen Tab (Link aus dem Mailprogramm)
+[346/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: //evil.com
+[347/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: https://evil.com
+[348/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: javascript:alert(1)
+[349/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:93:3 › Offene Weiterleitung verworfen: /\evil.com
+[350/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:101:1 › Fehler beim Code: eigener Text statt Dienstmeldung, Erneut senden erst nach Countdown
+[351/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: zu viele Versuche
+[352/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: offline
+[353/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:170:1 › Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“
+[354/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:124:3 › Fehler beim Prüfen: Dienst gestört
+[355/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:136:1 › Fehler beim Anfordern: Adresse, 429, offline
+[356/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:156:1 › Abgelaufener oder benutzter Link: eigener Text und Weg zum neuen Code
+[357/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:167:1 › Standard-Link von Supabase mit Fehler im Fragment zeigt denselben Text
+[358/662] [e2e-desktop] › tests\e2e\anmelden.spec.ts:174:1 › Präparierter Link mit fremder Sitzung im Fragment wird nicht übernommen (Login-CSRF)
+[359/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:114:3 › Angebote › Liste zeigt Firma, Betrag in einer Zeile und Frist; Annahme per Tastatur sendet genau den Betrag
+[360/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:139:3 › Angebote › Betrag hat sich geändert: Hinweis, neue Liste, nichts wird still gebucht
+[361/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:180:1 › Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent
+[362/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:153:3 › Angebote › Angebot nicht mehr verfügbar: neutraler Hinweis ohne Firmenstatus
+[363/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:187:1 › Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis
+[364/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:164:3 › Angebote › Netzfehler: Fehlertext im Sheet, zweiter Versuch klappt, Doppelklick sendet einmal
+[365/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:180:3 › Angebote › kein gültiges Angebot: Hinweis statt Liste
+[366/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:195:1 › Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet
+[367/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:190:3 › Nachtrag › zeigt Mehraufwand, neuen Gesamtpreis und nur die Belege dieses Nachtrags; Zustimmen sendet genau den Gesamtpreis
+[368/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:214:3 › Nachtrag › Ablehnen sendet keinen Betrag
+[369/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:224:3 › Nachtrag › Gesamtpreis hat sich geändert: Hinweis und neuer Betrag, erneute Bestätigung nötig
+[370/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:209:1 › „Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt
+[371/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:237:3 › Nachtrag › Belege nicht ladbar: Entscheidung bleibt möglich
+[372/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:246:3 › Nachtrag › kein offener Nachtrag: keine Karte
+[373/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:252:3 › Nachtrag › Abfrage: eigene Anfrage, nur offene Nachträge, feste Spalten
+[374/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:271:3 › Frage nach dem Termin › vor Terminbeginn gibt es keine Frage, aber den Storno-Knopf mit Stufen in Worten
+[375/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:283:3 › Frage nach dem Termin › Storno-Sheet ohne Bedingungen im Snapshot: kein Stufentext, Betrag bleibt
+[376/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:218:1 › Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet
+[377/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:293:3 › Frage nach dem Termin › Folgeanfrage (Storno kostenlos): Betrag „Kostenlos“, kein Stufentext
+[378/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:303:3 › Frage nach dem Termin › gemeldet, Termin noch in der Zukunft: kein Storno-Knopf
+[379/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:227:1 › Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit
+[380/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:310:3 › Frage nach dem Termin › Fehler im Sheet, schließen und neu öffnen: Fehler ist weg, Aktion geht
+[381/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:328:3 › Frage nach dem Termin › nach Terminbeginn: Frage statt Storno-Knopf
+[382/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:249:1 › Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash
+[383/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:335:3 › Frage nach dem Termin › „Ja“: Bestätigung per Tastatur, Auftrag ist erledigt
+[384/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:354:3 › Frage nach dem Termin › „Nein“: Meldung, danach Hinweis „Wir prüfen“ und keine Frage mehr
+[385/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:367:3 › Frage nach dem Termin › schon gemeldet: nur der Hinweis
+[386/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:374:3 › Frage nach dem Termin › Server lehnt ab (invalid_transition): Sheet schließt, Hinweis, Detail lädt neu
+[387/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:268:1 › Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf von quote (390, 430, 1280 px)
+[388/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:385:3 › Frage nach dem Termin › Meldefrist abgelaufen: eigener Text
+[389/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:288:1 › ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts
+[390/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 390 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[391/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 390 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[392/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 430 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[393/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:298:1 › 409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich
+[394/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 430 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[395/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:397:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch
+[396/662] [e2e-desktop] › tests\e2e\auftrag-aktionen.spec.ts:409:3 › Angebote bei 1280 px: lange Firmennamen laufen nicht über, Beträge in einer Zeile
+[397/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:62:1 › Detail: Status, Verlauf, Termin, Adressen und Preis
+[398/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:81:1 › Storno kostenlos: Vorschau, Bestätigung per Tastatur, Detail zeigt danach den Endzustand
+[399/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:317:1 › 409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen
+[400/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:101:1 › Storno mit Kosten: der Betrag der Vorschau wird gezeigt und genau so gesendet
+[401/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:116:1 › Stufe wechselt zwischen Vorschau und Bestätigung: neuer Betrag, nichts wird still gebucht
+[402/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:336:1 › 409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn
+[403/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:135:1 › zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt
+[404/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:145:1 › Netzfehler bei der Vorschau: Fehlertext, erneut versuchen möglich
+[405/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:155:1 › Storno nur bei „Bestätigt“: andere Status haben keinen Knopf
+[406/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:354:1 › 409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash
+[407/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 390 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[408/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 430 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[409/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:163:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch
+[410/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:172:1 › Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste
+[411/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:376:1 › 409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte
+[412/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:183:1 › Beschriftung nennt den Betrag und wechselt mit ihm
+[413/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:195:1 › Während die Buchung läuft, schließt nichts das Sheet
+[414/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:386:1 › 409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt
+[415/662] [e2e-desktop] › tests\e2e\auftrag.spec.ts:209:1 › Antwort verloren, Server hat gebucht: zweiter Versuch gleicht das Detail an
+[416/662] [e2e-desktop] › tests\e2e\backend.spec.ts:7:1 › Ungemockte Aufrufe werden abgebrochen und gemeldet, auch an einen echten Supabase-Host
+[417/662] [e2e-desktop] › tests\e2e\backend.spec.ts:17:1 › Tarife und Bedingungen kommen aus seed.sql: 28 Zeilen, Bedingungen mit gültigem Hash
+[418/662] [e2e-desktop] › tests\e2e\backend.spec.ts:32:1 › Rot-Beweis: ungemockter Aufruf lässt den Test scheitern
+[419/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:48:5 › Fokusrahmen (1.4.11, 2.4.7) › Rahmen in voller Akzentfarbe, mindestens 3:1 zum Hintergrund (light)
+[420/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:48:5 › Fokusrahmen (1.4.11, 2.4.7) › Rahmen in voller Akzentfarbe, mindestens 3:1 zum Hintergrund (dark)
+[421/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:58:3 › Fokusrahmen (1.4.11, 2.4.7) › Zeilen in Listen mit overflow-hidden: Rahmen liegt innen und wird nicht abgeschnitten
+[422/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:65:3 › Fokusrahmen (1.4.11, 2.4.7) › Onboarding: „Überspringen" auf dunklem Grund mit hellem Rahmen
+[423/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:112:3 › Fokus nicht verdeckt (2.4.11) › Umzug-Konfigurator: kein fokussiertes Element unter Kopf- oder Preisleiste
+[424/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Preis ohne Preisversion): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[425/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:120:3 › Fokus nicht verdeckt (2.4.11) › Zusammenfassung: Kontaktfelder und Einwilligung nicht unter den Leisten
+[426/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:132:3 › Fokus nicht verdeckt (2.4.11) › Start: Mietkarte nicht unter der Tab-Leiste
+[427/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:151:3 › Fokus in Freitextfeldern sichtbar (2.4.7) › Transport: „Gegenstände & Umfang"
+[428/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:159:3 › Fokus in Freitextfeldern sichtbar (2.4.7) › Entrümpelung: „Was sollten wir noch wissen?"
+[429/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:171:3 › Seitentitel (2.4.2) › jede Seite hat einen eigenen Titel, auch nach dem Wechsel
+[430/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Preis ohne Snapshot): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[431/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:198:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Fokus liegt nach dem Wechsel auf der Überschrift der neuen Seite, nicht auf body
+[432/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:210:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Seite mit nachgeladener Überschrift (Entrümpelung, Richtwert): Fokus kommt nach dem Laden
+[433/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:221:3 › Fokus nach Seitenwechsel (2.4.3, 4.1.3) › Erster Aufruf: Fokus bleibt beim Browser (keine Überschrift fokussiert)
+[434/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:229:3 › Anmeldung: Fokus beim Schrittwechsel (2.4.3) › nach „Code senden" im Codefeld, nach „Andere Adresse" wieder im E-Mail-Feld
+[435/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:239:3 › Anmeldung: Fokus beim Schrittwechsel (2.4.3) › erster Aufruf: kein automatischer Fokus im E-Mail-Feld
+[436/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:247:3 › Wartezeit nach 429 (4.1.3) › die Live-Region enthält nur die Meldung, der Zähler läuft daneben
+[437/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Bedingungen ohne terms): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[438/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:271:3 › Geänderter Richtpreis wird angesagt (4.1.3) › Montage: Statusmeldung trägt den neuen Endbetrag
+[439/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:288:3 › Sichtbarer Text im Namen (2.5.3) › Fotoknöpfe: Name beginnt mit „Kamera" bzw. „Galerie"
+[440/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:300:3 › Foto-Zähler wird angesagt (4.1.3) › Überschrift und Zähler bilden eine höfliche Live-Region, ohne zweites Element „Fotos"
+[441/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:316:3 › Überschriften ohne Sprung (1.3.1) › Entrümpelung, letzter Schritt: „Fotos" ist h2 unter dem h1; im Konfigurator h3 unter h2
+[442/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:330:3 › Fehlerseite (1.3.1, 2.4.6) › hat genau eine h1 mit dem Fehler
+[443/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:339:5 › Textkontrast der Adressmarker (1.4.3) › Marker „A" und „B" mindestens 4,5:1 (light)
+[444/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:339:5 › Textkontrast der Adressmarker (1.4.3) › Marker „A" und „B" mindestens 4,5:1 (dark)
+[445/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:373:3 › Textabstände (1.4.12) › Preisleiste: Betrag nicht abgeschnitten (Montage)
+[446/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:380:3 › Textabstände (1.4.12) › Preisleiste: „Persönliches Angebot" nicht abgeschnitten (Umzug mit Klavier)
+[447/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:419:3 › 409 unvollständig (Bedingungen unlesbar): wie nicht verfügbar behandelt, kein zweiter Aufruf
+[448/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:390:3 › Onboarding: neue Seite wird angesagt (4.1.3) › Titel und Text stehen in einer höflichen Live-Region, der Fokus bleibt auf „Weiter"
+[449/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:401:3 › Fokus nach Seitenwechsel: kein Wegziehen (2.4.3) › setzt der Nutzer den Fokus vor dem Nachladen der Überschrift woandershin, bleibt er dort
+[450/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:430:3 › Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2) › Pflichtfelder sind markiert; ungültige Eingabe zeigt nach dem Verlassen einen verknüpften Hinweis
+[451/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:430:1 › 422 pickup_outside_vienna: klare Meldung, Link zu den Angaben
+[452/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:457:3 › Eingabezweck (1.3.5) › Kontaktfelder der Zusammenfassung tragen autocomplete
+[453/662] [e2e-desktop] › tests\e2e\barrierefreiheit.spec.ts:467:3 › Fortschritt mit Wertetext (4.1.2) › Entrümpelung und Onboarding nennen Schritt bzw. Seite statt Prozent
+[454/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:13:1 › Entrümpelung-Beispiel: 1.175,00 € mit Spanne 950–1.550 €, ohne Gebührenzeile
+[455/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:438:1 › Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise
+[456/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:42:1 › Entrümpelung nur mit der Tastatur: alle Schritte bis zum Ergebnis
+[457/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:467:1 › Die App liest nie das Journal oder Einstellungen und keine Antwort enthält Gebührenfelder
+[458/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:60:1 › Mindestpreis: kleine Fläche rechnet mit dem Mindestpreis
+[459/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:73:1 › Gewerbe und Sonderabfall führen zur Besichtigung statt zu einem Preis
+[460/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:93:1 › Ergebnis ohne Angaben führt zurück zum Wizard
+[461/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:98:1 › Küche-Beispiel: 770,40 € mit Grundbetrag, ohne Gebührenzeile
+[462/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:114:1 › Standardmontage: Mindestmenge 2 lfm, Weiter per Tastatur
+[463/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:125:1 › Kaputter gespeicherter Zustand: Entrümpelung startet leer, Montage zeigt den Fehlerzustand
+[464/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:496:1 › Kontowechsel in einem anderen Tab hebt die Einwilligung auf
+[465/662] [e2e-desktop] › tests\e2e\dienste.spec.ts:138:1 › Ändern im Ergebnis: Wizard beginnt wieder bei Schritt 1, die Angaben bleiben erhalten
+[466/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:15:1 › Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber
+[467/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:514:1 › Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px
+[468/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:58:1 › Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen
+[469/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:66:1 › Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging
+[470/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:525:1 › Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag
+[471/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:81:1 › Fortschritt: x von 2 hochgeladen, dann gesendet
+[472/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:536:1 › Serverpreis gleich der Vorschau: kein Hinweis
+[473/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:89:1 › Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet
+[474/662] [e2e-desktop] › tests\e2e\anfrage.spec.ts:546:1 › Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel
+[475/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:102:1 › Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild
+[476/662] [e2e-desktop] › tests\e2e\komponenten.spec.ts:4:1 › Komponenten per Tastatur bedienbar
+[477/662] [e2e-desktop] › tests\e2e\komponenten.spec.ts:32:1 › Touch-Ziele, Beträge und Tab-Bar
+[478/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:18:1 › Umzug-Beispiel: 689,61 € mit allen Positionen, ohne Gebührenzeile
+[479/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › offline
+[480/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:45:1 › Hauptflow nur mit der Tastatur: Adressen bestätigen, Preis, Weiter
+[481/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:74:1 › Klavier führt zum persönlichen Angebot mit Grund, nicht zu einem Preis
+[482/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › 403 (Kontingent oder Policy)
+[483/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:88:1 › Ohne Einwilligung geht kein Request an die Routenfunktion; die Suche bleibt gesperrt
+[484/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:99:1 › Treffer ohne Hausnummer sind nicht wählbar
+[485/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:112:3 › Routenfunktion antwortet 429: verständliche Meldung, keine Kilometer, kein Preis
+[486/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:112:3 › Routenfunktion antwortet 500: verständliche Meldung, keine Kilometer, kein Preis
+[487/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:126:5 › Fehlertexte beim Hochladen › 413 (zu groß)
+[488/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:124:1 › Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer
+[489/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:135:1 › Fotos: Standort-EXIF ist nach der Aufbereitung entfernt, Entfernen und Limit funktionieren
+[490/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:166:1 › Änderung von Adresse oder Rückfahrt verwirft die Route
+[491/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:141:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_missing
+[492/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:180:1 › Mehr als 8 Fotos werden abgelehnt, 8 bleiben
+[493/662] [e2e-desktop] › tests\e2e\konfigurator.spec.ts:190:1 › Kaputter gespeicherter Zustand wird verworfen, der Konfigurator lädt leer
+[494/662] [e2e-desktop] › tests\e2e\konto.spec.ts:48:1 › abgemeldet: keine Zeile „Konto löschen“, der Pfad öffnet kein Sheet
+[495/662] [e2e-desktop] › tests\e2e\konto.spec.ts:60:1 › Löschen per Tastatur: erst nach dem Häkchen, sendet genau { confirm: true }, meldet ab
+[496/662] [e2e-desktop] › tests\e2e\konto.spec.ts:95:1 › Fotos eines Entwurfs sind nach dem Löschen nicht mehr im Speicher
+[497/662] [e2e-desktop] › tests\e2e\konto.spec.ts:116:1 › Schließen über Zurück: beim nächsten Öffnen kein Häkchen, Knopf gesperrt, nichts gesendet
+[498/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:141:5 › 422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt › photo_expired
+[499/662] [e2e-desktop] › tests\e2e\konto.spec.ts:132:1 › 409 open_requests: Weg zu den Aufträgen
+[500/662] [e2e-desktop] › tests\e2e\konto.spec.ts:144:1 › 401: Sitzung gilt nicht mehr, lokal abgemeldet, neutraler Hinweis im Profil, kein zweiter Aufruf
+[501/662] [e2e-desktop] › tests\e2e\konto.spec.ts:163:1 › Doppelklick sendet genau einen Aufruf
+[502/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:159:1 › Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt
+[503/662] [e2e-desktop] › tests\e2e\konto.spec.ts:173:1 › „Doch nicht“ sendet nichts und bleibt angemeldet
+[504/662] [e2e-desktop] › tests\e2e\konto.spec.ts:197:3 › 409 open_requests: Text im Sheet, bleibt angemeldet
+[505/662] [e2e-desktop] › tests\e2e\konto.spec.ts:197:3 › 403 role_not_allowed: Text im Sheet, bleibt angemeldet
+[506/662] [e2e-desktop] › tests\e2e\konto.spec.ts:197:3 › 500 internal: Text im Sheet, bleibt angemeldet
+[507/662] [e2e-desktop] › tests\e2e\konto.spec.ts:197:3 › 200 kein deleted: Text im Sheet, bleibt angemeldet
+[508/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:185:1 › 422 too_many_photos: eigener Text, Weg zurück zu den Angaben
+[509/662] [e2e-desktop] › tests\e2e\konto.spec.ts:213:1 › Netzfehler: Hinweis, zweiter Versuch löscht
+[510/662] [e2e-desktop] › tests\e2e\konto.spec.ts:228:1 › Während das Löschen läuft, schließt nichts das Sheet und der Knopf ist gesperrt
+[511/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:192:1 › Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt
+[512/662] [e2e-desktop] › tests\e2e\konto.spec.ts:243:3 › Maße bei 390 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[513/662] [e2e-desktop] › tests\e2e\fotos.spec.ts:202:1 › Große Fotos werden auf 2000 px an der langen Kante verkleinert
+[514/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:19:1 › Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse im DOM, auch nicht versteckt
+[515/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:42:1 › leere Liste und Ladefehler mit erneutem Versuch
+[516/662] [e2e-desktop] › tests\e2e\konto.spec.ts:243:3 › Maße bei 430 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[517/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:52:1 › Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gezeigte Auszahlung, danach steht die Anfrage unter „Angenommen“
+[518/662] [e2e-desktop] › tests\e2e\konto.spec.ts:243:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch
+[519/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:66:1 › Doppelklick sendet nur einen Aufruf
+[520/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:20:1 › Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebühr, keine Kontaktdaten, keine Auftrags-ID im DOM
+[521/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:74:1 › Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die Liste lädt neu und die Anfrage ist weg
+[522/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:40:1 › Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DOM, nachher im Sheet, nach dem Schließen wieder weg; jeder Abruf zählt
+[523/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:87:1 › geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden
+[524/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:61:1 › Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein Fehler lässt sich wiederholen
+[525/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:101:1 › ohne Sätze keine Auszahlung und keine Annahme
+[526/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:76:1 › Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener Zeit, kein Aufruf
+[527/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:108:1 › Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht es unter „Meine Angebote“
+[528/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:85:1 › Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Status wechselt, der Auftrag wandert nach „Beendet“
+[529/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › offer_exists
+[530/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:107:1 › Doppelklick auf die Bestätigung sendet nur einen Aufruf
+[531/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:115:1 › Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, nie Servercodes
+[532/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › offer_limit
+[533/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › amount_out_of_range
+[534/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:143:1 › Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftung „Preis für den Kunden“
+[535/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:167:1 › Beträge nicht lesbar: der Auftrag bleibt sichtbar, es erscheint kein Betrag (nie 0 €)
+[536/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:142:5 › Serverantworten beim Angebot › vat_rule_missing
+[537/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:173:1 › pausierte Firma (payment_hold) sieht ihre angenommenen Aufträge, aber keine offenen Anfragen; pending ruft nichts ab
+[538/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:181:1 › pending: weder Aufträge noch Anfragen werden abgerufen
+[539/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:154:1 › Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“
+[540/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:189:1 › Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund lässt die Anzeige stehen
+[541/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:203:1 › Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwindet die Liste (Abnahme N6)
+[542/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:164:1 › Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download
+[543/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:212:1 › Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird „Auftrag starten“ frei (Entscheidung der Serveruhr, nicht der Geräteuhr)
+[544/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status pending: keine Anfragen und kein Abruf der Liste
+[545/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:221:1 › Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erscheint unter „Angenommen“ mit den Beträgen des Servers
+[546/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status payment_hold: keine Anfragen und kein Abruf der Liste
+[547/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status suspended: keine Anfragen und kein Abruf der Liste
+[548/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:231:1 › Tastatur: Start, Abschluss und Kontakt ohne Maus; Escape schließt das Sheet ohne Aufruf
+[549/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:183:3 › Status rejected: keine Anfragen und kein Abruf der Liste
+[550/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:193:1 › aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste
+[551/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:260:1 › Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)
+[552/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:201:1 › aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)
+[553/662] [e2e-desktop] › tests\e2e\partner-auftraege.spec.ts:278:1 › 320 × 640 px: im Kontakt-Sheet ist „Schließen“ erreichbar
+[554/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:209:1 › Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)
+[555/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:37:1 › 320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, keine Überbreite (S9i5-3)
+[556/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:221:1 › angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)
+[557/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:53:3 › Einrichtung › ohne Faktor: Karte „In Prüfung“ und Einrichtung; vor dem Klick entsteht kein Faktor; keine Dokumente
+[558/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:232:1 › Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt
+[559/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:66:3 › Einrichtung › QR und Schlüssel erscheinen, falscher Code wird abgelehnt, richtiger führt zu den Dokumenten und gilt nach dem Neuladen weiter
+[560/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:249:1 › 320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erreichbar (Bildsicht s9i-6a, mittel 4)
+[561/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:110:3 › Einrichtung › abgebrochene Einrichtung: der liegengebliebene Faktor wird ersetzt, der neue Versuch klappt (auch nach Neuladen mitten drin)
+[562/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:126:3 › Einrichtung › Zu viele Versuche und kein Netz bekommen eigene Texte; der Code bleibt im Feld
+[563/662] [e2e-desktop] › tests\e2e\partner-anfragen.spec.ts:265:1 › Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)
+[564/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:144:3 › Einrichtung › Tastatur: Einrichtung ohne Maus (Tab zum Knopf, Code tippen, Enter)
+[565/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:43:1 › Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag
+[566/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:157:3 › Anmeldung mit Faktor › aal1 mit verifiziertem Faktor: Code-Abfrage statt Einrichtung; falscher Code, dann richtiger Code führt zu den Dokumenten
+[567/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:186:3 › Anmeldung mit Faktor › verifizierter Faktor bleibt unangetastet, auch wenn ein unverifizierter daneben liegt
+[568/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:80:1 › Doppelklick auf Senden: ein Foto, ein Nachtrag
+[569/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:193:3 › Anmeldung mit Faktor › Faktor des anderen Geräts bei der Einrichtung (insufficient_aal): Hinweis statt Absturz
+[570/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:203:3 › Anmeldung mit Faktor › Tastatur: Code tippen und mit Enter bestätigen, Touch-Ziele und Breite
+[571/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:216:3 › Anmeldung mit Faktor › Codefeld: Ziffern-Tastatur und Autofill für Einmalcodes
+[572/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:90:1 › Tastatur: Hauptweg nur mit Tastatur
+[573/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:225:5 › Zugang je Firmenstatus › rejected mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente
+[574/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:108:1 › Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet
+[575/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:225:5 › Zugang je Firmenstatus › suspended mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente
+[576/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:121:1 › Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft)
+[577/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:237:3 › Zugang je Firmenstatus › rejected ohne Faktor (aal1): ebenfalls nur die Karte, keine Einrichtung
+[578/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „declined“: eigener Text, danach darf ein neuer folgen
+[579/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › pending mit aal2: Karte und Dokumente
+[580/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „expired“: eigener Text, danach darf ein neuer folgen
+[581/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › active mit aal2: Karte und Dokumente
+[582/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „accepted“: eigener Text, danach darf ein neuer folgen
+[583/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:246:5 › Zugang je Firmenstatus › payment_hold mit aal2: Karte und Dokumente
+[584/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „withdrawn“: eigener Text, danach darf ein neuer folgen
+[585/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:253:3 › Zugang je Firmenstatus › pending mit aal1 und Faktor: Karte bleibt sichtbar, Dokumente erst nach dem Code
+[586/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:144:1 › Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen
+[587/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:270:3 › Dokumente › leere Liste; Hochladen bleibt gesperrt, bis eine Datei gewählt ist; Hinweis auf Grenzen
+[588/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:281:3 › Dokumente › PDF hochladen: Zeile mit id und kind, dann Datei auf {firma}/{id} mit application/pdf, Liste zeigt „Hochgeladen“
+[589/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:169:1 › Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text
+[590/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:303:3 › Dokumente › Bild: wird als JPEG hochgeladen (EXIF und Original fallen weg), nie als PNG
+[591/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:313:3 › Dokumente › unerlaubter Typ und zu große Datei: Text in Worten, es entsteht weder Zeile noch Upload
+[592/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:188:1 › Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt
+[593/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:331:3 › Dokumente › Server lehnt den Upload ab (415): die Zeile bleibt, „Datei fehlt“ mit „Erneut hochladen“ auf dieselbe id, ohne neue Zeile
+[594/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:206:1 › Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen
+[595/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:354:3 › Dokumente › verwaiste Zeile aus einer früheren Sitzung: „Datei fehlt“ ohne Datum der Datei, Erneut-Hochladen klappt per Tastatur
+[596/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:368:3 › Dokumente › fünf Dokumente: Hochladen gesperrt mit Erklärung
+[597/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:220:1 › Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu)
+[598/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:376:3 › Dokumente › Server meldet limit_reached und partner_not_active: eigene Texte, kein Upload
+[599/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:230:1 › Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag
+[600/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:387:3 › Dokumente › 42501 trotz aal2: allgemeiner Fehler, keine Schleife zurück in die Abfrage
+[601/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:398:3 › Dokumente › kein Netz beim Hochladen: Text „Keine Verbindung“, Zeile bleibt zum Wiederholen
+[602/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:252:1 › Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1)
+[603/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:410:3 › Dokumente › Netz weg beim Hochladen und beim Neuladen der Liste: Formular gesperrt, keine zweite Zeile, nach „Erneut versuchen“ lädt „Erneut hochladen“ auf dieselbe id
+[604/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:269:1 › Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2)
+[605/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:287:1 › Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6)
+[606/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:299:1 › Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter
+[607/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:437:3 › Dokumente › verweigert und die Sitzung steht nur noch auf aal1: zurück zur Code-Abfrage, keine Einrichtung
+[608/662] [e2e-desktop] › tests\e2e\partner-mfa.spec.ts:455:3 › Dokumente › Maße: Touch-Ziele mindestens 44 px, keine Überbreite, Konsole leer, Tastatur bis zum Absenden
+[609/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:312:1 › Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen
+[610/662] [e2e-desktop] › tests\e2e\partner.spec.ts:96:1 › nicht angemeldet: /partner führt zur Anmeldung und danach zurück
+[611/662] [e2e-desktop] › tests\e2e\partner.spec.ts:109:1 › Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf Endgültigkeit
+[612/662] [e2e-desktop] › tests\e2e\partner.spec.ts:127:1 › Pflichtfelder: leeres Absenden zeigt je Feld einen Text, sendet nichts und setzt den Fokus auf das erste Feld
+[613/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:323:1 › Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt
+[614/662] [e2e-desktop] › tests\e2e\partner.spec.ts:151:1 › Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „In Prüfung“
+[615/662] [e2e-desktop] › tests\e2e\partner.spec.ts:168:1 › Kleinunternehmer ohne UID: p_uid null, p_small_business true
+[616/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:336:1 › Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum
+[617/662] [e2e-desktop] › tests\e2e\partner.spec.ts:177:1 › Doppelklick sendet genau einen Aufruf
+[618/662] [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:350:1 › Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen
+[619/662] [e2e-desktop] › tests\e2e\partner.spec.ts:186:1 › already_member (zweites Gerät, Firma existiert schon): lädt den Status neu, kein Fehler
+[620/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler not_customer: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[621/662] [e2e-desktop] › tests\e2e\shell.spec.ts:5:1 › Erster Start: Onboarding per Tastatur, danach direkt Start
+[622/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler not_authenticated: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[623/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler JWT abgelaufen: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[624/662] [e2e-desktop] › tests\e2e\shell.spec.ts:23:1 › Überspringen beendet das Onboarding
+[625/662] [e2e-desktop] › tests\e2e\shell.spec.ts:34:3 › App-Shell › Tab-Bar erreicht alle Tabs mit der Tastatur
+[626/662] [e2e-desktop] › tests\e2e\shell.spec.ts:55:3 › App-Shell › Service-Karte öffnet den Flow ohne Tab-Bar, Zurück führt zum Start
+[627/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler scope_incomplete: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[628/662] [e2e-desktop] › tests\e2e\shell.spec.ts:64:3 › App-Shell › Info-Sheet zeigt die Tarife (Mock aus seed.sql), ohne Gebühr
+[629/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler Check 23514: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[630/662] [e2e-desktop] › tests\e2e\shell.spec.ts:81:3 › App-Shell › Info-Sheet: Ladefehler zeigt Fehlerzustand mit erneutem Versuch
+[631/662] [e2e-desktop] › tests\e2e\shell.spec.ts:91:3 › App-Shell › Offline-Hinweis erscheint und verschwindet
+[632/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler Unique 23505: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[633/662] [e2e-desktop] › tests\e2e\shell.spec.ts:99:3 › App-Shell › Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf
+[634/662] [e2e-desktop] › tests\e2e\partner.spec.ts:207:3 › Serverfehler 500: Text im Formular, Angaben bleiben, zweiter Versuch möglich
+[635/662] [e2e-desktop] › tests\e2e\partner.spec.ts:224:1 › Netzfehler: Hinweis „Keine Verbindung“, zweiter Versuch klappt
+[636/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status pending: In Prüfung
+[637/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status active: Aktiv
+[638/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status payment_hold mit Begründung: Pausiert
+[639/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status suspended mit Begründung: Gesperrt
+[640/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status rejected mit Begründung: Abgelehnt
+[641/662] [e2e-desktop] › tests\e2e\shell.spec.ts:109:3 › App-Shell › Unbekannte Adresse zeigt die Fehlerseite
+[642/662] [e2e-desktop] › tests\e2e\partner.spec.ts:245:3 › Status rejected: Abgelehnt
+[643/662] [e2e-desktop] › tests\e2e\shell.spec.ts:116:3 › App-Shell › Datenschutz und Impressum sind als Platzhalter markiert
+[644/662] [e2e-desktop] › tests\e2e\partner.spec.ts:261:1 › Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Registrierformular
+[645/662] [e2e-desktop] › tests\e2e\smoke.spec.ts:4:1 › Start lädt ohne Konsolenfehler
+[646/662] [e2e-desktop] › tests\e2e\smoke.spec.ts:13:1 › Erfassung sieht console.error und nicht abgefangene Fehler
+[647/662] [e2e-desktop] › tests\e2e\wege.spec.ts:99:3 › W2 Umzug › Erfolg: Start-Karte bis Bestätigung und Aufträge, gesendet wird genau der angezeigte Preis
+[648/662] [e2e-desktop] › tests\e2e\partner.spec.ts:274:1 › Profil: Zeile „Als Partner arbeiten“ führt zu /partner
+[649/662] [e2e-desktop] › tests\e2e\partner.spec.ts:283:3 › Maße bei 390 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[650/662] [e2e-desktop] › tests\e2e\partner.spec.ts:283:3 › Maße bei 430 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[651/662] [e2e-desktop] › tests\e2e\partner.spec.ts:283:3 › Maße bei 1280 px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px
+[652/662] [e2e-desktop] › tests\e2e\wege.spec.ts:139:3 › W2 Umzug › Abbruch: Zurück aus Zusammenfassung und Termin behält Tag und Preis, gesendet wird nichts
+[653/662] [e2e-desktop] › tests\e2e\wege.spec.ts:170:3 › W2 Umzug › Fehler 503 (Adressprüfung nicht erreichbar): Meldung, Entwurf bleibt, erneutes Senden mit derselben clientRef
+[654/662] [e2e-desktop] › tests\e2e\wege.spec.ts:188:3 › W3 Möbeltransport › Erfolg: Klavier wird als persönliches Angebot gesendet, Bestätigung ohne Preis
+[655/662] [e2e-desktop] › tests\e2e\wege.spec.ts:210:3 › W3 Möbeltransport › Erfolg mit Richtpreis: der im Konfigurator angezeigte Betrag wird gesendet und bestätigt
+[656/662] [e2e-desktop] › tests\e2e\wege.spec.ts:229:3 › W3 Möbeltransport › Abbruch der Anmeldung: Zurück führt zur Zusammenfassung, Angaben bleiben, nichts gesendet, kein Code angefordert
+[657/662] [e2e-desktop] › tests\e2e\wege.spec.ts:248:3 › W3 Möbeltransport › Fehler: Tarife nicht ladbar, Konfigurator zeigt den Fehlerzustand, „Erneut versuchen“ lädt
+[658/662] [e2e-desktop] › tests\e2e\wege.spec.ts:261:3 › W4 Entrümpelung › Besichtigung (Gewerbe): Anfrage ohne Preis bis zur Bestätigung
+[659/662] [e2e-desktop] › tests\e2e\wege.spec.ts:286:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend
+[660/662] [e2e-desktop] › tests\e2e\wege.spec.ts:300:3 › W6 Transportermiete und W7 Vermieter (noch nicht gebaut) › Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil
+[661/662] [e2e-desktop] › tests\e2e\wege.spec.ts:312:3 › F Fehlerfälle quer › Zusammenfassung: Bedingungen nicht ladbar, Fehlerzustand ohne Senden-Knopf, „Erneut versuchen“ zeigt die Zusammenfassung
+[662/662] [e2e-desktop] › tests\e2e\wege.spec.ts:341:3 › W9 Aufträge › Fehler: Liste nicht ladbar, Fehlerzustand, „Erneut versuchen“ zeigt die Aufträge
+  2 skipped
+  660 passed (16.5m)
+EXIT=0
+Ende 19:24:01
