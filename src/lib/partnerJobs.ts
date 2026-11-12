@@ -232,6 +232,102 @@ export async function loadPhotos(listingId: string): Promise<string[]> {
   })
 }
 
+// Angenommene Aufträge (s9i-6b) --------------------------------------------------------------------------------------------
+export type JobStatus = 'accepted' | 'in_progress' | 'completed' | 'cancelled_by_customer' | 'cancelled_by_partner'
+const JOB_STATUS: string[] = ['accepted', 'in_progress', 'completed', 'cancelled_by_customer', 'cancelled_by_partner']
+export type Job = {
+  /** Zuordnung; die Auftrags-ID gehört nur in Aufrufe, nie in die Anzeige */
+  id: string
+  requestId: string
+  status: JobStatus
+  terminAt: Date
+  ended: boolean
+  district: number | null
+  toDistrict: number | null
+  service: Listing['service']
+  preferredDate: string | null
+  timeWindow: string | null
+  /** Summen der eigenen Journalzeilen laut Server: nach einem Storno nur die Stornobasis; `null` = nicht lesbar, dann kein Betrag zeigen */
+  totalCents: number | null
+  payoutCents: number | null
+  /** Entscheidung der Datenbankuhr (Status accepted, Termin erreicht); die Geräteuhr entscheidet nichts */
+  canStart: boolean
+}
+const district = (v: unknown): number | null => (int(v) && v >= 1 && v <= 23 ? v : null)
+const cents = (v: unknown): number | null => (int(v) && v >= 0 ? v : null)
+
+/** Aufträge der Firma (`my_jobs()`: nur Zuordnungen im Zugriffsfenster, ohne Name, Adresse und Kontakt); unlesbare Zeilen entfallen, nie ein halber Betrag. */
+export async function loadJobs(): Promise<Job[]> {
+  const { data, error } = await supabase.rpc('my_jobs')
+  if (error) throw error
+  return (Array.isArray(data) ? data : []).flatMap((r): Job[] => {
+    const termin = when(r.termin_at)
+    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean') return []
+    return [
+      {
+        id: r.assignment_id,
+        requestId: r.request_id,
+        status: r.status as JobStatus,
+        terminAt: termin,
+        ended: r.ended_at !== null,
+        district: district(r.district),
+        toDistrict: district(r.to_district),
+        service: r.service as Listing['service'],
+        preferredDate: typeof r.preferred_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.preferred_date) ? r.preferred_date : null,
+        timeWindow: typeof r.time_window === 'string' ? r.time_window : null,
+        totalCents: cents(r.total_cents),
+        payoutCents: cents(r.payout_cents),
+        canStart: r.can_start,
+      },
+    ]
+  })
+}
+
+// Fehlercodes von start_job, complete_job, job_contact (direkte RPCs: die Meldung der Datenbank ist der Code)
+const JOB_CODES: Record<string, JobErrorKind> = {
+  too_early: 'too_early',
+  invalid_transition: 'closed',
+  not_found: 'closed',
+  not_assigned: 'gone',
+  partner_not_active: 'gone',
+  mfa_required: 'unauthorized',
+}
+
+async function jobCall<T>(fn: 'start_job' | 'complete_job' | 'job_contact', requestId: string): Promise<T> {
+  try {
+    const { data, error } = await supabase.rpc(fn, { p_request: requestId })
+    if (!error) return data as T
+    throw new JobError(own(JOB_CODES, error.message) ?? 'unavailable')
+  } catch (e) {
+    if (e instanceof JobError) throw e
+    throw new JobError('offline')
+  }
+}
+
+/** Die Datenbank prüft Termin (`too_early`), Status und Zuordnung; die App sendet nur die Auftrags-ID. */
+export const startJob = (requestId: string): Promise<void> => jobCall('start_job', requestId)
+export const finishJob = (requestId: string): Promise<void> => jobCall('complete_job', requestId)
+
+export type Contact = { name: string; phone: string; email: string; stairsDoor: string | null; fromAddress: string | null; toAddress: string | null }
+const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+const textOrNull = (v: unknown): string | null => (text(v) ? v : null)
+
+/** Kontakt und Adressen des Kunden: nur auf Antippen, jeder Aufruf schreibt serverseitig eine Audit-Zeile; die Antwort wird nie gespeichert. */
+export async function loadContact(requestId: string): Promise<Contact> {
+  const rows = await jobCall<unknown>('job_contact', requestId)
+  const r = Array.isArray(rows) && rows.length === 1 && rows[0] && typeof rows[0] === 'object' ? (rows[0] as Record<string, unknown>) : null
+  if (!r || !text(r.name) || !text(r.phone) || !text(r.email)) throw new JobError('unavailable')
+  return { name: r.name, phone: r.phone, email: r.email, stairsDoor: textOrNull(r.stairs_door), fromAddress: textOrNull(r.from_address), toAddress: textOrNull(r.to_address) }
+}
+
+/** `tel:`-Adresse aus einer Telefonnummer (nur Ziffern und führendes Plus); sonst `null`. */
+export function telHref(phone: string): string | null {
+  const digits = phone.replace(/[^\d+]/g, '')
+  return /^\+?\d{5,16}$/.test(digits) ? `tel:${digits}` : null
+}
+/** `mailto:`-Adresse nur bei einfach gebauter E-Mail; sonst `null` (dann steht der Text ohne Link da). */
+export const mailHref = (email: string): string | null => (/^[^\s<>"'@]+@[^\s<>"'@]+\.[^\s<>"'@]+$/.test(email) ? `mailto:${email}` : null)
+
 // Eigene Angebote ----------------------------------------------------------------------------------------------------------
 export type OfferStatus = 'sent' | 'confirmed' | 'withdrawn' | 'expired' | 'superseded' | 'rejected'
 export type MyOffer = { id: string; revisionId: string; amountCents: number; status: OfferStatus; validUntil: Date }

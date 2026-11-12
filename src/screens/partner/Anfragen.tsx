@@ -38,8 +38,11 @@ function Zeile({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** Offene Anfragen der Firma (nur Status active mit aal2), Annahme, Festangebot, eigene Angebote und angenommene Anfragen. Der Server entscheidet über alles. */
-export function Anfragen() {
+/**
+ * Offene Anfragen der Firma (nur Status active mit aal2), Annahme, Festangebot und eigene Angebote. Angenommene Aufträge zeigt `PartnerAuftraege`
+ * (aus `my_jobs()`); `onChange` meldet dorthin, dass sich etwas geändert hat. Der Server entscheidet über alles.
+ */
+export function Anfragen({ onChange }: { onChange: () => void }) {
   const [listings, reloadListings] = useLoad(loadListings)
   const [offers, reloadOffers] = useLoad(loadMyOffers)
   const [rates, reloadRates] = useLoad(loadRates)
@@ -51,12 +54,12 @@ export function Anfragen() {
     reloadListings()
     reloadOffers()
     reloadRates()
+    onChange()
   }
 
   if (listings.status === 'loading') return <Loading label="Anfragen laden" />
   if (listings.status === 'error') return <ErrorState text="Die Anfragen konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={reloadListings} />
   const open = listings.data.filter((l) => l.status === 'open')
-  const accepted = listings.data.filter((l) => l.status === 'accepted')
   const mine = offers.status === 'ready' ? offers.data : []
   const r = rates.status === 'ready' ? rates.data : null
 
@@ -86,16 +89,6 @@ export function Anfragen() {
           <Angebote offers={offers.data.slice(0, 20)} onDone={refresh} />
         </section>
       )}
-      {accepted.length > 0 && (
-        <section aria-labelledby="angenommen" className="flex flex-col gap-3 px-5 pb-4">
-          <h2 id="angenommen" className="m-0 text-headline">
-            Angenommen
-          </h2>
-          {accepted.map((l) => (
-            <Karte key={l.id} l={l} rates={r} onDone={refresh} />
-          ))}
-        </section>
-      )}
     </>
   )
 }
@@ -105,9 +98,7 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
   const day = dayLabel(l.preferredDate)
   const window = windowLabel(l.timeWindow)
   const scope = scopeLines(l.service, l.inputs)
-  const isOpen = l.status === 'open'
-  // Beträge nur bei offenen Anfragen: bei angenommenen gilt die Journalzeile der Annahme, nicht die Momentaufnahme des Listings (Abnahme H1, kommt mit my_jobs in 6b)
-  const payout = isOpen && rates && l.totalCents !== null ? payoutCents(l.totalCents, rates) : null
+  const payout = rates && l.totalCents !== null ? payoutCents(l.totalCents, rates) : null
   return (
     <article aria-labelledby={`l-${l.id}`} className={box}>
       <h3 id={`l-${l.id}`} className="m-0 text-headline">
@@ -125,25 +116,24 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
           ))}
         </ul>
       )}
-      {isOpen &&
-        (l.totalCents !== null ? (
-          <>
-            <Zeile label="Preis für den Kunden">{euro(l.totalCents)}</Zeile>
-            {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
-          </>
-        ) : (
-          l.lowCents !== null &&
-          l.highCents !== null && (
-            <Zeile label="Preisspanne">
-              <span className="whitespace-nowrap">
-                {euro(l.lowCents)} bis {euro(l.highCents)}
-              </span>
-            </Zeile>
-          )
-        ))}
-      {isOpen && <p className="m-0 text-subhead text-text-secondary">Antwort bis {viennaTime(l.deadline)}</p>}
-      {isOpen && <Fotos id={l.id} />}
-      {isOpen && l.totalCents !== null && (
+      {l.totalCents !== null ? (
+        <>
+          <Zeile label="Preis für den Kunden">{euro(l.totalCents)}</Zeile>
+          {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
+        </>
+      ) : (
+        l.lowCents !== null &&
+        l.highCents !== null && (
+          <Zeile label="Preisspanne">
+            <span className="whitespace-nowrap">
+              {euro(l.lowCents)} bis {euro(l.highCents)}
+            </span>
+          </Zeile>
+        )
+      )}
+      <p className="m-0 text-subhead text-text-secondary">Antwort bis {viennaTime(l.deadline)}</p>
+      <Fotos id={l.id} />
+      {l.totalCents !== null && (
         <>
           <Button disabled={payout === null} onClick={() => setSheet('accept')}>
             Annehmen
@@ -151,7 +141,7 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
           {payout === null && <p className="m-0 text-footnote text-text-secondary">Die Auszahlung kann gerade nicht berechnet werden. Lade die Seite neu.</p>}
         </>
       )}
-      {isOpen && l.totalCents === null &&
+      {l.totalCents === null &&
         (offer ? (
           <p className="m-0 text-body">
             Angebot gesendet: {euro(offer.amountCents)}, gültig bis {viennaTime(offer.validUntil)}
@@ -159,9 +149,8 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
         ) : (
           <Button onClick={() => setSheet('offer')}>Angebot abgeben</Button>
         ))}
-      {!isOpen && <p className="m-0 text-body font-semibold text-accent">Du hast den Zuschlag erhalten.</p>}
 
-      {isOpen && payout !== null && (
+      {payout !== null && (
         <Bestaetigen open={sheet === 'accept'} onClose={() => setSheet(null)} title="Anfrage annehmen" label="Verbindlich annehmen" action={() => acceptListing(l, payout)} onDone={onDone}>
           {sheet === 'accept' && (
             <>
@@ -172,7 +161,7 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
           )}
         </Bestaetigen>
       )}
-      {isOpen && l.totalCents === null && <AngebotSheet l={l} rates={rates} open={sheet === 'offer'} onClose={() => setSheet(null)} onDone={onDone} />}
+      {l.totalCents === null && <AngebotSheet l={l} rates={rates} open={sheet === 'offer'} onClose={() => setSheet(null)} onDone={onDone} />}
     </article>
   )
 }

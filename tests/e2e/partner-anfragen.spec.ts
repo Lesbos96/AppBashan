@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from './backend'
 import { collectErrors } from './console'
 import { factor } from './mfa-helpers'
-import { fixed, L1, L2, O1, openJobs, range, REV1, SENTINEL } from './jobs-helpers'
+import { fixed, job, L1, L2, O1, openJobs, range, REV1, SENTINEL } from './jobs-helpers'
 
 /*
  * Partner-Portal 2a (s9i-6a): offene Anfragen, Annahme, Festangebot, eigene Angebote. Backend gemockt (tests/e2e/jobs-helpers.ts).
@@ -211,17 +211,22 @@ test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Ve
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   // die erste Annahme hat serverseitig gegriffen, nur die Antwort ging verloren: das Listing der Firma steht auf accepted
   jobs.listings = [fixed({ status: 'accepted' })]
+  jobs.myJobs = [job()]
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
   await expect(page.locator('body')).not.toContainText('nicht mehr verfügbar')
   expect(jobs.accepts).toHaveLength(1)
 })
 
-test('angenommene Anfrage zeigt keine Beträge (Abnahme H1: gilt die Journalzeile, nicht die Momentaufnahme)', async ({ page }) => {
-  await openJobs(page, { listings: [fixed({ status: 'accepted' })] })
+test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)', async ({ page }) => {
+  // Das Listing behält seine Momentaufnahme (689,61 €); die Journalzeile nennt 700,00 € und 595,00 €
+  await openJobs(page, { listings: [fixed({ status: 'accepted' })], myJobs: [job({ total_cents: 70000, payout_cents: 59500 })] })
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
-  await expect(card(page)).toContainText('Zuschlag')
-  await expect(card(page)).not.toContainText(/€|Du erhältst|Preis/)
+  await expect(page.getByRole('article')).toHaveCount(1)
+  await expect(card(page)).toContainText('700,00 €')
+  await expect(card(page)).toContainText('595,00 €')
+  await expect(page.locator('body')).not.toContainText(/689,61|586,17/)
+  await expect(page.getByRole('button', { name: 'Annehmen' })).toHaveCount(0)
 })
 
 test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', async ({ page }) => {

@@ -456,6 +456,7 @@ describe('Rollen', () => {
       'job_contact(uuid)',
       'my_commissions(date)',
       'my_job_partner(uuid)',
+      'my_jobs()', // s9i-6b: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen
       'my_request_offers(uuid)',
       'partner_quality()', // S9h-2: nur admin sieht Zeilen (is_admin in der Funktion)
       'private.assignment_access(uuid,uuid):authenticated',

@@ -8,6 +8,7 @@ import { loadPartner, statusInfo, type Partner as Firm } from '../lib/partner'
 import { useLoad } from '../lib/prices'
 import { useSession } from '../lib/session'
 import { Anfragen } from './partner/Anfragen'
+import { PartnerAuftraege } from './partner/Auftraege'
 import { Dokumente } from './partner/Dokumente'
 import { MfaGate } from './partner/Mfa'
 import { Registrierung } from './partner/Registrierung'
@@ -48,6 +49,8 @@ function Firma({ userId }: { userId: string }) {
 
 function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
   const info = statusInfo[firm.status]
+  // zählt, wie oft Anfragen etwas geändert haben (Annahme, Angebot): die Aufträge laden dann still neu
+  const [changes, setChanges] = useState(0)
   return (
     <>
       <div className="flex flex-col gap-4 px-5 pt-2 pb-4">
@@ -67,8 +70,9 @@ function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
         <MfaGate>
           {(recheck) => (
             <>
-              {/* Anfragen sehen und annehmen darf nur eine aktive Firma (pending, payment_hold: der Server liefert nichts); der Abruf bleibt dort aus */}
-              {firm.status === 'active' && <Anfragen />}
+              {/* Aufträge wickelt eine aktive oder pausierte Firma ab (my_job_partner_id); Anfragen sehen und annehmen darf nur eine aktive (pending: der Server liefert nichts, der Abruf bleibt aus) */}
+              {firm.status === 'active' && <Anfragen onChange={() => setChanges((n) => n + 1)} />}
+              {(firm.status === 'active' || firm.status === 'payment_hold') && <PartnerAuftraege reloadKey={changes} />}
               <Dokumente partnerId={firm.id} onDenied={recheck} />
             </>
           )}

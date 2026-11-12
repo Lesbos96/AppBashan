@@ -32,6 +32,54 @@ export type ListingRow = {
   high_cents: number | null
   accept_deadline: string
 }
+/** Zeile von `my_jobs()` (Migration 0057): ohne Name, Adresse, Telefon, E-Mail. */
+export type JobRow = {
+  assignment_id: string
+  request_id: string
+  listing_id: string | null
+  status: 'accepted' | 'in_progress' | 'completed' | 'cancelled_by_customer' | 'cancelled_by_partner'
+  termin_at: string
+  accepted_at: string
+  ended_at: string | null
+  ended_reason: string | null
+  district: number | null
+  to_district: number | null
+  service: 'transport' | 'move' | 'clearance' | 'assembly'
+  preferred_date: string | null
+  time_window: string | null
+  total_cents: number | null
+  payout_cents: number | null
+  can_start: boolean
+}
+export const A1 = '6b5e7f80-1c2d-4e3f-a01b-0c9d8e7f6a5b'
+export const A2 = '7c6f8091-2d3e-4f40-b12c-1d0e9f8a7b6c'
+export const RQ1 = '8d70a1a2-3e4f-4051-a23d-2e1f0a9b8c7d'
+export const RQ2 = '9e81b2b3-4f50-4162-b34e-3f2a1b0c9d8e'
+/** Angenommener Umzug in Bezirk 3 (Ziel 10), Termin 2. Dezember 2026, 08:00 Uhr Wiener Zeit; 689,61 € mit Auszahlung 586,17 €; noch nicht startbar */
+export const job = (over: Partial<JobRow> = {}): JobRow => ({
+  assignment_id: A1,
+  request_id: RQ1,
+  listing_id: L1,
+  status: 'accepted',
+  termin_at: '2026-12-02T07:00:00+00:00',
+  accepted_at: '2026-11-20T10:00:00+00:00',
+  ended_at: null,
+  ended_reason: null,
+  district: 3,
+  to_district: 10,
+  service: 'move',
+  preferred_date: '2026-12-02',
+  time_window: 'morning',
+  total_cents: 68961,
+  payout_cents: 58617,
+  can_start: false,
+  ...over,
+})
+/** Antwort von `job_contact`: erfundene Platzhalterdaten */
+export const CONTACT = { name: 'Erika Beispiel', phone: '+43 660 1234567', email: 'erika@beispiel.test', stairs_door: '3. Stock, Tür 4', from_address: 'Beispielgasse 12, 1030 Wien', to_address: 'Musterweg 5, 1100 Wien', preferred_date: '2026-12-02', time_window: 'morning' }
+/** Fehlerantwort einer RPC wie PostgREST (`raise exception 'code'`) */
+export const pgErr = (code: string, status = 400): Ans => ({ status, json: { code: 'P0001', message: code, details: null, hint: null } })
+
 export type OfferRow = { id: string; base_revision_id: string; amount_cents: number; status: 'sent' | 'confirmed' | 'withdrawn' | 'expired' | 'superseded' | 'rejected'; valid_until: string }
 export type Ans = { status: number; json: unknown }
 
@@ -73,6 +121,17 @@ export type JobsState = {
   acceptAnswers: Ans[]
   sendAnswers: Ans[]
   withdrawAnswers: Ans[]
+  /** Aufträge der Firma (`my_jobs`); Start und Abschluss ändern sie wie der Server */
+  myJobs: JobRow[]
+  jobReads: number
+  /** Statuscodes für die nächsten Abrufe von `my_jobs` (Warteschlange) */
+  jobStatus: number[]
+  starts: string[]
+  completes: string[]
+  contacts: string[]
+  startAnswers: Ans[]
+  completeAnswers: Ans[]
+  contactAnswers: Ans[]
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
   listingReads: number
@@ -84,7 +143,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o
@@ -114,9 +173,35 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     s.accepts.push(body)
     const a = s.acceptAnswers.shift()
     if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    const won = s.listings.find((l) => l.id === body.listingId)
     s.listings = s.listings.map((l) => (l.id === body.listingId ? { ...l, status: 'accepted' as const } : l))
-    return r.fulfill({ headers: cors, json: { assignmentId: '6b5e7f80-1c2d-4e3f-a01b-0c9d8e7f6a5b' } })
+    // Der Server legt die Zuordnung an; Beträge stammen aus dem Journal (hier: Preis des Listings, Auszahlung wie gesendet)
+    if (won) s.myJobs.push(job({ listing_id: won.id, service: won.service, district: won.district, to_district: won.to_district, preferred_date: won.preferred_date, time_window: won.time_window, total_cents: won.total_cents, payout_cents: body.shownPayoutCents as number }))
+    return r.fulfill({ headers: cors, json: { assignmentId: A1 } })
   })
+  await page.route('**/rest/v1/rpc/my_jobs**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    s.jobReads++
+    const st = s.jobStatus.shift()
+    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
+    return r.fulfill({ headers: cors, json: s.myJobs })
+  })
+  // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen
+  const act = (name: 'start_job' | 'complete_job' | 'job_contact', log: string[], answers: Ans[], apply: (id: string) => void, okJson?: unknown) =>
+    page.route(`**/rest/v1/rpc/${name}**`, (r) => {
+      const o = pre(r)
+      if (o) return o
+      const id = (r.request().postDataJSON() as { p_request: string }).p_request
+      log.push(id)
+      const a = answers.shift()
+      if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+      apply(id)
+      return okJson === undefined ? r.fulfill({ status: 204, headers: cors }) : r.fulfill({ headers: cors, json: okJson })
+    })
+  await act('start_job', s.starts, s.startAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'in_progress' as const, can_start: false } : j))))
+  await act('complete_job', s.completes, s.completeAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'completed' as const, ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' } : j))))
+  await act('job_contact', s.contacts, s.contactAnswers, () => undefined, [CONTACT])
   await page.route('**/rest/v1/rpc/send_offer**', (r) => {
     const o = pre(r)
     if (o) return o

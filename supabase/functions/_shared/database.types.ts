@@ -1760,6 +1760,27 @@ export type Database = {
           name: string
         }[]
       }
+      my_jobs: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          assignment_id: string
+          can_start: boolean
+          district: number
+          ended_at: string
+          ended_reason: Database["public"]["Enums"]["assignment_end"]
+          listing_id: string
+          payout_cents: number
+          preferred_date: string
+          request_id: string
+          service: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["request_status"]
+          termin_at: string
+          time_window: string
+          to_district: number
+          total_cents: number
+        }[]
+      }
       my_request_offers: {
         Args: { p_request: string }
         Returns: {

@@ -89,6 +89,8 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   await context.route('**/rest/v1/job_listings**', (r) => rest(r, []))
   await context.route('**/rest/v1/partner_offers**', (r) => rest(r, []))
   await context.route('**/rest/v1/current_fee_rates**', (r) => rest(r, [{ fee_rate: 0.15, fee_vat_rate: 0.2 }]))
+  // Aufträge der Firma (s9i-6b): ohne eigenen Mock hat die Firma keine
+  await context.route('**/rest/v1/rpc/my_jobs**', (r) => reply(r, []))
   return backend
 }
 
