@@ -80,6 +80,42 @@ export const CONTACT = { name: 'Erika Beispiel', phone: '+43 660 1234567', email
 /** Fehlerantwort einer RPC wie PostgREST (`raise exception 'code'`) */
 export const pgErr = (code: string, status = 400): Ans => ({ status, json: { code: 'P0001', message: code, details: null, hint: null } })
 
+/** Zeile von `my_job_changes()` (Migration 0058): Preisgrundlage und letzter eigener Nachtrag; ohne Name, Adresse, Gebühr. */
+export type ChangeRow = {
+  request_id: string
+  service: 'transport' | 'move' | 'clearance' | 'assembly'
+  source: string
+  inputs: Record<string, unknown>
+  total_cents: number | null
+  change_id: string | null
+  change_status: 'proposed' | 'accepted' | 'declined' | 'expired' | 'withdrawn' | null
+  change_total_cents: number | null
+  change_valid_until: string | null
+  change_decided_at: string | null
+  receipt_ids: string[]
+}
+export const CH1 = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
+export const RC1 = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'
+const MOVE_INPUTS = { service: 'move', goods: 'normal', crew: 2, vehicles: 1, vehicleType: 'van', hours: 3, fromFloor: 2, toFloor: 0, fromLift: false, toLift: true, boxes: 10, parking: 0, packing: false, assembly: null }
+/** Preisgrundlage des Umzugs `RQ1` ohne Nachtrag: Festpreis 689,61 € aus der Buchung */
+export const change = (over: Partial<ChangeRow> = {}): ChangeRow => ({
+  request_id: RQ1,
+  service: 'move',
+  source: 'submit',
+  inputs: { ...MOVE_INPUTS },
+  total_cents: 68961,
+  change_id: null,
+  change_status: null,
+  change_total_cents: null,
+  change_valid_until: null,
+  change_decided_at: null,
+  receipt_ids: [],
+  ...over,
+})
+/** Nachtrag der Firma in einem Zustand: neuer Gesamtpreis 810,00 € */
+export const proposed = (status: NonNullable<ChangeRow['change_status']>, over: Partial<ChangeRow> = {}): ChangeRow =>
+  change({ change_id: CH1, change_status: status, change_total_cents: 81000, change_valid_until: '2026-12-01T10:00:00+00:00', change_decided_at: status === 'proposed' ? null : '2026-11-30T10:00:00+00:00', receipt_ids: [RC1], ...over })
+
 export type OfferRow = { id: string; base_revision_id: string; amount_cents: number; status: 'sent' | 'confirmed' | 'withdrawn' | 'expired' | 'superseded' | 'rejected'; valid_until: string }
 export type Ans = { status: number; json: unknown }
 
@@ -132,6 +168,20 @@ export type JobsState = {
   startAnswers: Ans[]
   completeAnswers: Ans[]
   contactAnswers: Ans[]
+  /** Preisgrundlagen und Nachträge (`my_job_changes`); `change-propose` und `withdraw_change` ändern sie wie der Server */
+  changes: ChangeRow[]
+  changeReads: number
+  /** Gesamtpreis, den der gemockte Server für den Nachtrag berechnet (810,00 €) */
+  serverTotal: number
+  /** Alle Aufrufe von `change-propose` (Vorschau und Anlegen), Rohkörper */
+  proposals: Record<string, unknown>[]
+  previewAnswers: Ans[]
+  proposeAnswers: Ans[]
+  /** Hochgeladene Belege: Auftrag, Typ, Größe */
+  receipts: { request: string | null; type: string | undefined; bytes: number }[]
+  receiptAnswers: Ans[]
+  withdrawnChanges: string[]
+  withdrawChangeAnswers: Ans[]
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
   listingReads: number
@@ -143,7 +193,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o
@@ -187,6 +237,55 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     // 403 steht für „Firma inzwischen gesperrt“ (P0001 partner_not_active), alles andere für einen Serverfehler
     if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: st === 403 ? 'P0001' : 'XX000', message: st === 403 ? 'partner_not_active' : 'boom', details: null, hint: null } })
     return r.fulfill({ headers: cors, json: s.myJobs })
+  })
+  // Nachtrag (s9i-7a): Der Mock verhält sich wie der Server: nur ein offener Nachtrag je Auftrag, der Betrag kommt aus `serverTotal`, ein anderer gezeigter Betrag ergibt 409
+  await page.route('**/rest/v1/rpc/my_job_changes**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    s.changeReads++
+    return r.fulfill({ headers: cors, json: s.changes })
+  })
+  await page.route('**/functions/v1/change-propose', (r) => {
+    const o = pre(r)
+    if (o) return o
+    const body = r.request().postDataJSON() as Record<string, unknown>
+    s.proposals.push(body)
+    const row = s.changes.find((c) => c.request_id === body.requestId)
+    if (body.preview === true) {
+      const a = s.previewAnswers.shift()
+      if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+      return r.fulfill({ headers: cors, json: { totalCents: s.serverTotal, baseCents: row?.total_cents ?? 68961 } })
+    }
+    const a = s.proposeAnswers.shift()
+    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    if (body.shownTotalCents !== s.serverTotal) return r.fulfill({ status: 409, headers: cors, json: { error: 'amount_changed' } })
+    if (row?.change_status === 'proposed') return r.fulfill({ status: 409, headers: cors, json: { error: 'change_open' } })
+    if (row) Object.assign(row, { change_id: CH1, change_status: 'proposed', change_total_cents: s.serverTotal, change_valid_until: '2026-12-01T10:00:00+00:00', change_decided_at: null, receipt_ids: body.photoIds })
+    return r.fulfill({ headers: cors, json: { revisionId: CH1, totalCents: s.serverTotal } })
+  })
+  await page.route('**/functions/v1/photo-receipt**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    const req = r.request()
+    s.receipts.push({ request: new URL(req.url()).searchParams.get('request'), type: req.headers()['content-type'], bytes: req.postDataBuffer()?.length ?? 0 })
+    const a = s.receiptAnswers.shift()
+    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    // Die Beleg-IDs sind laufende UUIDs; die Zeile der Firma führt sie wie der Server (bereite Belege der eigenen Firma)
+    const id = `c3d4e5f6-a7b8-4c9d-8e0f-${String(s.receipts.length).padStart(12, '0')}`
+    const row = s.changes.find((c) => c.request_id === new URL(req.url()).searchParams.get('request'))
+    if (row) row.receipt_ids = [...row.receipt_ids, id]
+    return r.fulfill({ headers: cors, json: { id } })
+  })
+  await page.route('**/rest/v1/rpc/withdraw_change**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    const body = r.request().postDataJSON() as { p_revision: string }
+    s.withdrawnChanges.push(body.p_revision)
+    const a = s.withdrawChangeAnswers.shift()
+    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    const row = s.changes.find((c) => c.change_id === body.p_revision)
+    if (row) Object.assign(row, { change_status: 'withdrawn', change_decided_at: '2026-11-30T12:00:00+00:00' })
+    return r.fulfill({ status: 204, headers: cors })
   })
   // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen
   const act = (name: 'start_job' | 'complete_job' | 'job_contact', log: string[], answers: Ans[], apply: (id: string) => void, okJson?: unknown) =>

@@ -20,7 +20,9 @@ import {
   type Job,
   type JobStatus,
 } from '../../lib/partnerJobs'
+import { canPropose, loadChanges, withdrawChange, type ChangeStatus, type JobChange } from '../../lib/partnerChange'
 import { Bestaetigen } from '../auftrag/Bestaetigen'
+import { NachtragSheet } from './Nachtrag'
 
 const box = 'flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card'
 const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums">{formatEuro(cents)}</span>
@@ -44,7 +46,22 @@ function Zeile({ label, children }: { label: string; children: ReactNode }) {
 
 const denied = (e: unknown) => typeof e === 'object' && e !== null && 'message' in e && (e.message === 'partner_not_active' || e.message === 'mfa_required')
 
-type Loaded ={ status: 'loading' } | { status: 'error' } | { status: 'ready'; data: Job[] }
+type Loaded = { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: Job[]; changes: Map<string, JobChange> }
+
+/**
+ * Aufträge aus `my_jobs()` plus Preisgrundlage und Nachtrag aus `my_job_changes()` (s9i-7a). Fällt nur die zweite Abfrage aus, bleiben die Aufträge
+ * sichtbar und es erscheint kein Nachtrag-Knopf (der Server entscheidet ohnehin); verweigert er, gilt das wie bei den Aufträgen.
+ */
+async function fetchAll(): Promise<{ data: Job[]; changes: Map<string, JobChange> }> {
+  const [data, changes] = await Promise.all([
+    loadJobs(),
+    loadChanges().catch((e: unknown) => {
+      if (denied(e)) throw e
+      return new Map<string, JobChange>()
+    }),
+  ])
+  return { data, changes }
+}
 
 /**
  * Aufträge der Firma aus `my_jobs()`. Neu laden: nach jeder Aktion, bei Rückkehr in den Tab und jede Minute, solange ein Auftrag auf seinen Termin wartet
@@ -59,8 +76,8 @@ function useJobs(reloadKey: number): [Loaded, (quiet: boolean) => void] {
   }, [])
   const fetchJobs = useCallback((quiet: boolean) => {
     const n = ++seq.current
-    loadJobs().then(
-      (data) => n === seq.current && setState({ status: 'ready', data }),
+    fetchAll().then(
+      (all) => n === seq.current && setState({ status: 'ready', ...all }),
       // Hintergrundabruf: ein Netzfehler lässt die Anzeige stehen; verweigert der Server (Firma gesperrt, zweiter Faktor weg), wird die Liste verworfen
       (e: unknown) => n === seq.current && setState((s) => (quiet && s.status === 'ready' && !denied(e) ? s : { status: 'error' })),
     )
@@ -119,7 +136,7 @@ export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
             Angenommen
           </h2>
           {live.map((j) => (
-            <Auftrag key={j.id} j={j} onDone={done} />
+            <Auftrag key={j.id} j={j} change={jobs.changes.get(j.requestId)} onDone={done} />
           ))}
         </section>
       )}
@@ -129,9 +146,42 @@ export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
             Beendet
           </h2>
           {over.map((j) => (
-            <Auftrag key={j.id} j={j} onDone={done} />
+            <Auftrag key={j.id} j={j} change={undefined} onDone={done} />
           ))}
         </section>
+      )}
+    </>
+  )
+}
+
+const CHANGE_NOTE: Record<Exclude<ChangeStatus, 'proposed'>, string> = {
+  accepted: 'Der Kunde hat deinen Nachtrag angenommen.',
+  declined: 'Der Kunde hat deinen Nachtrag abgelehnt. Es gilt der bisherige Preis.',
+  expired: 'Dein Nachtrag ist abgelaufen. Es gilt der bisherige Preis.',
+  withdrawn: 'Du hast deinen Nachtrag zurückgezogen.',
+}
+
+/** Zustand des Nachtrags und die Wege dahin (Vorschlagen, Zurückziehen); nur für laufende Aufträge. */
+function NachtragBlock({ c, onOpen, onWithdraw }: { c: JobChange; onOpen: () => void; onWithdraw: () => void }) {
+  const ch = c.change
+  return (
+    <>
+      {ch?.status === 'proposed' && (
+        <>
+          <p className="m-0 text-body">
+            Dein Nachtrag liegt beim Kunden: neuer Gesamtpreis {euro(ch.totalCents)}
+            {ch.validUntil && ` · gültig bis ${viennaTime(ch.validUntil)} Uhr`}
+          </p>
+          <Button variant="tinted" onClick={onWithdraw}>
+            Nachtrag zurückziehen
+          </Button>
+        </>
+      )}
+      {ch && ch.status !== 'proposed' && <p className="m-0 text-footnote text-text-secondary">{CHANGE_NOTE[ch.status]}</p>}
+      {canPropose(c) && (
+        <Button variant="tinted" onClick={onOpen}>
+          Nachtrag vorschlagen
+        </Button>
       )}
     </>
   )
@@ -150,8 +200,8 @@ function Betraege({ j }: { j: Job }) {
   )
 }
 
-function Auftrag({ j, onDone }: { j: Job; onDone: (notice?: string) => void }) {
-  const [sheet, setSheet] = useState<'start' | 'finish' | null>(null)
+function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined; onDone: (notice?: string) => void }) {
+  const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | null>(null)
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
   const window = windowLabel(j.timeWindow)
@@ -177,6 +227,7 @@ function Auftrag({ j, onDone }: { j: Job; onDone: (notice?: string) => void }) {
         </>
       )}
       {j.status === 'in_progress' && !j.ended && <Button onClick={() => setSheet('finish')}>Auftrag abschließen</Button>}
+      {change && !j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <NachtragBlock c={change} onOpen={() => setSheet('change')} onWithdraw={() => setSheet('withdraw')} />}
       <Kontakt j={j} />
       {j.ended && <p className="m-0 text-footnote text-text-secondary">Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.</p>}
 
@@ -186,6 +237,12 @@ function Auftrag({ j, onDone }: { j: Job; onDone: (notice?: string) => void }) {
       <Bestaetigen open={sheet === 'finish'} onClose={() => setSheet(null)} title="Auftrag abschließen" label="Verbindlich abschließen" action={() => finishJob(j.requestId)} onDone={onDone}>
         <p className="m-0 text-subhead text-text-secondary">Du meldest den Auftrag als erledigt. Das lässt sich danach nicht mehr ändern.</p>
       </Bestaetigen>
+      {change && <NachtragSheet open={sheet === 'change'} onClose={() => setSheet(null)} c={change} onDone={onDone} />}
+      {change?.change?.status === 'proposed' && (
+        <Bestaetigen open={sheet === 'withdraw'} onClose={() => setSheet(null)} title="Nachtrag zurückziehen" label="Nachtrag zurückziehen" action={() => withdrawChange(change.change?.id ?? '')} onDone={onDone}>
+          <p className="m-0 text-subhead text-text-secondary">Der Kunde bekommt eine Mail, dass der Nachtrag nicht mehr gilt. Danach kannst du einen neuen vorschlagen.</p>
+        </Bestaetigen>
+      )}
     </article>
   )
 }

@@ -21,6 +21,13 @@ export type JobErrorKind =
   | 'offer_limit'
   | 'amount'
   | 'vat_rule'
+  // Partner, Nachtrag (s9i-7a, src/lib/partnerChange.ts)
+  | 'change_open'
+  | 'not_increasing'
+  | 'no_change'
+  | 'bad_input'
+  | 'receipt_limit'
+  | 'bad_photo'
 
 export class JobError extends Error {
   constructor(readonly kind: JobErrorKind) {
@@ -45,6 +52,12 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   offer_limit: 'Für diese Anfrage liegen schon so viele Angebote vor. Versuche es später noch einmal.',
   amount: 'Der Betrag liegt nicht im erlaubten Bereich. Prüfe deine Eingabe.',
   vat_rule: 'Für deine Firma fehlt eine Steuerangabe. Wende dich an den Support.',
+  change_open: 'Für diesen Auftrag liegt schon ein Nachtrag vor. Die Ansicht wurde neu geladen.',
+  not_increasing: 'Der neue Preis ist nicht höher als der bisherige. Ein Nachtrag kann den Preis nur erhöhen.',
+  no_change: 'Für diesen Auftrag ist kein Nachtrag möglich.',
+  bad_input: 'Prüfe deine Angaben. Mit diesen Werten geht es nicht.',
+  receipt_limit: 'Zu diesem Auftrag gibt es schon die höchste Zahl an Belegfotos (8).',
+  bad_photo: 'Dieses Foto lässt sich nicht verwenden. Nimm ein anderes JPEG, PNG oder WebP.',
 }
 
 const CODES: Record<string, JobErrorKind> = {
