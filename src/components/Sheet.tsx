@@ -8,31 +8,58 @@ import { Icon } from './Icon'
  * `detents` sind Anteile der Fensterhöhe, aufsteigend; gezogen wird am Griff.
  * Unter die unterste Stufe ziehen, Esc oder Tippen auf den Hintergrund schließt.
  */
-export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = false, children }: { open: boolean; onClose: () => void; title: string; detents?: number[]; /** Solange gesperrt, schließt weder Esc, Hintergrund, Ziehen noch das Symbol (laufende Aktion). */ locked?: boolean; children: ReactNode }) {
+// Platz für Griff (44 px, 20 px davon überlappen) und Titelleiste (44 px) über dem Inhalt
+const CHROME = 24 + 44
+
+export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = false, fit = false, children }: { open: boolean; onClose: () => void; title: string; detents?: number[]; /** Solange gesperrt, schließt weder Esc, Hintergrund, Ziehen noch das Symbol (laufende Aktion). */ locked?: boolean; /** Höhe richtet sich nach dem Inhalt (höchstens die größte Stufe), es gibt dann nur diese eine Stufe: kein Leerraum unter kurzem Inhalt. */ fit?: boolean; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
   const controls = useDragControls()
   // animate() ist imperativ und folgt MotionConfig nicht
   const move = useReducedMotion() ? { duration: 0 } : spring
   const y = useMotionValue(0)
   const [height, setHeight] = useState(0)
 
-  // Stufen als y-Versatz vom höchsten Stand; `height` ist die Sheet-Höhe (höchste Stufe).
-  const stops = detents.map((d) => height - Math.round(d * window.innerHeight)).reverse()
+  // Stufen als y-Versatz vom höchsten Stand; `height` ist die Sheet-Höhe (höchste Stufe). Mit `fit` gibt es nur die Stufe 0 (ganz offen).
+  const stops = fit ? [0] : detents.map((d) => height - Math.round(d * window.innerHeight)).reverse()
+
+  /** Höhe passend zum Inhalt (inkl. Abstand unten), höchstens die größte Stufe. */
+  const fitHeight = () => {
+    const max = Math.round(Math.max(...detents) * window.innerHeight)
+    if (!fit || !inner.current || !scroller.current) return max
+    const pad = parseFloat(getComputedStyle(scroller.current).paddingBottom) || 0
+    return Math.min(max, Math.ceil(inner.current.offsetHeight + pad + CHROME))
+  }
 
   useEffect(() => {
     const el = dialog.current
     if (!el) return
     if (open && !el.open) {
-      const h = Math.round(Math.max(...detents) * window.innerHeight)
+      el.showModal()
+      const h = fitHeight()
       setHeight(h)
       y.set(h)
-      el.showModal()
-      animate(y, h - Math.round(Math.min(...detents) * window.innerHeight), move)
+      animate(y, fit ? 0 : h - Math.round(Math.min(...detents) * window.innerHeight), move)
     }
     if (!open && el.open) el.close()
     // detents sind pro Aufruf konstant
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  // Mit `fit` wächst und schrumpft das Sheet mit dem Inhalt (z. B. nächster Schritt, Fehlertext), solange es offen und in Ruhe ist
+  useEffect(() => {
+    const el = inner.current
+    if (!fit || !open || !el) return
+    const ro = new ResizeObserver(() => {
+      const h = fitHeight()
+      setHeight(h)
+      if (Math.abs(y.get()) < 1) y.set(0)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fit, open])
 
   async function dismiss() {
     if (locked) {
@@ -86,7 +113,9 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = fa
           </button>
         </header>
         {/* scroll-py: fokussierte Elemente landen nicht am Rand des Scrollbereichs, der Fokusrahmen bleibt ganz sichtbar */}
-        <div className="min-h-0 flex-1 scroll-py-4 overflow-y-auto px-4 pb-[max(var(--safe-bottom),16px)]">{children}</div>
+        <div ref={scroller} className="min-h-0 flex-1 scroll-py-4 overflow-y-auto px-4 pb-[max(var(--safe-bottom),16px)]">
+          <div ref={inner}>{children}</div>
+        </div>
       </motion.div>
     </dialog>
   )

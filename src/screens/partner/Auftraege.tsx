@@ -24,6 +24,8 @@ import { canPropose, loadChanges, withdrawChange, type ChangeStatus, type JobCha
 import { Bestaetigen } from '../auftrag/Bestaetigen'
 import { NachtragSheet } from './Nachtrag'
 
+// geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
+const NBSP = String.fromCharCode(160)
 const box = 'flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card'
 const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums">{formatEuro(cents)}</span>
 
@@ -37,9 +39,10 @@ const STATUS: Record<JobStatus, { chip: 'confirmed' | 'done'; label: string }> =
 
 function Zeile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-body">
-      <span className="min-w-0 text-text-secondary">{label}</span>
-      <span className="ml-auto min-w-0 break-words text-right font-semibold">{children}</span>
+    // Label bricht in seiner Spalte um, statt über den Wert zu rutschen (S9i6b-1, 320 px); der Wert steht rechts, nie breiter als 70 %
+    <p className="m-0 flex items-baseline justify-between gap-3 text-body">
+      <span className="min-w-0 flex-1 text-text-secondary">{label}</span>
+      <span className="max-w-[70%] shrink-0 break-words text-right font-semibold">{children}</span>
     </p>
   )
 }
@@ -205,13 +208,14 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
   const window = windowLabel(j.timeWindow)
-  const places = j.district !== null ? `Abholung in Bezirk ${j.district}${j.toDistrict !== null ? `, Ziel in Bezirk ${j.toDistrict}` : ''}` : null
+  // geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
+  const places = j.district !== null ? `Abholung in Bezirk${NBSP}${j.district}${j.toDistrict !== null ? `, Ziel in Bezirk${NBSP}${j.toDistrict}` : ''}` : null
   return (
     <article aria-labelledby={`j-${j.id}`} className={box}>
       <div className="flex items-start justify-between gap-3">
         <h3 id={`j-${j.id}`} className="m-0 min-w-0 break-words text-headline">
           {serviceLabel[j.service]}
-          {j.district !== null && `, Bezirk ${j.district}`}
+          {j.district !== null && `, Bezirk${NBSP}${j.district}`}
         </h3>
         <StatusChip status={info.chip}>{info.label}</StatusChip>
       </div>
@@ -277,7 +281,7 @@ function Kontakt({ j }: { j: Job }) {
       <Button variant="tinted" disabled={state !== null} onClick={() => void open()}>
         Kontakt und Adresse anzeigen
       </Button>
-      <Sheet open={state !== null} onClose={close} title="Kontakt und Adresse" detents={[0.7]}>
+      <Sheet open={state !== null} onClose={close} title="Kontakt und Adresse" detents={[0.7]} fit>
         {state?.status === 'loading' && <Loading label="Kontakt laden" />}
         {state?.status === 'error' && (
           <div className="flex flex-col gap-4 pt-2">

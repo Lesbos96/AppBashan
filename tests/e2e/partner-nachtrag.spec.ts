@@ -25,6 +25,14 @@ const RQ3 = '22222222-2222-4222-8222-222222222223'
 const RQ4 = '22222222-2222-4222-8222-222222222224'
 const photo = { name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX }
 
+/** Höhe des offenen Sheets und seines Inhalts (nur Maße, per getBoundingClientRect) */
+const measureSheet = (page: Page) =>
+  dialog(page).evaluate((d) => {
+    const sheet = d.querySelector('div.fixed') as HTMLElement
+    const content = sheet.querySelector('div.overflow-y-auto > div') as HTMLElement
+    return { sheet: sheet.getBoundingClientRect().height, content: content.getBoundingClientRect().height, view: window.innerHeight }
+  })
+
 /** Stunden auf 5 ändern und den Betrag prüfen */
 async function checkHours(page: Page, hours = '5') {
   await propose(page).click()
@@ -59,7 +67,7 @@ test('Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden;
   expect(sends(jobs)[0]).toMatchObject({ requestId: RQ1, changes: { hours: 5 }, shownTotalCents: 81000 })
   expect(Object.keys(sends(jobs)[0] ?? {}).sort(), 'kein Betragsfeld außer der Bestätigung').toEqual(['changes', 'photoIds', 'requestId', 'shownTotalCents'])
   expect((sends(jobs)[0]?.photoIds as string[]).length).toBe(1)
-  await expect(page.getByRole('status')).toContainText('Dein Nachtrag liegt beim Kunden')
+  await expect(page.getByRole('status').filter({ hasText: 'Dein Nachtrag liegt beim Kunden' })).toBeVisible()
   await expect(card(page)).toContainText('neuer Gesamtpreis 810,00 €')
   await expect(card(page).getByRole('button', { name: 'Nachtrag zurückziehen' })).toBeVisible()
   await expect(propose(page), 'solange einer offen ist, gibt es keinen zweiten').toHaveCount(0)
@@ -244,7 +252,7 @@ test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu 
   jobs.changes = [proposed('proposed')]
   await dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ }).click()
   await expect(dialog(page)).toHaveCount(0)
-  await expect(page.getByRole('status')).toContainText('liegt schon ein Nachtrag vor')
+  await expect(page.getByRole('status').filter({ hasText: 'liegt schon ein Nachtrag vor' })).toBeVisible()
   await expect(card(page)).toContainText('neuer Gesamtpreis 810,00 €')
   expect(sends(jobs)).toHaveLength(1)
 })
@@ -258,6 +266,33 @@ test('Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zur
   expect(jobs.withdrawnChanges).toEqual([CH1])
   await expect(card(page)).toContainText('Du hast deinen Nachtrag zurückgezogen.')
   await expect(propose(page)).toBeVisible()
+})
+
+test('Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt', async ({ page }) => {
+  const { jobs } = await open(page, { changes: [proposed('proposed')] })
+  await card(page).getByRole('button', { name: 'Nachtrag zurückziehen' }).click()
+  const measure = () => measureSheet(page)
+  await expect.poll(async () => (await measure()).sheet).toBeGreaterThan(100)
+  const m = await measure()
+  // Griff, Titelleiste und Abstand unten brauchen zusammen höchstens 68 + 48 px über dem Inhalt
+  expect(m.sheet, JSON.stringify(m)).toBeLessThanOrEqual(m.content + 116)
+  expect(m.sheet, JSON.stringify(m)).toBeLessThan(m.view * 0.6)
+  await dialog(page).getByRole('button', { name: 'Doch nicht' }).click()
+  expect(jobs.withdrawnChanges).toEqual([])
+})
+
+test('Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum', async ({ page }) => {
+  await open(page)
+  const measure = () => measureSheet(page)
+  await propose(page).click()
+  await expect.poll(async () => (await measure()).sheet).toBeGreaterThan(100)
+  const first = await measure()
+  await dialog(page).getByLabel('Stunden').fill('5')
+  await dialog(page).getByRole('button', { name: 'Betrag prüfen' }).click()
+  await expect(dialog(page)).toContainText('810,00 €')
+  await expect.poll(async () => (await measure()).content).not.toBe(first.content)
+  const second = await measure()
+  expect(second.sheet, JSON.stringify({ first, second })).toBeLessThanOrEqual(second.content + 116)
 })
 
 test('Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen', async ({ page }) => {

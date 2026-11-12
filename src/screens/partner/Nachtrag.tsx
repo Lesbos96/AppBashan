@@ -11,9 +11,9 @@ const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums"
 
 function Zeile({ label, children, strong }: { label: string; children: ReactNode; strong?: boolean }) {
   return (
-    <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-body">
-      <span className="min-w-0 text-text-secondary">{label}</span>
-      <span className={`ml-auto min-w-0 break-words text-right ${strong ? 'text-headline' : 'font-semibold'}`}>{children}</span>
+    <p className="m-0 flex items-baseline justify-between gap-3 text-body">
+      <span className="min-w-0 flex-1 text-text-secondary">{label}</span>
+      <span className={`max-w-[70%] shrink-0 break-words text-right ${strong ? 'text-headline' : 'font-semibold'}`}>{children}</span>
     </p>
   )
 }
@@ -133,7 +133,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
   const sendable = have + files.length >= 1 && have + files.length <= MAX_PHOTOS
 
   return (
-    <Sheet open={open} onClose={onClose} locked={busy} title="Nachtrag vorschlagen" detents={[0.92]}>
+    <Sheet open={open} onClose={onClose} locked={busy} title="Nachtrag vorschlagen" detents={[0.92]} fit>
       <div className="flex flex-col gap-4 pt-2">
         {step === 'form' && (
           <>

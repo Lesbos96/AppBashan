@@ -35,7 +35,7 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
   }
 
   return (
-    <Sheet open={open} onClose={close} locked={busy} title={title} detents={[0.6]}>
+    <Sheet open={open} onClose={close} locked={busy} title={title} detents={[0.6]} fit>
       <div className="flex flex-col gap-4 pt-2">
         {children}
         {error && (
