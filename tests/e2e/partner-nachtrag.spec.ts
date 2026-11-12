@@ -57,6 +57,8 @@ test('Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden;
   await expect(send, 'ohne Foto kein Senden').toBeDisabled()
   await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
   await expect(dialog(page)).toContainText('beleg.png')
+  await expect(dialog(page)).toContainText('1 Foto wird beim Senden hochgeladen')
+  await expect(dialog(page), 'ein gewähltes Foto widerspricht „Noch kein Foto“').not.toContainText('Noch kein Foto')
   await expect(send).toBeEnabled()
   await send.click()
   await expect(dialog(page)).toHaveCount(0)

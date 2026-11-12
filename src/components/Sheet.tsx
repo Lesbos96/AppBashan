@@ -9,7 +9,7 @@ import { Icon } from './Icon'
  * Unter die unterste Stufe ziehen, Esc oder Tippen auf den Hintergrund schließt.
  */
 // Platz für Griff (44 px, 20 px davon überlappen) und Titelleiste (44 px) über dem Inhalt
-const CHROME = 24 + 44
+const CHROME = 24 + 44 + 1
 
 export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = false, fit = false, children }: { open: boolean; onClose: () => void; title: string; detents?: number[]; /** Solange gesperrt, schließt weder Esc, Hintergrund, Ziehen noch das Symbol (laufende Aktion). */ locked?: boolean; /** Höhe richtet sich nach dem Inhalt (höchstens die größte Stufe), es gibt dann nur diese eine Stufe: kein Leerraum unter kurzem Inhalt. */ fit?: boolean; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -96,7 +96,7 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = fa
         dragElastic={0.05}
         onDragEnd={(_, info) => release(info.velocity.y)}
         style={{ y, height }}
-        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-(--content-max-width) flex-col rounded-t-sheet-top bg-background text-text shadow-sheet"
+        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-(--content-max-width) flex-col rounded-t-sheet-top border-t-[0.5px] border-separator bg-background text-text shadow-sheet"
       >
         <div onPointerDown={(e) => controls.start(e)} className="-mb-5 flex h-11 shrink-0 cursor-grab touch-none items-start justify-center pt-1.5">
           <span className="h-[5px] w-9 rounded-[3px] bg-text/20" />

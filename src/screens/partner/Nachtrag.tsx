@@ -170,7 +170,9 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
             <p className="m-0 text-subhead text-text-secondary">Der Kunde sieht den neuen Gesamtpreis und deine Belegfotos. Ohne seine Zustimmung gilt der bisherige Preis.</p>
             <GroupedList title="Belegfotos">
               <li className="flex flex-col gap-1 px-4 py-3">
-                <span className="text-body">{have === 0 ? 'Noch kein Foto' : have === 1 ? '1 Foto schon hochgeladen' : `${have} Fotos schon hochgeladen`}</span>
+                {have === 0 && files.length === 0 && <span className="text-body">Noch kein Foto</span>}
+                {have > 0 && <span className="text-body">{have === 1 ? '1 Foto schon hochgeladen' : `${have} Fotos schon hochgeladen`}</span>}
+                {files.length > 0 && <span className="text-body">{files.length === 1 ? '1 Foto wird beim Senden hochgeladen' : `${files.length} Fotos werden beim Senden hochgeladen`}</span>}
                 <span className="text-footnote text-text-secondary">Mindestens ein Foto, höchstens {MAX_PHOTOS} je Auftrag. Gelöscht werden sie nicht.</span>
               </li>
               {files.map((f, i) => (
@@ -216,10 +218,13 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
             {busy ? 'Wird berechnet …' : 'Betrag prüfen'}
           </Button>
         ) : (
-          <>
-            <Button disabled={busy || !sendable} onClick={() => void send()}>
-              {busy ? 'Wird gesendet …' : preview ? `Nachtrag über ${formatEuro(preview.totalCents)} senden` : 'Senden'}
-            </Button>
+          <Button disabled={busy || !sendable} onClick={() => void send()}>
+            {busy ? 'Wird gesendet …' : preview ? `Nachtrag über ${formatEuro(preview.totalCents)} senden` : 'Senden'}
+          </Button>
+        )}
+        {/* Die zwei schlichten Knöpfe stehen dicht beieinander unter dem Hauptknopf (kein leerer Block dazwischen) */}
+        <div className="flex flex-col">
+          {step === 'proof' && (
             <Button
               variant="plain"
               disabled={busy}
@@ -230,11 +235,11 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
             >
               Werte ändern
             </Button>
-          </>
-        )}
-        <Button variant="plain" disabled={busy} onClick={onClose}>
-          Doch nicht
-        </Button>
+          )}
+          <Button variant="plain" disabled={busy} onClick={onClose}>
+            Doch nicht
+          </Button>
+        </div>
       </div>
     </Sheet>
   )

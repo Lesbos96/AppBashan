@@ -1,7 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect, test } from '../e2e/backend'
-import { A2, fixed, job, mockJobs, O1, pgErr, range, REV1, RQ2, type JobsState } from '../e2e/jobs-helpers'
-import { factor, openPartner, pgError, storageError, type DocRow, type OpenOpts } from '../e2e/mfa-helpers'
+import { A2, change, fixed, job, mockJobs, O1, pgErr, proposed, range, REV1, RQ2, type JobsState } from '../e2e/jobs-helpers'
+import { factor, openPartner, PNG_1PX, pgError, storageError, type DocRow, type OpenOpts } from '../e2e/mfa-helpers'
 
 const O2 = '7c6f8a91-2d3e-4f40-b12c-1d0e9f8a7b6c'
 const O3 = '8d7a9ba2-3e4f-4051-a23d-2e1f0a9b8c7d'
@@ -225,6 +225,56 @@ const shots: Shot[] = [
   },
   { name: 'auftraege-payment-hold', open: { ...ACTIVE, status: 'payment_hold' }, jobs: { myJobs: [job({ can_start: true })] }, wait: heading('Angenommen') },
   { name: 'auftraege-ladefehler', open: ACTIVE, jobs: { jobStatus: [500, 500] }, wait: (page) => expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible() },
+  // Nachtrag (s9i-7a): Platzhalterdaten aus tests/e2e/jobs-helpers.ts
+  { name: 'nachtrag-karte', open: ACTIVE, jobs: { myJobs: [job({ status: 'in_progress' })], changes: [change()] }, wait: heading('Angenommen') },
+  { name: 'nachtrag-offen', open: ACTIVE, jobs: { myJobs: [job()], changes: [proposed('proposed')] }, wait: heading('Angenommen') },
+  { name: 'nachtrag-abgelehnt', open: ACTIVE, jobs: { myJobs: [job()], changes: [proposed('declined')] }, wait: heading('Angenommen') },
+  {
+    name: 'nachtrag-formular',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Nachtrag vorschlagen' }).click()
+      await expect(page.getByRole('dialog').getByLabel('Stunden')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'nachtrag-betrag',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Nachtrag vorschlagen' }).click()
+      await page.getByRole('dialog').getByLabel('Stunden').fill('5')
+      await page.getByRole('dialog').getByRole('button', { name: 'Betrag prüfen' }).click()
+      await expect(page.getByRole('dialog')).toContainText('Neuer Gesamtpreis')
+      await page.getByRole('dialog').getByLabel('Belegfoto hinzufügen').setInputFiles({ name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX })
+      await expect(page.getByRole('dialog')).toContainText('beleg.png')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'nachtrag-fehler',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()], previewAnswers: [{ status: 409, json: { error: 'change_not_increasing' } }] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Nachtrag vorschlagen' }).click()
+      await page.getByRole('dialog').getByLabel('Stunden').fill('2')
+      await page.getByRole('dialog').getByRole('button', { name: 'Betrag prüfen' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'nachtrag-zurueckziehen-sheet',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [proposed('proposed')] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Nachtrag zurückziehen' }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
   {
     name: 'angebot-eingabe-fehler',
     open: ACTIVE,
