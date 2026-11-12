@@ -27,9 +27,9 @@ const CODES: Record<string, JobErrorKind> = {
   price_not_fixed: 'taken',
   not_found: 'taken',
   not_responsible: 'taken',
-  payout_changed: 'changed',
+  payout_changed: 'payout',
+  fee_rate_changed: 'payout',
   revision_changed: 'changed',
-  fee_rate_changed: 'changed',
   partner_job_limit: 'job_limit',
   partner_not_active: 'gone',
   mfa_required: 'unauthorized',
@@ -40,7 +40,9 @@ const CODES: Record<string, JobErrorKind> = {
   vat_rule_missing: 'vat_rule',
   retry: 'retry',
 }
-const kindOf = (code: unknown): JobErrorKind => (typeof code === 'string' ? CODES[code] : undefined) ?? 'unavailable'
+// Nachschlagen nur in eigenen Schlüsseln (kein `constructor`, `toString` aus der Prototypkette)
+const own = <T>(map: Record<string, T>, key: unknown): T | undefined => (typeof key === 'string' && Object.hasOwn(map, key) ? map[key] : undefined)
+const kindOf = (code: unknown): JobErrorKind => own(CODES, code) ?? 'unavailable'
 
 async function rpc(fn: 'send_offer' | 'withdraw_offer', args: { p_listing: string; p_amount: number } | { p_offer: string }): Promise<void> {
   try {
@@ -118,8 +120,14 @@ export async function loadRates(): Promise<Rates> {
   return { feeRate: f, vatRate: v }
 }
 
-/** Auszahlung in Cent: dieselbe Rechnung wie der Server (`splitFee`); der Server vergleicht sie bei der Annahme. */
-export const payoutCents = (totalCents: number, r: Rates): number => splitFee(totalCents, { feeRate: r.feeRate, vatRate: r.vatRate }).payoutCents
+/** Auszahlung in Cent: dieselbe Rechnung wie der Server (`splitFee`); der Server vergleicht sie bei der Annahme. Ungültiger Satz: `null` (keine Auszahlung zeigen). */
+export function payoutCents(totalCents: number, r: Rates): number | null {
+  try {
+    return splitFee(totalCents, { feeRate: r.feeRate, vatRate: r.vatRate }).payoutCents
+  } catch {
+    return null
+  }
+}
 
 // Anzeige: Umfang (Whitelist), Tag, Zeitfenster ------------------------------------------------------------------------------
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -142,8 +150,10 @@ export function scopeLines(service: Listing['service'], inputs: unknown): string
   if (!r) return []
   const out: string[] = []
   if (service === 'transport' || service === 'move') {
-    if (typeof r.goods === 'string' && GOODS[r.goods]) out.push(GOODS[r.goods]!)
-    if (num(r.crew) && num(r.vehicles) && typeof r.vehicleType === 'string' && VEHICLE[r.vehicleType]) out.push(`${r.vehicles} × ${VEHICLE[r.vehicleType]}, ${r.crew} Personen`)
+    const goods = own(GOODS, r.goods)
+    if (goods) out.push(goods)
+    const vehicle = own(VEHICLE, r.vehicleType)
+    if (num(r.crew) && num(r.vehicles) && vehicle) out.push(`${r.vehicles} × ${vehicle}, ${r.crew} Personen`)
     if (num(r.hours)) out.push(`${r.hours} Std.`)
     if (num(r.fromFloor)) out.push(`Abholung: ${floor(r.fromFloor)}, ${lift(r.fromLift)}`)
     if (num(r.toFloor)) out.push(`Ziel: ${floor(r.toFloor)}, ${lift(r.toLift)}`)
@@ -151,10 +161,11 @@ export function scopeLines(service: Listing['service'], inputs: unknown): string
     if (r.packing === true) out.push('Einpacken')
     out.push(...assemblyLine(r.assembly))
   } else if (service === 'clearance') {
-    const obj = typeof r.object === 'string' ? OBJECT[r.object] : undefined
+    const obj = own(OBJECT, r.object)
     if (obj) out.push(obj)
     if (num(r.area)) out.push(`${r.area} m²`)
-    if (typeof r.fill === 'string' && FILL[r.fill]) out.push(FILL[r.fill]!)
+    const fill = own(FILL, r.fill)
+    if (fill) out.push(fill)
     if (num(r.floor)) out.push(`${floor(r.floor)}, ${lift(r.lift)}`)
     if (r.special === true) out.push('Sonderfall, Besichtigung nötig')
     out.push(...assemblyLine(r.assembly))
@@ -166,7 +177,7 @@ export function scopeLines(service: Listing['service'], inputs: unknown): string
 
 export const serviceLabel: Record<Listing['service'], string> = { transport: 'Transport', move: 'Umzug', clearance: 'Entrümpelung', assembly: 'Montage' }
 const WINDOW: Record<string, string> = { morning: 'Vormittag, 8 bis 11 Uhr', midday: 'Mittag, 11 bis 14 Uhr', afternoon: 'Nachmittag, 14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
-export const windowLabel = (w: string | null) => (w ? WINDOW[w] ?? null : null)
+export const windowLabel = (w: string | null) => own(WINDOW, w) ?? null
 
 /** Kalendertag wie gespeichert (ohne Zeitzonen-Umrechnung): „Mi., 2. Dezember 2026“. */
 export function dayLabel(iso: string | null): string | null {
@@ -188,9 +199,20 @@ export function parseEuro(input: string): number | null {
 }
 
 // Aufrufe ------------------------------------------------------------------------------------------------------------------
-/** Annahme eines Festpreis-Listings mit genau der gezeigten Auszahlung; bei anderem Wert antwortet der Server mit 409. */
+/**
+ * Annahme eines Festpreis-Listings mit genau der gezeigten Auszahlung; bei anderem Wert antwortet der Server mit 409.
+ * Ging die Antwort einer geglückten Annahme verloren, liefert der zweite Versuch `already_taken`: steht das Listing dann als angenommen
+ * in der eigenen Liste (nur die Firma mit Zuordnung sieht das), war es der eigene Erfolg.
+ */
 export async function acceptListing(l: Pick<Listing, 'id' | 'revisionId'>, shownPayoutCents: number): Promise<void> {
-  await invoke('accept', { listingId: l.id, revisionId: l.revisionId, shownPayoutCents }, CODES)
+  try {
+    await invoke('accept', { listingId: l.id, revisionId: l.revisionId, shownPayoutCents }, CODES)
+  } catch (e) {
+    if (!(e instanceof JobError) || e.kind !== 'taken') throw e
+    const mine = await loadListings().catch(() => [])
+    if (mine.some((x) => x.id === l.id && x.status === 'accepted')) return
+    throw e
+  }
 }
 
 /** Festangebot in ganzen Cent. Die Prüfung hier spart nur den Umweg; Spanne, Grenzen und Status prüft der Server. */
@@ -217,7 +239,7 @@ const OFFER_STATUS: string[] = ['sent', 'confirmed', 'withdrawn', 'expired', 'su
 
 /** Eigene Angebote der Firma (feste Spaltenliste, ohne `request_id`); sie hängen über die Revision am Listing. */
 export async function loadMyOffers(): Promise<MyOffer[]> {
-  const { data, error } = await supabase.from('partner_offers').select('id, base_revision_id, amount_cents, status, valid_until').order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('partner_offers').select('id, base_revision_id, amount_cents, status, valid_until').order('created_at', { ascending: false }).limit(20)
   if (error) throw error
   return (Array.isArray(data) ? data : []).flatMap((r): MyOffer[] => {
     const until = when(r.valid_until)

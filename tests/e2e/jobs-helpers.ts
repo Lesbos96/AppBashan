@@ -76,13 +76,15 @@ export type JobsState = {
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
   listingReads: number
+  offerReads: number
+  rateReads: number
 }
 
 const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors }) : null)
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o
@@ -95,10 +97,16 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
   await page.route('**/rest/v1/partner_offers**', (r) => {
     const o = pre(r)
     if (o) return o
+    s.offerReads++
     s.urls.push(r.request().url())
     return rest(r, s.offers)
   })
-  await page.route('**/rest/v1/current_fee_rates**', (r) => pre(r) ?? rest(r, [s.rates]))
+  await page.route('**/rest/v1/current_fee_rates**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    s.rateReads++
+    return rest(r, [s.rates])
+  })
   await page.route('**/functions/v1/accept', (r) => {
     const o = pre(r)
     if (o) return o

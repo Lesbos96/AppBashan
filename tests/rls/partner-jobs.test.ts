@@ -27,6 +27,7 @@ function request(id: string, kind: 'range' | 'free'): string {
     insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
     values ('${id}', 1, 'submit', '{}', '${snap}', 1, ${vals});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
+    insert into public.request_contacts (request_id, name, phone, email) values ('${id}', 'Test Kunde', '+43 660 1234567', 'kunde@movenow.test');
     select public.distribute_request('${id}');`
 }
 // Die Listing-ID legt der Eigentümer je Auftrag und Firma als Einstellung ab (Partner kennen die Auftrags-ID nicht, `request_id` ist gesperrt).
@@ -39,7 +40,7 @@ const rows = (v: string | undefined, n: number) => expect(v, String(v)).toBe(`= 
 const none = (v: string | undefined) => expect(v === '= 0' || v?.includes('42501'), String(v)).toBe(true)
 
 describe('Sichtbarkeit vor dem Zuschlag', () => {
-  it('Spaltenliste von job_listings ist exakt festgelegt; Partner lesen weder Anfrage noch Kontakt noch Kontaktfunktion', () => {
+  it('Spaltenliste von job_listings ist exakt festgelegt; Partner lesen weder Anfrage noch Kontakt noch Kontaktfunktion (Fotos: job-photos.test.ts)', () => {
     const R = newId()
     const setup = `${BASE('a')} ${request(R, 'range')} ${stash(R, 'a')}`
     const cols = (role: string) => `=(select coalesce(string_agg(attname, ',' order by attname), '') from pg_attribute where attrelid = 'public.job_listings'::regclass and attnum > 0 and not attisdropped and has_column_privilege('${role}', attrelid, attnum, 'select'))`
@@ -51,7 +52,8 @@ describe('Sichtbarkeit vor dem Zuschlag', () => {
       { name: 'request_contacts', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.request_contacts)` },
       { name: 'job_contact vor Zuschlag', as: 'authenticated', claims: A2(U.pa), sql: `perform * from public.job_contact('${R}')` },
       { name: 'price_revisions', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.price_revisions)` },
-      { name: 'Fotos', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.job_photos)` },
+      // Kontrolle: die Zeilen gibt es wirklich (der Eigentümer sieht sie), „0“ oben misst also die Sperre
+      { name: 'Kontakt und Anfrage vorhanden', sql: `=(select (select count(*) from public.request_contacts where request_id = '${R}') + (select count(*) from public.service_requests where id = '${R}') + (select count(*) from public.price_revisions where request_id = '${R}'))` },
     ]
     const r = probes(setup, steps)
     expect(r['Spalten authenticated']).toBe('= accept_deadline,created_at,decided_at,district,high_cents,id,inputs,low_cents,partner_id,preferred_date,revision_id,service,status,time_window,to_district,total_cents,volume_m3')
@@ -61,7 +63,7 @@ describe('Sichtbarkeit vor dem Zuschlag', () => {
     none(r['request_contacts'])
     err(r['job_contact vor Zuschlag'], 'not_assigned')
     none(r['price_revisions'])
-    none(r['Fotos'])
+    rows(r['Kontakt und Anfrage vorhanden'], 3)
   })
 
   it('Sätze: Partner lesen fee_rate und fee_vat_rate über current_fee_rates, Kunden nichts; Angebotsgrenze bleibt verborgen', () => {

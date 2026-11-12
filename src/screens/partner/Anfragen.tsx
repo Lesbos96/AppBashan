@@ -105,8 +105,9 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
   const day = dayLabel(l.preferredDate)
   const window = windowLabel(l.timeWindow)
   const scope = scopeLines(l.service, l.inputs)
-  const payout = rates && l.totalCents !== null ? payoutCents(l.totalCents, rates) : null
   const isOpen = l.status === 'open'
+  // Beträge nur bei offenen Anfragen: bei angenommenen gilt die Journalzeile der Annahme, nicht die Momentaufnahme des Listings (Abnahme H1, kommt mit my_jobs in 6b)
+  const payout = isOpen && rates && l.totalCents !== null ? payoutCents(l.totalCents, rates) : null
   return (
     <article aria-labelledby={`l-${l.id}`} className={box}>
       <h3 id={`l-${l.id}`} className="m-0 text-headline">
@@ -124,21 +125,22 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
           ))}
         </ul>
       )}
-      {l.totalCents !== null ? (
-        <>
-          <Zeile label="Preis für den Kunden">{euro(l.totalCents)}</Zeile>
-          {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
-        </>
-      ) : (
-        l.lowCents !== null &&
-        l.highCents !== null && (
-          <Zeile label="Preisspanne">
-            <span className="whitespace-nowrap">
-              {euro(l.lowCents)} bis {euro(l.highCents)}
-            </span>
-          </Zeile>
-        )
-      )}
+      {isOpen &&
+        (l.totalCents !== null ? (
+          <>
+            <Zeile label="Preis für den Kunden">{euro(l.totalCents)}</Zeile>
+            {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
+          </>
+        ) : (
+          l.lowCents !== null &&
+          l.highCents !== null && (
+            <Zeile label="Preisspanne">
+              <span className="whitespace-nowrap">
+                {euro(l.lowCents)} bis {euro(l.highCents)}
+              </span>
+            </Zeile>
+          )
+        ))}
       {isOpen && <p className="m-0 text-subhead text-text-secondary">Antwort bis {viennaTime(l.deadline)}</p>}
       {isOpen && <Fotos id={l.id} />}
       {isOpen && l.totalCents !== null && (
@@ -157,7 +159,7 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
         ) : (
           <Button onClick={() => setSheet('offer')}>Angebot abgeben</Button>
         ))}
-      {!isOpen && <p className="m-0 text-body font-semibold text-accent">Angenommen</p>}
+      {!isOpen && <p className="m-0 text-body font-semibold text-accent">Du hast den Zuschlag erhalten.</p>}
 
       {isOpen && payout !== null && (
         <Bestaetigen open={sheet === 'accept'} onClose={() => setSheet(null)} title="Anfrage annehmen" label="Verbindlich annehmen" action={() => acceptListing(l, payout)} onDone={onDone}>
@@ -239,7 +241,7 @@ function AngebotSheet({ l, rates, open, onClose, onDone }: { l: Listing; rates: 
         {cents !== null && (
           <>
             <Zeile label="Dein Angebot">{euro(cents)}</Zeile>
-            {rates && <Zeile label="Du erhältst voraussichtlich">{euro(payoutCents(cents, rates))}</Zeile>}
+            {rates && payoutCents(cents, rates) !== null && <Zeile label="Du erhältst voraussichtlich">{euro(payoutCents(cents, rates)!)}</Zeile>}
             <p className="m-0 text-subhead text-text-secondary">Dein Anteil kann sich bis zur Annahme ändern. Verbindlich, bis du das Angebot zurückziehst oder es abläuft.</p>
           </>
         )}

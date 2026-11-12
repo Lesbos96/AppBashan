@@ -125,9 +125,9 @@ describe('Annahme', () => {
     [409, 'offer_required', 'taken'],
     [404, 'not_found', 'taken'],
     [403, 'not_responsible', 'taken'],
-    [409, 'payout_changed', 'changed'],
+    [409, 'payout_changed', 'payout'],
     [409, 'revision_changed', 'changed'],
-    [409, 'fee_rate_changed', 'changed'],
+    [409, 'fee_rate_changed', 'payout'],
     [409, 'partner_job_limit', 'job_limit'],
     [403, 'partner_not_active', 'gone'],
     [403, 'mfa_required', 'unauthorized'],
@@ -141,6 +141,51 @@ describe('Annahme', () => {
   it('Netzfehler ist offline', async () => {
     invoke.mockResolvedValue({ data: null, error: new FunctionsFetchError(new Error('x')) })
     await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'offline' })
+  })
+
+  it('payout_changed und fee_rate_changed sind „Auszahlung geändert“, revision_changed „Preis geändert“', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(409, { error: 'fee_rate_changed' }) })
+    await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'payout' })
+  })
+
+  describe('Gewinner-Retry (Abnahme M1)', () => {
+    const row = { id: ID, revision_id: REV, status: 'accepted', district: 3, to_district: null, service: 'transport', inputs: {}, preferred_date: null, time_window: null, total_cents: 68961, low_cents: 68961, high_cents: 68961, accept_deadline: '2026-12-01T10:00:00Z' }
+    it('already_taken, aber das Listing steht in der eigenen Liste als angenommen → Erfolg', async () => {
+      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'already_taken' }) })
+      result = { data: [row], error: null }
+      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).resolves.toBeUndefined()
+    })
+    it('already_taken und das Listing ist nicht angenommen (anderer Gewinner) → Fehler bleibt', async () => {
+      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'already_taken' }) })
+      result = { data: [{ ...row, status: 'open' }], error: null }
+      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
+    })
+    it('ein anderes angenommenes Listing zählt nicht; ein Lesefehler lässt den Fehler stehen', async () => {
+      // eine Response lässt sich nur einmal lesen: jeder Aufruf bekommt eine neue
+      invoke.mockImplementation(async () => ({ data: null, error: http(409, { error: 'already_taken' }) }))
+      result = { data: [{ ...row, id: '2d1a3b4c-7e8f-4a9b-8c7d-6e5f4a3b2c1d' }], error: null }
+      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
+      result = { data: null, error: { message: 'x' } }
+      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
+    })
+    it('andere Fehler lesen die Liste nicht', async () => {
+      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'payout_changed' }) })
+      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'payout' })
+      expect(selects).toEqual([])
+    })
+  })
+})
+
+describe('Härtung (Abnahme N1, N2)', () => {
+  it('ungültiger Satz ergibt null statt eines Fehlers', () => {
+    expect(payoutCents(1000, { feeRate: 1.5, vatRate: 0.2 })).toBeNull()
+    expect(payoutCents(1000, { feeRate: 0.123456, vatRate: 0.2 })).toBeNull()
+  })
+  it('Schlüssel der Prototypkette sind keine Treffer', async () => {
+    expect(scopeLines('transport', { goods: 'constructor', vehicleType: 'toString', crew: 1, vehicles: 1 })).toEqual([])
+    expect(scopeLines('clearance', { object: '__proto__', fill: 'hasOwnProperty' })).toEqual([])
+    rpc.mockResolvedValue({ data: null, error: { message: 'constructor' } })
+    await expect(sendOffer(ID, 100)).rejects.toMatchObject({ kind: 'unavailable' })
   })
 })
 

@@ -15,6 +15,7 @@ export type JobErrorKind =
   | 'unavailable'
   // Partner (s9i-6a, src/lib/partnerJobs.ts)
   | 'taken'
+  | 'payout'
   | 'job_limit'
   | 'have_offer'
   | 'offer_limit'
@@ -38,6 +39,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut.',
   unavailable: 'Das hat nicht geklappt. Versuche es gleich noch einmal.',
   taken: 'Diese Anfrage ist nicht mehr verfügbar. Die Liste wurde neu geladen.',
+  payout: 'Deine Auszahlung hat sich geändert. Prüfe sie und bestätige erneut.',
   job_limit: 'Du hast die höchste Zahl offener Aufträge erreicht. Schließe zuerst einen ab.',
   have_offer: 'Du hast für diese Anfrage schon ein Angebot abgegeben.',
   offer_limit: 'Für diese Anfrage liegen schon so viele Angebote vor. Versuche es später noch einmal.',
@@ -62,7 +64,7 @@ const CODES: Record<string, JobErrorKind> = {
 }
 
 /** Wie lange ein Fehler die Anzeige veraltet: danach lädt der Auftrag neu. */
-export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'taken' || k === 'have_offer'
+export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'taken' || k === 'payout' || k === 'have_offer'
 export const retryable = (k: JobErrorKind) => k === 'offline' || k === 'retry' || k === 'unavailable'
 
 export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' ? codes[code] : undefined) ?? 'unavailable'

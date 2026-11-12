@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from './backend'
 import { collectErrors } from './console'
 import { factor } from './mfa-helpers'
-import { fixed, L1, L2, O1, openJobs, PHOTO, range, REV1, SENTINEL } from './jobs-helpers'
+import { fixed, L1, L2, O1, openJobs, range, REV1, SENTINEL } from './jobs-helpers'
 
 /*
  * Partner-Portal 2a (s9i-6a): offene Anfragen, Annahme, Festangebot, eigene Angebote. Backend gemockt (tests/e2e/jobs-helpers.ts).
@@ -168,23 +168,60 @@ test('Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download', async ({ pa
   await expect(card(page).locator('img')).toHaveCount(1)
   expect(jobs.photoCalls).toEqual([{ listingId: L1 }])
   expect(await card(page).locator('a[download], a[href]').count()).toBe(0)
-  expect(PHOTO).toBeTruthy()
 })
 
-for (const status of ['pending', 'payment_hold', 'suspended', 'rejected'] as const) {
+/** Kein einziger Abruf von Anfragen, Angeboten oder Sätzen. */
+const noJobReads = (jobs: { listingReads: number; offerReads: number; rateReads: number }) => expect([jobs.listingReads, jobs.offerReads, jobs.rateReads]).toEqual([0, 0, 0])
+
+// Der positive Anker steht hinter der Schranke (Dokumente) bzw. an ihr; erst danach zählt „kein Abruf“ (Abnahme s9i-6a M3)
+for (const [status, anchor] of [
+  ['pending', 'Dokumente'],
+  ['payment_hold', 'Dokumente'],
+  ['suspended', 'Transporte Huber GmbH'],
+  ['rejected', 'Transporte Huber GmbH'],
+] as const) {
   test(`Status ${status}: keine Anfragen und kein Abruf der Liste`, async ({ page }) => {
     const { jobs } = await openJobs(page, { listings: [fixed()] }, { status, aal: 'aal2', factors: [factor('f-1', 'verified')] })
-    await expect(page.getByRole('heading', { name: 'Transporte Huber GmbH' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: anchor, level: 2 })).toBeVisible()
+    await page.waitForLoadState('networkidle')
     await expect(heading(page)).toHaveCount(0)
     await expect(page.getByRole('article')).toHaveCount(0)
-    expect(jobs.listingReads).toBe(0)
+    noJobReads(jobs)
   })
 }
 
 test('aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste', async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] }, { aal: 'aal1', factors: [factor('f-1', 'verified')] })
+  await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
+  await page.waitForLoadState('networkidle')
   await expect(heading(page)).toHaveCount(0)
-  expect(jobs.listingReads).toBe(0)
+  noJobReads(jobs)
+})
+
+test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)', async ({ page }) => {
+  const { jobs } = await openJobs(page, { listings: [fixed()] })
+  await expect(heading(page)).toBeVisible()
+  expect(jobs.listingReads).toBeGreaterThanOrEqual(1)
+  expect(jobs.offerReads).toBeGreaterThanOrEqual(1)
+  expect(jobs.rateReads).toBeGreaterThanOrEqual(1)
+})
+
+test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)', async ({ page }) => {
+  const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] })
+  await card(page).getByRole('button', { name: 'Annehmen' }).click()
+  // die erste Annahme hat serverseitig gegriffen, nur die Antwort ging verloren: das Listing der Firma steht auf accepted
+  jobs.listings = [fixed({ status: 'accepted' })]
+  await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
+  await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
+  await expect(page.locator('body')).not.toContainText('nicht mehr verfügbar')
+  expect(jobs.accepts).toHaveLength(1)
+})
+
+test('angenommene Anfrage zeigt keine Beträge (Abnahme H1: gilt die Journalzeile, nicht die Momentaufnahme)', async ({ page }) => {
+  await openJobs(page, { listings: [fixed({ status: 'accepted' })] })
+  await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
+  await expect(card(page)).toContainText('Zuschlag')
+  await expect(card(page)).not.toContainText(/€|Du erhältst|Preis/)
 })
 
 test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', async ({ page }) => {
