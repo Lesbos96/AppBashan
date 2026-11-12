@@ -207,7 +207,8 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
   const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | null>(null)
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
-  const window = windowLabel(j.timeWindow)
+  // „11 Uhr“ bricht nie mit verwaister Uhrzeit um (Bildsicht)
+  const window = windowLabel(j.timeWindow)?.replace(' Uhr', `${NBSP}Uhr`)
   // geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
   const places = j.district !== null ? `Abholung in Bezirk${NBSP}${j.district}${j.toDistrict !== null ? `, Ziel in Bezirk${NBSP}${j.toDistrict}` : ''}` : null
   return (

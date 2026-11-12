@@ -207,38 +207,40 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
           </>
         )}
 
-        {error && (
-          <p role="alert" className="m-0 text-body text-destructive">
-            {error}
-          </p>
-        )}
-
-        {step === 'form' ? (
-          <Button disabled={busy} onClick={() => void check()}>
-            {busy ? 'Wird berechnet …' : 'Betrag prüfen'}
-          </Button>
-        ) : (
-          <Button disabled={busy || !sendable} onClick={() => void send()}>
-            {busy ? 'Wird gesendet …' : preview ? `Nachtrag über ${formatEuro(preview.totalCents)} senden` : 'Senden'}
-          </Button>
-        )}
-        {/* Die zwei schlichten Knöpfe stehen dicht beieinander unter dem Hauptknopf (kein leerer Block dazwischen) */}
-        <div className="flex flex-col">
-          {step === 'proof' && (
-            <Button
-              variant="plain"
-              disabled={busy}
-              onClick={() => {
-                setStep('form')
-                setError('')
-              }}
-            >
-              Werte ändern
+        {/* Fehler und Knöpfe kleben am unteren Rand des Sheets: bei hohem Inhalt (320 px) scrollt nur der Inhalt, die Aktion bleibt erreichbar */}
+        <div className="sticky bottom-0 -mx-4 flex flex-col gap-4 bg-background px-4 pt-3 pb-1">
+          {error && (
+            <p role="alert" className="m-0 text-body text-destructive">
+              {error}
+            </p>
+          )}
+          {step === 'form' ? (
+            <Button disabled={busy} onClick={() => void check()}>
+              {busy ? 'Wird berechnet …' : 'Betrag prüfen'}
+            </Button>
+          ) : (
+            <Button disabled={busy || !sendable} onClick={() => void send()}>
+              {busy ? 'Wird gesendet …' : preview ? `Nachtrag über ${formatEuro(preview.totalCents)} senden` : 'Senden'}
             </Button>
           )}
-          <Button variant="plain" disabled={busy} onClick={onClose}>
-            Doch nicht
-          </Button>
+          {/* Die zwei schlichten Knöpfe stehen dicht beieinander unter dem Hauptknopf (kein leerer Block dazwischen) */}
+          <div className="flex flex-col">
+            {step === 'proof' && (
+              <Button
+                variant="plain"
+                disabled={busy}
+                onClick={() => {
+                  setStep('form')
+                  setError('')
+                }}
+              >
+                Werte ändern
+              </Button>
+            )}
+            <Button variant="plain" disabled={busy} onClick={onClose}>
+              Doch nicht
+            </Button>
+          </div>
         </div>
       </div>
     </Sheet>
