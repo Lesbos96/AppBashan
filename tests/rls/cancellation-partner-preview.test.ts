@@ -89,7 +89,9 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
       ${accepted(E7)} ${declined(E7)} ${propose(E7, 80000, 7)}
       ${accepted(B1)} ${accepted(B2, "now() - interval '2 hours'")} update public.service_requests set not_done_reported_at = now() where id = '${B1}';`
     const steps2: Step[] = [
-      { name: 'E7 zurückgezogen', as: 'authenticated', claims: { sub: U.pa, aal: 'aal2' }, sql: `perform public.withdraw_change(${OPEN(E7)})` },
+      // die Firma sieht Revisionen nicht per RLS: die ID des offenen Nachtrags vorher als Eigentümer ablegen
+      { name: 'E7 offene ID', sql: `perform set_config('app.e7', ${OPEN(E7)}::text, true)` },
+      { name: 'E7 zurückgezogen', as: 'authenticated', claims: { sub: U.pa, aal: 'aal2' }, sql: `perform public.withdraw_change(current_setting('app.e7')::uuid)` },
       { name: 'E5 angenommen dann abgelehnt', as: 'service_role', sql: callOut(E5, 'scope_impossible') },
       { name: 'E6 abgelehnt dann offen', as: 'service_role', sql: callOut(E6, 'scope_impossible') },
       { name: 'E7 abgelehnt, zurückgezogen', as: 'service_role', sql: callOut(E7, 'scope_impossible') },
@@ -99,7 +101,7 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
       { name: 'B1 gemeldet', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', B1, 'scope_impossible')}` },
       { name: 'B2 zu spät', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', B2, 'other')}` },
       { name: 'B2 vor Ort', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', B2, 'scope_impossible')}` },
-      { name: 'Grund fehlt', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', B1, null)}` },
+      { name: 'Grund fehlt', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', E6, null)}` },
       { name: 'Grund unbekannt', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', E6, 'bogus')}` },
     ]
     const r2 = probes(setup2, steps2)
