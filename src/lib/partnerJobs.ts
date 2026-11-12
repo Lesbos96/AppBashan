@@ -262,14 +262,15 @@ export async function loadJobs(): Promise<Job[]> {
   if (error) throw error
   return (Array.isArray(data) ? data : []).flatMap((r): Job[] => {
     const termin = when(r.termin_at)
-    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean') return []
+    const ended = r.ended_at === null ? false : when(r.ended_at) !== null
+    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean' || (r.ended_at !== null && !ended)) return []
     return [
       {
         id: r.assignment_id,
         requestId: r.request_id,
         status: r.status as JobStatus,
         terminAt: termin,
-        ended: r.ended_at !== null,
+        ended,
         district: district(r.district),
         toDistrict: district(r.to_district),
         service: r.service as Listing['service'],
@@ -320,13 +321,15 @@ export async function loadContact(requestId: string): Promise<Contact> {
   return { name: r.name, phone: r.phone, email: r.email, stairsDoor: textOrNull(r.stairs_door), fromAddress: textOrNull(r.from_address), toAddress: textOrNull(r.to_address) }
 }
 
-/** `tel:`-Adresse aus einer Telefonnummer (nur Ziffern und führendes Plus); sonst `null`. */
+/** `tel:`-Adresse aus einer Telefonnummer (nur Ziffern und führendes Plus; „(0)“ nach der Ländervorwahl entfällt); sonst `null`. */
 export function telHref(phone: string): string | null {
-  const digits = phone.replace(/[^\d+]/g, '')
+  const digits = phone.replace(/^(\s*\+\d+\s*)\(0\)/, '$1').replace(/[^\d+]/g, '')
   return /^\+?\d{5,16}$/.test(digits) ? `tel:${digits}` : null
 }
+// Positive Zeichenmenge: der Server erlaubt in E-Mails auch `?`, `&`, `%`, `#` (request_contacts_format); sie dürften sonst Betreff, Text oder Empfänger des Mailprogramms setzen
+const MAIL = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
 /** `mailto:`-Adresse nur bei einfach gebauter E-Mail; sonst `null` (dann steht der Text ohne Link da). */
-export const mailHref = (email: string): string | null => (/^[^\s<>"'@]+@[^\s<>"'@]+\.[^\s<>"'@]+$/.test(email) ? `mailto:${email}` : null)
+export const mailHref = (email: string): string | null => (MAIL.test(email) ? `mailto:${email}` : null)
 
 // Eigene Angebote ----------------------------------------------------------------------------------------------------------
 export type OfferStatus = 'sent' | 'confirmed' | 'withdrawn' | 'expired' | 'superseded' | 'rejected'

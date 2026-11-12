@@ -184,7 +184,8 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     if (o) return o
     s.jobReads++
     const st = s.jobStatus.shift()
-    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
+    // 403 steht für „Firma inzwischen gesperrt“ (P0001 partner_not_active), alles andere für einen Serverfehler
+    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: st === 403 ? 'P0001' : 'XX000', message: st === 403 ? 'partner_not_active' : 'boom', details: null, hint: null } })
     return r.fulfill({ headers: cors, json: s.myJobs })
   })
   // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen

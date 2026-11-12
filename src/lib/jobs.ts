@@ -67,7 +67,7 @@ const CODES: Record<string, JobErrorKind> = {
 export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'taken' || k === 'payout' || k === 'have_offer'
 export const retryable = (k: JobErrorKind) => k === 'offline' || k === 'retry' || k === 'unavailable'
 
-export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' ? codes[code] : undefined) ?? 'unavailable'
+export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' && Object.hasOwn(codes, code) ? codes[code] : undefined) ?? 'unavailable'
 
 /** Edge Function aufrufen; Fehlercodes des Servers ordnet `codes` den Fehlerarten zu (Kunde: `CODES`, Partner: eigene Tabelle). */
 export async function invoke(name: string, body: Record<string, unknown>, codes: Record<string, JobErrorKind> = CODES): Promise<unknown> {

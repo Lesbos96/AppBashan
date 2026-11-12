@@ -2,7 +2,7 @@
 // Rollback-Proben (`probes`), es bleibt nichts zurück. Termine sind Zeitpunkte relativ zur DB-Uhr (-2 Stunden, +14 Tage); entschieden wird
 // nur per `now() >= termin_at`, kein Kalendertag-Vergleich, daher keine Tagesgrenze zu beachten.
 import { describe, expect, it } from 'vitest'
-import { splitFee } from '@pricing'
+import { splitChange, splitFee } from '@pricing'
 import { ownerSql, probes, type Step } from '../support/owner.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
@@ -94,7 +94,7 @@ describe('my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster', () => {
       { name: 'Audit vorher', sql: `=(select count(*) from public.audit_log where action = 'contact_read')` },
       as('b Anzahl', U.pb, `=(select count(*) from public.my_jobs())`),
       as('b sieht A nicht', U.pb, `=(select count(*) from public.my_jobs() where request_id in ('${R1}', '${R2}', '${RO}', '${RN}'))`),
-      { name: 'a aal1', as: 'authenticated', claims: A1(U.pa), sql: `perform * from public.my_jobs()` },
+      { name: 'a aal1', as: 'authenticated', claims: A1(U.pa), sql: `=(select count(*) from public.my_jobs())` },
       as('Kunde', U.cust, `perform * from public.my_jobs()`),
       as('pending', U.pp, `perform * from public.my_jobs()`),
       as('rejected', U.pr, `perform * from public.my_jobs()`),
@@ -134,7 +134,7 @@ describe('my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster', () => {
     const steps: Step[] = [
       as('payment_hold', U.ph, `=(select count(*) from public.my_jobs() where request_id = '${RH}')`),
       as('payment_hold fremd', U.ph, `=(select count(*) from public.my_jobs() where request_id = '${RS}')`),
-      as('suspended', U.ps, `perform * from public.my_jobs()`),
+      as('suspended', U.ps, `=(select count(*) from public.my_jobs())`),
       as('a', U.pa, `=(select count(*) from public.my_jobs())`),
     ]
     const r = probes(setup, steps)
@@ -142,6 +142,44 @@ describe('my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster', () => {
     rowsOf(r['payment_hold fremd'], 0)
     err(r['suspended'], 'partner_not_active')
     rowsOf(r['a'], 0)
+  })
+})
+
+describe('Beträge nach einem Nachtrag', () => {
+  it('ein offener oder abgelehnter Nachtrag ändert die Summen nicht, ein angenommener hebt sie auf Gesamtpreis und Gesamtauszahlung', () => {
+    const [R, RD] = [newId(), newId()]
+    const rates = { feeRate: RT.fr, vatRate: RT.vr }
+    const NEW_TOTAL = 80000
+    const c = splitChange(NEW_TOTAL, rates, splitFee(68961, rates))
+    const whole = splitFee(NEW_TOTAL, rates)
+    const receipt = (id: string) =>
+      `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at) values ('${id}', 'receipt', ${P('a')}, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now());`
+    const propose = (id: string) =>
+      `perform public.propose_change('${U.pa}', 'aal2', '${id}', (select current_revision from public.service_requests where id = '${id}'), '{"hours":6}'::jsonb, ${NEW_TOTAL}, array(select id from public.job_photos where request_id = '${id}' and kind = 'receipt'))`
+    const open = (id: string) => `(select id from public.price_revisions where request_id = '${id}' and source = 'change_order' and status = 'proposed')`
+    const decide = (id: string, yes: boolean) =>
+      `perform public.decide_change('${U.cust}', ${open(id)}, ${yes}, ${NEW_TOTAL}, ${RT.fr}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.frv}, ${RT.vrv})`
+    const setup = `${BASE('a')} ${accepted(R, 'a', U.pa)} ${accepted(RD, 'a', U.pa)} ${receipt(R)} ${receipt(RD)}`
+    const was = `= accepted:false:68961:${s.payoutCents}:false`
+    const steps: Step[] = [
+      { name: 'vorher', as: 'authenticated', claims: A2(U.pa), sql: lineOf(`request_id = '${R}'`) },
+      { name: 'Vorschlag R', as: 'service_role', sql: propose(R) },
+      { name: 'Vorschlag RD', as: 'service_role', sql: propose(RD) },
+      { name: 'offen', as: 'authenticated', claims: A2(U.pa), sql: lineOf(`request_id in ('${R}', '${RD}')`) },
+      { name: 'Annahme', as: 'service_role', sql: decide(R, true) },
+      { name: 'Ablehnung', as: 'service_role', sql: decide(RD, false) },
+      { name: 'angenommen', as: 'authenticated', claims: A2(U.pa), sql: lineOf(`request_id = '${R}'`) },
+      { name: 'abgelehnt', as: 'authenticated', claims: A2(U.pa), sql: lineOf(`request_id = '${RD}'`) },
+      // Kontrolle: das Journal trägt zwei Zeilen (Buchung und Differenz); die Summe ist also wirklich eine Summe
+      { name: 'Journalzeilen R', sql: `=(select count(*) from public.commission_entries where request_id = '${R}')` },
+    ]
+    const r = probes(setup, steps)
+    expect(r['vorher']).toBe(was)
+    expect(r['offen']).toBe(`${was},${was.slice(2)}`)
+    expect(r['Annahme'], String(r['Annahme'])).toBe('ok')
+    expect(r['angenommen']).toBe(`= accepted:false:${NEW_TOTAL}:${whole.payoutCents}:false`)
+    expect(r['abgelehnt']).toBe(was)
+    rowsOf(r['Journalzeilen R'], 2)
   })
 })
 

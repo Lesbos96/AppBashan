@@ -42,7 +42,9 @@ function Zeile({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-type Loaded = { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: Job[] }
+const denied = (e: unknown) => typeof e === 'object' && e !== null && 'message' in e && (e.message === 'partner_not_active' || e.message === 'mfa_required')
+
+type Loaded ={ status: 'loading' } | { status: 'error' } | { status: 'ready'; data: Job[] }
 
 /**
  * Aufträge der Firma aus `my_jobs()`. Neu laden: nach jeder Aktion, bei Rückkehr in den Tab und jede Minute, solange ein Auftrag auf seinen Termin wartet
@@ -59,7 +61,8 @@ function useJobs(reloadKey: number): [Loaded, (quiet: boolean) => void] {
     const n = ++seq.current
     loadJobs().then(
       (data) => n === seq.current && setState({ status: 'ready', data }),
-      () => n === seq.current && setState((s) => (quiet && s.status === 'ready' ? s : { status: 'error' })),
+      // Hintergrundabruf: ein Netzfehler lässt die Anzeige stehen; verweigert der Server (Firma gesperrt, zweiter Faktor weg), wird die Liste verworfen
+      (e: unknown) => n === seq.current && setState((s) => (quiet && s.status === 'ready' && !denied(e) ? s : { status: 'error' })),
     )
   }, [])
   const load = useCallback(

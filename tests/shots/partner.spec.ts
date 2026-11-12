@@ -1,10 +1,12 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect, test } from '../e2e/backend'
-import { fixed, mockJobs, O1, range, REV1, type JobsState } from '../e2e/jobs-helpers'
+import { A2, fixed, job, mockJobs, O1, pgErr, range, REV1, RQ2, type JobsState } from '../e2e/jobs-helpers'
 import { factor, openPartner, pgError, storageError, type DocRow, type OpenOpts } from '../e2e/mfa-helpers'
 
 const O2 = '7c6f8a91-2d3e-4f40-b12c-1d0e9f8a7b6c'
 const O3 = '8d7a9ba2-3e4f-4051-a23d-2e1f0a9b8c7d'
+const A3 = '0a92c3c4-5061-4273-a45f-4a3b2c1d0e9f'
+const RQ3 = 'af03d4d5-6172-4384-b560-5b4c3d2e1f0a'
 
 /*
  * Bildsicht für das Partner-Portal (s9i-5a, 5b): Registrierung, Statuskarten je Status, Einrichtung, Code-Abfrage, Dokumente.
@@ -151,12 +153,78 @@ const shots: Shot[] = [
     },
     wait: heading('Offene Anfragen'),
   },
+  // Aufträge (s9i-6b): Platzhalterdaten aus tests/e2e/jobs-helpers.ts (keine echten Personen)
   {
-    name: 'angenommen',
+    name: 'auftraege-liste',
     open: ACTIVE,
-    jobs: { listings: [fixed({ status: 'accepted' })] },
+    jobs: { myJobs: [job(), job({ assignment_id: A2, request_id: RQ2, service: 'transport', can_start: true, district: 21, to_district: null, time_window: 'afternoon' }), job({ assignment_id: A3, request_id: RQ3, status: 'in_progress', service: 'clearance', to_district: null })] },
     wait: heading('Angenommen'),
   },
+  {
+    name: 'auftraege-beendet',
+    open: ACTIVE,
+    jobs: {
+      myJobs: [
+        job({ status: 'completed', ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' }),
+        job({ assignment_id: A2, request_id: RQ2, status: 'cancelled_by_customer', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_customer', total_cents: 34481, payout_cents: 29309 }),
+        job({ assignment_id: A3, request_id: RQ3, status: 'cancelled_by_partner', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 0, payout_cents: 0 }),
+      ],
+    },
+    wait: heading('Beendet'),
+  },
+  {
+    name: 'auftraege-kontakt',
+    open: ACTIVE,
+    jobs: { myJobs: [job()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Kontakt und Adresse anzeigen' }).click()
+      await expect(page.getByRole('dialog')).toContainText('Erika Beispiel')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'auftraege-kontakt-fehler',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], contactAnswers: [pgErr('not_assigned')] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Kontakt und Adresse anzeigen' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'auftraege-start-sheet',
+    open: ACTIVE,
+    jobs: { myJobs: [job({ can_start: true })] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag starten' }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'auftraege-abschluss-sheet',
+    open: ACTIVE,
+    jobs: { myJobs: [job({ status: 'in_progress' })] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag abschließen' }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'auftraege-start-fehler',
+    open: ACTIVE,
+    jobs: { myJobs: [job({ can_start: true })], startAnswers: [pgErr('too_early')] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag starten' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Auftrag starten' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  { name: 'auftraege-payment-hold', open: { ...ACTIVE, status: 'payment_hold' }, jobs: { myJobs: [job({ can_start: true })] }, wait: heading('Angenommen') },
+  { name: 'auftraege-ladefehler', open: ACTIVE, jobs: { jobStatus: [500, 500] }, wait: (page) => expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible() },
   {
     name: 'angebot-eingabe-fehler',
     open: ACTIVE,

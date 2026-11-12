@@ -53,6 +53,7 @@ describe('loadJobs', () => {
     ['kein Termin', { termin_at: null }],
     ['Termin kein Datum', { termin_at: 'morgen' }],
     ['can_start kein boolean', { can_start: 'true' }],
+    ['Ende kein Datum', { ended_at: 'gestern' }],
   ])('%s: Zeile entfällt', async (_n, over) => {
     rpc.mockResolvedValue({ data: [row(over), row()], error: null })
     expect(await loadJobs()).toHaveLength(1)
@@ -160,5 +161,12 @@ describe('Links', () => {
   it('mailHref nur bei einfacher Adresse', () => {
     expect(mailHref('karl@movenow.test')).toBe('mailto:karl@movenow.test')
     for (const e of ['a b@x.at', 'a@b', 'x@y@z.at', '<a@b.at>', 'javascript:alert(1)']) expect(mailHref(e), e).toBeNull()
+  })
+  it('mailHref: kein Link bei Zeichen, die im Mailprogramm Betreff, Text oder Empfänger setzen (Abnahme M1)', () => {
+    for (const e of ['a@b.at?subject=x', 'a@b.at?bcc=c%40d.at', 'a@b.at&body=x', 'a%40b@c.at', 'a@b.at#x', 'a,b@c.at', 'a@b.at;c@d.at']) expect(mailHref(e), e).toBeNull()
+  })
+  it('telHref: „(0)“ nach der Ländervorwahl entfällt', () => {
+    expect(telHref('+43 (0) 660 1234567')).toBe('tel:+436601234567')
+    expect(telHref('+43 (660) 1234567')).toBe('tel:+436601234567')
   })
 })

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from './backend'
 import { collectErrors } from './console'
-import { A1, CONTACT, fixed, job, openJobs, pgErr, RQ1, RQ2, A2, type JobsState } from './jobs-helpers'
+import { A2, CONTACT, fixed, job, openJobs, pgErr, RQ1, RQ2, type JobsState } from './jobs-helpers'
 
 /*
  * Partner-Portal 2b (s9i-6b): angenommene Aufträge aus `my_jobs()`, Kontakt nur auf Antippen (`job_contact`), Start und Abschluss.
@@ -49,7 +49,7 @@ test('Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DO
   await expect(dialog(page).getByRole('link', { name: CONTACT.phone })).toHaveAttribute('href', 'tel:+436601234567')
   await expect(dialog(page).getByRole('link', { name: CONTACT.email })).toHaveAttribute('href', `mailto:${CONTACT.email}`)
   expect(jobs.contacts).toEqual([RQ1])
-  await dialog(page).getByRole('button', { name: 'Schließen' }).click()
+  await dialog(page).getByRole('button', { name: 'Schließen' }).last().click()
   await expect(dialog(page)).toHaveCount(0)
   const html = await page.content()
   for (const v of [CONTACT.name, CONTACT.phone, CONTACT.email, CONTACT.from_address]) expect(html, `„${v}“ nach dem Schließen`).not.toContain(v)
@@ -64,7 +64,7 @@ test('Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein F
   await button().click()
   await expect(dialog(page)).toContainText('Das ist nicht mehr verfügbar.')
   await expect(dialog(page).getByRole('button', { name: 'Erneut versuchen' })).toHaveCount(0)
-  await dialog(page).getByRole('button', { name: 'Schließen' }).click()
+  await dialog(page).getByRole('button', { name: 'Schließen' }).last().click()
   await button().click()
   await expect(dialog(page)).toContainText('Das hat nicht geklappt')
   await dialog(page).getByRole('button', { name: 'Erneut versuchen' }).click()
@@ -119,11 +119,11 @@ test('Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, 
   await start().click()
   await confirm().click()
   await expect(dialog(page)).toContainText('Der Termin hat noch nicht begonnen.')
-  await dialog(page).getByRole('button', { name: 'Schließen' }).click()
+  await dialog(page).getByRole('button', { name: 'Schließen' }).last().click()
   await start().click()
   await confirm().click()
   await expect(dialog(page)).toContainText('Deine Anmeldung ist abgelaufen')
-  await dialog(page).getByRole('button', { name: 'Schließen' }).click()
+  await dialog(page).getByRole('button', { name: 'Schließen' }).last().click()
   // Zustand hat sich geändert: das Sheet schließt, der Hinweis erscheint, die Liste lädt neu
   const reads = jobs.jobReads
   jobs.myJobs = [job({ status: 'in_progress' })]
@@ -187,7 +187,8 @@ test('pending: weder Aufträge noch Anfragen werden abgerufen', async ({ page })
 })
 
 test('Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund lässt die Anzeige stehen', async ({ page }) => {
-  const { jobs } = await open(page, { myJobs: [job()], jobStatus: [500] })
+  // zwei Fehler: React StrictMode (Entwicklungsbuild) ruft beim Start zweimal ab, der erste Abruf gilt nicht mehr
+  const { jobs } = await open(page, { myJobs: [job()], jobStatus: [500, 500] })
   await expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible()
   await page.getByRole('button', { name: /Erneut|Nochmal|Wiederholen/ }).click()
   await expect(card(page)).toContainText('Umzug, Bezirk 3')
@@ -197,6 +198,15 @@ test('Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund l
   await expect.poll(() => jobs.jobReads).toBeGreaterThan(reads)
   await expect(card(page)).toContainText('Umzug, Bezirk 3')
   await expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toHaveCount(0)
+})
+
+test('Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwindet die Liste (Abnahme N6)', async ({ page }) => {
+  const { jobs } = await open(page, { myJobs: [job()] })
+  await expect(card(page)).toContainText('Umzug, Bezirk 3')
+  jobs.jobStatus.push(403)
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Auftrag starten' })).toHaveCount(0)
 })
 
 test('Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird „Auftrag starten“ frei (Entscheidung der Serveruhr, nicht der Geräteuhr)', async ({ page }) => {
@@ -270,19 +280,10 @@ test('320 × 640 px: im Kontakt-Sheet ist „Schließen“ erreichbar', async ({
   await open(page, { myJobs: [job()] })
   await card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }).click()
   await expect(dialog(page)).toContainText(CONTACT.name)
-  const b = dialog(page).getByRole('button', { name: 'Schließen' })
+  const b = dialog(page).getByRole('button', { name: 'Schließen' }).last()
   await b.scrollIntoViewIfNeeded()
   const box = await b.boundingBox()
   expect(box!.y).toBeGreaterThanOrEqual(0)
   expect(box!.y + box!.height).toBeLessThanOrEqual(640)
   expect(box!.height).toBeGreaterThanOrEqual(44)
-})
-
-test('A1 ist die Zuordnung, nicht die Auftrags-ID: die Liste nutzt die Zuordnung nur als Schlüssel', async ({ page }) => {
-  const { jobs } = await open(page, { myJobs: [job()] })
-  await expect(card(page)).toContainText('Umzug')
-  await card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }).click()
-  await expect(dialog(page)).toContainText(CONTACT.name)
-  expect(jobs.contacts).toEqual([RQ1])
-  expect(jobs.contacts).not.toContain(A1)
 })
