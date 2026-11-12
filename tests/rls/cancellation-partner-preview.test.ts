@@ -95,6 +95,10 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
       { name: 'E5 angenommen dann abgelehnt', as: 'service_role', sql: callOut(E5, 'scope_impossible') },
       { name: 'E6 abgelehnt dann offen', as: 'service_role', sql: callOut(E6, 'scope_impossible') },
       { name: 'E7 abgelehnt, zurückgezogen', as: 'service_role', sql: callOut(E7, 'scope_impossible') },
+      // „angenommen, dann abgelehnt“: die Pauschale ist berechtigt; Gebührenzeile auf der gültigen Revision, Summen über das Journal
+      { name: 'E5 echt mit Pauschale', as: 'service_role', sql: cancelCall(E5, 'scope_impossible', CALL_OUT, RECEIPTS(E5)) },
+      { name: 'E5 Gebührenzeile', sql: `=(select concat_ws(':', total_cents, revision_id = (select current_revision from public.service_requests where id = '${E5}')) from public.commission_entries where request_id = '${E5}' and kind = 'cancellation_fee')` },
+      { name: 'E5 Summe', sql: `=(select sum(total_cents) from public.commission_entries where request_id = '${E5}')` },
       { name: 'E6 echt mit Belegen', as: 'service_role', sql: cancelCall(E6, 'scope_impossible', CALL_OUT, RECEIPTS(E6)) },
       { name: 'E6 unverändert', sql: `=${status(E6)} || ':' || ${journal(E6)}` },
       // Prüfreihenfolge der Grundlage = Storno: Meldung, Grund, Zeitgrenze
@@ -109,6 +113,9 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
     val(r2['E5 angenommen dann abgelehnt'], String(CALL_OUT))
     val(r2['E6 abgelehnt dann offen'], '0')
     val(r2['E7 abgelehnt, zurückgezogen'], String(CALL_OUT))
+    expect(r2['E5 echt mit Pauschale']).toBe('ok')
+    val(r2['E5 Gebührenzeile'], `${CALL_OUT}:t`)
+    val(r2['E5 Summe'], String(CALL_OUT))
     err(r2['E6 echt mit Belegen'], 'call_out_not_allowed')
     val(r2['E6 unverändert'], 'accepted:1')
     err(r2['B1 gemeldet'], 'under_review')
@@ -137,6 +144,12 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
       { name: 'Basis Kunde', as: 'service_role', sql: `perform * from ${basisOf(U.cust, 'aal2', E1, 'other')}` },
       { name: 'alte Grundlage entfernt', as: 'service_role', sql: `perform * from public.cancel_by_partner_basis('${U.pa}', 'aal2', '${E1}')` },
       { name: 'private Prüffunktionen', as: 'service_role', sql: `perform private.call_out_eligible('${E1}', 'scope_impossible')` },
+      // NULL-Sicherheit (Planfund M2): Grund NULL ist nie berechtigt
+      { name: 'eligible mit NULL', sql: `=private.call_out_eligible('${E1}', null)` },
+      { name: 'Pauschale mit NULL-Grund', sql: `perform private.partner_cancel_fee(${P('a')}, '${E1}', null, ${RECEIPTS(E1)})` },
+      // Firma in payment_hold darf wie bisher (geteiltes Tor)
+      { name: 'Firma payment_hold', sql: `perform public.admin_set_partner_status('${U.adm}', ${P('a')}, 'payment_hold', 'Zahlungsverzug für den Test')` },
+      { name: 'Basis payment_hold', as: 'service_role', sql: callOut(E1, 'scope_impossible') },
     ]
     const r = probes(setup, steps)
     expect(r['E2 abgelaufen']).toBe('ok')
@@ -156,6 +169,10 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
     err(r['Basis Kunde'], 'not_found')
     err(r['alte Grundlage entfernt'], '42883')
     err(r['private Prüffunktionen'], '42501')
+    val(r['eligible mit NULL'], 'false')
+    err(r['Pauschale mit NULL-Grund'], 'call_out_not_allowed')
+    expect(r['Firma payment_hold']).toBe('ok')
+    val(r['Basis payment_hold'], String(CALL_OUT))
   })
 
   it('Vorschau schreibt nichts: Status, Journal, Outbox, Audit und Revisionen bleiben gleich', () => {

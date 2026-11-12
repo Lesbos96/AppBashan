@@ -2,7 +2,7 @@
 // Partner: echte aal2-Sitzungen (tests/support/totp.ts). Kunde: Wegwerfkonto (aal1). Fixtures sind committet, weil die Functions eigene Verbindungen nutzen;
 // Rest nach dem Lauf: Journal ist unlöschbar, Kunde, Aufträge und beteiligte Firmen bleiben (Firmen gesperrt, tests/support/sweep.ts, OPEN_ISSUES S9c-7).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { splitFee } from '@pricing'
+import { splitChange, splitFee } from '@pricing'
 import { moveInputs } from '../support/quote.ts'
 import { deleteUsers, env, makeUser, service, type TestUser } from '../support/db.ts'
 import { ownerSql } from '../support/owner.ts'
@@ -12,7 +12,8 @@ import { tryAal2User, type Aal2User } from '../support/totp.ts'
 
 const adm = newId()
 const BOOKED = 68961
-const [J1, J2, J3] = [newId(), newId(), newId()]
+const [J1, J2, J3, J4] = [newId(), newId(), newId(), newId()]
+let rates = { feeRate: 0, vatRate: 0 }
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User, pp: Aal2User, pr: Aal2User, ps: Aal2User
 let cust: TestUser, cust2: TestUser
@@ -67,7 +68,9 @@ beforeAll(async () => {
     (select version from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as frv,
     (select version from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vrv,
     (select version from public.current_price_version) as pv`)[0] as { fr: number; vr: number; frv: number; vrv: number; pv: number }
-  const s0 = splitFee(BOOKED, { feeRate: f.fr, vatRate: f.vr })
+  rates = { feeRate: f.fr, vatRate: f.vr }
+  const s0 = splitFee(BOOKED, rates)
+  const c80 = splitChange(80000, rates, s0)
   const terms = '"terms":{"cancel_free_hours":48,"cancel_late_percent":50,"cancel_full_percent":100,"cancel_full_days_before":0,"call_out_fee_cents":6900,"termsHash":"x"}'
   const inputs = JSON.stringify({ ...moveInputs, service: 'move' })
   const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
@@ -80,9 +83,14 @@ beforeAll(async () => {
       ${s0.payoutCents}, ${f.fr}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.frv}, ${f.vrv});`
   const D21 = { districts: 'array[21]::smallint[]' }
   ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${firm(pp.id, 'p', 'pending', adm, D21)} ${firm(pr.id, 'r', 'rejected', adm, D21)}
-    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J3)}
+    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J3)} ${job(J4)}
     insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
-    values ('${J3}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now()); commit;`)
+    values ('${J3}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now()),
+           ('${J4}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('c', 64), now());
+    select public.propose_change('${pa.id}', 'aal2', '${J4}', (select current_revision from public.service_requests where id = '${J4}'), '{"hours":6}'::jsonb, 80000,
+      array(select id from public.job_photos where request_id = '${J4}' and kind = 'receipt'));
+    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${J4}' and status = 'proposed'), false, 80000, ${f.fr}, ${f.vr},
+      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv}); commit;`)
 }, 600_000)
 
 afterAll(async () => {
@@ -126,7 +134,25 @@ describe('cancel-partner live (Dev, echte Tokens)', () => {
     expect(s.status).toBe('cancelled_by_partner')
     expect(await count('commission_entries', 'request_id', J2, { kind: 'cancellation' })).toBe(1)
     expect(await count('audit_log', 'entity_id', J2, { action: 'cancel_by_partner' })).toBe(1)
-    expect(s.followups).toBeLessThanOrEqual(1)
+    expect(s.followups).toBe(1) // Termin in 14 Tagen, kein Festangebot: genau eine Weitervermittlung
+  })
+  live('Geldpfad: Vorschau zeigt die Pauschale, der echte Aufruf bucht genau eine Gebührenzeile wie splitFee, der Kunde sieht nur den Betrag', async () => {
+    const fee = splitFee(6900, rates)
+    const base = { requestId: J4, reason: 'scope_impossible' }
+    expect(await fn('cancel-partner', pa.jwt2, { ...base, preview: true })).toEqual({ status: 200, body: { callOutCents: 6900, payoutCents: fee.payoutCents } })
+    const photos = ((await service.from('job_photos').select('id').eq('request_id', J4).eq('kind', 'receipt')).data ?? []).map((p) => p.id)
+    expect(photos).toHaveLength(1)
+    expect(await fn('cancel-partner', pa.jwt2, { ...base, photoIds: photos, shownCallOutCents: 6900 })).toEqual({ status: 200, body: { status: 'cancelled_by_partner', callOutCents: 6900 } })
+    const rows = ownerSql(`select total_cents, fee_cents, fee_net_cents, fee_vat_cents, payout_cents from public.commission_entries where request_id = '${J4}' and kind = 'cancellation_fee'`)
+    expect(rows.map((r) => [Number(r.total_cents), Number(r.fee_cents), Number(r.fee_net_cents), Number(r.fee_vat_cents), Number(r.payout_cents)])).toEqual([
+      [6900, fee.feeCents, fee.feeNetCents, fee.feeVatCents, fee.payoutCents],
+    ])
+    const s = await state(J4)
+    expect(s.followups).toBe(0)
+    expect(await count('outbox', 'request_id', J4, { kind: 'partner_cancelled_fee' })).toBe(1)
+    const mine = await cust.db.rpc('my_cancel_info', { p_request: J4 })
+    expect(mine.data, JSON.stringify(mine.error)).toBe(6900)
+    expect((await cust2.db.rpc('my_cancel_info', { p_request: J4 })).error).not.toBeNull()
   })
 })
 
