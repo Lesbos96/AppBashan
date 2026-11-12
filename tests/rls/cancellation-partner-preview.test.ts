@@ -80,7 +80,7 @@ const snapshot = (req: string) =>
 describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059)', () => {
   it('Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag', () => {
     // höchstens 5 offene Aufträge je Firma (partner_open_jobs_max): zwei Ansätze mit je 5
-    const [E0, E1, E2, E3, E4, E5, E6, E7, B1, B2] = Array.from({ length: 10 }, () => newId())
+    const [E0, E1, E2, E3, E4, E5, E6, E7, B1, B2] = [newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()] as const
     const setup = `${BASE} ${accepted(E0)} ${accepted(E1)} ${declined(E1)} ${accepted(E2)} ${receipt(E2)} ${propose(E2, 80000, 6)}
       ${accepted(E3)} ${receipt(E3)} ${propose(E3, 80000, 6)} ${decide(E3, true, 80000, TOTAL)}
       ${accepted(E4)} ${declined(E4)} ${propose(E4, 80000, 7)} ${decide(E4, true, 80000, TOTAL)}`

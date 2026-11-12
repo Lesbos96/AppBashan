@@ -93,9 +93,10 @@ beforeAll(async () => {
       ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv}); commit;`)
 }, 600_000)
 
+// Erst die Firmen aufräumen (der Marker ist die Mitgliedschaft der Testnutzer), dann die Nutzer: sonst blieben aktive Firmen ohne Mitglied stehen
 afterAll(async () => {
-  await deleteUsers()
   sweepTestResidue(adm, true)
+  await deleteUsers()
 }, 120_000)
 
 const live = (name: string, body: (c: { skip: () => void }) => Promise<void>) => it(name, async (c) => { if (skipReason) c.skip(); else await body(c) }, 120_000)
