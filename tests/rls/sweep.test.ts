@@ -18,7 +18,9 @@ function makeFirm(u: string, over: Partial<Record<string, string>> = {}, mail?: 
   users.push(u)
   const user = mail ? `insert into auth.users (id, email) values ('${u}', '${mail}');` : insertUsers([u])
   ownerSql(`begin; ${user} ${firm(u, 'f', 'pending', adm, { ...OV, name: `'${GUARD_FIRM}'`, ...over })} commit;`)
-  const id = String(ownerSql(`select partner_id from public.partner_members where user_id = '${u}'`)[0]?.partner_id)
+  const pid = ownerSql(`select partner_id from public.partner_members where user_id = '${u}'`)[0]?.partner_id
+  if (!pid) throw new Error('Firma ohne Mitgliedschaft angelegt')
+  const id = String(pid)
   firms.push(id)
   return id
 }

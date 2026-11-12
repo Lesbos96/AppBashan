@@ -1,7 +1,8 @@
 // Aufräumen der Wettlauftests (committete Fixtures), auch Reste früherer Läufe. Ein einziger CLI-Aufruf je Aufruf der Funktion
 // (ein DO-Block statt je Firma und Nutzer einer Abfrage); die Laufzeit hängt nicht mehr von der Zahl der Reste ab.
-// Test-Marker: Nutzer pt-*@movenow.test, Firmen Kontaktadresse pt-firma-<8 Hex>@movenow.test. Journal, Zuordnungen und Angebote sind unlöschbar
-// (ON DELETE RESTRICT): Firmen damit werden gesperrt, damit sie nie Empfänger anderer Tests sind; Nutzer, an denen etwas hängt, bleiben (OPEN_ISSUES S9c-7).
+// Test-Marker: Nutzer pt-*@movenow.test, Firmen Kontaktadresse pt-firma-<8 Hex>@movenow.test. Journal, Zuordnungen, Angebote, Belege und Nachträge
+// einer Firma sind unlöschbar (ON DELETE RESTRICT): solche Firmen werden gesperrt, damit sie nie Empfänger anderer Tests sind und bleiben als Waisen stehen
+// (ihre Mitglieder gehen mit den Nutzern verloren); Nutzer, an denen Aufträge hängen, bleiben (OPEN_ISSUES S9c-7).
 // Es darf nur ein test:rls-Lauf gleichzeitig auf Dev laufen (der Marker gehört keinem Lauf einzeln).
 import '../../scripts/dev-guard.mjs'
 import { ownerSql } from './owner.ts'
@@ -48,7 +49,7 @@ export function sweepTestResidue(admin: string, final = false) {
           and not exists (select 1 from public.partner_members m join public.partners p on p.id = m.partner_id where m.user_id = x.id and p.name = '${COVER_FIRM}') loop
           begin
             delete from auth.users where id = u.id;
-          exception when others then null; -- Kunde oder Mitglied mit Journal, Zuordnung oder Angebot: bleibt
+          exception when others then null; -- Kunde mit Aufträgen oder Journal (Auftrag, Journal, Zuordnung): das Konto bleibt
           end;
         end loop;
       end $sweep$;
