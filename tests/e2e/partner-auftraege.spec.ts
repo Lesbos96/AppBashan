@@ -77,7 +77,7 @@ test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener 
   const { jobs } = await open(page, { myJobs: [job({ can_start: false })] })
   const b = card(page).getByRole('button', { name: 'Auftrag starten' })
   await expect(b).toBeDisabled()
-  await expect(card(page)).toContainText(/ab 2\. Dezember.*08:00 Uhr starten/)
+  await expect(card(page)).toContainText(/ab 2\.\sDezember.*08:00\sUhr\sstarten/)
   await b.click({ force: true }).catch(() => undefined)
   expect(jobs.starts).toEqual([])
 })
