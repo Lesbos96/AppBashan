@@ -208,7 +208,8 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
         )}
 
         {/* Fehler und Knöpfe kleben am unteren Rand des Sheets: bei hohem Inhalt (320 px) scrollt nur der Inhalt, die Aktion bleibt erreichbar */}
-        <div className="sticky bottom-0 -mx-4 flex flex-col gap-4 bg-background px-4 pt-3 pb-1">
+        {/* Die Fußleiste reicht bis zur Sheet-Unterkante (Abstand des Scrollbereichs unten wird mit abgedeckt), sonst schaut Inhalt darunter hervor */}
+        <div className="sticky bottom-[calc(-1*max(var(--safe-bottom),16px))] -mx-4 -mb-[max(var(--safe-bottom),16px)] flex flex-col gap-4 border-t-[0.5px] border-separator bg-background px-4 pt-3 pb-[max(var(--safe-bottom),16px)]">
           {error && (
             <p role="alert" className="m-0 text-body text-destructive">
               {error}

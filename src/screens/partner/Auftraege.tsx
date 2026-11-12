@@ -26,6 +26,12 @@ import { NachtragSheet } from './Nachtrag'
 
 // geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
 const NBSP = String.fromCharCode(160)
+/** Zeit- und Datumsangaben mit geschützten Leerzeichen: „1. Dezember“, „8 bis 11 Uhr“ brechen nie mitten in der Angabe um (Bildsicht). */
+const nb = (s: string) =>
+  s
+    .replace(/(\d+)\. (\p{L})/gu, `$1.${NBSP}$2`)
+    .replace(/(\d+) bis (\d+)/g, `$1${NBSP}bis${NBSP}$2`)
+    .replaceAll(' Uhr', `${NBSP}Uhr`)
 const box = 'flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card'
 const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums">{formatEuro(cents)}</span>
 
@@ -173,7 +179,7 @@ function NachtragBlock({ c, onOpen, onWithdraw }: { c: JobChange; onOpen: () => 
         <>
           <p className="m-0 text-body">
             Dein Nachtrag liegt beim Kunden: neuer Gesamtpreis {euro(ch.totalCents)}
-            {ch.validUntil && ` · gültig bis ${viennaTime(ch.validUntil)} Uhr`}
+            {ch.validUntil && ` · gültig bis ${nb(viennaTime(ch.validUntil))}${NBSP}Uhr`}
           </p>
           <Button variant="tinted" onClick={onWithdraw}>
             Nachtrag zurückziehen
@@ -208,7 +214,8 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
   // „11 Uhr“ bricht nie mit verwaister Uhrzeit um (Bildsicht)
-  const window = windowLabel(j.timeWindow)?.replace(' Uhr', `${NBSP}Uhr`)
+  const w = windowLabel(j.timeWindow)
+  const window = w ? nb(w) : null
   // geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
   const places = j.district !== null ? `Abholung in Bezirk${NBSP}${j.district}${j.toDistrict !== null ? `, Ziel in Bezirk${NBSP}${j.toDistrict}` : ''}` : null
   return (
@@ -228,7 +235,7 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
           <Button disabled={!j.canStart} onClick={() => setSheet('start')}>
             Auftrag starten
           </Button>
-          {!j.canStart && <p className="m-0 text-footnote text-text-secondary">Du kannst den Auftrag ab {viennaTime(j.terminAt)} Uhr starten.</p>}
+          {!j.canStart && <p className="m-0 text-footnote text-text-secondary">Du kannst den Auftrag ab {nb(viennaTime(j.terminAt))}{NBSP}Uhr{NBSP}starten.</p>}
         </>
       )}
       {j.status === 'in_progress' && !j.ended && <Button onClick={() => setSheet('finish')}>Auftrag abschließen</Button>}

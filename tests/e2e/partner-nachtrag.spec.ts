@@ -323,6 +323,9 @@ test('Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein 
   await expect(dialog(page).getByRole('alert')).toContainText('Ändere mindestens einen Wert.')
   const check = await dialog(page).getByRole('button', { name: 'Betrag prüfen' }).boundingBox()
   expect(check && check.y + check.height <= 640, JSON.stringify(check)).toBe(true)
+  // Die Fußleiste endet an der Sheet-Unterkante: darunter schaut kein Inhalt hervor
+  const edges = await dialog(page).evaluate((d) => ({ foot: (d.querySelector('div.sticky') as HTMLElement).getBoundingClientRect().bottom, sheet: (d.querySelector('div.fixed') as HTMLElement).getBoundingClientRect().bottom }))
+  expect(edges.foot, JSON.stringify(edges)).toBeGreaterThanOrEqual(edges.sheet - 1)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   expect(await dialog(page).evaluate((d) => d.scrollWidth <= d.clientWidth)).toBe(true)
 })
