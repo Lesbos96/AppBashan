@@ -59,14 +59,15 @@ type Loaded = { status: 'loading' } | { status: 'error' } | { status: 'ready'; d
 
 /**
  * Aufträge aus `my_jobs()` plus Preisgrundlage und Nachtrag aus `my_job_changes()` (s9i-7a). Fällt nur die zweite Abfrage aus, bleiben die Aufträge
- * sichtbar und es erscheint kein Nachtrag-Knopf (der Server entscheidet ohnehin); verweigert er, gilt das wie bei den Aufträgen.
+ * sichtbar und die zuletzt gelesenen Nachträge bleiben stehen (ein offenes Sheet verliert seinen Zustand nicht; der Server entscheidet ohnehin);
+ * verweigert er, gilt das wie bei den Aufträgen.
  */
-async function fetchAll(): Promise<{ data: Job[]; changes: Map<string, JobChange> }> {
+async function fetchAll(kept: Map<string, JobChange>): Promise<{ data: Job[]; changes: Map<string, JobChange> }> {
   const [data, changes] = await Promise.all([
     loadJobs(),
     loadChanges().catch((e: unknown) => {
       if (denied(e)) throw e
-      return new Map<string, JobChange>()
+      return kept
     }),
   ])
   return { data, changes }
@@ -79,14 +80,19 @@ async function fetchAll(): Promise<{ data: Job[]; changes: Map<string, JobChange
 function useJobs(reloadKey: number): [Loaded, (quiet: boolean) => void] {
   const [state, setState] = useState<Loaded>({ status: 'loading' })
   const seq = useRef(0)
+  const kept = useRef(new Map<string, JobChange>())
   // Antworten gelten nur für den letzten Abruf (kein Überholen) und nicht nach dem Unmount
   const invalidate = useCallback(() => {
     seq.current++
   }, [])
   const fetchJobs = useCallback((quiet: boolean) => {
     const n = ++seq.current
-    fetchAll().then(
-      (all) => n === seq.current && setState({ status: 'ready', ...all }),
+    fetchAll(kept.current).then(
+      (all) => {
+        if (n !== seq.current) return
+        kept.current = all.changes
+        setState({ status: 'ready', ...all })
+      },
       // Hintergrundabruf: ein Netzfehler lässt die Anzeige stehen; verweigert der Server (Firma gesperrt, zweiter Faktor weg), wird die Liste verworfen
       (e: unknown) => n === seq.current && setState((s) => (quiet && s.status === 'ready' && !denied(e) ? s : { status: 'error' })),
     )

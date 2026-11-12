@@ -30,6 +30,7 @@ const CODES: Record<string, JobErrorKind> = {
   route_locked: 'bad_input',
   receipt_required: 'bad_photo',
   receipt_limit: 'receipt_limit',
+  request_closed: 'closed',
   not_jpeg: 'bad_photo',
   too_large: 'bad_photo',
   dimensions: 'bad_photo',

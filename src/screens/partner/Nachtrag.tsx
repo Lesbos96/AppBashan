@@ -34,6 +34,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
   const [changes, setChanges] = useState<Record<string, unknown>>({})
   const [files, setFiles] = useState<File[]>([])
   const [uploaded, setUploaded] = useState<string[]>([])
+  const [touched, setTouched] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [fileKey, setFileKey] = useState(0)
@@ -50,6 +51,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
       setChanges({})
       setFiles([])
       setUploaded([])
+      setTouched(false)
       setError('')
       setFileKey((k) => k + 1)
     }
@@ -84,8 +86,15 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
     }
   }
 
-  const have = c.receiptIds.length + uploaded.length
+  // Vorhandene Belege (vom Server) und in dieser Sitzung hochgeladene als Menge: nach einem Neuladen im Hintergrund stünde dieselbe ID sonst doppelt in der Liste (Abnahme M1)
+  const all = Array.from(new Set([...c.receiptIds, ...uploaded]))
+  const have = all.length
   const room = MAX_PHOTOS - have
+  // Ein hochgeladenes Foto bleibt beim Server (Belege lassen sich nicht löschen): auch beim Schließen ohne Senden neu laden, damit es als vorhanden zählt (Abnahme M2)
+  const close = () => {
+    onClose()
+    if (touched) onDone()
+  }
 
   async function send() {
     if (running.current || !preview) return
@@ -93,11 +102,12 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
     setBusy(true)
     setError('')
     try {
-      const ids = [...c.receiptIds, ...uploaded]
+      const ids = [...all]
       // Fotos nacheinander hochladen; jedes fertige Foto verlässt die Warteschlange und bleibt bei einem Fehler erhalten
       for (const f of files) {
         const id = await uploadReceipt(c.requestId, f)
-        ids.push(id)
+        if (!ids.includes(id)) ids.push(id)
+        setTouched(true)
         setUploaded((u) => [...u, id])
         setFiles((fs) => fs.filter((x) => x !== f))
       }
@@ -112,7 +122,11 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
           setPreview(await previewChange(c.requestId, changes))
           setError('Der Preis hat sich geändert. Prüfe den neuen Betrag und sende erneut.')
         } catch (e2) {
-          setError(text(e2))
+          const k2 = e2 instanceof JobError ? e2.kind : 'unavailable'
+          if (closes(k2)) {
+            onClose()
+            onDone(jobErrorText[k2])
+          } else setError(text(e2))
         }
       } else if (closes(kind)) {
         onClose()
@@ -133,7 +147,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
   const sendable = have + files.length >= 1 && have + files.length <= MAX_PHOTOS
 
   return (
-    <Sheet open={open} onClose={onClose} locked={busy} title="Nachtrag vorschlagen" detents={[0.92]} fit>
+    <Sheet open={open} onClose={close} locked={busy} title="Nachtrag vorschlagen" detents={[0.92]} fit>
       <div className="flex flex-col gap-4 pt-2">
         {step === 'form' && (
           <>
@@ -238,7 +252,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
                 Werte ändern
               </Button>
             )}
-            <Button variant="plain" disabled={busy} onClick={onClose}>
+            <Button variant="plain" disabled={busy} onClick={close}>
               Doch nicht
             </Button>
           </div>

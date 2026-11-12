@@ -78,7 +78,7 @@ describe('my_job_changes(): Zuordnung, Firmenstatus, Fenster, Spaltenliste', () 
   it('A sieht Grundlage und Beleg-IDs des eigenen Auftrags; B, aal1, Kunde, pending, rejected, anon nicht; keine Personendaten, keine Gebühr', () => {
     const [R, RB, RO] = [newId(), newId(), newId()]
     const setup = `${BASE('a', 'b', 'p', 'r')} ${accepted(R, 'a', U.pa)} ${accepted(RB, 'b', U.pb)} ${accepted(RO, 'a', U.pa)}
-      ${receipt(R, 'a', 2)} ${receipt(RB, 'b')}
+      ${receipt(R, 'a', 2)} ${receipt(R, 'b')} ${receipt(RB, 'b')}
       update public.assignments set ended_at = now() - interval '40 days', ended_reason = 'completed' where request_id = '${RO}'`
     const steps: Step[] = [
       { name: 'Ergebnisspalten', sql: `=(select pg_get_function_result('public.my_job_changes()'::regprocedure))` },
@@ -97,7 +97,8 @@ describe('my_job_changes(): Zuordnung, Firmenstatus, Fenster, Spaltenliste', () 
       { name: 'anon', as: 'anon', sql: `perform * from public.my_job_changes()` },
       { name: 'service_role', as: 'service_role', sql: `perform * from public.my_job_changes()` },
       as('keine Personendaten', U.pa, `=(select count(*) from public.my_job_changes() j where to_jsonb(j)::text ~* '${SENTINEL_RE}')`),
-      as('keine Gebühr', U.pa, `=(select count(*) from public.my_job_changes() j, jsonb_object_keys(to_jsonb(j)) k where k ~* 'fee|commission|payout')`),
+      // ganze Zeile als Text (Schlüssel und Werte, auch verschachtelt): weder Gebühr noch Provision noch Auszahlung
+      as('keine Gebühr', U.pa, `=(select count(*) from public.my_job_changes() j where to_jsonb(j)::text ~* 'fee|commission|payout')`),
       { name: 'Kennzeichen vorhanden', sql: `=(select count(*) from public.request_contacts c join public.service_requests r on r.id = c.request_id where r.id = '${R}' and c.name = '${SENTINEL.name}' and r.from_address = '${SENTINEL.from}')` },
     ]
     const r = probes(setup, steps)

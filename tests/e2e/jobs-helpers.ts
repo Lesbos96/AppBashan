@@ -171,6 +171,8 @@ export type JobsState = {
   /** Preisgrundlagen und Nachträge (`my_job_changes`); `change-propose` und `withdraw_change` ändern sie wie der Server */
   changes: ChangeRow[]
   changeReads: number
+  /** Statuscodes für die nächsten Abrufe von `my_job_changes` (Warteschlange), z. B. 500 */
+  changeStatus: number[]
   /** Gesamtpreis, den der gemockte Server für den Nachtrag berechnet (810,00 €) */
   serverTotal: number
   /** Alle Aufrufe von `change-propose` (Vorschau und Anlegen), Rohkörper */
@@ -193,7 +195,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o
@@ -243,6 +245,8 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     const o = pre(r)
     if (o) return o
     s.changeReads++
+    const st = s.changeStatus.shift()
+    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
     return r.fulfill({ headers: cors, json: s.changes })
   })
   await page.route('**/functions/v1/change-propose', (r) => {

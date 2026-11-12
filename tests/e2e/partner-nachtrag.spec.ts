@@ -246,6 +246,56 @@ test('Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene
   expect(jobs.receipts).toHaveLength(2)
 })
 
+/** Rückkehr in den Tab: die Aufträge laden im Hintergrund neu */
+const refocus = (page: Page) => page.evaluate(() => window.dispatchEvent(new Event('focus')))
+
+test('Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1)', async ({ page }) => {
+  const { jobs } = await open(page, { proposeAnswers: [{ status: 500, json: { error: 'internal' } }] })
+  await checkHours(page)
+  await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
+  await dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ }).click()
+  await expect(dialog(page)).toContainText('Das hat nicht geklappt')
+  const reads = jobs.changeReads
+  await refocus(page)
+  await expect.poll(() => jobs.changeReads).toBeGreaterThan(reads)
+  await expect(dialog(page)).toContainText('1 Foto schon hochgeladen')
+  await dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ }).click()
+  await expect(dialog(page)).toHaveCount(0)
+  expect(jobs.receipts, 'ein Upload, keine Dublette').toHaveLength(1)
+  expect(sends(jobs)).toHaveLength(2)
+  expect(sends(jobs)[1]?.photoIds).toHaveLength(1)
+})
+
+test('Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2)', async ({ page }) => {
+  const { jobs } = await open(page, { proposeAnswers: [{ status: 500, json: { error: 'internal' } }] })
+  await checkHours(page)
+  await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
+  await dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ }).click()
+  await expect(dialog(page)).toContainText('Das hat nicht geklappt')
+  const reads = jobs.changeReads
+  await dialog(page).getByRole('button', { name: 'Doch nicht' }).click()
+  await expect(dialog(page)).toHaveCount(0)
+  await expect.poll(() => jobs.changeReads).toBeGreaterThan(reads)
+  // Neu geöffnet: der hochgeladene Beleg ist vorhanden, es braucht kein zweites Foto
+  await propose(page).click()
+  await dialog(page).getByLabel('Stunden').fill('5')
+  await dialog(page).getByRole('button', { name: 'Betrag prüfen' }).click()
+  await expect(dialog(page)).toContainText('1 Foto schon hochgeladen')
+  await expect(dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ })).toBeEnabled()
+})
+
+test('Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6)', async ({ page }) => {
+  const { jobs } = await open(page)
+  await checkHours(page)
+  await expect(dialog(page)).toContainText('810,00 €')
+  jobs.changeStatus = [500, 500, 500]
+  const reads = jobs.changeReads
+  await refocus(page)
+  await expect.poll(() => jobs.changeReads).toBeGreaterThan(reads)
+  await expect(dialog(page)).toContainText('Neuer Gesamtpreis')
+  await expect(dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ })).toBeVisible()
+})
+
 test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter', async ({ page }) => {
   const { jobs } = await open(page, { proposeAnswers: [{ status: 409, json: { error: 'change_open' } }] })
   await checkHours(page)
