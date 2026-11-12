@@ -1625,7 +1625,12 @@ export type Database = {
         Returns: string
       }
       cancel_by_partner_basis: {
-        Args: { p_aal: string; p_actor: string; p_request: string }
+        Args: {
+          p_aal: string
+          p_actor: string
+          p_reason: string
+          p_request: string
+        }
         Returns: {
           call_out_cents: number
           fee_rate: number
@@ -1741,6 +1746,7 @@ export type Database = {
           storage_path: string
         }[]
       }
+      my_cancel_info: { Args: { p_request: string }; Returns: number }
       my_commissions: {
         Args: { p_month?: string }
         Returns: Database["public"]["CompositeTypes"]["commission_row"][]
