@@ -282,7 +282,7 @@ const shots: Shot[] = [
     jobs: { myJobs: [job()], changes: [change()] },
     steps: async (page) => {
       await page.getByRole('button', { name: 'Auftrag absagen' }).click()
-      await expect(page.getByRole('dialog').getByLabel('Grund')).toBeVisible()
+      await expect(page.getByRole('dialog').getByRole('radio', { name: /vor Ort anders als gebucht/ })).toBeVisible()
     },
     wait: heading('Angenommen'),
   },
@@ -305,7 +305,7 @@ const shots: Shot[] = [
     jobs: { myJobs: [job()], changes: [change()] },
     steps: async (page) => {
       await page.getByRole('button', { name: 'Auftrag absagen' }).click()
-      await page.getByRole('dialog').getByLabel('Grund').selectOption('unavailable')
+      await page.getByRole('dialog').getByRole('radio', { name: /nicht durchführen/ }).check()
       await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
       await expect(page.getByRole('dialog')).toContainText('Der Kunde muss nichts zahlen')
     },
@@ -321,7 +321,7 @@ const shots: Shot[] = [
       await page.getByRole('dialog').getByRole('radio', { name: /Mit Pauschale/ }).check()
       await page.getByRole('dialog').getByLabel('Belegfoto hinzufügen').setInputFiles({ name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX })
       ctx.jobs.callOut = 8000
-      await page.getByRole('dialog').getByRole('button', { name: /Pauschale absagen/ }).click()
+      await page.getByRole('dialog').getByRole('button', { name: /^Für .+ absagen$/ }).click()
       await expect(page.getByRole('dialog')).toContainText('Der Betrag hat sich geändert')
     },
     wait: heading('Angenommen'),

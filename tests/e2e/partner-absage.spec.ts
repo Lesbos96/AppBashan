@@ -21,9 +21,12 @@ const photo = { name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX }
 const fee = (d: ReturnType<typeof dialog>) => d.getByRole('radio', { name: /Mit Pauschale/ })
 const free = (d: ReturnType<typeof dialog>) => d.getByRole('radio', { name: /Ohne Pauschale/ })
 
-async function startCheck(page: Page, reason?: string) {
+const REASON = { scope_impossible: /vor Ort anders als gebucht/, unavailable: /nicht durchführen/, other: /Anderer Grund/ }
+const reasonRadio = (d: ReturnType<typeof dialog>, r: keyof typeof REASON) => d.getByRole('radio', { name: REASON[r] })
+
+async function startCheck(page: Page, reason?: keyof typeof REASON) {
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).click()
-  if (reason) await dialog(page).getByLabel('Grund').selectOption(reason)
+  if (reason) await reasonRadio(dialog(page), reason).check()
   await dialog(page).getByRole('button', { name: 'Folgen prüfen' }).click()
 }
 
@@ -59,7 +62,7 @@ test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein B
   await expect(d).toContainText('Du stellst sie ihm außerhalb der App in Rechnung')
   await expect(d.getByRole('button', { name: 'Absagen', exact: true }), 'ohne Auswahl kein Absenden').toBeDisabled()
   await fee(d).check()
-  const send = d.getByRole('button', { name: 'Für 69,00 € Pauschale absagen' })
+  const send = d.getByRole('button', { name: 'Für 69,00 € absagen' })
   await expect(send, 'ohne Beleg kein Absenden').toBeDisabled()
   await d.getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
   await expect(send).toBeEnabled()
@@ -83,10 +86,10 @@ test('Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Be
   await startCheck(page)
   const d = dialog(page)
   await d.getByRole('button', { name: 'Grund ändern' }).click()
-  await d.getByLabel('Grund').selectOption('other')
+  await reasonRadio(d, 'other').check()
   // der neue Grund braucht eine neue Vorschau: kein Absenden ohne sie
   await expect(d.getByRole('button', { name: 'Folgen prüfen' })).toBeVisible()
-  await d.getByLabel('Grund').selectOption('scope_impossible')
+  await reasonRadio(d, 'scope_impossible').check()
   await d.getByRole('button', { name: 'Folgen prüfen' }).click()
   expect(previews(jobs)).toHaveLength(2)
   await free(d).check()
@@ -103,7 +106,7 @@ test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisc
   await fee(d).check()
   await d.getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
   jobs.callOut = 8000 // der Server rechnet inzwischen anders
-  await d.getByRole('button', { name: 'Für 69,00 € Pauschale absagen' }).click()
+  await d.getByRole('button', { name: 'Für 69,00 € absagen' }).click()
   await expect(d).toContainText('Der Betrag hat sich geändert')
   await expect(d).toContainText('80,00 €')
   await expect(d).toContainText('68,00 €')
@@ -115,7 +118,7 @@ test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisc
   await expect(d.getByRole('button', { name: 'Absagen', exact: true })).toBeDisabled()
   // erst die ausdrückliche Bestätigung des neuen Betrags sendet
   await fee(d).check()
-  await d.getByRole('button', { name: 'Für 80,00 € Pauschale absagen' }).click()
+  await d.getByRole('button', { name: 'Für 80,00 € absagen' }).click()
   await expect(d).toHaveCount(0)
   expect(sends(jobs)).toHaveLength(2)
   expect(sends(jobs)[1]).toMatchObject({ shownCallOutCents: 8000 })
@@ -166,14 +169,15 @@ test('not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt,
 test('Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“', async ({ page }) => {
   await open(page)
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).click()
-  await expect(dialog(page).getByLabel('Grund').locator('option')).toHaveCount(3)
+  await expect(dialog(page).getByRole('radio')).toHaveCount(3)
+  await expect(reasonRadio(dialog(page), 'scope_impossible'), 'Standard').toBeChecked()
 })
 
 test('Grund-Auswahl ab Termin', async ({ page }) => {
   await open(page, { myJobs: [job({ can_start: true })] })
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).click()
-  await expect(dialog(page).getByLabel('Grund').locator('option')).toHaveCount(1)
-  await expect(dialog(page).getByLabel('Grund')).toHaveValue('scope_impossible')
+  await expect(dialog(page).getByRole('radio')).toHaveCount(1)
+  await expect(reasonRadio(dialog(page), 'scope_impossible')).toBeChecked()
   await expect(dialog(page)).toContainText('Der Termin hat begonnen')
 })
 
@@ -181,7 +185,25 @@ test('too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis', async ({
   await open(page, { cancelPreviewAnswers: [{ status: 409, json: { error: 'too_late_for_reason' } }] })
   await startCheck(page, 'unavailable')
   await expect(dialog(page)).toContainText('Der Termin hat schon begonnen')
-  await expect(dialog(page).getByLabel('Grund')).toHaveValue('scope_impossible')
+  await expect(reasonRadio(dialog(page), 'scope_impossible')).toBeChecked()
+})
+
+test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await open(page)
+  await startCheck(page)
+  const d = dialog(page)
+  await expect(d).toContainText('69,00 €')
+  await fee(d).check()
+  await free(d).scrollIntoViewIfNeeded()
+  await expect(free(d)).toBeInViewport()
+  const send = d.getByRole('button', { name: 'Für 69,00 € absagen' })
+  const box = await send.boundingBox()
+  expect(box?.height, 'Knopf bleibt einzeilig (Höhe unter 60 px)').toBeLessThan(60)
+  expect((box?.y ?? 0) + (box?.height ?? 0), 'Knopf liegt im Fenster').toBeLessThanOrEqual(640)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  const money = await d.getByText('69,00 €').first().evaluate((el) => getComputedStyle(el).whiteSpace)
+  expect(money).toBe('nowrap')
 })
 
 test('Tastatur: Hauptweg ohne Maus', async ({ page }) => {
