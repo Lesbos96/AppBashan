@@ -39,7 +39,7 @@ export function Abrechnung() {
         Abrechnung
       </h2>
       <div className="flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
-        <p className="m-0 text-subhead text-text-secondary">Dein Journal mit Buchungen, Nachträgen, Stornos und Provision als CSV. Aufträge erscheinen im Monat ihres Abschlusses.</p>
+        <p className="m-0 text-subhead text-text-secondary">Dein Journal mit Buchungen, Nachträgen und Stornos als CSV. Aufträge erscheinen im Monat ihres Abschlusses.</p>
         <label className="flex min-h-12 items-center gap-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           <span className="shrink-0 text-body">Monat</span>
           <input

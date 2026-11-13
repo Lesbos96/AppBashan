@@ -41,6 +41,8 @@ test('Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinwe
   await expect(month(page)).toHaveValue(/^\d{4}-(0[1-9]|1[0-2])$/)
   await expect(card(page)).toContainText('JJJJ-MM')
   await expect(card(page)).toContainText('im Monat ihres Abschlusses')
+  // Die Seite nennt keine Gebühr (die Partner-Specs prüfen den Seitentext auf Gebührenwörter); die Spaltennamen stehen nur in der Datei
+  await expect(page.locator('body')).not.toContainText(/Plattform|Provision|Gebühr|15 ?%/)
   await expect(button(page)).toBeEnabled()
   expect(real(errors)).toEqual([])
 })
@@ -111,7 +113,7 @@ for (const status of ['pending', 'active', 'payment_hold', 'suspended', 'rejecte
 
 test('aal1: hinter der Schranke (zweiter Faktor), keine Karte', async ({ page }) => {
   const { jobs } = await openJobs(page, { commissions: COMMISSIONS }, { aal: 'aal1' })
-  await expect(page.getByPlaceholder('Ziffern')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
   await expect(card(page)).toHaveCount(0)
   expect(jobs.journalCalls).toEqual([])
 })
