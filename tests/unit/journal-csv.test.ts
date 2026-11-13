@@ -49,8 +49,10 @@ describe('journalCsv: Format', () => {
     ]
     const l = lines(rows)
     expect(l[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;0,15;-8,63;-1,72;-10,35;-58,65;${E2}`)
-    const sum = (i: number) => rows.reduce((a, r) => a + [r.total_cents, r.fee_rate, r.fee_net_cents, r.fee_vat_cents, r.fee_cents, r.payout_cents][i]!, 0)
-    expect([0, 2, 3, 4, 5].map(sum)).toEqual([0, 0, 0, 0, 0])
+    // Summe aus den Zellen der erzeugten Datei (Ziffern, ohne Gleitkomma): Betrag Kunde, netto, USt., brutto, Auszahlung
+    const cents = (s: string) => (s.startsWith('-') ? -1 : 1) * Number(s.replace('-', '').replace(',', ''))
+    const sums = [5, 7, 8, 9, 10].map((i) => l.slice(1, 3).reduce((a, line) => a + cents(line.split(';')[i]!), 0))
+    expect(sums).toEqual([0, 0, 0, 0, 0])
   })
 
   it('Stornopauschale und Nachtrag und Korrektur haben ihre Bezeichnung', () => {
@@ -145,13 +147,42 @@ describe('journalCsv: Wiener Zeit über die Zeitumstellungen', () => {
   })
 })
 
-describe('journalCsv: Quoting und Formelschutz (Textfelder)', () => {
-  const id = (v: string) => lines([row({ request_id: v })])[1]!
+describe('journalCsv: Kennungen und Zeit sind geprüft, keine Freitexte im Pfad', () => {
+  it.each([
+    ['Semikolon', 'a;b'],
+    ['Formel', '=SUMME(A1)'],
+    ['Formel nach Leerzeichen', '  =1+1'],
+    ['Zeilenumbruch', 'a\nb'],
+    ['leer', ''],
+    ['null', null],
+    ['undefined', undefined],
+    ['zu kurz', '1111-1'],
+  ])('Auftrag, Journal-ID und Bezug: %s ist bad_row', (_n, v) => {
+    expect(() => journalCsv([row({ request_id: v as never })])).toThrow('bad_row')
+    expect(() => journalCsv([row({ entry_id: v as never })])).toThrow('bad_row')
+    if (v !== null) expect(() => journalCsv([row({ reverses_entry_id: v as never, kind: 'cancellation' })])).toThrow('bad_row')
+  })
+  it.each([['null', null], ['Zahl', 0], ['kein ISO', 'gestern'], ['leer', '']])('Buchungszeit %s ist bad_row', (_n, v) => {
+    expect(() => journalCsv([row({ created_at: v as never })])).toThrow('bad_row')
+  })
+  it('Beträge werden nie entschärft: negative Beträge bleiben ohne Apostroph', () => {
+    const l = lines([row({ total_cents: -6900, fee_cents: -1035, fee_net_cents: -863, fee_vat_cents: -172, payout_cents: -5865 })])[1]!
+    expect(l).not.toContain("'")
+    expect(l).toContain(';-69,00;')
+  })
+})
+
+describe('commissionsCsv (Admin): Quoting und Formelschutz, auch nach führenden Leerzeichen', () => {
+  const base: CommissionRow = {
+    entry_id: 'e1', request_id: 'r1', partner_id: 'p1', partner_name: 'x', kind: 'booking', reverses_entry_id: null, created_at: '2026-09-30T22:00:00+00:00', total_cents: 100,
+    fee_rate: 0.15, fee_net_cents: 12, fee_vat_cents: 3, fee_cents: 15, payout_cents: 85, vat_rule: 'standard_20', request_status: 'completed', ended_at: '2026-09-30T23:30:00+00:00', billing_month: '2026-10-01',
+  }
+  const name = (v: string) => commissionsCsv([{ ...base, partner_name: v }])
   it('Semikolon, Anführungszeichen, CR und LF: Anführungszeichen, " verdoppelt', () => {
-    expect(id('a;b')).toContain(';"a;b";')
-    expect(id('say "hi"')).toContain(';"say ""hi""";')
-    expect(id('a\nb')).toContain(';"a\nb";')
-    expect(id('a\rb')).toContain(';"a\rb";')
+    expect(name('a;b')).toContain(';"a;b";')
+    expect(name('say "hi"')).toContain(';"say ""hi""";')
+    expect(name('a\nb')).toContain(';"a\nb";')
+    expect(name('a\rb')).toContain(';"a\rb";')
   })
   it.each([
     ['=SUMME(A1)', "'=SUMME(A1)"],
@@ -162,24 +193,12 @@ describe('journalCsv: Quoting und Formelschutz (Textfelder)', () => {
     ['  =1+1', "'  =1+1"],
     [' -2', "' -2"],
   ])('Textfeld %j wird zu %j entschärft', (input, out) => {
-    expect(id(input)).toContain(`;${out};`)
+    expect(name(input)).toContain(`;${out};`)
   })
   it('Formel mit Anführungszeichen wird erst entschärft, dann gequotet', () => {
-    expect(id('=HYPERLINK("x")')).toContain(`;"'=HYPERLINK(""x"")";`)
+    expect(name('=HYPERLINK("x")')).toContain(`;"'=HYPERLINK(""x"")";`)
   })
-  it('Beträge werden nie entschärft: negative Beträge bleiben ohne Apostroph', () => {
-    const l = lines([row({ total_cents: -6900, fee_cents: -1035, fee_net_cents: -863, fee_vat_cents: -172, payout_cents: -5865 })])[1]!
-    expect(l).not.toContain("'")
-    expect(l).toContain(';-69,00;')
-  })
-})
-
-describe('commissionsCsv (Admin): Formelschutz auch nach führenden Leerzeichen', () => {
-  const base: CommissionRow = {
-    entry_id: 'e1', request_id: 'r1', partner_id: 'p1', partner_name: 'x', kind: 'booking', reverses_entry_id: null, created_at: '2026-09-30T22:00:00+00:00', total_cents: 100,
-    fee_rate: 0.15, fee_net_cents: 12, fee_vat_cents: 3, fee_cents: 15, payout_cents: 85, vat_rule: 'standard_20', request_status: 'completed', ended_at: '2026-09-30T23:30:00+00:00', billing_month: '2026-10-01',
-  }
-  it('führende Leerzeichen vor = werden entschärft', () => {
-    expect(commissionsCsv([{ ...base, partner_name: '  =1+1' }])).toContain(";'  =1+1;")
+  it('Satz im Admin-Export wird wie im Journal geprüft', () => {
+    expect(() => commissionsCsv([{ ...base, fee_rate: 1.5 }])).toThrow('bad_row')
   })
 })

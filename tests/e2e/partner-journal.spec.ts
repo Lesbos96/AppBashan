@@ -82,6 +82,40 @@ test('Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens is
   await expect(button(page)).toBeEnabled()
 })
 
+test('Ladezustand: während der Anfrage sind Knopf und Monatsfeld gesperrt, der Knopf nennt den Zustand', async ({ page }) => {
+  await open(page)
+  await pick(page, '2026-10')
+  // Antwort um 800 ms verzögern; `fallback` reicht an den Mock von `mockJobs` weiter
+  await page.route('**/rest/v1/rpc/my_commissions**', async (r) => {
+    await new Promise((res) => setTimeout(res, 800))
+    await r.fallback()
+  })
+  const pending = page.waitForEvent('download')
+  await button(page).click()
+  await expect(card(page).getByRole('button', { name: 'Wird erstellt …' })).toBeDisabled()
+  await expect(month(page)).toBeDisabled()
+  const d = await pending
+  expect(d.suggestedFilename()).toBe('movenow-journal-2026-10.csv')
+  await expect(button(page)).toBeEnabled()
+})
+
+for (const status of ['pending', 'active', 'payment_hold', 'suspended', 'rejected'] as const) {
+  test(`Firmenstatus ${status}: Karte ${status === 'active' || status === 'payment_hold' ? 'sichtbar' : 'nicht vorhanden, kein Aufruf'}`, async ({ page }) => {
+    const { jobs } = await openJobs(page, { commissions: COMMISSIONS }, { status })
+    if (status === 'pending' || status === 'active' || status === 'payment_hold') await expect(page.getByRole('heading', { name: 'Dokumente' })).toBeVisible()
+    else await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible()
+    await expect(card(page)).toHaveCount(status === 'active' || status === 'payment_hold' ? 1 : 0)
+    expect(jobs.journalCalls).toEqual([])
+  })
+}
+
+test('aal1: hinter der Schranke (zweiter Faktor), keine Karte', async ({ page }) => {
+  const { jobs } = await openJobs(page, { commissions: COMMISSIONS }, { aal: 'aal1' })
+  await expect(page.getByPlaceholder('Ziffern')).toBeVisible()
+  await expect(card(page)).toHaveCount(0)
+  expect(jobs.journalCalls).toEqual([])
+})
+
 test('leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler', async ({ page }) => {
   await open(page)
   await pick(page, '2026-09')

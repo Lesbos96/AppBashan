@@ -71,6 +71,20 @@ describe('loadJournalCsv', () => {
     expect(csv.split('\r\n').filter(Boolean)).toHaveLength(1002)
   })
 
+  it('genau 1000 Zeilen: ein Aufruf', async () => {
+    const all = Array.from({ length: 1000 }, (_, i) => row(i + 1))
+    answer = (from, to) => ({ data: all.slice(from, to + 1), error: null, count: 1000 })
+    const { csv } = await loadJournalCsv('2026-10')
+    expect(calls.range).toEqual([[0, 999]])
+    expect(csv.split('\r\n').filter(Boolean)).toHaveLength(1001)
+  })
+
+  it('Zeile über die Seitengrenze doppelt (Zähler wuchs zwischen den Seiten): keine Datei', async () => {
+    const all = Array.from({ length: 1001 }, (_, i) => row(i + 1))
+    answer = (from) => ({ data: from === 0 ? all.slice(0, 1000) : [all[0]], error: null, count: 1001 })
+    await expect(loadJournalCsv('2026-10')).rejects.toMatchObject({ kind: 'unavailable' })
+  })
+
   it.each([
     ['Zeilenzahl weicht vom count ab', () => ({ data: [row(1)], error: null, count: 2 })],
     ['doppelte Journal-ID', () => ({ data: [row(1), row(1)], error: null, count: 2 })],

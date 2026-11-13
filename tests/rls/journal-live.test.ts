@@ -1,6 +1,7 @@
 // Journal-CSV der Firma (s9i-7c1): my_commissions mit echten aal2-Tokens gegen Dev, so wie die App es aufruft (count exact, feste Sortierung, range).
 // Rechte-Matrix, keine Kundendatenspalten, Summe je Auftrag nach Storno ohne Pauschale = 0, Abgleich mit export_commissions und Datei aus den Live-Zeilen.
 // Fixtures sind committet (Journal ist unlöschbar); Rest nach dem Lauf: Kunde, Aufträge und Firmen (gesperrt, tests/support/sweep.ts, OPEN_ISSUES S9c-7).
+import { execFileSync } from 'node:child_process'
 import { appendFileSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
@@ -44,12 +45,13 @@ const appCall = (db: Aal2User['aal2'], m = month) =>
     .order('entry_id')
     .range(0, 999)
 
-// Ist-Werte der Rechte-Matrix für den Nachweis (vitest zeigt die Konsole bestandener Tests hier nicht): Arbeitsdatei, jeder Lauf überschreibt sie beim ersten Eintrag nicht, sondern hängt an
+// Ist-Werte der Rechte-Matrix für den Nachweis (vitest zeigt die Konsole bestandener Tests hier nicht): Arbeitsdatei, jeder Lauf beginnt sie neu mit Zeit und Commit
 const ist = (line: string) => appendFileSync('tmp/reports/journal-live-ist.txt', `${line}\n`)
 const mine = (rows: R[] | null, req: string) => (rows ?? []).filter((r) => r.request_id === req)
 const sum = (rows: R[], col: keyof R) => rows.reduce((a, r) => a + Number(r[col]), 0)
 
 beforeAll(async () => {
+  writeFileSync('tmp/reports/journal-live-ist.txt', `LAUF ${new Date().toISOString()} commit ${execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim()}\n`)
   ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
   sweepTestResidue(adm)
   const first = await tryAal2User('pt-jn-pa')
@@ -131,8 +133,9 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
     expect(b.error).toBeNull()
     ist(`IST firma-b-zeilen-von-a=${(b.data ?? []).filter((x) => OURS.includes(x.request_id)).length} firma-b-gesamt=${b.data?.length}`)
     expect((b.data ?? []).filter((x) => OURS.includes(x.request_id))).toHaveLength(0)
-    for (const p of [pp, pr, ps]) {
+    for (const [name, p] of [['pending', pp], ['rejected', pr], ['suspended', ps]] as const) {
       const r = await appCall(p.aal2)
+      ist(`IST firma-${name}-aal2 fehler=${r.error?.message ?? 'keiner'} zeilen=${r.data?.length}`)
       expect(r.error).toBeNull()
       expect(r.data).toEqual([])
     }

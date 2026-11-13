@@ -43,6 +43,9 @@ const euro = (cents: unknown): string => {
   return `${n < 0n ? '-' : ''}${abs / 100n},${String(abs % 100n).padStart(2, '0')}`
 }
 
+// Kennungen im Journal sind UUIDs aus der Datenbank, sonst bad_row
+const uuid = (v: unknown): string => (typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : bad())
+
 // Satz als Dezimalzahl 0 bis 1 mit höchstens fünf Stellen (numeric(6,5)), sonst bad_row
 const rate = (v: unknown): string => {
   const s = typeof v === 'number' || typeof v === 'string' ? String(v) : ''
@@ -51,9 +54,10 @@ const rate = (v: unknown): string => {
 
 // Zeitpunkte in Wiener Ortszeit „TT.MM.JJJJ HH:MM“ (wie der Abrechnungsmonat; Excel liest das als Datum)
 const VIENNA = new Intl.DateTimeFormat('de-AT', { timeZone: 'Europe/Vienna', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-const when = (iso: string): string => {
-  if (Number.isNaN(new Date(iso).getTime())) return bad()
-  const p =Object.fromEntries(VIENNA.formatToParts(new Date(iso)).map((x) => [x.type, x.value]))
+const when = (iso: unknown): string => {
+  // nur ISO-Zeitstempel als Zeichenkette (`new Date(null)` wäre 1970)
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(iso) || Number.isNaN(new Date(iso).getTime())) return bad()
+  const p = Object.fromEntries(VIENNA.formatToParts(new Date(iso)).map((x) => [x.type, x.value]))
   return `${p.day}.${p.month}.${p.year} ${p.hour}:${p.minute}`
 }
 
@@ -87,8 +91,8 @@ export function journalCsv(rows: JournalRow[]): string {
   const lines = rows.map((r) => {
     if (!Object.hasOwn(KIND, r.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(r.billing_month)) return bad()
     return [
-      r.billing_month.slice(0, 7), when(r.created_at), text(r.request_id), KIND[r.kind]!, text(r.reverses_entry_id), euro(r.total_cents), rate(r.fee_rate),
-      euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents), text(r.entry_id),
+      r.billing_month.slice(0, 7), when(r.created_at), uuid(r.request_id), KIND[r.kind]!, r.reverses_entry_id === null ? '' : uuid(r.reverses_entry_id), euro(r.total_cents), rate(r.fee_rate),
+      euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents), uuid(r.entry_id),
     ].join(';')
   })
   return BOM + [JOURNAL_HEADER.join(';'), ...lines].map((l) => `${l}\r\n`).join('')
@@ -98,7 +102,7 @@ export function commissionsCsv(rows: CommissionRow[]): string {
   const lines = rows.map((r) =>
     [
       r.billing_month.slice(0, 7), r.request_id, r.partner_id, text(r.partner_name), r.kind, r.entry_id, r.reverses_entry_id ?? '', when(r.created_at),
-      euro(r.total_cents), String(r.fee_rate).replace('.', ','), euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents),
+      euro(r.total_cents), rate(r.fee_rate), euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents),
       r.vat_rule, r.request_status, when(r.ended_at),
     ].join(';'),
   )
