@@ -152,6 +152,7 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
     expect((await fn('accept', pa.jwt1, body)).status).toBe(403)
     expect((await fn('accept', cust.jwt, body)).status).toBe(403)
     expect((await fn('accept', pb.jwt2, body)).status).toBe(404)
+    ist(`DIAG partner_accept_basis: ${JSON.stringify(await service.rpc('partner_accept_basis', { p_actor: pa.id, p_listing: body.listingId }))}`)
     const wrong = await fn('accept', pa.jwt2, { ...body, shownPayoutCents: BOOKED.payout + 1 })
     expect(wrong, JSON.stringify(wrong)).toMatchObject({ status: 409, body: { error: 'payout_changed' } })
     expect(snap(W1)).toMatchObject({ status: 'requested', journal: [] })

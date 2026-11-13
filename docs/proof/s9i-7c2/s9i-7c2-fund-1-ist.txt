@@ -1,0 +1,8 @@
+LAUF 2026-11-13T21:34:00.869Z commit 1614eaf Kennung 7c2-1311-a
+W1 | 1 Anfrage (Fixture) | status=requested | journal=[] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2}
+DIAG partner_accept_basis: {"success":false,"error":{"code":"42804","details":"Returned type integer does not match expected type bigint in column 2.","hint":null,"message":"structure of query does not match function result type"},"data":null,"count":null,"status":400,"statusText":"Bad Request"}
+SUMME W1 | my_commissions={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | csv={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | erwartet={"total":0,"fee":0,"net":0,"vat":0,"payout":0}
+SUMME W2A | my_commissions={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | csv={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | erwartet={"total":0,"fee":0,"net":0,"vat":0,"payout":0}
+SUMME W2B | my_commissions={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | csv={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | erwartet={"total":0,"fee":0,"net":0,"vat":0,"payout":0}
+RECHTE | fremde Firma b: Zeilen der Aufträge=0, gesamt=0
+AUFRÄUMEN Belegobjekte gelöscht: 0
