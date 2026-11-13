@@ -1,0 +1,21 @@
+﻿Commit 871e59f | Arbeitsbaum sauber: ja | npm run db:push
+
+> movenow@0.1.0 db:push
+> dotenv -e .env.local -- supabase db push --linked --yes
+
+node.exe : Connecting to remote database...
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Connecting to remote database...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Do you want to push these migrations to the remote database?
+ • 20261113100000_0060_job_contact_after_cancel.sql
+ [Y/n] y
+Applying migration 20261113100000_0060_job_contact_after_cancel.sql...
+{"upToDate":false,"dryRun":false,"migrations":["20261113100000_0060_job_contact_after_cancel.sql"],"seeds":[],"roles":[],"message":"Finished supabase db push."}
+A new version of Supabase CLI is available: v3.1.0 (currently installed v2.122.0)
+We recommend updating regularly for new features and bug fixes: 
+https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+EXIT=0

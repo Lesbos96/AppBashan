@@ -1,0 +1,117 @@
+﻿Commit da1540d + Arbeitsbaum geändert | Arbeitsbaum sauber: nein | gezielter Lauf nach Bildsicht-Fix (Grund als Radio, kürzere Fußleiste)
+node.exe : [WebServer] (node:18700) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:13844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:25680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:5788) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 82 tests using 2 workers
+
+(node:17180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:8744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [e2e] › tests\e2e\auftrag-absage.spec.ts:57:1 › mit Pauschale: Betrag des Servers, außerhalb der App in Rechnung, keine Weitervermittlung, nie die Gebühr (691ms)
+  ok  3 [e2e] › tests\e2e\auftrag-absage.spec.ts:74:1 › ohne Pauschale, Folgeanfrage läuft: weitervermittelt, Link zur neuen Anfrage (522ms)
+  ok  4 [e2e] › tests\e2e\auftrag-absage.spec.ts:84:1 › ohne Pauschale, Folgeanfrage ohne Treffer (unmatched): keine andere Firma, neue Anfrage (557ms)
+  ok  5 [e2e] › tests\e2e\auftrag-absage.spec.ts:92:1 › ohne Pauschale, keine Folgeanfrage: nur „Dir entstehen keine Kosten“ und neue Anfrage, kein Satz über andere Firmen (570ms)
+  ok  2 [e2e] › tests\e2e\partner-absage.spec.ts:33:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt (2.6s)
+  ok  6 [e2e] › tests\e2e\auftrag-absage.spec.ts:100:1 › Betrag nicht lesbar: Fehler mit „Erneut versuchen“, nie „keine Kosten“ (559ms)
+  ok  7 [e2e] › tests\e2e\partner-absage.spec.ts:54:1 › mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale (2.8s)
+  ok  8 [e2e] › tests\e2e\partner-nachtrag.spec.ts:43:1 › Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag (2.6s)
+  ok  9 [e2e] › tests\e2e\partner-absage.spec.ts:84:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau (2.7s)
+  ok 10 [e2e] › tests\e2e\partner-nachtrag.spec.ts:80:1 › Doppelklick auf Senden: ein Foto, ein Nachtrag (3.7s)
+  ok 12 [e2e] › tests\e2e\partner-nachtrag.spec.ts:90:1 › Tastatur: Hauptweg nur mit Tastatur (1.6s)
+  ok 11 [e2e] › tests\e2e\partner-absage.spec.ts:102:1 › 409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet (3.4s)
+  ok 13 [e2e] › tests\e2e\partner-nachtrag.spec.ts:108:1 › Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet (1.4s)
+  ok 15 [e2e] › tests\e2e\partner-nachtrag.spec.ts:121:1 › Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft) (1.4s)
+  ok 14 [e2e] › tests\e2e\partner-absage.spec.ts:128:1 › 409 retry: neue Vorschau, kein erneutes Senden (3.1s)
+  ok 16 [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „declined“: eigener Text, danach darf ein neuer folgen (1.4s)
+  ok 18 [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „expired“: eigener Text, danach darf ein neuer folgen (1.3s)
+  ok 17 [e2e] › tests\e2e\partner-absage.spec.ts:138:1 › Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen (3.1s)
+  ok 19 [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „accepted“: eigener Text, danach darf ein neuer folgen (1.4s)
+  ok 21 [e2e] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „withdrawn“: eigener Text, danach darf ein neuer folgen (1.4s)
+  ok 20 [e2e] › tests\e2e\partner-absage.spec.ts:151:1 › Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt (2.6s)
+  ok 22 [e2e] › tests\e2e\partner-nachtrag.spec.ts:144:1 › Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen (2.7s)
+  ok 23 [e2e] › tests\e2e\partner-absage.spec.ts:159:1 › not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen (2.7s)
+  ok 25 [e2e] › tests\e2e\partner-absage.spec.ts:169:1 › Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“ (1.6s)
+  ok 24 [e2e] › tests\e2e\partner-nachtrag.spec.ts:169:1 › Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text (2.8s)
+  ok 26 [e2e] › tests\e2e\partner-absage.spec.ts:176:1 › Grund-Auswahl ab Termin (1.7s)
+  ok 27 [e2e] › tests\e2e\partner-nachtrag.spec.ts:188:1 › Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt (3.0s)
+  ok 28 [e2e] › tests\e2e\partner-absage.spec.ts:184:1 › too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis (2.6s)
+  ok 29 [e2e] › tests\e2e\partner-nachtrag.spec.ts:206:1 › Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen (2.6s)
+  ok 30 [e2e] › tests\e2e\partner-absage.spec.ts:191:1 › 320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über (2.6s)
+  ok 31 [e2e] › tests\e2e\partner-nachtrag.spec.ts:220:1 › Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu) (2.4s)
+  ok 32 [e2e] › tests\e2e\partner-absage.spec.ts:209:1 › Tastatur: Hauptweg ohne Maus (1.6s)
+(node:19316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 34 [e2e-desktop] › tests\e2e\auftrag-absage.spec.ts:57:1 › mit Pauschale: Betrag des Servers, außerhalb der App in Rechnung, keine Weitervermittlung, nie die Gebühr (598ms)
+  ok 35 [e2e-desktop] › tests\e2e\auftrag-absage.spec.ts:74:1 › ohne Pauschale, Folgeanfrage läuft: weitervermittelt, Link zur neuen Anfrage (522ms)
+  ok 36 [e2e-desktop] › tests\e2e\auftrag-absage.spec.ts:84:1 › ohne Pauschale, Folgeanfrage ohne Treffer (unmatched): keine andere Firma, neue Anfrage (547ms)
+  ok 33 [e2e] › tests\e2e\partner-nachtrag.spec.ts:230:1 › Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag (2.7s)
+  ok 37 [e2e-desktop] › tests\e2e\auftrag-absage.spec.ts:92:1 › ohne Pauschale, keine Folgeanfrage: nur „Dir entstehen keine Kosten“ und neue Anfrage, kein Satz über andere Firmen (592ms)
+  ok 39 [e2e-desktop] › tests\e2e\auftrag-absage.spec.ts:100:1 › Betrag nicht lesbar: Fehler mit „Erneut versuchen“, nie „keine Kosten“ (595ms)
+  ok 38 [e2e] › tests\e2e\partner-nachtrag.spec.ts:252:1 › Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1) (2.8s)
+  ok 40 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:33:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt (2.5s)
+  ok 42 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:54:1 › mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale (2.6s)
+  ok 41 [e2e] › tests\e2e\partner-nachtrag.spec.ts:269:1 › Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2) (3.6s)
+  ok 43 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:84:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau (2.6s)
+  ok 44 [e2e] › tests\e2e\partner-nachtrag.spec.ts:287:1 › Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6) (2.8s)
+  ok 46 [e2e] › tests\e2e\partner-nachtrag.spec.ts:299:1 › Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter (2.6s)
+  ok 45 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:102:1 › 409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet (3.3s)
+  ok 47 [e2e] › tests\e2e\partner-nachtrag.spec.ts:312:1 › Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen (2.4s)
+  ok 48 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:128:1 › 409 retry: neue Vorschau, kein erneutes Senden (3.1s)
+  ok 49 [e2e] › tests\e2e\partner-nachtrag.spec.ts:323:1 › Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt (2.4s)
+  ok 50 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:138:1 › Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen (3.1s)
+  ok 51 [e2e] › tests\e2e\partner-nachtrag.spec.ts:336:1 › Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum (2.5s)
+  ok 52 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:151:1 › Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt (2.5s)
+  ok 53 [e2e] › tests\e2e\partner-nachtrag.spec.ts:350:1 › Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen (2.6s)
+(node:10424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 54 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:159:1 › not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen (2.5s)
+  ok 56 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:169:1 › Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“ (1.4s)
+  ok 55 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:43:1 › Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag (2.6s)
+  ok 57 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:176:1 › Grund-Auswahl ab Termin (1.5s)
+  ok 59 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:184:1 › too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis (2.3s)
+  ok 58 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:80:1 › Doppelklick auf Senden: ein Foto, ein Nachtrag (3.8s)
+  ok 61 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:90:1 › Tastatur: Hauptweg nur mit Tastatur (1.6s)
+  ok 60 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:191:1 › 320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über (2.4s)
+  ok 62 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:108:1 › Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet (1.4s)
+  ok 63 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:209:1 › Tastatur: Hauptweg ohne Maus (1.5s)
+  ok 64 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:121:1 › Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft) (2.3s)
+  ok 65 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „declined“: eigener Text, danach darf ein neuer folgen (1.3s)
+  ok 66 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „expired“: eigener Text, danach darf ein neuer folgen (1.3s)
+  ok 67 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „accepted“: eigener Text, danach darf ein neuer folgen (1.3s)
+  ok 68 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:137:3 › Zustand des letzten Nachtrags „withdrawn“: eigener Text, danach darf ein neuer folgen (1.3s)
+  ok 69 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:144:1 › Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen (2.5s)
+  ok 70 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:169:1 › Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text (2.5s)
+  ok 71 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:188:1 › Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt (2.5s)
+  ok 72 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:206:1 › Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen (2.5s)
+  ok 73 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:220:1 › Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu) (2.3s)
+  ok 74 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:230:1 › Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag (2.6s)
+  ok 75 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:252:1 › Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1) (2.7s)
+  ok 76 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:269:1 › Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2) (3.5s)
+  ok 77 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:287:1 › Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6) (2.4s)
+  ok 78 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:299:1 › Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter (2.5s)
+  ok 79 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:312:1 › Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen (2.4s)
+  ok 80 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:323:1 › Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt (2.3s)
+  ok 81 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:336:1 › Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum (2.4s)
+  ok 82 [e2e-desktop] › tests\e2e\partner-nachtrag.spec.ts:350:1 › Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen (2.5s)
+
+  82 passed (2.0m)
+EXIT=0

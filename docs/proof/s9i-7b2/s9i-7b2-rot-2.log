@@ -1,0 +1,51 @@
+﻿Commit 871e59f | Arbeitsbaum sauber: ja (nur docs/VERBESSERUNGSVORSCHLAEGE.md untracked, nicht im Lauf)
+Erwartung: ROT, 0060 noch nicht auf Dev: 'E1 danach' liefert Kontakt statt not_assigned
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/job-contact-after-cancel.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/job-contact-after-cancel.test.ts (2 tests | 1 failed) 11724ms
+   ❯ job_contact nach Storno durch die Firma (0060) (2)
+     × ohne Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt 5967ms
+     ✓ Storno durch den Kunden bleibt unverändert: Kontakt im Fenster offen (S9i7-10 c bleibt für diese Art offen) 5755ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/job-contact-after-cancel.test.ts > job_contact nach Storno durch die Firma (0060) > ohne 
+Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt
+AssertionError: not_assigned: ok: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ err tests/rls/job-contact-after-cancel.test.ts:64:97
+     62|   `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_…
+     63| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     64| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     65| const contact = (req: string) => `=(select name from public.job_contac…
+     66| const call = (req: string) => `perform * from public.job_contact('${re…
+ ❯ tests/rls/job-contact-after-cancel.test.ts:106:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  07:06:12
+   Duration  35.06s (tests 66%, import 33%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=1

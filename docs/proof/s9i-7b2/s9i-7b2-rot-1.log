@@ -1,0 +1,50 @@
+﻿Commit 3c8479a (Branch s9i-7b2) | Arbeitsbaum sauber: nein (neu: Migration 0060 lokal nicht auf Dev, Test job-contact-after-cancel)
+Erwartung: ROT, weil 0060 noch nicht auf Dev ist (E1 danach liefert Kontakt statt not_assigned)
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/job-contact-after-cancel.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/job-contact-after-cancel.test.ts (1 test | 1 failed) 6957ms
+   ❯ job_contact nach Storno durch die Firma (0060) (1)
+     × ohne Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt 6955ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/job-contact-after-cancel.test.ts > job_contact nach Storno durch die Firma (0060) > ohne 
+Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt
+AssertionError: not_assigned: ok: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ err tests/rls/job-contact-after-cancel.test.ts:64:97
+     62|   `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_…
+     63| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     64| const err = (v: string | undefined, part: string) => expect(v?.include…
+       |                                                                                                 ^
+     65| const contact = (req: string) => `=(select name from public.job_contac…
+     66| const call = (req: string) => `perform * from public.job_contact('${re…
+ ❯ tests/rls/job-contact-after-cancel.test.ts:103:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  07:03:28
+   Duration  31.09s (tests 54%, import 45%, transform 1%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=1

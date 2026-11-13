@@ -1,0 +1,169 @@
+﻿Lockerungsprobe e2e (Entscheidung 85) | Commit 871e59f + Arbeitsbaum geändert | Arbeitsbaum sauber: nein | Änderung 1: contactLocked immer false; Änderung 2: Absage sendet bei 'Ohne Pauschale' die Pauschale als gezeigten Betrag. Erwartung ROT mit Ist-Werten
+node.exe : [WebServer] (node:15944) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:27968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:32160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 12 tests using 1 worker
+
+(node:32392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   1 [e2e] › tests\e2e\partner-absage.spec.ts:30:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt (7.7s)
+(node:8776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [e2e] › tests\e2e\partner-absage.spec.ts:51:1 › mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale (2.6s)
+  x   3 [e2e] › tests\e2e\partner-absage.spec.ts:81:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau (7.8s)
+(node:29992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  4 [e2e] › tests\e2e\partner-absage.spec.ts:99:1 › 409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet (3.3s)
+  ok  5 [e2e] › tests\e2e\partner-absage.spec.ts:125:1 › 409 retry: neue Vorschau, kein erneutes Senden (3.0s)
+  ok  6 [e2e] › tests\e2e\partner-absage.spec.ts:135:1 › Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen (3.0s)
+  ok  7 [e2e] › tests\e2e\partner-absage.spec.ts:148:1 › Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt (2.3s)
+  ok  8 [e2e] › tests\e2e\partner-absage.spec.ts:156:1 › not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen (2.4s)
+  ok  9 [e2e] › tests\e2e\partner-absage.spec.ts:166:1 › Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“ (1.3s)
+  ok 10 [e2e] › tests\e2e\partner-absage.spec.ts:172:1 › Grund-Auswahl ab Termin (1.3s)
+  ok 11 [e2e] › tests\e2e\partner-absage.spec.ts:180:1 › too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis (2.3s)
+  x  12 [e2e] › tests\e2e\partner-absage.spec.ts:187:1 › Tastatur: Hauptweg ohne Maus (6.6s)
+
+
+  1) [e2e] › tests\e2e\partner-absage.spec.ts:30:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt 
+
+    Error: Kontaktsperre ohne Pauschale
+
+    expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('article').first().getByRole('button', { name: 'Kontakt und Adresse anzeigen' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Kontaktsperre ohne Pauschale getByRole('article').first().getByRole('button', { name: 'Kontakt und Adresse anzeigen' }) with timeout 5000ms
+      - waiting for getByRole('article').first().getByRole('button', { name: 'Kontakt und Adresse anzeigen' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      44 |   await expect(card(page)).toContainText('Von dir storniert')
+      45 |   await expect(card(page)).toContainText('Storniert, es fällt kein Betrag an.')
+    > 46 |   await expect(card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }), 'Kontaktsperre ohne Pauschale').toHaveCount(0)
+         |                                                                                                                          ^
+      47 |   await expect(card(page)).toContainText('Kontakt und Adresse sind gesperrt')
+      48 |   expect(real(errors)).toEqual([])
+      49 | })
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-absage.spec.ts:46:122
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-ohne-Pa-6568f-ege-Kontakt-danach-gesperrt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-absage-ohne-Pa-6568f-ege-Kontakt-danach-gesperrt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-ohne-Pa-6568f-ege-Kontakt-danach-gesperrt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-absage-ohne-Pa-6568f-ege-Kontakt-danach-gesperrt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests\e2e\partner-absage.spec.ts:81:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      92 |   await free(d).check()
+      93 |   await d.getByRole('button', { name: 'Absagen', exact: true }).click()
+    > 94 |   await expect(d).toHaveCount(0)
+         |                   ^
+      95 |   expect(sends(jobs)).toEqual([{ requestId: RQ1, reason: 'scope_impossible', shownCallOutCents: 0 }])
+      96 |   expect(jobs.receipts).toEqual([])
+      97 | })
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-absage.spec.ts:94:19
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-Weg-„Oh-4bd71-chsel-verwirft-die-Vorschau-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-absage-Weg-„Oh-4bd71-chsel-verwirft-die-Vorschau-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-Weg-„Oh-4bd71-chsel-verwirft-die-Vorschau-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-absage-Weg-„Oh-4bd71-chsel-verwirft-die-Vorschau-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [e2e] › tests\e2e\partner-absage.spec.ts:187:1 › Tastatur: Hauptweg ohne Maus ─────────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      196 |   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).focus()
+      197 |   await page.keyboard.press('Enter')
+    > 198 |   await expect(dialog(page)).toHaveCount(0)
+          |                              ^
+      199 |   expect(sends(jobs)).toHaveLength(1)
+      200 |   await expect(card(page)).toContainText('Von dir storniert')
+      201 | })
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-absage.spec.ts:198:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-Tastatur-Hauptweg-ohne-Maus-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-absage-Tastatur-Hauptweg-ohne-Maus-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-absage-Tastatur-Hauptweg-ohne-Maus-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-absage-Tastatur-Hauptweg-ohne-Maus-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [e2e] › tests\e2e\partner-absage.spec.ts:30:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt 
+    [e2e] › tests\e2e\partner-absage.spec.ts:81:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau 
+    [e2e] › tests\e2e\partner-absage.spec.ts:187:1 › Tastatur: Hauptweg ohne Maus ──────────────────
+  9 passed (50.9s)
+EXIT=1

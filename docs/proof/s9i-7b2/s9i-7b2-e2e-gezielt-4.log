@@ -1,0 +1,57 @@
+﻿Commit f8a4dc1 + Arbeitsbaum geändert | Arbeitsbaum sauber: nein | Bildfix Runde 2 (Beträge als eigene Karte, beide Wege sichtbar bei 320 px)
+node.exe : [WebServer] (node:17196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:31564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:7932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 26 tests using 2 workers
+
+(node:12144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:33:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt (2.6s)
+  ok  2 [e2e] › tests\e2e\partner-absage.spec.ts:33:1 › ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt (2.6s)
+  ok  3 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:54:1 › mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale (2.7s)
+  ok  4 [e2e] › tests\e2e\partner-absage.spec.ts:54:1 › mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale (2.7s)
+  ok  5 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:85:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau (2.7s)
+  ok  6 [e2e] › tests\e2e\partner-absage.spec.ts:85:1 › Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau (2.7s)
+  ok  7 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:103:1 › 409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet (3.3s)
+  ok  8 [e2e] › tests\e2e\partner-absage.spec.ts:103:1 › 409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet (3.4s)
+  ok  9 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:129:1 › 409 retry: neue Vorschau, kein erneutes Senden (3.1s)
+  ok 10 [e2e] › tests\e2e\partner-absage.spec.ts:129:1 › 409 retry: neue Vorschau, kein erneutes Senden (3.2s)
+  ok 11 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:139:1 › Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen (3.0s)
+  ok 12 [e2e] › tests\e2e\partner-absage.spec.ts:139:1 › Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen (3.1s)
+  ok 13 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:152:1 › Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt (2.5s)
+  ok 14 [e2e] › tests\e2e\partner-absage.spec.ts:152:1 › Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt (2.5s)
+  ok 15 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:160:1 › not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen (2.5s)
+  ok 16 [e2e] › tests\e2e\partner-absage.spec.ts:160:1 › not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen (2.5s)
+  ok 17 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:170:1 › Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“ (1.4s)
+  ok 18 [e2e] › tests\e2e\partner-absage.spec.ts:170:1 › Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“ (1.5s)
+  ok 19 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:177:1 › Grund-Auswahl ab Termin (1.4s)
+  ok 20 [e2e] › tests\e2e\partner-absage.spec.ts:177:1 › Grund-Auswahl ab Termin (1.5s)
+  ok 21 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:185:1 › too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis (2.4s)
+  ok 22 [e2e] › tests\e2e\partner-absage.spec.ts:185:1 › too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis (2.4s)
+  ok 23 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:192:1 › 320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über (2.4s)
+  ok 24 [e2e] › tests\e2e\partner-absage.spec.ts:192:1 › 320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über (2.5s)
+  ok 25 [e2e-desktop] › tests\e2e\partner-absage.spec.ts:213:1 › Tastatur: Hauptweg ohne Maus (1.5s)
+  ok 26 [e2e] › tests\e2e\partner-absage.spec.ts:213:1 › Tastatur: Hauptweg ohne Maus (1.5s)
+
+  26 passed (38.4s)
+EXIT=0

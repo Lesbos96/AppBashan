@@ -1,0 +1,64 @@
+﻿Commit 871e59f | Arbeitsbaum sauber: ja | nach db:push 0060: Kontaktsperre + bestehende Kontakt-Tests
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/job-contact-after-cancel.test.ts tests/rls/listings.test.ts tests/rls/account-deletion.test.ts tests/rls/partner-my-jobs.test.ts tests/rls/cancellation-partner.test.ts tests/rls/cancellation-partner-preview.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/job-contact-after-cancel.test.ts (2 tests) 11814ms
+   ✓ job_contact nach Storno durch die Firma (0060) (2)
+     ✓ ohne Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt 5989ms
+     ✓ Storno durch den Kunden bleibt unverändert: Kontakt im Fenster offen (S9i7-10 c bleibt für diese Art offen) 5823ms
+ ✓ |rls| tests/rls/listings.test.ts (13 tests) 10799ms
+   ✓ Verteilung (distribute_request) (1)
+     ✓ Empfänger: aktive Firmen mit Kategorie und Bezirk, keine Selbstbuchung; sonst unmatched mit Outbox; zweiter Aufruf ohne Wirkung 993ms
+   ✓ Listing-Lesen (RLS) (1)
+     ✓ eigene Zeilen mit aal2 und Status active; verweigert: aal1, fremde Firma, Kunde, pending, nach Frist, Spalte request_id 798ms
+   ✓ Annahme (partner_accept) (3)
+     ✓ Erfolg: Status, Zuordnung, Listings, Journal, Ereignis, Outbox in einer Transaktion; verweigert: zweite Annahme, Revision, Auszahlung, Firmenstatus, fremdes Listing 811ms
+     ✓ Zuständigkeit gilt bei der Annahme und beim Lesen (Abnahme H1): Scope entzogen → Listing unsichtbar, Annahme verweigert, keine Zuordnung 705ms
+     ✓ Frist (Cron noch nicht gelaufen), Limit offener Aufträge, pending-Firma 751ms
+   ✓ Ablehnen und Fristen (3)
+     ✓ decline_listing: eigene Zeile, letzte Ablehnung → unmatched mit Outbox; aal1, fremde, pending, geschlossen verweigert 777ms
+     ✓ expire_requests: nur abgelaufene requested/awaiting_offer; Listings geschlossen, Outbox, Ereignis; Annahme danach: expired 1043ms
+     ✓ Zurückziehen schließt die Listings; direktes UPDATE auf den Status bleibt verweigert 847ms
+   ✓ Abwicklung (start_job, complete_job, job_contact, my_job_partner) (4)
+     ✓ start und complete: Akteur, Zeitpunkt, Zuordnung; Zuordnung endet mit completed 747ms
+     ✓ Kunde bestätigt „durchgeführt“ ab Termin auch aus accepted 784ms
+     ✓ job_contact: nur zugeordnet, aal2, protokolliert, bis partner_access_days nach Ende; my_job_partner für den Kunden 749ms
+     ✓ admin_contact: nur admin (p_actor), Begründung Pflicht, Audit; authenticated verweigert 818ms
+   ✓ Outbox und Zuordnung: Rechte (1)
+     ✓ Kunde und Partner lesen weder outbox noch fremde assignments; assignments nur Select; admin liest outbox 972ms
+ ✓ |rls| tests/rls/cancellation-partner-preview.test.ts (3 tests) 3745ms
+   ✓ Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) (3)
+     ✓ Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag 1917ms
+     ✓ Vorschau schreibt nichts: Status, Journal, Outbox, Audit und Revisionen bleiben gleich 865ms
+     ✓ my_cancel_info: nur der Kunde, nur nach Firmen-Storno, nur der Betrag der Pauschale 961ms
+ ✓ |rls| tests/rls/partner-my-jobs.test.ts (4 tests) 3436ms
+   ✓ my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster (2)
+     ✓ Firma A sieht nur eigene Aufträge im Zugriffsfenster mit Beträgen aus dem Journal; B, aal1, Kunde, pending, rejected, anon nichts 957ms
+     ✓ payment_hold sieht bereits angenommene Aufträge, suspended nichts 898ms
+   ✓ Beträge nach einem Nachtrag (1)
+     ✓ ein offener oder abgelehnter Nachtrag ändert die Summen nicht, ein angenommener hebt sie auf Gesamtpreis und Gesamtauszahlung 767ms
+   ✓ Kontakt, Start und Abschluss (1)
+     ✓ job_contact schreibt je Aufruf eine Audit-Zeile; Start vor dem Termin abgelehnt, Abschluss nur aus in_progress; my_jobs folgt dem Status 812ms
+ ✓ |rls| tests/rls/account-deletion.test.ts (3 tests) 3093ms
+   ✓ delete_account (S9h-4) (2)
+     ✓ verweigert, löscht, anonymisiert; Journal, Ereignisse und Export bleiben gleich 1199ms
+     ✓ Sperre: jeder offene Status verhindert das Löschen, jeder Endstatus nicht 924ms
+   ✓ photo_purge (S9h-4: Konto, Kette S9h2-1, Aufbewahrung S9d-6) (1)
+     ✓ Konto, Kette, Aufbewahrung, fehlende Einstellung 966ms
+ ✓ |rls| tests/rls/cancellation-partner.test.ts (3 tests) 2930ms
+   ✓ cancel_by_partner (T13) und Weitervermittlung (T16) (3)
+     ✓ Gegenbuchung, Zuordnung, Zähler, Folgeanfrage mit Kopien und Ausschluss, Mails 1259ms
+     ✓ scope_impossible: Pauschale nur mit Beleg nach abgelehntem Nachtrag, keine Weitervermittlung 880ms
+     ✓ ab Terminbeginn nur scope_impossible (S9h2-3, Beks), sonst too_late_for_reason 787ms
+
+ Test Files  6 passed (6)
+      Tests  28 passed (28)
+   Start at  07:08:35
+   Duration  65.13s (tests 76%, import 24%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+EXIT=0

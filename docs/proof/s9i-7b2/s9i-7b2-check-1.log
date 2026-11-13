@@ -1,0 +1,200 @@
+﻿Commit 7d6f1c3 | Arbeitsbaum sauber: ja (nur docs/VERBESSERUNGSVORSCHLAEGE.md untracked, bewusst nicht im Repo)
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts supabase/functions/offer-confirm/index.ts supabase/functions/change-propose/index.ts supabase/functions/change-decide/index.ts supabase/functions/cancel-customer/index.ts supabase/functions/cancel-partner/index.ts supabase/functions/admin-correct/index.ts supabase/functions/delete-account/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+node.exe : Check supabase/functions/_shared/pricing/index.ts
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...ricing/index.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/route/index.ts
+Check supabase/functions/quote/index.ts
+Check supabase/functions/photo-cleanup/index.ts
+Check supabase/functions/accept/index.ts
+Check supabase/functions/admin-contact/index.ts
+Check supabase/functions/outbox-send/index.ts
+Check supabase/functions/photo-publish/index.ts
+Check supabase/functions/photo-receipt/index.ts
+Check supabase/functions/job-photo/index.ts
+Check supabase/functions/admin-photo/index.ts
+Check supabase/functions/offer-confirm/index.ts
+Check supabase/functions/change-propose/index.ts
+Check supabase/functions/change-decide/index.ts
+Check supabase/functions/cancel-customer/index.ts
+Check supabase/functions/cancel-partner/index.ts
+Check supabase/functions/admin-correct/index.ts
+Check supabase/functions/delete-account/index.ts
+Check scripts/measure-photo.ts
+Check tests/unit/golden-deno.ts
+Check tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/admin-correct-handler.test.ts (9 tests) 74ms
+ ✓ |unit| tests/unit/accept.test.ts (10 tests) 83ms
+ ✓ |unit| tests/unit/cancel-handler.test.ts (8 tests) 78ms
+ ✓ |unit| tests/unit/cancel-partner-handler.test.ts (11 tests) 92ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 126ms
+ ✓ |unit| tests/unit/partner-docs.test.ts (22 tests) 66ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 179ms
+ ✓ |unit| tests/unit/offer-confirm.test.ts (4 tests) 72ms
+ ✓ |unit| tests/unit/change-handlers.test.ts (16 tests) 113ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (6 tests) 83ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 126ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 60ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 264ms
+ ✓ |unit| tests/unit/delete-account-handler.test.ts (8 tests) 51ms
+ ✓ |unit| tests/unit/partner-register.test.ts (47 tests) 33ms
+ ✓ |unit| tests/unit/account-client.test.ts (11 tests) 55ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (11 tests) 29ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (19 tests) 76ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 43ms
+ ❯ |unit| tests/unit/jobs-client.test.ts (44 tests | 1 failed) 86ms
+   ✓ Angebot (15)
+     ✓ sendet genau den gezeigten Betrag 5ms
+     ✓ 409 amount_changed wird changed 41ms
+     ✓ 409 offer_not_valid wird closed 1ms
+     ✓ 409 invalid_transition wird closed 1ms
+     ✓ 404 not_found wird closed 1ms
+     ✓ 409 offer_unavailable wird gone 1ms
+     ✓ 409 partner_not_active wird gone 1ms
+     ✓ 403 partner_not_active wird gone 1ms
+     ✓ 409 retry wird retry 1ms
+     ✓ 401 unauthorized wird unauthorized 2ms
+     ✓ 500 internal wird unavailable 1ms
+     ✓ 409 rate_mismatch wird unavailable 1ms
+     ✓ Netzfehler ist offline 0ms
+     ✓ Liste: nur gültige Zeilen mit Status sent, Betrag als ganze Cent 1ms
+     ✓ Fehler der Liste wird geworfen 1ms
+   ✓ Nachtrag (12)
+     ✓ liest nur den offenen Nachtrag dieses Auftrags mit fester Spaltenliste 1ms
+     ✓ kein Nachtrag: null 0ms
+     ✓ Snapshot passt nicht zum Gesamtpreis: nur der neue Gesamtpreis, keine Differenz 0ms
+     ✓ unlesbarer Gesamtpreis ist ein Fehler 1ms
+     ✓ Zustimmen sendet exakt den gezeigten Gesamtpreis, Ablehnen keinen Betrag 1ms
+     ✓ 409 amount_changed wird changed 1ms
+     ✓ 409 revision_changed wird closed 0ms
+     ✓ 409 change_not_valid wird closed 0ms
+     ✓ 409 invalid_transition wird closed 0ms
+     ✓ 409 partner_not_active wird gone 1ms
+     ✓ 409 retry wird retry 0ms
+     ✓ Belege: nur Fotos dieses Nachtrags, nur https 1ms
+   ✓ Termin (8)
+     ✓ complete_job und report_not_done senden nur die Anfrage 0ms
+     ✓ Datenbankfehler invalid_transition wird closed 0ms
+     ✓ Datenbankfehler not_found wird closed 0ms
+     ✓ Datenbankfehler too_early wird too_early 0ms
+     ✓ Datenbankfehler report_window_closed wird window_closed 0ms
+     ✓ Datenbankfehler irgendwas wird unavailable 0ms
+     ✓ geworfener Netzfehler ist offline 1ms
+     ✓ terminStarted: ab dem Termin, ungültig ist nie gestartet 0ms
+   ❯ Texte (1)
+     × jede Fehlerart hat einen Text ohne Gebühren- oder Firmenstatuswort 13ms
+   ✓ snapshotStorno (Stufen aus dem Snapshot) (8)
+     ✓ nennt die Stufen aus den Werten im Snapshot 1ms
+     ✓ ohne terms: kein Text 0ms
+     ✓ kein Objekt: kein Text 0ms
+     ✓ Wert fehlt: kein Text 0ms
+     ✓ Prozent über 100: kein Text 0ms
+     ✓ negativ: kein Text 0ms
+     ✓ Text statt Zahl: kein Text 0ms
+     ✓ Bruch: kein Text 0ms
+ ✓ |unit| tests/unit/change.test.ts (12 tests) 38ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 119ms
+ ✓ |unit| tests/unit/partner-jobs.test.ts (81 tests) 97ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 28ms
+ ✓ |unit| tests/unit/quote.test.ts (60 tests) 453ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (18 tests) 90ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 24ms
+ ✓ |unit| tests/unit/auth.test.ts (56 tests) 34ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 25ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 16ms
+ ✓ |unit| tests/unit/mfa-client.test.ts (21 tests) 28ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 31ms
+ ✓ |unit| tests/unit/cancel-client.test.ts (17 tests) 85ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 16ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 18ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 14ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 47ms
+ ✓ |unit| tests/unit/commission-csv.test.ts (5 tests) 12ms
+ ✓ |unit| tests/unit/partner-my-jobs.test.ts (47 tests) 51ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 12ms
+ ✓ |unit| tests/unit/admin-correct-db.test.ts (2 tests) 11ms
+ ✓ |unit| tests/unit/partner-change.test.ts (19 tests) 40ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 7ms
+ ✓ |unit| tests/unit/partner-cancel.test.ts (31 tests) 23ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 1080ms
+   ✓ Ungültige Eingabe wirft und liefert nie NaN (e) (6)
+     ✓ beliebige Werte: InputError, nie ein anderer Fehler 307ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 1228ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 861ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 787ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 27ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 60ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/jobs-client.test.ts > Texte > jede Fehlerart hat einen Text ohne Gebühren- oder 
+Firmenstatuswort
+AssertionError: expected [ 'amount', 'bad_input', …(24) ] to deeply equal [ 'amount', 'bad_input', …(20) ]
+
+- Expected
++ Received
+
+@@ -6,19 +6,23 @@
+    "changed",
+    "closed",
+    "gone",
+    "have_offer",
+    "job_limit",
++   "late_reason",
++   "no_call_out",
+    "no_change",
+    "not_increasing",
+    "offer_limit",
+    "offline",
+    "payout",
+    "receipt_limit",
++   "receipt_missing",
+    "retry",
+    "taken",
+    "too_early",
+    "unauthorized",
+    "unavailable",
++   "under_review",
+    "vat_rule",
+    "window_closed",
+  ]
+
+ ❯ tests/unit/jobs-client.test.ts:179:46
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 49 passed (50)
+      Tests  1 failed | 1108 passed (1109)
+   Start at  07:53:43
+   Duration  2.20s (import 46%, tests 34%, transform 17%, worker 3%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=1

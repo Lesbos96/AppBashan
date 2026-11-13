@@ -1,0 +1,116 @@
+﻿node.exe : [WebServer] (node:23872) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:8528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:8516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:29032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 80 tests using 2 workers
+
+(node:24176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage mit-pauschale (1.6s)
+  ok  3 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-weitervermittelt (1.0s)
+  ok  2 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-grund (2.8s)
+  ok  4 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-keine-folgeanfrage (1.0s)
+  ok  6 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px mit-pauschale (1.0s)
+  ok  7 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-weitervermittelt (1.0s)
+  ok  5 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-pauschale (3.1s)
+  ok  8 [shots-390-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-keine-folgeanfrage (1.0s)
+(node:31772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 10 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage mit-pauschale (1.0s)
+  ok  9 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-ohne-pauschale (3.0s)
+  ok 11 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-weitervermittelt (974ms)
+  ok 13 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-keine-folgeanfrage (1.0s)
+  ok 14 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px mit-pauschale (1.0s)
+  ok 12 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-betrag-geaendert (3.2s)
+  ok 15 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-weitervermittelt (1.0s)
+  ok 17 [shots-390-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-keine-folgeanfrage (1.1s)
+  ok 16 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-fehler (3.1s)
+  ok 18 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-grund (2.1s)
+  ok 19 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-ohne-pauschale (1.9s)
+  ok 20 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-pauschale (3.0s)
+  ok 21 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-mit-pauschale (1.9s)
+  ok 23 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-grund (2.0s)
+  ok 22 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-ohne-pauschale (3.0s)
+  ok 24 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-pauschale (3.0s)
+  ok 25 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-betrag-geaendert (3.1s)
+  ok 26 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-ohne-pauschale (2.9s)
+  ok 27 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-fehler (2.9s)
+  ok 29 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-ohne-pauschale (1.9s)
+  ok 28 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-betrag-geaendert (3.0s)
+  ok 30 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-mit-pauschale (1.9s)
+  ok 31 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-fehler (2.9s)
+  ok 32 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-grund (1.9s)
+  ok 33 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-ohne-pauschale (1.9s)
+  ok 34 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-pauschale (2.9s)
+  ok 35 [shots-390-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-mit-pauschale (1.8s)
+(node:472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 37 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage mit-pauschale (1.1s)
+  ok 38 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-weitervermittelt (1.0s)
+  ok 36 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-ohne-pauschale (2.9s)
+  ok 39 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-keine-folgeanfrage (1.1s)
+  -  41 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px mit-pauschale
+  -  42 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-weitervermittelt
+  -  43 [shots-1280-light] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-keine-folgeanfrage
+  ok 40 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-betrag-geaendert (3.1s)
+  ok 44 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-grund (2.2s)
+  ok 45 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-fehler (2.8s)
+  ok 46 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-pauschale (3.1s)
+  ok 47 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-ohne-pauschale (1.8s)
+  ok 49 [shots-390-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-mit-pauschale (1.8s)
+  ok 48 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-ohne-pauschale (3.0s)
+(node:27412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 51 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage mit-pauschale (1.2s)
+  ok 52 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-weitervermittelt (1.2s)
+  ok 50 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-betrag-geaendert (3.4s)
+  ok 53 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage ohne-pauschale-keine-folgeanfrage (1.2s)
+  -  55 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px mit-pauschale
+  -  56 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-weitervermittelt
+  -  57 [shots-1280-dark] › tests\shots\absage.spec.ts:41:5 › Kunde Absage 320 px ohne-pauschale-keine-folgeanfrage
+  ok 54 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-fehler (3.1s)
+  ok 58 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-grund (2.1s)
+  ok 59 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-ohne-pauschale (2.0s)
+  ok 60 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-pauschale (3.1s)
+  ok 61 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-mit-pauschale (2.0s)
+  -  63 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-grund
+  -  64 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-pauschale
+  -  65 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-ohne-pauschale
+  -  66 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-betrag-geaendert
+  -  67 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-fehler
+  -  68 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-ohne-pauschale
+  -  69 [shots-1280-light] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-mit-pauschale
+  ok 62 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-ohne-pauschale (3.1s)
+  ok 70 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-betrag-geaendert (3.2s)
+  ok 71 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-fehler (2.9s)
+  ok 72 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-ohne-pauschale (1.9s)
+  ok 73 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner absage-karte-mit-pauschale (1.9s)
+  -  74 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-grund
+  -  75 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-pauschale
+  -  76 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-ohne-pauschale
+  -  77 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-betrag-geaendert
+  -  78 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-fehler
+  -  79 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-ohne-pauschale
+  -  80 [shots-1280-dark] › tests\shots\partner.spec.ts:400:5 › Partner 320 px absage-karte-mit-pauschale
+
+  20 skipped
+  60 passed (1.3m)

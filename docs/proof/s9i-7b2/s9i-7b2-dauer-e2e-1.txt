@@ -1,0 +1,23 @@
+﻿Datei | alt s | neu s | Faktor
+e2e/anfrage.spec.ts |  532.8 |  563.6 | 1.1x
+e2e/fotos.spec.ts |  185.1 |  197.2 | 1.1x
+e2e/wege.spec.ts |  153.0 |  165.2 | 1.1x
+e2e/auftrag-aktionen.spec.ts |  123.2 |  132.5 | 1.1x
+e2e/partner-mfa.spec.ts |   99.4 |  120.6 | 1.2x
+e2e/partner-anfragen.spec.ts |  103.6 |  114.5 | 1.1x
+e2e/partner-nachtrag.spec.ts |   99.8 |  111.1 | 1.1x
+e2e/barrierefreiheit.spec.ts |   78.2 |   94.4 | 1.2x
+e2e/konto.spec.ts |   79.5 |   86.3 | 1.1x
+e2e/partner-auftraege.spec.ts |   74.6 |   83.4 | 1.1x
+e2e/auftrag.spec.ts |   77.0 |   81.2 | 1.1x
+e2e/partner-absage.spec.ts |    -   |   76.8 | -
+e2e/partner.spec.ts |   46.5 |   52.8 | 1.1x
+e2e/konfigurator.spec.ts |   43.1 |   51.0 | 1.2x
+e2e/dienste.spec.ts |   23.2 |   27.6 | 1.2x
+e2e/shell.spec.ts |   24.1 |   26.1 | 1.1x
+e2e/anmelden.spec.ts |   17.5 |   22.7 | 1.3x
+e2e/auftrag-absage.spec.ts |    -   |    7.2 | -
+e2e/komponenten.spec.ts |    3.8 |    4.0 | 1.0x
+e2e/backend.spec.ts |    1.4 |    2.2 | 1.6x
+e2e/smoke.spec.ts |    1.3 |    1.8 | 1.4x
+SUMME: alt 1767 s, neu 2022 s
