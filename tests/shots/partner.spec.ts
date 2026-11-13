@@ -337,6 +337,18 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
+  // Journal-CSV (s9i-7c1): Karte „Abrechnung“ unter den Aufträgen, Monatsfeld, Fehlerfall
+  { name: 'abrechnung', open: ACTIVE, jobs: { myJobs: [job()], changes: [change()] }, wait: heading('Angenommen') },
+  {
+    name: 'abrechnung-fehler',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()], journalAnswers: [{ status: 400, json: { code: 'P0001', message: 'mfa_required', details: null, hint: null } }] },
+    steps: async (page) => {
+      await page.getByRole('region', { name: 'Abrechnung' }).getByRole('button', { name: 'Journal herunterladen' }).click()
+      await expect(page.getByRole('region', { name: 'Abrechnung' }).getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
   {
     name: 'absage-netzfehler-vorschau',
     open: ACTIVE,

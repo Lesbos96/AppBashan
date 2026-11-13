@@ -59,9 +59,11 @@ test('Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf
   expect(lines[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;0,15;-8,63;-1,72;-10,35;-58,65;${E2}`)
   expect(lines).toHaveLength(4)
   expect(jobs.journalCalls).toHaveLength(1)
-  expect(jobs.journalCalls[0]).toMatchObject({ month: '2026-10-01', range: '0-999' })
+  expect(jobs.journalCalls[0]).toMatchObject({ month: '2026-10-01' })
   expect(jobs.journalCalls[0]!.prefer).toContain('count=exact')
-  const sel = new URL(jobs.journalCalls[0]!.url).searchParams.get('select')
+  const q = new URL(jobs.journalCalls[0]!.url).searchParams
+  expect([q.get('offset'), q.get('limit'), q.get('order')]).toEqual(['0', '1000', 'created_at.asc,entry_id.asc'])
+  const sel = q.get('select')
   expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
   expect(bytes.toString('utf8')).not.toMatch(/partner_name|Testfirma/)
   expect(real(errors)).toEqual([])
@@ -93,7 +95,8 @@ test('Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter', async ({ page 
   const { jobs } = await open(page)
   await pick(page, '2026-10')
   await month(page).focus()
-  await page.keyboard.press('Tab')
+  // Das Monatsfeld hat Teilfelder (Monat, Jahr, Auswahl): Tab geht weiter, bis der Knopf dran ist
+  for (let i = 0; i < 6 && !(await button(page).evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab')
   await expect(button(page)).toBeFocused()
   const d = await download(page, () => page.keyboard.press('Enter'))
   expect(d.suggestedFilename()).toBe('movenow-journal-2026-10.csv')

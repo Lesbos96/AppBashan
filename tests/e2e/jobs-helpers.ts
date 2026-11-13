@@ -190,9 +190,9 @@ export type JobsState = {
   cancels: Record<string, unknown>[]
   cancelPreviewAnswers: Ans[]
   cancelAnswers: Ans[]
-  /** Journal (s9i-7c1): Zeilen von `my_commissions` (gefiltert nach `p_month`), jeder Aufruf mit Monat, Range- und Prefer-Kopf; `abort` = Netzfehler */
+  /** Journal (s9i-7c1): Zeilen von `my_commissions` (gefiltert nach `p_month`), jeder Aufruf mit Monat, URL (select, order, offset, limit) und Prefer-Kopf; `abort` = Netzfehler */
   commissions: Record<string, unknown>[]
-  journalCalls: { month: unknown; range: string | undefined; prefer: string | undefined; url: string }[]
+  journalCalls: { month: unknown; prefer: string | undefined; url: string }[]
   journalAnswers: (Ans | 'abort')[]
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
@@ -212,12 +212,15 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     if (o) return o
     const h = r.request().headers()
     const month = (r.request().postDataJSON() as { p_month?: unknown }).p_month
-    s.journalCalls.push({ month, range: h['range'], prefer: h['prefer'], url: r.request().url() })
+    s.journalCalls.push({ month, prefer: h['prefer'], url: r.request().url() })
     const a = s.journalAnswers.shift()
     if (a === 'abort') return r.abort('failed')
     if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
     const all = s.commissions.filter((c) => c.billing_month === month)
-    const [from, to] = (h['range'] ?? '0-999').split('-').map(Number) as [number, number]
+    // postgrest-js schickt `.range()` bei POST als `offset` und `limit` in der URL
+    const q = new URL(r.request().url()).searchParams
+    const from = Number(q.get('offset') ?? 0)
+    const to = from + Number(q.get('limit') ?? 1000) - 1
     const page = all.slice(from, to + 1)
     return r.fulfill({
       headers: { ...cors, 'access-control-expose-headers': 'content-range', 'content-range': `${page.length ? `${from}-${from + page.length - 1}` : '*'}/${all.length}` },

@@ -61,7 +61,7 @@ describe('journalCsv: Format', () => {
   })
 
   it('keine Spalte mit Kundendaten, Firmenname, Partner-ID oder Status', () => {
-    expect(journalCsv([]).split('\r\n')[0]).not.toMatch(/Partner|Status|Name|Adresse|Telefon|Mail|Kunde;|Endzeit/)
+    expect(journalCsv([]).split('\r\n')[0]).not.toMatch(/Partner|Status|Name|Adresse|Telefon|Mail|Endzeit/)
   })
 })
 

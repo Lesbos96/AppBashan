@@ -19,8 +19,9 @@
     "paths": {
       "@pricing": ["./supabase/functions/_shared/pricing/index.ts"],
       "@pricing/*": ["./supabase/functions/_shared/pricing/*"],
+      "@commission": ["./supabase/functions/_shared/commission/csv.ts"],
       "npm:imagescript@3.17.0": ["./node_modules/imagescript/dist/index.d.ts"]
     }
   },
-  "include": ["src", "supabase/functions/_shared/pricing", "supabase/functions/_shared/route", "supabase/functions/_shared/quote", "supabase/functions/_shared/http.ts"]
+  "include": ["src", "supabase/functions/_shared/pricing", "supabase/functions/_shared/commission", "supabase/functions/_shared/route", "supabase/functions/_shared/quote", "supabase/functions/_shared/http.ts"]
 }

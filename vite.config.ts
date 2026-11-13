@@ -13,6 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@pricing': fileURLToPath(new URL('./supabase/functions/_shared/pricing', import.meta.url)),
+      '@commission': fileURLToPath(new URL('./supabase/functions/_shared/commission/csv.ts', import.meta.url)),
       // Die Functions importieren mit npm:-Spezifizierer (Deno); in Vitest löst das Paket aus node_modules auf.
       'npm:imagescript@3.17.0': 'imagescript',
     },

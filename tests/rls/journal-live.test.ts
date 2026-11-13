@@ -1,6 +1,7 @@
 // Journal-CSV der Firma (s9i-7c1): my_commissions mit echten aal2-Tokens gegen Dev, so wie die App es aufruft (count exact, feste Sortierung, range).
 // Rechte-Matrix, keine Kundendatenspalten, Summe je Auftrag nach Storno ohne Pauschale = 0, Abgleich mit export_commissions und Datei aus den Live-Zeilen.
 // Fixtures sind committet (Journal ist unlöschbar); Rest nach dem Lauf: Kunde, Aufträge und Firmen (gesperrt, tests/support/sweep.ts, OPEN_ISSUES S9c-7).
+import { appendFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
 import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
@@ -14,6 +15,7 @@ import { tryAal2User, type Aal2User } from '../support/totp.ts'
 const adm = newId()
 const BOOKED = 68961
 const [J1, J2, J4] = [newId(), newId(), newId()]
+const OURS: string[] = [J1, J2, J4]
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User, pp: Aal2User, pr: Aal2User, ps: Aal2User
 let cust: TestUser
@@ -42,6 +44,8 @@ const appCall = (db: Aal2User['aal2'], m = month) =>
     .order('entry_id')
     .range(0, 999)
 
+// Ist-Werte der Rechte-Matrix für den Nachweis (vitest zeigt die Konsole bestandener Tests hier nicht): Arbeitsdatei, jeder Lauf überschreibt sie beim ersten Eintrag nicht, sondern hängt an
+const ist = (line: string) => appendFileSync('tmp/reports/journal-live-ist.txt', `${line}\n`)
 const mine = (rows: R[] | null, req: string) => (rows ?? []).filter((r) => r.request_id === req)
 const sum = (rows: R[], col: keyof R) => rows.reduce((a, r) => a + Number(r[col]), 0)
 
@@ -113,7 +117,7 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
     const k = await appCall(cust.db)
     const l = await appCall(pa.aal1)
     const r = await appCall(pa.aal2)
-    console.info(`IST anon=${a.error?.code} kunde=${k.error?.message} aal1=${l.error?.message} firma-a-aal2-zeilen=${r.data?.length}`)
+    ist(`IST anon=${a.error?.code} kunde=${k.error?.message} aal1=${l.error?.message} firma-a-aal2-zeilen=${r.data?.length}`)
     expect(a.error?.code).toBe('42501')
     expect(k.error?.message).toBe('mfa_required')
     expect(l.error?.message).toBe('mfa_required')
@@ -125,8 +129,8 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
   live('fremde Firma sieht keine Zeile von Firma a; pending, rejected, suspended: kein Fehler, leer', async () => {
     const b = await appCall(pb.aal2)
     expect(b.error).toBeNull()
-    console.info(`IST firma-b-zeilen-von-a=${(b.data ?? []).filter((x) => [J1, J2, J4].includes(x.request_id)).length} firma-b-gesamt=${b.data?.length}`)
-    expect((b.data ?? []).filter((x) => [J1, J2, J4].includes(x.request_id))).toHaveLength(0)
+    ist(`IST firma-b-zeilen-von-a=${(b.data ?? []).filter((x) => OURS.includes(x.request_id)).length} firma-b-gesamt=${b.data?.length}`)
+    expect((b.data ?? []).filter((x) => OURS.includes(x.request_id))).toHaveLength(0)
     for (const p of [pp, pr, ps]) {
       const r = await appCall(p.aal2)
       expect(r.error).toBeNull()
@@ -141,7 +145,7 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
     expect(new Set(full.data.map((x) => x.billing_month))).toEqual(new Set([`${month}-01`]))
   })
 
-  live('Typ commission_row: genau die bekannten Spalten, keine Kundendaten (eine neue Spalte bricht den Test und braucht Prüfung)', () => {
+  live('Typ commission_row: genau die bekannten Spalten, keine Kundendaten (eine neue Spalte bricht den Test und braucht Prüfung)', async () => {
     const cols = ownerSql(`select attname from pg_attribute where attrelid = 'public.commission_row'::regclass and attnum > 0 and not attisdropped order by attnum`).map((r) => r.attname)
     expect(cols).toEqual([
       'entry_id', 'request_id', 'partner_id', 'partner_name', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents',
@@ -174,7 +178,7 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
     const mineRows = (await appCall(pa.aal2)).data ?? []
     const exp = await (service.rpc('export_commissions', { p_actor: adm, p_month: `${month}-01` }) as unknown as Promise<{ data: R[] | null }>)
     const key = (x: R) => `${x.entry_id}|${x.kind}|${x.reverses_entry_id}|${x.total_cents}|${x.fee_cents}|${x.fee_net_cents}|${x.fee_vat_cents}|${x.payout_cents}`
-    const own = (exp.data ?? []).filter((x) => [J1, J2, J4].includes(x.request_id))
+    const own = (exp.data ?? []).filter((x) => OURS.includes(x.request_id))
     expect(mineRows.map(key).sort()).toEqual(own.map(key).sort())
   })
 

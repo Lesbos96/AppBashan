@@ -7,6 +7,7 @@ import { Card } from '../components/Surfaces'
 import { loadPartner, statusInfo, type Partner as Firm } from '../lib/partner'
 import { useLoad } from '../lib/prices'
 import { useSession } from '../lib/session'
+import { Abrechnung } from './partner/Abrechnung'
 import { Anfragen } from './partner/Anfragen'
 import { PartnerAuftraege } from './partner/Auftraege'
 import { Dokumente } from './partner/Dokumente'
@@ -72,7 +73,13 @@ function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
             <>
               {/* Aufträge wickelt eine aktive oder pausierte Firma ab (my_job_partner_id); Anfragen sehen und annehmen darf nur eine aktive (pending: der Server liefert nichts, der Abruf bleibt aus) */}
               {firm.status === 'active' && <Anfragen onChange={() => setChanges((n) => n + 1)} />}
-              {(firm.status === 'active' || firm.status === 'payment_hold') && <PartnerAuftraege reloadKey={changes} />}
+              {(firm.status === 'active' || firm.status === 'payment_hold') && (
+                <>
+                  <PartnerAuftraege reloadKey={changes} />
+                  {/* Journal: eine Firma ohne Annahme hat keine Zeilen (pending, rejected); gesperrte Firmen sehen im Portal nichts (ACCESS), siehe OPEN_ISSUES S9i7c1-3 */}
+                  <Abrechnung />
+                </>
+              )}
               <Dokumente partnerId={firm.id} onDenied={recheck} />
             </>
           )}
