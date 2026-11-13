@@ -184,6 +184,12 @@ export type JobsState = {
   receiptAnswers: Ans[]
   withdrawnChanges: string[]
   withdrawChangeAnswers: Ans[]
+  /** Absage (s9i-7b2): Pauschale in Cent, die der gemockte Server bei Grund `scope_impossible` meldet (sonst 0); Auszahlung = Pauschale − round(15 %) */
+  callOut: number
+  /** Alle Aufrufe von `cancel-partner` (Vorschau und Absage), Rohkörper */
+  cancels: Record<string, unknown>[]
+  cancelPreviewAnswers: Ans[]
+  cancelAnswers: Ans[]
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
   listingReads: number
@@ -195,7 +201,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], ...structuredClone(init) }
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o
@@ -290,6 +296,23 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     const row = s.changes.find((c) => c.change_id === body.p_revision)
     if (row) Object.assign(row, { change_status: 'withdrawn', change_decided_at: '2026-11-30T12:00:00+00:00' })
     return r.fulfill({ status: 204, headers: cors })
+  })
+  // Absage (s9i-7b2): der Mock verhält sich wie der Server: Pauschale nur bei `scope_impossible`, anderer gezeigter Betrag ergibt 409 `amount_changed`
+  await page.route('**/functions/v1/cancel-partner', (r) => {
+    const o = pre(r)
+    if (o) return o
+    const body = r.request().postDataJSON() as Record<string, unknown>
+    s.cancels.push(body)
+    const callOut = body.reason === 'scope_impossible' ? s.callOut : 0
+    const payout = callOut - Math.round(callOut * 0.15)
+    const a = (body.preview === true ? s.cancelPreviewAnswers : s.cancelAnswers).shift()
+    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    if (body.preview === true) return r.fulfill({ headers: cors, json: { callOutCents: callOut, payoutCents: payout } })
+    // Wie der Server: die Pauschale fällt nur mit Belegen an (`feeBaseCents = ids.length > 0 ? callOutCents : 0`)
+    const due = Array.isArray(body.photoIds) && body.photoIds.length > 0 ? callOut : 0
+    if (body.shownCallOutCents !== due) return r.fulfill({ status: 409, headers: cors, json: { error: 'amount_changed' } })
+    s.myJobs = s.myJobs.map((j) => (j.request_id === body.requestId ? { ...j, status: 'cancelled_by_partner' as const, ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: due, payout_cents: due - Math.round(due * 0.15) } : j))
+    return r.fulfill({ headers: cors, json: { status: 'cancelled_by_partner', callOutCents: due } })
   })
   // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen
   const act = (name: 'start_job' | 'complete_job' | 'job_contact', log: string[], answers: Ans[], apply: (id: string) => void, okJson?: unknown) =>

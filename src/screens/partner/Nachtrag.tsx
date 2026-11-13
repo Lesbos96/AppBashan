@@ -5,6 +5,7 @@ import { Field, GroupedList, SelectField, SwitchRow } from '../../components/Sur
 import { JobError, jobErrorText } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import { PhotoError, MAX_PHOTOS } from '../../lib/photos'
+import { BelegFotos } from './Belege'
 import { buildChanges, changeFields, previewChange, proposeChange, startDraft, uploadReceipt, type Draft, type JobChange, type Preview } from '../../lib/partnerChange'
 
 const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums">{formatEuro(cents)}</span>
@@ -89,7 +90,6 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
   // Vorhandene Belege (vom Server) und in dieser Sitzung hochgeladene als Menge: nach einem Neuladen im Hintergrund stünde dieselbe ID sonst doppelt in der Liste (Abnahme M1)
   const all = Array.from(new Set([...c.receiptIds, ...uploaded]))
   const have = all.length
-  const room = MAX_PHOTOS - have
   // Ein hochgeladenes Foto bleibt beim Server (Belege lassen sich nicht löschen): auch beim Schließen ohne Senden neu laden, damit es als vorhanden zählt (Abnahme M2)
   const close = () => {
     onClose()
@@ -143,7 +143,6 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
   }
 
   const setField = (key: string, v: string | boolean) => setDraft((d) => ({ ...d, [key]: v }))
-  const full = files.length >= room
   const sendable = have + files.length >= 1 && have + files.length <= MAX_PHOTOS
 
   return (
@@ -182,42 +181,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
               </Zeile>
             </div>
             <p className="m-0 text-subhead text-text-secondary">Der Kunde sieht den neuen Gesamtpreis und deine Belegfotos. Ohne seine Zustimmung gilt der bisherige Preis.</p>
-            <GroupedList title="Belegfotos">
-              <li className="flex flex-col gap-1 px-4 py-3">
-                {have === 0 && files.length === 0 && <span className="text-body">Noch kein Foto</span>}
-                {have > 0 && <span className="text-body">{have === 1 ? '1 Foto schon hochgeladen' : `${have} Fotos schon hochgeladen`}</span>}
-                {files.length > 0 && <span className="text-body">{files.length === 1 ? '1 Foto wird beim Senden hochgeladen' : `${files.length} Fotos werden beim Senden hochgeladen`}</span>}
-                <span className="text-footnote text-text-secondary">Mindestens ein Foto, höchstens {MAX_PHOTOS} je Auftrag. Gelöscht werden sie nicht.</span>
-              </li>
-              {files.map((f, i) => (
-                <li key={`${f.name}-${i}`} className="flex min-h-12 items-center justify-between gap-3 px-4">
-                  <span className="min-w-0 truncate text-body">{f.name}</span>
-                  <button type="button" disabled={busy} onClick={() => setFiles((fs) => fs.filter((x) => x !== f))} aria-label={`Foto entfernen: ${f.name}`} className="press min-h-11 shrink-0 px-2 text-[16px] font-medium text-accent disabled:opacity-40">
-                    Entfernen
-                  </button>
-                </li>
-              ))}
-              <li className="relative">
-                <label className="flex min-h-12 items-center gap-3 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
-                  <span className="shrink-0 text-body">Foto</span>
-                  <span className={`min-w-0 flex-1 truncate text-right text-body ${full ? 'text-text-tertiary' : 'text-accent'}`}>{full ? 'Höchstzahl erreicht' : 'Hinzufügen'}</span>
-                  <input
-                    key={fileKey}
-                    type="file"
-                    multiple
-                    aria-label="Belegfoto hinzufügen"
-                    accept="image/jpeg,image/png,image/webp"
-                    disabled={busy || full}
-                    onChange={(e) => {
-                      const list = Array.from(e.target.files ?? []).slice(0, Math.max(0, room - files.length))
-                      setFiles((fs) => [...fs, ...list])
-                      setFileKey((k) => k + 1)
-                    }}
-                    className="sr-only"
-                  />
-                </label>
-              </li>
-            </GroupedList>
+            <BelegFotos have={have} files={files} setFiles={setFiles} fileKey={fileKey} setFileKey={setFileKey} busy={busy} />
           </>
         )}
 

@@ -275,6 +275,70 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
+  // Absage (s9i-7b2): Pauschale 69,00 €, Gebühr 10,35 €, Auszahlung 58,65 € (Live-Test-Beispiel, 15 %)
+  {
+    name: 'absage-grund',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await expect(page.getByRole('dialog').getByLabel('Grund')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'absage-pauschale',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await page.getByRole('dialog').getByRole('radio', { name: /Mit Pauschale/ }).check()
+      await page.getByRole('dialog').getByLabel('Belegfoto hinzufügen').setInputFiles({ name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX })
+      await expect(page.getByRole('dialog')).toContainText('beleg.png')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'absage-ohne-pauschale',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByLabel('Grund').selectOption('unavailable')
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await expect(page.getByRole('dialog')).toContainText('Der Kunde muss nichts zahlen')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'absage-betrag-geaendert',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page, ctx) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await page.getByRole('dialog').getByRole('radio', { name: /Mit Pauschale/ }).check()
+      await page.getByRole('dialog').getByLabel('Belegfoto hinzufügen').setInputFiles({ name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX })
+      ctx.jobs.callOut = 8000
+      await page.getByRole('dialog').getByRole('button', { name: /Pauschale absagen/ }).click()
+      await expect(page.getByRole('dialog')).toContainText('Der Betrag hat sich geändert')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'absage-fehler',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()], cancelPreviewAnswers: [{ status: 409, json: { error: 'under_review' } }] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  { name: 'absage-karte-ohne-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 0, payout_cents: 0 })] }, wait: heading('Beendet') },
+  { name: 'absage-karte-mit-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 5865 })] }, wait: heading('Beendet') },
   {
     name: 'angebot-eingabe-fehler',
     open: ACTIVE,

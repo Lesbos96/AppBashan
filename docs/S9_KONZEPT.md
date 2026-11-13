@@ -402,7 +402,7 @@ Jeder Test läuft mit zwei Kunden, zwei Partner-Firmen, einem pending-Partner, a
 | Listing nach Frist/Annahme | offen vor Frist | nach Fristende; nach Annahme durch anderen Partner | 0 Zeilen |
 | Pending/suspended Partner | – | `accept`, `send_offer`, `job_contact`, Listings | 42501 bzw. Funktionsfehler `partner_not_active` |
 | MFA | Partner mit `aal2` liest Listings, ruft `job_contact` | Partner mit `aal1`: Listings (0 Zeilen), `job_contact`, `job-photo`, `photo-publish`. Kunde ohne MFA bucht und liest `my_job_partner` nach der Annahme (erlaubt); fremder Kunde und Aufruf vor der Annahme (verweigert) [R4-2] | 0 Zeilen bzw. Funktionsfehler `mfa_required` |
-| Kontaktdaten | zugeordneter Partner `job_contact` bis `partner_access_days` nach Ende | nicht zugeordneter, abgelehnter; nach Storno/`completed` + 30 Tage | Funktionsfehler `not_assigned` (kein Datenleck in der Meldung) |
+| Kontaktdaten | zugeordneter Partner `job_contact` bis `partner_access_days` nach Ende; nach Storno durch die Firma nur bei fälliger Pauschale (0060, s9i-7b2), sonst sofort gesperrt | nicht zugeordneter, abgelehnter; nach Storno/`completed` + 30 Tage | Funktionsfehler `not_assigned` (kein Datenleck in der Meldung) |
 | Fotos | zugeordneter/zuständiger Partner erhält signierte URL der Kopie; Kunde erhält URL für Beleg-Fotos eigener Nachträge | anderer Partner; Original-Bucket; nach Annahme durch anderen; abgelaufenes Listing; fremder Kunde | 403 von der Function; Storage 0 Zeilen/403 |
 | Fotos vor dem Absenden | Storage-Insert in den Staging-Pfad ohne Anfrage (bis 8); `quote` übernimmt sie | Insert und Delete nach dem Absenden; Insert in fremden Ordner; `request_photos`-Insert direkt; neunte Datei im Ordner (Storage lässt sie zu, `quote` lehnt ab) | 42501 bzw. 0 Zeilen; `quote`: 422 `too_many_photos` |
 | Gebühr für Kunden | – | Kunde liest `commission_entries`, Gebühr in `price_revisions`, `partner_offers`-Auszahlung, `job_listings`, `platform_settings`, `outbox`, `audit_log` | 0 Zeilen bzw. Spalte existiert nicht |
@@ -466,7 +466,7 @@ Jeder Test läuft mit zwei Kunden, zwei Partner-Firmen, einem pending-Partner, a
 | Zeitpunkt | Wer | Bedingung |
 |---|---|---|
 | Vor Annahme | nur Partner, denen die Anfrage angeboten wird | Listing `open`, Frist nicht abgelaufen, Partner `active` mit `aal2`, Kategorie und Bezirk passen, Partner ist nicht der Kunde (keine Selbstbuchung) |
-| Nach Annahme | nur der zugeordnete Partner | Zuordnung besteht (5.5); endet `partner_access_days` (30) Tage nach `completed` bzw. nach dem Storno [Entschieden (Beks, 01.11.2026)] |
+| Nach Annahme | nur der zugeordnete Partner | Zuordnung besteht (5.5); endet `partner_access_days` (30) Tage nach `completed` bzw. nach dem Storno [Entschieden (Beks, 01.11.2026)]. Ausnahme Kontakt (`job_contact`, nicht die Fotos) nach Storno durch die Firma ohne fällige Pauschale: sofort gesperrt (Beks, s9i-7b2, Migration 0060) |
 | Nie | andere Partner, anon. admin nur über die protokollierenden Edge Functions `admin-photo` und `admin-contact` (Art A, Audit-Log; `admin-photo` erzeugt die signierte URL, was SQL nicht kann); ein freies SELECT als admin wird entzogen, weil sich SELECT nicht per Trigger protokollieren lässt (pgAudit ist **[Phase 2]**). Ausnahme und dokumentierte Grenze: Adresse und Freitext in `service_requests` sowie Name und Telefon in `profiles` bleiben für admin lesbar [Entschieden (Beks, 01.11.2026): reicht für Phase 1]. Weitere dokumentierte Grenze: Der Storage-Browser des Dashboards zeigt die Originalfotos ohne Audit-Log, wie das SELECT auf `service_requests` [R4-3] | – |
 
 ### 7.3 Zugriffsweg
@@ -513,7 +513,7 @@ Akteur in Klammern; „Funktion“ ist die serverseitige Erzwingung (4.4).
 ### 8.5 Storno durch Kunden
 
 1. Vor Vertrag (`requested`, `awaiting_offer`, `offered`): `withdraw` → `withdrawn`, Listings schließen, nach dem Planungsstand keine Kosten und keine Provision **[Frage Recht 3: Bindung des Kundenangebots bis zur Annahme ungeklärt]**.
-2. Nach Vertrag: `cancel_by_customer` → `cancelled_by_customer`; Stufen aus dem Snapshot (10.2): kostenlos bis 48 h vor dem Termin, danach 50 % des Gesamtpreises, am Termintag 100 %; bei `cancel_fee_waived` (Folgeanfrage nach Partner-Storno) kostenlos. Die Stornogebühr stellt der Partner dem Kunden in Rechnung; Provision nach 9.4. Der Zugriff des Partners auf Kontakt und Fotos endet 30 Tage nach dem Storno.
+2. Nach Vertrag: `cancel_by_customer` → `cancelled_by_customer`; Stufen aus dem Snapshot (10.2): kostenlos bis 48 h vor dem Termin, danach 50 % des Gesamtpreises, am Termintag 100 %; bei `cancel_fee_waived` (Folgeanfrage nach Partner-Storno) kostenlos. Die Stornogebühr stellt der Partner dem Kunden in Rechnung; Provision nach 9.4. Der Zugriff des Partners auf Kontakt und Fotos endet 30 Tage nach dem Storno (bei einem Storno durch die Firma ohne fällige Pauschale ist der Kontakt sofort gesperrt, 0060).
 
 ### 8.5b Nach dem Termin [Entschieden (Beks, 01.11.2026)]
 
@@ -675,7 +675,7 @@ Die Nummern sind die Nummern dieses Abschnitts; Beks' Zählung vom 01.11.2026 we
 | 7 Vermieter-Freigabe, 13 Miete | Phase 2 (mit der Miete) | 5.3, 8.8 |
 | 8 Festpreis und Nachträge | Festpreis gilt in beide Richtungen; Nachtrag nur erhöhend und nur mit Zustimmung des Kunden | 5.6 |
 | 8b Nachtrag bei Festangebot | kein Nachtrag | 5.6 |
-| 9 Kontakt und Fotos nach dem Auftrag | 30 Tage nach `completed` bzw. Storno | 5.5, 7.2 |
+| 9 Kontakt und Fotos nach dem Auftrag | 30 Tage nach `completed` bzw. Storno; Kontakt nach Storno durch die Firma ohne fällige Pauschale sofort gesperrt (s9i-7b2) | 5.5, 7.2 |
 | 10 Partner-Firma | Datenmodell mit `partner_members` (`unique (user_id)`), Oberfläche nur Inhaber; MFA (TOTP) Pflicht für Partner, nicht für Kunden | 5.2, R19 |
 | 11 Gebiet | Liste der Wiener Bezirke 1–23, maßgeblich die Abholadresse; Radius Phase 2 | 5.2, 5.5 |
 | 12 Weitervermittlung | automatisch zum gleichen Preis, wenn der Termin mindestens 24 Stunden entfernt ist; Kunde wird informiert und darf kostenlos stornieren; sonst neue Anfrage über `quote` | T16, 8.6 |

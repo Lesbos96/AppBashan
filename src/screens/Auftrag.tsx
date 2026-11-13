@@ -12,6 +12,7 @@ import { useLoad } from '../lib/prices'
 import { parseSnapshot, priceLabel } from '../lib/quote'
 import { useSession } from '../lib/session'
 import { supabase } from '../lib/supabase'
+import { Absage } from './auftrag/Absage'
 import { Angebote } from './auftrag/Angebote'
 import { Nachtrag } from './auftrag/Nachtrag'
 import { Termin } from './auftrag/Termin'
@@ -101,6 +102,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
         )}
       </section>
 
+      {r.status === 'cancelled_by_partner' && <Absage id={r.id} userId={userId} />}
       {r.status === 'offered' && <Angebote id={r.id} onDone={done} />}
       {live && <Nachtrag id={r.id} onDone={done} />}
       {live && started && !r.not_done_reported_at && <Termin id={r.id} onDone={done} />}

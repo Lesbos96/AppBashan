@@ -74,13 +74,27 @@ export function snapshotStorno(snapshot: unknown): string[] {
   return termsText({ termsHash: '', cancel_free_hours: r.cancel_free_hours, cancel_late_percent: r.cancel_late_percent, cancel_full_percent: r.cancel_full_percent, cancel_full_days_before: r.cancel_full_days_before, call_out_fee_cents: 0 }).storno
 }
 
+/**
+ * Absage der Firma aus Sicht des Kunden (s9i-7b2): Pauschale in Cent laut `my_cancel_info` (nie die Gebühr) und die Folgeanfrage über `reissued_from`.
+ * Ein unlesbarer Betrag ist ein Fehler, nie „keine Pauschale“. VORLÄUFIG bis zur Rechtsprüfung (S9_KONZEPT.md:361, docs/GOLIVE.md): Pauschale und Texte dazu.
+ */
+export type PartnerCancel = { feeCents: number; next: { id: string; status: string } | null }
+export async function loadPartnerCancel(requestId: string, userId: string): Promise<PartnerCancel> {
+  const { data, error } = await supabase.rpc('my_cancel_info', { p_request: requestId })
+  if (error) throw error
+  if (!cents(data)) throw new CancelError('unavailable')
+  const next = await supabase.from('service_requests').select('id, status').eq('reissued_from', requestId).eq('customer_id', userId).maybeSingle()
+  if (next.error) throw next.error
+  return { feeCents: data, next: next.data }
+}
+
 export const feeText =(feeCents: number) => (feeCents === 0 ? 'Kostenlos' : formatEuro(feeCents))
 
 const STEPS = ['Angefragt', 'Bestätigt', 'Läuft', 'Erledigt']
 const CURRENT: Record<string, number> = { requested: 0, awaiting_offer: 0, offered: 0, accepted: 1, in_progress: 2, completed: 3 }
 const END: Record<string, string> = {
   cancelled_by_customer: 'Du hast den Auftrag storniert.',
-  cancelled_by_partner: 'Der Partner hat den Auftrag storniert.',
+  cancelled_by_partner: 'Die Firma hat den Auftrag abgesagt.',
   withdrawn: 'Du hast die Anfrage zurückgezogen.',
   expired: 'Die Anfrage ist abgelaufen.',
   declined: 'Die Anfrage wurde abgelehnt.',

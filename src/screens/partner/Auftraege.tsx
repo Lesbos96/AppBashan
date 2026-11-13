@@ -13,6 +13,7 @@ import {
   mailHref,
   serviceLabel,
   startJob,
+  contactLocked,
   telHref,
   viennaTime,
   windowLabel,
@@ -22,6 +23,7 @@ import {
 } from '../../lib/partnerJobs'
 import { canPropose, loadChanges, withdrawChange, type ChangeStatus, type JobChange } from '../../lib/partnerChange'
 import { Bestaetigen } from '../auftrag/Bestaetigen'
+import { AbsageSheet } from './Absage'
 import { NachtragSheet } from './Nachtrag'
 
 // geschütztes Leerzeichen: „Bezirk 3“ bricht nie mit verwaister Ziffer um (S9i6b-1)
@@ -216,7 +218,8 @@ function Betraege({ j }: { j: Job }) {
 }
 
 function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined; onDone: (notice?: string) => void }) {
-  const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | null>(null)
+  const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | 'cancel' | null>(null)
+  const locked = contactLocked(j)
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
   // „11 Uhr“ bricht nie mit verwaister Uhrzeit um (Bildsicht)
@@ -246,8 +249,14 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       )}
       {j.status === 'in_progress' && !j.ended && <Button onClick={() => setSheet('finish')}>Auftrag abschließen</Button>}
       {change && !j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <NachtragBlock c={change} onOpen={() => setSheet('change')} onWithdraw={() => setSheet('withdraw')} />}
-      <Kontakt j={j} />
-      {j.ended && <p className="m-0 text-footnote text-text-secondary">Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.</p>}
+      {(j.status === 'accepted' || j.status === 'in_progress') && !j.ended && (
+        <Button variant="plain" onClick={() => setSheet('cancel')}>
+          Auftrag absagen
+        </Button>
+      )}
+      {!locked && <Kontakt j={j} />}
+      {j.ended && <p className="m-0 text-footnote text-text-secondary">{locked ? 'Kontakt und Adresse sind gesperrt, weil keine Pauschale anfällt.' : 'Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.'}</p>}
+      {!j.ended && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} onDone={onDone} />}
 
       <Bestaetigen open={sheet === 'start'} onClose={() => setSheet(null)} title="Auftrag starten" label="Auftrag starten" action={() => startJob(j.requestId)} onDone={onDone}>
         <p className="m-0 text-subhead text-text-secondary">Der Auftrag läuft danach. Abschließen kannst du ihn, wenn alles erledigt ist.</p>
