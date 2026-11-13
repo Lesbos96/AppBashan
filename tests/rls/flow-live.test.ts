@@ -6,12 +6,13 @@ import { appendFileSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Image } from 'imagescript'
+import '../../scripts/dev-guard.mjs'
 import { splitChange, splitFee } from '@pricing'
 import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
 import { moveInputs } from '../support/quote.ts'
-import { anon, deleteUsers, env, makeUser, service, type TestUser } from '../support/db.ts'
+import { anon, deleteUsers, env, makeUser, type TestUser } from '../support/db.ts'
 import { ownerSql } from '../support/owner.ts'
-import { COVER_FIRM, FIRM_MAIL, firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
+import { COVER_FIRM, FIRM_MAIL, FIRM_MAIL_RE, firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepReceiptObjects, sweepTestResidue } from '../support/sweep.ts'
 import { tryAal2User, type Aal2User } from '../support/totp.ts'
 
@@ -77,7 +78,7 @@ const photosOf = (req: string) => ownerSql(`select id from public.job_photos whe
 const contact = (db: Aal2User['aal2'], req: string) => db.rpc('job_contact', { p_request: req })
 
 beforeAll(async () => {
-  writeFileSync('tmp/reports/flow-live-ist.txt', `LAUF ${new Date().toISOString()} commit ${execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim()} Kennung 7c2-1311-c\n`)
+  writeFileSync('tmp/reports/flow-live-ist.txt', `LAUF ${new Date().toISOString()} commit ${execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim()}${execFileSync('git', ['status', '--porcelain', '--untracked-files=no']).toString().trim() ? ' (Arbeitsbaum geändert)' : ' (sauber)'} Kennung 7c2-1311-c\n`)
   ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
   sweepTestResidue(adm)
   await sweepReceiptObjects()
@@ -127,7 +128,13 @@ beforeAll(async () => {
 }, 600_000)
 
 afterAll(async () => {
-  for (const [name, f] of [['Belegobjekte', async () => ist(`AUFRÄUMEN Belegobjekte gelöscht: ${await sweepReceiptObjects()}`)], ['Firmen und Nutzer', async () => sweepTestResidue(adm, true)], ['Konten', deleteUsers]] as const) {
+  for (const [name, f] of [['Belegobjekte', async () => ist(`AUFRÄUMEN Belegobjekte gelöscht: ${await sweepReceiptObjects()}`)], ['Firmen und Nutzer', async () => sweepTestResidue(adm, true)], ['Konten', deleteUsers],
+    ['Rest', async () => {
+      const r = ownerSql(`select count(*) filter (where p.status in ('active', 'payment_hold')) as aktiv, count(*) as gesamt,
+        (select status::text from public.partners where id = nullif('${partnerA}', '')::uuid) as firma_a
+        from public.partners p where p.contact_email ~ '${FIRM_MAIL_RE}' and p.name <> '${COVER_FIRM}'`)[0]!
+      ist(`AUFRÄUMEN Rest | Testfirmen active/payment_hold=${r.aktiv} gesamt=${r.gesamt} Firma a=${r.firma_a}`)
+    }]] as const) {
     try {
       await f()
     } catch (e) {
@@ -151,7 +158,7 @@ describe('Erwartungskonstanten', () => {
   })
 })
 
-describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden)', () => {
+describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden); Konstanten: Buchung, Pauschale, Angebot', () => {
   live('accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409', async () => {
     const a = partnerA
     const b = partnerOf(pb.id)
@@ -205,7 +212,7 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
     expect(prev.status, JSON.stringify(prev)).toBe(200)
     ctx.t1 = Number(prev.body.totalCents)
     expect(prev.body.baseCents).toBe(BOOKED.total)
-    expect(ctx.t1).toBeGreaterThan(BOOKED.total)
+    expect(ctx.t1).toBe(BOOKED.total + 7080) // 6 statt 5 Stunden: eine Stunde zu 7.080 ct (tests/unit/pricing.test.ts:31), unabhängig von der Antwort
     ist(`W1 | 5a Vorschau | totalCents=${ctx.t1} baseCents=${prev.body.baseCents}`)
     const real = await fn('change-propose', pa.jwt2, { requestId: W1, changes: { hours: 6 }, photoIds: photosOf(W1), shownTotalCents: ctx.t1 })
     expect(real, JSON.stringify(real)).toMatchObject({ status: 200, body: { totalCents: ctx.t1 } })
@@ -324,7 +331,7 @@ describe('W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (
 })
 
 describe('W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer', () => {
-  live('accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt', async () => {
+  live('accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact bleibt im Zugriffsfenster (Entscheidung 104, S9i7-10 c)', async () => {
     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W4, partnerA), revisionId: rev1(W4), shownPayoutCents: BOOKED.payout })).status).toBe(200)
     expect(step('W4', '1 accept', W4).status).toBe('accepted')
     expect((await fn('cancel-customer', null, { requestId: W4, shownFeeCents: 0 })).status).toBe(401)
@@ -363,7 +370,7 @@ describe('W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confir
     expect(wrong, JSON.stringify(wrong)).toMatchObject({ status: 409, body: { error: 'amount_changed' } })
     expect(snap(W5).journal).toEqual([])
     const ok = await fn('offer-confirm', cust.jwt, body)
-    expect(ok.status, JSON.stringify(ok)).toBe(200)
+    expect(ok, JSON.stringify(ok)).toEqual({ status: 200, body: { status: 'confirmed' } })
     const s = step('W5', '3 offer-confirm (Kunde)', W5)
     expect(s.status).toBe('accepted')
     expect(s.journal).toEqual([{ kind: 'booking', rev: false, ...OFFER }])
@@ -378,7 +385,7 @@ const total = (rows: Row[], req: string): Money => sum(rows.filter((r) => r.requ
 const cents = (s: string) => { const m = /^(-?)(\d+),(\d{2})$/.exec(s); if (!m) throw new Error(`Betrag ${s}`); return (m[1] ? -1 : 1) * (Number(m[2]) * 100 + Number(m[3])) }
 
 describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold', () => {
-  live('Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe aus Vorschau T, 0, 0, 6900)', async () => {
+  live('Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (W1 = T, W2A 0, W2B 0, W3 Pauschale 6.900, W4 0, W5 noch keine Zeile)', async () => {
     const r = await mine(pa.aal2)
     expect(r.error).toBeNull()
     const rows = own(r.data)
@@ -389,7 +396,10 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     writeFileSync('tmp/reports/flow-live.csv', csv)
     const lines = csv.split('\r\n').filter(Boolean)
     expect(lines).toHaveLength(rows.length + 1)
+    const counts: Record<string, number> = { [W1]: 2, [W2A]: 2, [W2B]: 2, [W3]: 3, [W4]: 2, [W5]: 0 } // Zeilen je Auftrag: Buchung, Nachtrag, Gegenbuchung, Pauschale
+    expect(rows).toHaveLength(11)
     for (const [req, w] of want) {
+      expect(rows.filter((x) => x.request_id === req), `Zeilen ${req}`).toHaveLength(counts[req]!)
       expect(total(rows, req), `my_commissions ${req}`).toEqual(w)
       const cs = lines.slice(1).map((l) => l.split(';')).filter((c) => c[2] === req)
       const fromCsv: Money = { total: 0, fee: 0, net: 0, vat: 0, payout: 0 }
@@ -424,6 +434,8 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
 
   live('Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder', async () => {
     const empty = (r: { data: unknown[] | null; error: { code?: string } | null }) => expect(r.error?.code === '42501' || (r.data ?? []).length === 0).toBe(true)
+    // Positivkontrolle: dieselbe Abfrage liefert der Firma a mit aal2 Zeilen (sonst bewiese „leer“ nichts)
+    expect(((await pa.aal2.from('commission_entries').select('id').in('request_id', OURS)).data ?? []).length).toBeGreaterThan(0)
     empty(await cust.db.from('commission_entries').select('id').in('request_id', OURS))
     empty(await pb.aal2.from('commission_entries').select('id').in('request_id', OURS))
     empty(await pa.aal1.from('commission_entries').select('id').in('request_id', OURS))
