@@ -17,6 +17,27 @@ const BOUND = `(exists (select 1 from public.assignments a where a.partner_id = 
   or exists (select 1 from public.commission_entries c where c.partner_id = p.id) or exists (select 1 from public.job_photos j where j.uploaded_partner_id = p.id)
   or exists (select 1 from public.price_revisions r where r.proposed_by = p.id))`
 
+const UUID_FILE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\.jpg)?$/
+
+/**
+ * Löscht die Storage-Objekte der Belege von Testfirmen (Bucket job-photos, Pfade aus job_photos, nur über die Storage-API, s9i-7c2, Fable-Auflage 4).
+ * Die Zeilen in job_photos bleiben (unlöschbar); nicht angefasst werden SQL-Deletes auf storage.objects, andere Buckets und Objekte ohne job_photos-Zeile.
+ * Mehr als 50 Treffer oder ein Pfad ohne UUID-Muster: Abbruch ohne Löschen. Danach muss die Zählung 0 sein. Gibt die Zahl der gelöschten Objekte zurück.
+ */
+export async function sweepReceiptObjects(): Promise<number> {
+  const { service } = await import('./db.ts')
+  const exists = `exists (select 1 from storage.objects o where o.bucket_id = 'job-photos' and o.name = j.storage_path)`
+  const sel = `from public.job_photos j join public.partners p on p.id = j.uploaded_partner_id where j.kind = 'receipt' and ${TEST_FIRM} and ${exists}`
+  const paths = ownerSql(`select j.storage_path as p ${sel}`).map((r) => String(r.p))
+  if (paths.length > 50 || paths.some((p) => !UUID_FILE.test(p))) throw new Error(`Belegobjekte: ${paths.length} Treffer oder ungültiger Pfad, nichts gelöscht`)
+  if (paths.length === 0) return 0
+  const { error } = await service.storage.from('job-photos').remove(paths)
+  if (error) throw error
+  const left = Number(ownerSql(`select count(*) as n ${sel}`)[0]?.n)
+  if (left !== 0) throw new Error(`Belegobjekte: ${left} nach dem Löschen noch vorhanden`)
+  return paths.length
+}
+
 /**
  * Räumt Testfirmen und Testnutzer auf; `admin` ist der Akteur der Sperren und bleibt, außer bei `final` (dann wird auch er versucht).
  * Ein Fehler bei einer Firma betrifft nur diese. Am Anfang eines Tests (`final` aus) wirft die Funktion, wenn danach noch aktive oder
