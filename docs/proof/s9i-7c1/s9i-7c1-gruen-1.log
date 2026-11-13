@@ -1,0 +1,20 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+tests/rls/journal-live.test.ts(131,88): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+tests/rls/journal-live.test.ts(132,63): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+tests/rls/journal-live.test.ts(147,133): error TS2345: Argument of type '() => void' is not assignable to parameter of type '() => Promise<void>'.
+  Type 'void' is not assignable to type 'Promise<void>'.
+tests/rls/journal-live.test.ts(180,70): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+EXIT=2

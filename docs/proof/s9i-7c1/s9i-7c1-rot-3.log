@@ -1,0 +1,32 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+sha256 tests/rls/journal-live.test.ts: 15645ecabc6c37f0
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/journal-live.test.ts (8 tests | 1 failed) 26948ms
+   ❯ my_commissions für den Journal-Export (Dev, echte Tokens) (8)
+     × Datei aus den Live-Zeilen: je Auftrag Summe der Spalte „Betrag Kunde“ 0, 0 und 6900 ct; keine Kunden-ID; eine Zeile je Journalzeile 68ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/journal-live.test.ts > my_commissions für den Journal-Export (Dev, echte Tokens) > Datei aus den Live-Zeilen: je Auftrag Summe der Spalte „Betrag Kunde“ 0, 0 und 6900 ct; keine Kunden-ID; eine Zeile je Journalzeile
+TypeError: journalCsv is not a function
+ ❯ tests/rls/journal-live.test.ts:183:17
+    181|   live('Datei aus den Live-Zeilen: je Auftrag Summe der Spalte „Betrag…
+    182|     const rows = (await appCall(pa.aal2)).data ?? []
+    183|     const csv = journalCsv(rows as never)
+       |                 ^
+    184|     const lines = csv.split('\r\n').filter(Boolean)
+    185|     expect(lines).toHaveLength(rows.length + 1)
+ ❯ tests/rls/journal-live.test.ts:108:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  09:21:20
+   Duration  29.89s (tests 99%)
+
+EXIT=1

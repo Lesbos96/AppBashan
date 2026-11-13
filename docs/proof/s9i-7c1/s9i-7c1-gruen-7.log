@@ -1,0 +1,12 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  09:27:32
+   Duration  24.58s (tests 99%)
+
+EXIT=0

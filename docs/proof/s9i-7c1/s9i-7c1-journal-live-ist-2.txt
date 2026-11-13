@@ -1,0 +1,6 @@
+LAUF 2026-11-13T09:51:36.297Z commit 6a29ff9
+IST anon=42501 kunde=mfa_required aal1=mfa_required firma-a-aal2-zeilen=9
+IST firma-b-zeilen-von-a=0 firma-b-gesamt=0
+IST firma-pending-aal2 fehler=keiner zeilen=0
+IST firma-rejected-aal2 fehler=keiner zeilen=0
+IST firma-suspended-aal2 fehler=keiner zeilen=0

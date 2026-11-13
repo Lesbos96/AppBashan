@@ -1,0 +1,186 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts supabase/functions/offer-confirm/index.ts supabase/functions/change-propose/index.ts supabase/functions/change-decide/index.ts supabase/functions/cancel-customer/index.ts supabase/functions/cancel-partner/index.ts supabase/functions/admin-correct/index.ts supabase/functions/delete-account/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m supabase/functions/accept/index.ts
+[0m[32mCheck[0m supabase/functions/admin-contact/index.ts
+[0m[32mCheck[0m supabase/functions/outbox-send/index.ts
+[0m[32mCheck[0m supabase/functions/photo-publish/index.ts
+[0m[32mCheck[0m supabase/functions/photo-receipt/index.ts
+[0m[32mCheck[0m supabase/functions/job-photo/index.ts
+[0m[32mCheck[0m supabase/functions/admin-photo/index.ts
+[0m[32mCheck[0m supabase/functions/offer-confirm/index.ts
+[0m[32mCheck[0m supabase/functions/change-propose/index.ts
+[0m[32mCheck[0m supabase/functions/change-decide/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-customer/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-partner/index.ts
+[0m[32mCheck[0m supabase/functions/admin-correct/index.ts
+[0m[32mCheck[0m supabase/functions/delete-account/index.ts
+[0m[32mCheck[0m scripts/measure-photo.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/journal-csv.test.ts (53 tests | 1 failed) 19ms
+   ❯ journalCsv: Format (6)
+     ✓ ohne Zeilen nur BOM und Kopfzeile, CRLF 1ms
+     ✓ Buchung: Monat, Wiener Zeit, Auftrag, Art deutsch und technisch, Beträge mit Komma, Satz mit Komma 1ms
+     ✓ jede Zeile endet mit CRLF, jede Journalzeile ergibt genau eine CSV-Zeile (nichts zusammengefasst) 1ms
+     ✓ Gegenbuchung mit Vorzeichen und Bezug auf die gegengebuchte Zeile; Storno ohne Pauschale ergibt Summe 0 1ms
+     ✓ Stornopauschale und Nachtrag und Korrektur haben ihre Bezeichnung 0ms
+     × keine Spalte mit Kundendaten, Firmenname, Partner-ID oder Status 4ms
+   ✓ journalCsv: Beträge aus Integer-Cent (33)
+     ✓ 6900 ct → 69,00 0ms
+     ✓ -1035 ct → -10,35 0ms
+     ✓ 5 ct → 0,05 0ms
+     ✓ 0 ct → 0,00 0ms
+     ✓ -5 ct → -0,05 0ms
+     ✓ 123456789 ct → 1234567,89 0ms
+     ✓ Minus ist ASCII 0x2D, jede Betragsspalte passt auf ^-?\d+,\d{2}$ 0ms
+     ✓ bigint als Zeichenkette ist erlaubt 0ms
+     ✓ Betrag leere Zeichenkette ist bad_row 2ms
+     ✓ Betrag null ist bad_row 0ms
+     ✓ Betrag undefined ist bad_row 0ms
+     ✓ Betrag Kommazahl ist bad_row 0ms
+     ✓ Betrag NaN ist bad_row 0ms
+     ✓ Betrag Unendlich ist bad_row 0ms
+     ✓ Betrag zu groß für eine sichere Ganzzahl ist bad_row 0ms
+     ✓ Betrag Exponent ist bad_row 0ms
+     ✓ Betrag Dezimalpunkt ist bad_row 0ms
+     ✓ Betrag Text ist bad_row 0ms
+     ✓ Betrag Leerzeichen ist bad_row 0ms
+     ✓ Betrag Formel ist bad_row 0ms
+     ✓ Satz 0.15 → 0,15 0ms
+     ✓ Satz 0 → 0 0ms
+     ✓ Satz 1 → 1 0ms
+     ✓ Satz 0.15000 → 0,15000 0ms
+     ✓ Satz 0.2 → 0,2 0ms
+     ✓ Satz leer ist bad_row 0ms
+     ✓ Satz null ist bad_row 0ms
+     ✓ Satz 1,5 ist bad_row 0ms
+     ✓ Satz negativ ist bad_row 0ms
+     ✓ Satz Exponent ist bad_row 0ms
+     ✓ Satz NaN ist bad_row 0ms
+     ✓ Satz Text ist bad_row 0ms
+     ✓ unbekannte Art ist bad_row 0ms
+   ✓ journalCsv: Wiener Zeit über die Zeitumstellungen (3)
+     ✓ Sommerzeit-Beginn (letzter Sonntag im März, 2026-03-29, 01:00 UTC) 0ms
+     ✓ Winterzeit-Beginn (letzter Sonntag im Oktober, 2026-10-25, 01:00 UTC) 0ms
+     ✓ Tageswechsel um Mitternacht Wiener Zeit 0ms
+   ✓ journalCsv: Quoting und Formelschutz (Textfelder) (10)
+     ✓ Semikolon, Anführungszeichen, CR und LF: Anführungszeichen, " verdoppelt 0ms
+     ✓ Textfeld "=SUMME(A1)" wird zu "'=SUMME(A1)" entschärft 0ms
+     ✓ Textfeld "+1" wird zu "'+1" entschärft 0ms
+     ✓ Textfeld "-1" wird zu "'-1" entschärft 0ms
+     ✓ Textfeld "@cmd" wird zu "'@cmd" entschärft 0ms
+     ✓ Textfeld "\tx" wird zu "'\tx" entschärft 0ms
+     ✓ Textfeld "  =1+1" wird zu "'  =1+1" entschärft 0ms
+     ✓ Textfeld " -2" wird zu "' -2" entschärft 0ms
+     ✓ Formel mit Anführungszeichen wird erst entschärft, dann gequotet 0ms
+     ✓ Beträge werden nie entschärft: negative Beträge bleiben ohne Apostroph 0ms
+   ✓ commissionsCsv (Admin): Formelschutz auch nach führenden Leerzeichen (1)
+     ✓ führende Leerzeichen vor = werden entschärft 0ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 45ms
+ ✓ |unit| tests/unit/partner-docs.test.ts (22 tests) 42ms
+ ✓ |unit| tests/unit/account-client.test.ts (11 tests) 42ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 109ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 65ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (6 tests) 60ms
+ ✓ |unit| tests/unit/offer-confirm.test.ts (4 tests) 60ms
+ ✓ |unit| tests/unit/cancel-handler.test.ts (8 tests) 63ms
+ ✓ |unit| tests/unit/accept.test.ts (10 tests) 72ms
+ ✓ |unit| tests/unit/admin-correct-handler.test.ts (9 tests) 67ms
+ ✓ |unit| tests/unit/cancel-partner-handler.test.ts (11 tests) 70ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 93ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 76ms
+ ✓ |unit| tests/unit/cancel-client.test.ts (17 tests) 54ms
+ ✓ |unit| tests/unit/delete-account-handler.test.ts (8 tests) 59ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (19 tests) 63ms
+ ✓ |unit| tests/unit/jobs-client.test.ts (44 tests) 65ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 103ms
+ ✓ |unit| tests/unit/partner-journal.test.ts (20 tests) 41ms
+ ✓ |unit| tests/unit/partner-jobs.test.ts (81 tests) 82ms
+ ✓ |unit| tests/unit/change.test.ts (12 tests) 38ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (18 tests) 73ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 27ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 765ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 712ms
+ ✓ |unit| tests/unit/change-handlers.test.ts (16 tests) 91ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 916ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (11 tests) 23ms
+ ✓ |unit| tests/unit/partner-my-jobs.test.ts (47 tests) 28ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 20ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 18ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 23ms
+ ✓ |unit| tests/unit/auth.test.ts (56 tests) 19ms
+ ✓ |unit| tests/unit/partner-register.test.ts (47 tests) 30ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 13ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 9ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 8ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 9ms
+ ✓ |unit| tests/unit/commission-csv.test.ts (5 tests) 8ms
+ ✓ |unit| tests/unit/partner-change.test.ts (19 tests) 26ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 8ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 14ms
+ ✓ |unit| tests/unit/admin-correct-db.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 842ms
+ ✓ |unit| tests/unit/quote.test.ts (60 tests) 161ms
+ ✓ |unit| tests/unit/mfa-client.test.ts (21 tests) 12ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 3ms
+ ✓ |unit| tests/unit/partner-cancel.test.ts (31 tests) 13ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 4ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 10ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 24ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/journal-csv.test.ts > journalCsv: Format > keine Spalte mit Kundendaten, Firmenname, Partner-ID oder Status
+AssertionError: expected '\ufeffAbrechnungsmonat;Buchungszeit;A…' not to match /Partner|Status|Name|Adresse|Telefon|M…/
+
+- Expected:
+/Partner|Status|Name|Adresse|Telefon|Mail|Kunde;|Endzeit/
+
++ Received:
+"﻿Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Satz;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID"
+
+ ❯ tests/unit/journal-csv.test.ts:64:49
+     62|
+     63|   it('keine Spalte mit Kundendaten, Firmenname, Partner-ID oder Status…
+     64|     expect(journalCsv([]).split('\r\n')[0]).not.toMatch(/Partner|Statu…
+       |                                                 ^
+     65|   })
+     66| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 51 passed (52)
+      Tests  1 failed | 1181 passed (1182)
+   Start at  09:24:59
+   Duration  2.57s (transform 58%, import 25%, tests 15%, worker 2%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=1

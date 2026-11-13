@@ -1,0 +1,12 @@
+Volllauf-Hash 6a29ff9 gegen Endstand (Index, vor dem Abschluss-Commit); diese Datei selbst und das Scan-Log fehlen in der Liste
+--- git diff --cached --stat 6a29ff9
+ docs/proof/s9i-7c1/s9i-7c1-journal-live-2.csv     |    10 +
+ docs/proof/s9i-7c1/s9i-7c1-journal-live-ist-2.txt |     6 +
+ docs/proof/s9i-7c1/s9i-7c1-journal-live-ist.txt   |     6 +
+ docs/proof/s9i-7c1/s9i-7c1-journal-live.csv       |    10 +
+ docs/proof/s9i-7c1/s9i-7c1-plan.md                |    46 +
+ docs/proof/s9i-7c1/s9i-7c1-rls-1.json             |     1 +
+ docs/proof/s9i-7c1/s9i-7c1-rls-2.json             |     1 +
+ 29 files changed, 53171 insertions(+), 1 deletion(-)
+--- nur Code und Konfiguration (src supabase tests .claude package.json vite.config.ts tsconfig.json playwright.config.ts), erwartet leer:
+--- Ende

@@ -1,0 +1,15 @@
+Kennung 7c1-1311-a · Teil A Berater-Tool-Sperre (S9i7b2-1)
+Datum 2026-11-13
+
+Quelle 1: https://code.claude.com/docs/en/tools-reference (WebFetch, vollständig gespeichert; Treffer per Grep "advisor"):
+  "The advisor tool is a server tool that the API runs, rather than a tool that Claude Code implements. It has no name you can reference in permission rules or hook matchers."
+Quelle 2: https://code.claude.com/docs/en/advisor.md (WebFetch), Abschnitt "Turn the advisor off":
+  "To stop using the advisor, run /advisor off ..."
+  "To disable the advisor tool entirely, set CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1. The /advisor command becomes unavailable and any configured advisorModel is ignored."
+  Abschnitt "Choose an advisor model": "Subagents inherit the configured advisor and apply the same pairing check against their own model."
+Quelle 3: https://code.claude.com/docs/en/permissions (WebFetch): kein Eintrag zum advisor.
+
+Ergebnis:
+- Es gibt KEINEN belegten Namen für eine deny-Regel (Doku: "no name you can reference in permission rules").
+- Nach Auftrag A ("Gibt es keinen belegten Namen: nichts eintragen, Fund melden, weiter mit dem Verbot im Auftrag"): .claude/settings.json NICHT geändert, keine Probeaufrufe (ohne Regel wäre ein Probeaufruf kein Beleg einer Sperre).
+- Dokumentierter Abschaltweg ist ein anderer: Umgebungsvariable CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1 (Prozess-Umgebung oder "env" in settings.json). Wirkung nicht erprobt (Neustart nötig, nicht im Auftrag). Für Beks zur Entscheidung; bis dahin gilt das ausdrückliche Verbot im Auftrag an jeden Berater.

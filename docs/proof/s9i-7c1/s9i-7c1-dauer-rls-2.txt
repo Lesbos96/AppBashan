@@ -1,0 +1,44 @@
+Datei | alt Datei s | neu Datei s | Faktor | alt Log s | neu Log s
+rls/partner-functions-live.test.ts |  129.1 |  115.2 | 0.9x |  153.0 |  152.6
+rls/uploads.test.ts |   81.6 |   81.7 | 1.0x |   85.9 |   87.1
+rls/quote-hardening.test.ts |   77.8 |   67.0 | 0.9x |   83.7 |   72.4
+rls/quote.test.ts |   47.1 |   54.4 | 1.2x |   53.3 |   65.0
+rls/status.test.ts |   24.6 |   21.4 | 0.9x |   32.1 |   28.9
+rls/partner-documents.test.ts |   19.8 |   17.8 | 0.9x |   35.2 |   50.5
+rls/job-photos-concurrency.test.ts |   18.3 |   17.6 | 1.0x |   25.0 |   22.9
+rls/partners.test.ts |   21.0 |   16.6 | 0.8x |   21.3 |   16.9
+rls/accept-concurrency.test.ts |   14.8 |   14.3 | 1.0x |   15.8 |   15.1
+rls/change-orders-concurrency.test.ts |   15.9 |   13.9 | 0.9x |   16.8 |   14.6
+rls/listings.test.ts |   22.2 |   12.4 | 0.6x |   22.2 |   12.4
+rls/offers-concurrency.test.ts |   13.2 |   12.3 | 0.9x |   14.2 |   13.1
+rls/job-photos.test.ts |   15.9 |   12.3 | 0.8x |   15.9 |   12.3
+rls/partner-mfa.test.ts |   17.2 |   12.1 | 0.7x |   18.4 |   13.3
+rls/sweep.test.ts |   14.3 |   11.4 | 0.8x |   22.9 |   18.1
+rls/rls.test.ts |   12.1 |   10.5 | 0.9x |   26.0 |   23.2
+rls/partner-admin.test.ts |    8.9 |    9.0 | 1.0x |    8.9 |    9.0
+rls/offers.test.ts |   41.6 |    8.6 | 0.2x |   41.6 |    8.6
+rls/settings.test.ts |   27.3 |    8.4 | 0.3x |   36.7 |   12.0
+rls/journal.test.ts |   10.5 |    8.4 | 0.8x |   10.5 |    8.4
+rls/booking-open.test.ts |    8.7 |    7.7 | 0.9x |   10.0 |    9.1
+rls/change-orders.test.ts |   54.3 |    6.8 | 0.1x |   54.3 |    6.8
+rls/route.test.ts |    6.1 |    5.6 | 0.9x |    8.1 |    7.2
+rls/delete-account-live.test.ts |    5.2 |    4.9 | 0.9x |    5.5 |    5.0
+rls/account-deletion.test.ts |    3.2 |    3.9 | 1.2x |    3.2 |    3.9
+rls/cancellation.test.ts |    4.5 |    3.7 | 0.8x |    4.5 |    3.7
+rls/cancellation-partner-preview.test.ts |    3.8 |    3.4 | 0.9x |    3.8 |    3.4
+rls/cancellation-partner.test.ts |    2.9 |    3.1 | 1.1x |    2.9 |    3.1
+rls/partner-my-jobs.test.ts |    3.7 |    2.9 | 0.8x |    3.7 |    2.9
+rls/partner-my-job-changes.test.ts |    3.9 |    2.8 | 0.7x |    3.9 |    2.8
+rls/partner-jobs.test.ts |    3.6 |    2.7 | 0.8x |    3.6 |    2.7
+rls/outbox.test.ts |    2.8 |    2.6 | 0.9x |    2.8 |    2.6
+rls/auth.test.ts |    3.1 |    2.3 | 0.7x |    3.5 |    2.6
+rls/completion.test.ts |    8.0 |    2.3 | 0.3x |    8.0 |    2.3
+rls/admin-correct.test.ts |   12.3 |    2.1 | 0.2x |   12.3 |    2.1
+rls/journal-live.test.ts |   -    |    2.1 | - |   -    |   20.9
+rls/job-contact-after-cancel.test.ts |    1.9 |    1.5 | 0.8x |    1.9 |    1.5
+rls/partner-fee-read.test.ts |    5.9 |    1.0 | 0.2x |    5.9 |    1.0
+SUMME JSON-Dateidauer: alt 767 s, neu 587 s
+SUMME JSON-Testdauer: alt 765 s, neu 585 s
+SUMME Log-Dateidauer: alt 877 s, neu 740 s
+Tests: alt 333, neu 341
+Wanduhr (Start bis Ende laut Log): neu 791 s; alt 932 s (s9i-7b2)

@@ -1,0 +1,10 @@
+﻿Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Satz;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID
+2026-11;13.11.2026 10:51;cfe69901-b0b0-4f0e-bc08-dc661d7cf4f3;Buchung (booking);;689,61;0,15;86,20;17,24;103,44;586,17;144df617-4d73-4127-b9c4-79936625c057
+2026-11;13.11.2026 10:51;cfe69901-b0b0-4f0e-bc08-dc661d7cf4f3;Nachtrag (change);;110,39;0,15;13,80;2,76;16,56;93,83;7a0ecb89-4ade-4dfb-b07b-a7eea0c76626
+2026-11;13.11.2026 10:51;490faa70-a911-4a75-a2bf-bc8fcfff6c1d;Buchung (booking);;689,61;0,15;86,20;17,24;103,44;586,17;80d381b3-aadd-4bcd-add7-0e377bcc871a
+2026-11;13.11.2026 10:51;8a9243ee-939a-4e08-a684-db3ef354c9f8;Buchung (booking);;689,61;0,15;86,20;17,24;103,44;586,17;f3ca0901-0a46-4e34-8480-049df33b108a
+2026-11;13.11.2026 10:51;8a9243ee-939a-4e08-a684-db3ef354c9f8;Storno-Gegenbuchung (cancellation);f3ca0901-0a46-4e34-8480-049df33b108a;-689,61;0,15;-86,20;-17,24;-103,44;-586,17;591bf201-a1d1-49f8-985f-3eb2662ce0d1
+2026-11;13.11.2026 10:51;cfe69901-b0b0-4f0e-bc08-dc661d7cf4f3;Storno-Gegenbuchung (cancellation);144df617-4d73-4127-b9c4-79936625c057;-689,61;0,15;-86,20;-17,24;-103,44;-586,17;b813fc37-bffd-412f-8f9e-3a01b2da5bfd
+2026-11;13.11.2026 10:51;cfe69901-b0b0-4f0e-bc08-dc661d7cf4f3;Storno-Gegenbuchung (cancellation);7a0ecb89-4ade-4dfb-b07b-a7eea0c76626;-110,39;0,15;-13,80;-2,76;-16,56;-93,83;c45efe36-a2d0-494e-ae64-d1225bd84031
+2026-11;13.11.2026 10:51;490faa70-a911-4a75-a2bf-bc8fcfff6c1d;Stornopauschale (cancellation_fee);;69,00;0,15;8,63;1,72;10,35;58,65;563a0450-bb84-476b-ad44-212e8a8b1b99
+2026-11;13.11.2026 10:51;490faa70-a911-4a75-a2bf-bc8fcfff6c1d;Storno-Gegenbuchung (cancellation);80d381b3-aadd-4bcd-add7-0e377bcc871a;-689,61;0,15;-86,20;-17,24;-103,44;-586,17;858873f9-9d9d-415f-b84d-61d706da69ab

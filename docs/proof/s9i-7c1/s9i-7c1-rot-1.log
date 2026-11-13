@@ -1,0 +1,65 @@
+Commit: 711ffe6
+Arbeitsbaum sauber: nein (neue Tests, tests/shots/partner.spec.ts)
+Sha256 tests/unit/journal-csv.test.ts: e668af9faa47b028
+Sha256 tests/unit/partner-journal.test.ts: fc8807a7cf329377
+     29|
+ ❯ id tests/unit/journal-csv.test.ts:149:29
+ ❯ tests/unit/journal-csv.test.ts:165:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/55]⎯
+
+ FAIL  |unit| tests/unit/journal-csv.test.ts > journalCsv: Quoting und Formelschutz (Textfelder) > Formel mit Anführungszeichen wird erst entschärft, dann gequotet
+TypeError: journalCsv is not a function
+ ❯ lines tests/unit/journal-csv.test.ts:27:39
+     25|
+     26| const HEADER = 'Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag…
+     27| const lines = (rows: JournalRow[]) => journalCsv(rows).split('\r\n')
+       |                                       ^
+     28| const cells = (r: JournalRow) => lines([r])[1]!.split(';')
+     29|
+ ❯ id tests/unit/journal-csv.test.ts:149:29
+ ❯ tests/unit/journal-csv.test.ts:168:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/55]⎯
+
+ FAIL  |unit| tests/unit/journal-csv.test.ts > journalCsv: Quoting und Formelschutz (Textfelder) > Beträge werden nie entschärft: negative Beträge bleiben ohne Apostroph
+TypeError: journalCsv is not a function
+ ❯ lines tests/unit/journal-csv.test.ts:27:39
+     25|
+     26| const HEADER = 'Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag…
+     27| const lines = (rows: JournalRow[]) => journalCsv(rows).split('\r\n')
+       |                                       ^
+     28| const cells = (r: JournalRow) => lines([r])[1]!.split(';')
+     29|
+ ❯ tests/unit/journal-csv.test.ts:171:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/55]⎯
+
+ FAIL  |unit| tests/unit/journal-csv.test.ts > commissionsCsv (Admin): Formelschutz auch nach führenden Leerzeichen > führende Leerzeichen vor = werden entschärft
+AssertionError: expected '\ufeffAbrechnungsmonat;Auftrag;Partne…' to contain ';\'  =1+1;'
+
+- Expected
++ Received
+
+- ;'  =1+1;
++ ﻿Abrechnungsmonat;Auftrag;Partner-ID;Partner;Art;Buchung;Gegenbuchung zu;Gebucht am;Gesamtpreis;Satz;Provision netto;USt.;Provision brutto;Auszahlung;USt.-Regel;Auftragsstatus;Endzeitpunkt
++ 2026-10;r1;p1;  =1+1;booking;e1;;01.10.2026 00:00;1,00;0,15;0,12;0,03;0,15;0,85;standard_20;completed;01.10.2026 01:30
++
+
+ ❯ tests/unit/journal-csv.test.ts:183:67
+    181|   }
+    182|   it('führende Leerzeichen vor = werden entschärft', () => {
+    183|     expect(commissionsCsv([{ ...base, partner_name: '  =1+1' }])).toCo…
+       |                                                                   ^
+    184|   })
+    185| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/55]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  54 failed | 43 passed (97)
+   Start at  09:08:36
+   Duration  546ms (transform 68%, import 19%, tests 10%, worker 2%)
+
+EXIT=1

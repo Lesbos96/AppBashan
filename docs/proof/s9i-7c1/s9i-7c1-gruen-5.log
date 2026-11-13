@@ -1,0 +1,102 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 10 tests using 1 worker
+
+  ok  1 [e2e] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat (1.3s)
+  x   2 [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste (1.6s)
+  ok  3 [e2e] › tests\e2e\partner-journal.spec.ts:70:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt (2.2s)
+  ok  4 [e2e] › tests\e2e\partner-journal.spec.ts:83:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler (1.4s)
+  x   5 [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter (6.4s)
+  ok  6 [e2e] › tests\e2e\partner-journal.spec.ts:103:1 › Monat leer: Fehlertext ohne Aufruf (1.5s)
+  ok  7 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok  8 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok  9 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 10 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+
+
+  1) [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "month": "2026-10-01",
+    -   "range": "0-999",
+    +   "range": undefined,
+      }
+
+      60 |   expect(lines).toHaveLength(4)
+      61 |   expect(jobs.journalCalls).toHaveLength(1)
+    > 62 |   expect(jobs.journalCalls[0]).toMatchObject({ month: '2026-10-01', range: '0-999' })
+         |                                ^
+      63 |   expect(jobs.journalCalls[0]!.prefer).toContain('count=exact')
+      64 |   const sel = new URL(jobs.journalCalls[0]!.url).searchParams.get('select')
+      65 |   expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:62:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('region', { name: 'Abrechnung' }).getByRole('button', { name: 'Journal herunterladen' })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('region', { name: 'Abrechnung' }).getByRole('button', { name: 'Journal herunterladen' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByRole('button', { name: 'Journal herunterladen' })
+        14 × locator resolved to <button type="button" class="press w-full px-5 disabled:opacity-40 h-12 rounded-button-secondary bg-tint text-[16px] font-semibold text-accent ">Journal herunterladen</button>
+           - unexpected value "inactive"
+
+
+       95 |   await month(page).focus()
+       96 |   await page.keyboard.press('Tab')
+    >  97 |   await expect(button(page)).toBeFocused()
+          |                              ^
+       98 |   const d = await download(page, () => page.keyboard.press('Enter'))
+       99 |   expect(d.suggestedFilename()).toBe('movenow-journal-2026-10.csv')
+      100 |   expect(jobs.journalCalls).toHaveLength(1)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:97:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+    [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter 
+  8 passed (26.7s)
+EXIT=1

@@ -1,0 +1,368 @@
+Commit: 711ffe6
+Arbeitsbaum sauber: nein
+sha256 tests/e2e/partner-journal.spec.ts: 394e10fbe9b25629
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 10 tests using 1 worker
+
+  x   1 [e2e] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat (6.4s)
+  x   2 [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste (1.0m)
+  x   3 [e2e] › tests\e2e\partner-journal.spec.ts:70:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt (1.0m)
+  x   4 [e2e] › tests\e2e\partner-journal.spec.ts:83:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler (1.0m)
+  x   5 [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter (1.0m)
+  x   6 [e2e] › tests\e2e\partner-journal.spec.ts:103:1 › Monat leer: Fehlertext ohne Aufruf (1.0m)
+  x   7 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.0m)
+  x   8 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.0m)
+  x   9 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.0m)
+  x  10 [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.0m)
+
+
+  1) [e2e] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: 'Abrechnung' }).getByRole('heading', { name: 'Abrechnung' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: 'Abrechnung' }).getByRole('heading', { name: 'Abrechnung' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByRole('heading', { name: 'Abrechnung' })
+
+
+      37 |   const errors = collectErrors(page)
+      38 |   await open(page)
+    > 39 |   await expect(card(page).getByRole('heading', { name: 'Abrechnung' })).toBeVisible()
+         |                                                                         ^
+      40 |   await expect(month(page)).toBeVisible()
+      41 |   await expect(month(page)).toHaveValue(/^\d{4}-(0[1-9]|1[0-2])$/)
+      42 |   await expect(card(page)).toContainText('JJJJ-MM')
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:39:73
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Karte--ecb0a-weis-auf-den-Abschlussmonat-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Karte--ecb0a-weis-auf-den-Abschlussmonat-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Karte--ecb0a-weis-auf-den-Abschlussmonat-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Karte--ecb0a-weis-auf-den-Abschlussmonat-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:51:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [e2e] › tests\e2e\partner-journal.spec.ts:70:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:72:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Doppel-c2f1e-dens-ist-der-Knopf-gesperrt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Doppel-c2f1e-dens-ist-der-Knopf-gesperrt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Doppel-c2f1e-dens-ist-der-Knopf-gesperrt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Doppel-c2f1e-dens-ist-der-Knopf-gesperrt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [e2e] › tests\e2e\partner-journal.spec.ts:83:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:85:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-leerer-f5200-r-mit-Kopfzeile-kein-Fehler-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-leerer-f5200-r-mit-Kopfzeile-kein-Fehler-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-leerer-f5200-r-mit-Kopfzeile-kein-Fehler-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-leerer-f5200-r-mit-Kopfzeile-kein-Fehler-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:94:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Tastat-7d3df-m-Knopf-Enter-lädt-herunter-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [e2e] › tests\e2e\partner-journal.spec.ts:103:1 › Monat leer: Fehlertext ohne Aufruf ──────────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      103 | test('Monat leer: Fehlertext ohne Aufruf', async ({ page }) => {
+      104 |   const { jobs } = await open(page)
+    > 105 |   await month(page).fill('')
+          |                     ^
+      106 |   await button(page).click()
+      107 |   await expect(card(page).getByRole('alert')).toContainText('Monat')
+      108 |   expect(jobs.journalCalls).toEqual([])
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:105:21
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Monat-leer-Fehlertext-ohne-Aufruf-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Monat-leer-Fehlertext-ohne-Aufruf-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Monat-leer-Fehlertext-ohne-Aufruf-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Monat-leer-Fehlertext-ohne-Aufruf-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:120:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-6c7c5-nbar-zweiter-Versuch-klappt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Fehler-6c7c5-nbar-zweiter-Versuch-klappt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-6c7c5-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Fehler-6c7c5-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:120:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-58190-nbar-zweiter-Versuch-klappt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Fehler-58190-nbar-zweiter-Versuch-klappt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-58190-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Fehler-58190-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:120:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-666f7-nbar-zweiter-Versuch-klappt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Fehler-666f7-nbar-zweiter-Versuch-klappt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-666f7-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Fehler-666f7-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Abrechnung' }).getByLabel('Monat')
+
+
+      27 |
+      28 | async function pick(page: Page, m: string) {
+    > 29 |   await month(page).fill(m)
+         |                     ^
+      30 | }
+      31 | async function download(page: Page, act: () => Promise<void>) {
+      32 |   const [d] = await Promise.all([page.waitForEvent('download'), act()])
+        at pick (C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:29:21)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:120:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-1527e-nbar-zweiter-Versuch-klappt-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Fehler-1527e-nbar-zweiter-Versuch-klappt-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Fehler-1527e-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Fehler-1527e-nbar-zweiter-Versuch-klappt-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10 failed
+    [e2e] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat 
+    [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+    [e2e] › tests\e2e\partner-journal.spec.ts:70:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt 
+    [e2e] › tests\e2e\partner-journal.spec.ts:83:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler 
+    [e2e] › tests\e2e\partner-journal.spec.ts:92:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter 
+    [e2e] › tests\e2e\partner-journal.spec.ts:103:1 › Monat leer: Fehlertext ohne Aufruf ───────────
+    [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+    [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+    [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+    [e2e] › tests\e2e\partner-journal.spec.ts:117:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt 
+EXIT=1

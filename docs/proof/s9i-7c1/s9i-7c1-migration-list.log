@@ -1,0 +1,13 @@
+Kennung 7c1-1311-a, Abschluss, Commit 6a29ff9
+--- migration list (Ende)
+"local":"20261113100000","remote":"20261113100000"
+(kein Treffer in der zweiten Abfrage = keine lokale Migration ohne Gegenstück remote)
+60
+20261112120000_0059_partner_cancel_preview.sql
+20261113100000_0060_job_contact_after_cancel.sql
+--- functions list (Ende)
+"slug":"photo-receipt","name":"photo-receipt","status":"ACTIVE","version":2
+"slug":"change-propose","name":"change-propose","status":"ACTIVE","version":4
+"slug":"change-decide","name":"change-decide","status":"ACTIVE","version":4
+"slug":"cancel-customer","name":"cancel-customer","status":"ACTIVE","version":3
+"slug":"cancel-partner","name":"cancel-partner","status":"ACTIVE","version":3

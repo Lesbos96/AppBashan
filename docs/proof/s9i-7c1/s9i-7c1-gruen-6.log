@@ -1,0 +1,111 @@
+Commit: b68e42c
+Arbeitsbaum sauber: nein
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 20 tests using 2 workers
+
+  ok  2 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat (1.4s)
+  ok  1 [e2e] › tests\e2e\partner-journal.spec.ts:36:1 › Karte: Überschrift, Monatsfeld mit Label und Format-Hinweis, Knopf, Hinweis auf den Abschlussmonat (1.4s)
+  x   3 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste (1.5s)
+  x   4 [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste (1.5s)
+  ok  5 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:72:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt (2.2s)
+  ok  6 [e2e] › tests\e2e\partner-journal.spec.ts:72:1 › Doppelklick: genau ein Aufruf und genau eine Datei; während des Ladens ist der Knopf gesperrt (2.2s)
+  ok  7 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:85:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler (1.4s)
+  ok  8 [e2e] › tests\e2e\partner-journal.spec.ts:85:1 › leerer Zeitraum: Datei nur mit Kopfzeile, kein Fehler (1.4s)
+  ok  9 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:94:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter (1.3s)
+  ok 10 [e2e] › tests\e2e\partner-journal.spec.ts:94:1 › Tastatur: Monatsfeld, Tab zum Knopf, Enter lädt herunter (1.4s)
+  ok 11 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:106:1 › Monat leer: Fehlertext ohne Aufruf (1.3s)
+  ok 12 [e2e] › tests\e2e\partner-journal.spec.ts:106:1 › Monat leer: Fehlertext ohne Aufruf (1.4s)
+  ok 13 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 14 [e2e] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler aal1 (mfa_required): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 15 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 16 [e2e] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler keine Firma (not_found): Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 17 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 18 [e2e] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler Serverfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 19 [e2e-desktop] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+  ok 20 [e2e] › tests\e2e\partner-journal.spec.ts:120:3 › Fehler Netzfehler: Text im Alert, keine Datei, Knopf wieder bedienbar, zweiter Versuch klappt (1.4s)
+
+
+  1) [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+        "0",
+        "1000",
+    -   "created_at,entry_id",
+    +   "created_at.asc,entry_id.asc",
+      ]
+
+      63 |   expect(jobs.journalCalls[0]!.prefer).toContain('count=exact')
+      64 |   const q = new URL(jobs.journalCalls[0]!.url).searchParams
+    > 65 |   expect([q.get('offset'), q.get('limit'), q.get('order')]).toEqual(['0', '1000', 'created_at,entry_id'])
+         |                                                             ^
+      66 |   const sel = q.get('select')
+      67 |   expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
+      68 |   expect(bytes.toString('utf8')).not.toMatch(/partner_name|Testfirma/)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:65:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [e2e-desktop] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+        "0",
+        "1000",
+    -   "created_at,entry_id",
+    +   "created_at.asc,entry_id.asc",
+      ]
+
+      63 |   expect(jobs.journalCalls[0]!.prefer).toContain('count=exact')
+      64 |   const q = new URL(jobs.journalCalls[0]!.url).searchParams
+    > 65 |   expect([q.get('offset'), q.get('limit'), q.get('order')]).toEqual(['0', '1000', 'created_at,entry_id'])
+         |                                                             ^
+      66 |   const sel = q.get('select')
+      67 |   expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
+      68 |   expect(bytes.toString('utf8')).not.toMatch(/partner_name|Testfirma/)
+        at C:\Users\gesch\Music\MoveNow\tests\e2e\partner-journal.spec.ts:65:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e-desktop\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e-desktop\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\playwright\e2e-partner-journal-Downlo-a6447-act-und-fester-Spaltenliste-e2e-desktop\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [e2e] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+    [e2e-desktop] › tests\e2e\partner-journal.spec.ts:48:1 › Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf mit Monatsanfang, count exact und fester Spaltenliste 
+  18 passed (21.5s)
+EXIT=1
