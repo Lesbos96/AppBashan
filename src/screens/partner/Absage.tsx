@@ -209,30 +209,34 @@ export function AbsageSheet({
             {preview.callOutCents === 0 ? (
               <p className="m-0 text-body">Der Kunde muss nichts zahlen. Seine Anfrage geht an andere Firmen. Kontakt und Adresse sind danach für dich gesperrt.</p>
             ) : (
-              <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
-                <legend className="mb-2 text-headline">Wie willst du absagen?</legend>
-                <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
-                  <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'fee'} disabled={busy} onChange={() => setChoice('fee')} />
-                  <span className="flex min-w-0 flex-col gap-2">
-                    <span className="text-body font-semibold">Mit Pauschale</span>
-                    <Zeile label="Pauschale inkl. USt.">{euro(preview.callOutCents)}</Zeile>
-                    <Zeile label="Gebühr">{euro(preview.callOutCents - preview.payoutCents)}</Zeile>
-                    <Zeile label="Du erhältst" strong>
-                      {euro(preview.payoutCents)}
-                    </Zeile>
-                    <span className="text-subhead text-text-secondary">
-                      Der Kunde schuldet dir {euro(preview.callOutCents)}. Du stellst sie ihm außerhalb der App in Rechnung. Die Anfrage wird nicht weitervermittelt. Du brauchst mindestens ein Belegfoto.
+              <>
+                <div className="flex flex-col gap-2 rounded-grouped-list bg-surface p-4 shadow-card">
+                  <Zeile label="Pauschale inkl. USt.">{euro(preview.callOutCents)}</Zeile>
+                  <Zeile label="Gebühr">{euro(preview.callOutCents - preview.payoutCents)}</Zeile>
+                  <Zeile label="Du erhältst" strong>
+                    {euro(preview.payoutCents)}
+                  </Zeile>
+                </div>
+                <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
+                  <legend className="mb-2 text-headline">Wie willst du absagen?</legend>
+                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
+                    <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'fee'} disabled={busy} onChange={() => setChoice('fee')} />
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span className="text-body font-semibold">Mit Pauschale</span>
+                      <span className="text-subhead text-text-secondary">
+                        Der Kunde schuldet dir {euro(preview.callOutCents)}. Du stellst sie ihm außerhalb der App in Rechnung. Keine Weitervermittlung. Belegfoto nötig.
+                      </span>
                     </span>
-                  </span>
-                </label>
-                <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
-                  <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'free'} disabled={busy} onChange={() => setChoice('free')} />
-                  <span className="flex min-w-0 flex-col gap-2">
-                    <span className="text-body font-semibold">Ohne Pauschale</span>
-                    <span className="text-subhead text-text-secondary">Der Kunde muss nichts zahlen. Seine Anfrage geht an andere Firmen. Kontakt und Adresse sind danach für dich gesperrt.</span>
-                  </span>
-                </label>
-              </fieldset>
+                  </label>
+                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
+                    <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'free'} disabled={busy} onChange={() => setChoice('free')} />
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span className="text-body font-semibold">Ohne Pauschale</span>
+                      <span className="text-subhead text-text-secondary">Der Kunde zahlt nichts, seine Anfrage geht an andere Firmen. Kontakt danach gesperrt.</span>
+                    </span>
+                  </label>
+                </fieldset>
+              </>
             )}
             <p className="m-0 text-footnote text-text-secondary">Mehrere Absagen in kurzer Zeit lösen eine Prüfung deiner Firma aus.</p>
             {feeChosen && <BelegFotos have={have} files={files} setFiles={setFiles} fileKey={fileKey} setFileKey={setFileKey} busy={busy} />}
@@ -255,23 +259,27 @@ export function AbsageSheet({
               {busy ? 'Wird gesendet …' : feeChosen ? `Für ${formatEuro(preview.callOutCents)} absagen` : 'Absagen'}
             </Button>
           )}
-          <div className="flex flex-wrap items-center justify-center gap-x-6">
+          <div className="flex gap-2">
             {preview !== null && (
-              <Button
-                variant="plain"
-                disabled={busy}
-                onClick={() => {
-                  setPreview(null)
-                  setChoice(null)
-                  setError('')
-                }}
-              >
-                Grund ändern
-              </Button>
+              <div className="min-w-0 flex-1">
+                <Button
+                  variant="plain"
+                  disabled={busy}
+                  onClick={() => {
+                    setPreview(null)
+                    setChoice(null)
+                    setError('')
+                  }}
+                >
+                  Grund ändern
+                </Button>
+              </div>
             )}
-            <Button variant="plain" disabled={busy} onClick={close}>
-              Doch nicht
-            </Button>
+            <div className="min-w-0 flex-1">
+              <Button variant="plain" disabled={busy} onClick={close}>
+                Doch nicht
+              </Button>
+            </div>
           </div>
         </div>
       </div>
