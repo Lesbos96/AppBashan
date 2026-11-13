@@ -297,8 +297,9 @@ describe('W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (
     expect(r, JSON.stringify(r)).toEqual({ status: 200, body: { status: 'cancelled_by_partner', callOutCents: CALL_OUT.total } })
     const s = step('W3', '2 cancel-partner mit Pauschale', W3)
     expect(s.status).toBe('cancelled_by_partner')
-    expect(kinds(s)).toEqual(['booking+', 'cancellation-', 'cancellation_fee+'])
-    expect(s.journal[2]).toEqual({ kind: 'cancellation_fee', rev: false, ...CALL_OUT })
+    // Gegenbuchung und Pauschale entstehen in einer Transaktion (gleicher Zeitstempel): Reihenfolge nicht festgelegt, daher sortiert vergleichen
+    expect(kinds(s).sort()).toEqual(['booking+', 'cancellation-', 'cancellation_fee+'])
+    expect(s.journal.find((j) => j.kind === 'cancellation_fee')).toEqual({ kind: 'cancellation_fee', rev: false, ...CALL_OUT })
     expect(sum(s.journal)).toEqual(CALL_OUT)
     expect(s.followups).toBe(0)
     expect(s.outbox.partner_cancelled_fee).toBe(1)
