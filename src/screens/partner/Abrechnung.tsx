@@ -52,7 +52,7 @@ export function Abrechnung() {
           />
         </label>
         <p id="abrechnung-format" className="m-0 text-footnote text-text-secondary">
-          Format JJJJ-MM, zum Beispiel 2026-10.
+          Zeigt dein Browser ein Textfeld, schreibe JJJJ-MM, zum Beispiel 2026-10.
         </p>
         {error && (
           <p role="alert" className="m-0 text-body text-destructive">

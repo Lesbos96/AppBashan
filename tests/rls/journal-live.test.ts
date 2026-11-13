@@ -1,7 +1,7 @@
 // Journal-CSV der Firma (s9i-7c1): my_commissions mit echten aal2-Tokens gegen Dev, so wie die App es aufruft (count exact, feste Sortierung, range).
 // Rechte-Matrix, keine Kundendatenspalten, Summe je Auftrag nach Storno ohne Pauschale = 0, Abgleich mit export_commissions und Datei aus den Live-Zeilen.
 // Fixtures sind committet (Journal ist unlöschbar); Rest nach dem Lauf: Kunde, Aufträge und Firmen (gesperrt, tests/support/sweep.ts, OPEN_ISSUES S9c-7).
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
 import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
@@ -185,6 +185,8 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
   live('Datei aus den Live-Zeilen: je Auftrag Summe der Spalte „Betrag Kunde“ 0, 0 und 6900 ct; keine Kunden-ID; eine Zeile je Journalzeile', async () => {
     const rows = (await appCall(pa.aal2)).data ?? []
     const csv = journalCsv(rows as never)
+    // Beleg für den Bericht (Testdaten dieses Laufs, ohne Personendaten): Arbeitsdatei, wird mit jedem Lauf ersetzt
+    writeFileSync('tmp/reports/journal-live.csv', csv)
     const lines = csv.split('\r\n').filter(Boolean)
     expect(lines).toHaveLength(rows.length + 1)
     expect(csv).not.toContain(cust.id)
