@@ -76,7 +76,7 @@ const photosOf = (req: string) => ownerSql(`select id from public.job_photos whe
 const contact = (db: Aal2User['aal2'], req: string) => db.rpc('job_contact', { p_request: req })
 
 beforeAll(async () => {
-  writeFileSync('tmp/reports/flow-live-ist.txt', `LAUF ${new Date().toISOString()} commit ${execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim()} Kennung 7c2-1311-a\n`)
+  writeFileSync('tmp/reports/flow-live-ist.txt', `LAUF ${new Date().toISOString()} commit ${execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim()} Kennung 7c2-1311-c\n`)
   ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
   sweepTestResidue(adm)
   await sweepReceiptObjects()
