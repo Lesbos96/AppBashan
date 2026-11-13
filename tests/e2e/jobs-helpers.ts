@@ -190,6 +190,10 @@ export type JobsState = {
   cancels: Record<string, unknown>[]
   cancelPreviewAnswers: Ans[]
   cancelAnswers: Ans[]
+  /** Journal (s9i-7c1): Zeilen von `my_commissions` (gefiltert nach `p_month`), jeder Aufruf mit Monat, Range- und Prefer-Kopf; `abort` = Netzfehler */
+  commissions: Record<string, unknown>[]
+  journalCalls: { month: unknown; range: string | undefined; prefer: string | undefined; url: string }[]
+  journalAnswers: (Ans | 'abort')[]
   /** Statuscode für den nächsten Abruf der Liste (Warteschlange), z. B. 500 */
   listStatus: number[]
   listingReads: number
@@ -201,7 +205,25 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
+  // Journal (s9i-7c1): wie PostgREST: Zeilen des Monats, Ausschnitt nach `Range`, Gesamtzahl im Kopf `content-range` (sichtbar für die App über expose-headers)
+  await page.route('**/rest/v1/rpc/my_commissions**', (r) => {
+    const o = pre(r)
+    if (o) return o
+    const h = r.request().headers()
+    const month = (r.request().postDataJSON() as { p_month?: unknown }).p_month
+    s.journalCalls.push({ month, range: h['range'], prefer: h['prefer'], url: r.request().url() })
+    const a = s.journalAnswers.shift()
+    if (a === 'abort') return r.abort('failed')
+    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    const all = s.commissions.filter((c) => c.billing_month === month)
+    const [from, to] = (h['range'] ?? '0-999').split('-').map(Number) as [number, number]
+    const page = all.slice(from, to + 1)
+    return r.fulfill({
+      headers: { ...cors, 'access-control-expose-headers': 'content-range', 'content-range': `${page.length ? `${from}-${from + page.length - 1}` : '*'}/${all.length}` },
+      json: page,
+    })
+  })
   await page.route('**/rest/v1/job_listings**', (r) => {
     const o = pre(r)
     if (o) return o

@@ -337,6 +337,32 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
+  {
+    name: 'absage-netzfehler-vorschau',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.route('**/functions/v1/cancel-partner', (r) => r.abort('failed'))
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'absage-netzfehler-senden',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change()] },
+    steps: async (page) => {
+      await page.route('**/functions/v1/cancel-partner', (r) => (r.request().postDataJSON().preview === true ? r.fallback() : r.abort('failed')))
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('radio', { name: /nicht durchführen/ }).check()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Absagen', exact: true }).click()
+      await expect(page.getByRole('status').filter({ hasText: 'Wir wissen nicht, ob die Absage angekommen ist' })).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
   { name: 'absage-karte-ohne-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 0, payout_cents: 0 })] }, wait: heading('Beendet') },
   { name: 'absage-karte-mit-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 5865 })] }, wait: heading('Beendet') },
   {
