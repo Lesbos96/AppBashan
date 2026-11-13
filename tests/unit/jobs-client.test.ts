@@ -177,7 +177,7 @@ describe('Termin', () => {
 describe('Texte', () => {
   it('jede Fehlerart hat einen Text ohne Gebühren- oder Firmenstatuswort', () => {
     expect(Object.keys(jobErrorText).sort()).toEqual([
-      'amount', 'bad_input', 'bad_photo', 'change_open', 'changed', 'closed', 'gone', 'have_offer', 'job_limit', 'no_change', 'not_increasing', 'offer_limit', 'offline', 'payout', 'receipt_limit', 'retry', 'taken', 'too_early', 'unauthorized', 'unavailable', 'vat_rule', 'window_closed',
+      'amount', 'bad_input', 'bad_photo', 'change_open', 'changed', 'closed', 'gone', 'have_offer', 'job_limit', 'late_reason', 'no_call_out', 'no_change', 'not_increasing', 'offer_limit', 'offline', 'payout', 'receipt_limit', 'receipt_missing', 'retry', 'taken', 'too_early', 'unauthorized', 'unavailable', 'under_review', 'vat_rule', 'window_closed',
     ])
     for (const text of Object.values(jobErrorText)) expect(text).not.toMatch(/Provision|Plattform|15 ?%|gesperrt|suspended/)
   })
