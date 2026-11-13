@@ -141,6 +141,8 @@ export function AbsageSheet({
       // Belege nacheinander hochladen (nur beim Weg mit Pauschale); jedes fertige Foto bleibt bei einem Fehler erhalten. Gesendet wurde dabei noch nichts.
       if (fee) {
         ids = [...all]
+        // Auch bei verlorener Antwort eines Uploads liegt der Beleg beim Server: dann beim Schließen neu laden (Abnahme N2)
+        if (files.length > 0) setTouched(true)
         for (const f of files) {
           const id = await uploadReceipt(requestId, f)
           if (!ids.includes(id)) ids.push(id)
@@ -171,6 +173,12 @@ export function AbsageSheet({
       } else if (kind === 'offline' || kind === 'unavailable') {
         // Ergebnis unbekannt (verlorene Antwort): nicht erneut senden, den Status neu laden
         leave('Wir wissen nicht, ob die Absage angekommen ist. Die Aufträge wurden neu geladen. Prüfe den Status des Auftrags.')
+      } else if (kind === 'late_reason') {
+        // Wie in der Vorschau: zurück zur Auswahl, der Grund passt nicht mehr (Abnahme N1)
+        setReason('scope_impossible')
+        setPreview(null)
+        setChoice(null)
+        setError(text(e))
       } else {
         setError(text(e))
       }
@@ -180,6 +188,8 @@ export function AbsageSheet({
     }
   }
 
+  // Ob die Anfrage weitervermittelt wird, entscheidet der Server (Termin zu nah, Festangebot, schon eine Folgeanfrage): nur bedingt zusagen, ab Terminbeginn gar nicht (Abnahme M1)
+  const again = started ? '' : ' Weitervermittlung, wenn der Termin es zulässt.'
   const free = preview ? preview.callOutCents === 0 || choice === 'free' : false
   const feeChosen = preview ? preview.callOutCents > 0 && choice === 'fee' : false
   const sendable = preview !== null && (free || (feeChosen && have + files.length >= 1 && have + files.length <= 8))
@@ -213,7 +223,7 @@ export function AbsageSheet({
           <>
             <p className="m-0 text-footnote text-text-secondary">Grund: {CANCEL_REASONS.find((r) => r.value === preview.reason)?.label}</p>
             {preview.callOutCents === 0 ? (
-              <p className="m-0 text-body">Der Kunde muss nichts zahlen. Seine Anfrage geht an andere Firmen. Kontakt und Adresse sind danach für dich gesperrt.</p>
+              <p className="m-0 text-body">Der Kunde muss nichts zahlen.{again} Kontakt und Adresse sind danach für dich gesperrt.</p>
             ) : (
               <>
                 <div className="flex flex-col gap-1 rounded-grouped-list bg-surface px-4 py-3 shadow-card">
@@ -238,14 +248,14 @@ export function AbsageSheet({
                     <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'free'} disabled={busy} onChange={() => setChoice('free')} />
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="text-body font-semibold">Ohne Pauschale</span>
-                      <span className="text-subhead text-text-secondary">Der Kunde zahlt nichts, seine Anfrage geht an andere Firmen.</span>
+                      <span className="text-subhead text-text-secondary">Der Kunde zahlt nichts.</span>
                     </span>
                   </label>
                 </fieldset>
               </>
             )}
             <p className="m-0 text-footnote text-text-secondary">
-              {preview.callOutCents > 0 ? 'Ohne Pauschale sind Kontakt und Adresse danach für dich gesperrt. ' : ''}Mehrere Absagen in kurzer Zeit lösen eine Prüfung deiner Firma aus.
+              {preview.callOutCents > 0 ? `Ohne Pauschale:${again} Kontakt und Adresse sind danach für dich gesperrt. ` : ''}Mehrere Absagen in kurzer Zeit lösen eine Prüfung deiner Firma aus.
             </p>
             {feeChosen && <BelegFotos have={have} files={files} setFiles={setFiles} fileKey={fileKey} setFileKey={setFileKey} busy={busy} />}
           </>

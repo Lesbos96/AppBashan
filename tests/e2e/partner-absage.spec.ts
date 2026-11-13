@@ -189,6 +189,34 @@ test('too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis', async ({
   await expect(reasonRadio(dialog(page), 'scope_impossible')).toBeChecked()
 })
 
+test('Netzfehler in der Vorschau darf wiederholt werden; gesendet wird dabei nichts', async ({ page }) => {
+  const { jobs } = await open(page)
+  let failed = false
+  await page.route('**/functions/v1/cancel-partner', (r) => {
+    if (!failed && r.request().postDataJSON().preview === true) {
+      failed = true
+      return r.abort('failed')
+    }
+    return r.fallback()
+  })
+  await startCheck(page)
+  await expect(dialog(page)).toContainText('Keine Verbindung')
+  await dialog(page).getByRole('button', { name: 'Folgen prüfen' }).click()
+  await expect(dialog(page)).toContainText('69,00 €')
+  expect(sends(jobs)).toEqual([])
+})
+
+test('too_late_for_reason beim Senden: zurück zur Auswahl, kein erneutes Senden', async ({ page }) => {
+  const { jobs } = await open(page, { cancelAnswers: [{ status: 409, json: { error: 'too_late_for_reason' } }] })
+  await startCheck(page, 'unavailable')
+  await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
+  await expect(dialog(page)).toContainText('Der Termin hat schon begonnen')
+  await expect(dialog(page).getByRole('button', { name: 'Folgen prüfen' })).toBeVisible()
+  await expect(reasonRadio(dialog(page), 'scope_impossible')).toBeChecked()
+  await page.waitForTimeout(500)
+  expect(sends(jobs)).toHaveLength(1)
+})
+
 test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await open(page)
