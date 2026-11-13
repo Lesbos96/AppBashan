@@ -1,0 +1,38 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein; sweep.ts TEMPORAER gelockert (waechter), nie committen; p.name <> COVER bleibt
+vorher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 1 failed) 80089ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung 12716ms
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+System.Management.Automation.RemoteException
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung
+AssertionError: expected undefined to be 'pending' // Object.is equality
+System.Management.Automation.RemoteException
+- Expected:
+"pending"
+System.Management.Automation.RemoteException
++ Received:
+undefined
+System.Management.Automation.RemoteException
+ ❯ tests/rls/sweep.test.ts:56:24
+     54|     const id = makeFirm(u, {}, `echt-${u.slice(0, 8)}@example.org`)
+     55|     sweepTestResidue(adm)
+     56|     expect(status(id)).toBe('pending')
+       |                        ^
+     57|   }, 120_000)
+     58|
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  00:00:07
+   Duration  97.18s (tests 100%)
+
+EXIT=1
+nachher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0

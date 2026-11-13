@@ -1,0 +1,43 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein (tests/rls/sweep.test.ts neu, untracked)
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 1 failed) 18582ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 5048ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma, deren Nutzer 
+zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt
+AssertionError: expected 'active' to be undefined
+
+- Expected:
+undefined
+
++ Received:
+"active"
+
+ ❯ tests/rls/sweep.test.ts:43:24
+     41|     expect(Number(ownerSql(`select count(*) as n from public.partner_m…
+     42|     sweepTestResidue(adm)
+     43|     expect(status(id)).toBeUndefined()
+       |                        ^
+     44|   }, 120_000)
+     45|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  22:38:18
+   Duration  21.31s (tests 100%)
+
+EXIT=1

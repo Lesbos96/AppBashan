@@ -1,0 +1,38 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein; sweep.ts TEMPORAER gelockert (marker), nie committen; p.name <> COVER bleibt
+vorher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 1 failed) 73718ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt 5124ms
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+System.Management.Automation.RemoteException
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt
+AssertionError: expected undefined to be 'pending' // Object.is equality
+System.Management.Automation.RemoteException
+- Expected:
+"pending"
+System.Management.Automation.RemoteException
++ Received:
+undefined
+System.Management.Automation.RemoteException
+ ❯ tests/rls/sweep.test.ts:64:24
+     62|     dropUser(u)
+     63|     sweepTestResidue(adm)
+     64|     expect(status(id)).toBe('pending')
+       |                        ^
+     65|   }, 120_000)
+     66| })
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  23:58:16
+   Duration  91.87s (tests 100%)
+
+EXIT=1
+nachher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0

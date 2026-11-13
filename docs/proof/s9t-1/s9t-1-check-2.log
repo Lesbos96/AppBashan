@@ -1,0 +1,103 @@
+﻿Commit 156abcb
+Arbeitsbaum sauber: ja (nur untracked docs/VERBESSERUNGSVORSCHLAEGE.md)
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts supabase/functions/offer-confirm/index.ts supabase/functions/change-propose/index.ts supabase/functions/change-decide/index.ts supabase/functions/cancel-customer/index.ts supabase/functions/cancel-partner/index.ts supabase/functions/admin-correct/index.ts supabase/functions/delete-account/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+Check supabase/functions/_shared/pricing/index.ts
+Check supabase/functions/route/index.ts
+Check supabase/functions/quote/index.ts
+Check supabase/functions/photo-cleanup/index.ts
+Check supabase/functions/accept/index.ts
+Check supabase/functions/admin-contact/index.ts
+Check supabase/functions/outbox-send/index.ts
+Check supabase/functions/photo-publish/index.ts
+Check supabase/functions/photo-receipt/index.ts
+Check supabase/functions/job-photo/index.ts
+Check supabase/functions/admin-photo/index.ts
+Check supabase/functions/offer-confirm/index.ts
+Check supabase/functions/change-propose/index.ts
+Check supabase/functions/change-decide/index.ts
+Check supabase/functions/cancel-customer/index.ts
+Check supabase/functions/cancel-partner/index.ts
+Check supabase/functions/admin-correct/index.ts
+Check supabase/functions/delete-account/index.ts
+Check scripts/measure-photo.ts
+Check tests/unit/golden-deno.ts
+Check tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/accept.test.ts (10 tests) 82ms
+ ✓ |unit| tests/unit/cancel-handler.test.ts (8 tests) 70ms
+ ✓ |unit| tests/unit/partner-docs.test.ts (22 tests) 76ms
+ ✓ |unit| tests/unit/offer-confirm.test.ts (4 tests) 65ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 164ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (6 tests) 64ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 115ms
+ ✓ |unit| tests/unit/pricing.test.ts (84 tests) 122ms
+ ✓ |unit| tests/unit/admin-correct-handler.test.ts (9 tests) 79ms
+ ✓ |unit| tests/unit/cancel-partner-handler.test.ts (11 tests) 77ms
+ ✓ |unit| tests/unit/change-handlers.test.ts (16 tests) 113ms
+ ✓ |unit| tests/unit/change.test.ts (12 tests) 28ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 270ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 59ms
+ ✓ |unit| tests/unit/delete-account-handler.test.ts (8 tests) 59ms
+ ✓ |unit| tests/unit/account-client.test.ts (11 tests) 63ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (19 tests) 78ms
+ ✓ |unit| tests/unit/cancel-client.test.ts (17 tests) 85ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 29ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 119ms
+ ✓ |unit| tests/unit/jobs-client.test.ts (44 tests) 94ms
+ ✓ |unit| tests/unit/partner-jobs.test.ts (81 tests) 105ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 28ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 26ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (11 tests) 28ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (18 tests) 86ms
+ ✓ |unit| tests/unit/auth.test.ts (56 tests) 34ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 15ms
+ ✓ |unit| tests/unit/partner-my-jobs.test.ts (47 tests) 39ms
+ ✓ |unit| tests/unit/partner-register.test.ts (47 tests) 34ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 12ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 26ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 11ms
+ ✓ |unit| tests/unit/mfa-client.test.ts (21 tests) 27ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 12ms
+ ✓ |unit| tests/unit/commission-csv.test.ts (5 tests) 6ms
+ ✓ |unit| tests/unit/partner-change.test.ts (19 tests) 22ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 19ms
+ ✓ |unit| tests/unit/admin-correct-db.test.ts (2 tests) 9ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 23ms
+ ✓ |unit| tests/unit/quote.test.ts (60 tests) 680ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 4ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 5ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 1075ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 965ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 780ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 705ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 25ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 55ms
+
+ Test Files  49 passed (49)
+      Tests  1078 passed (1078)
+   Start at  01:00:01
+   Duration  1.87s (import 43%, tests 35%, transform 19%, worker 3%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+EXIT=0

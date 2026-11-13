@@ -1,0 +1,79 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein; sweep.ts temporaer = Stand HEAD (alter Aufraeumer), Tests und partner.ts neu
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 3 failed) 14381ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 3690ms
+     × Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung 1427ms
+     × Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt 2166ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts [ tests/rls/sweep.test.ts ]
+TypeError: sweepTestResidue is not a function
+ ❯ tests/rls/sweep.test.ts:38:3
+     36|   for (const id of firms) if (status(id)) ownerDeletePartner(id)
+     37|   if (users.length) ownerSql(`delete from auth.users where id in (${us…
+     38|   sweepTestResidue(adm, true)
+       |   ^
+     39| }, 120_000)
+     40|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma, deren Nutzer 
+zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt
+TypeError: sweepTestResidue is not a function
+ ❯ tests/rls/sweep.test.ts:48:5
+     46|     dropUser(u)
+     47|     expect(Number(ownerSql(`select count(*) as n from public.partner_m…
+     48|     sweepTestResidue(adm)
+       |     ^
+     49|     expect(status(id)).toBeUndefined()
+     50|   }, 120_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma mit einem Mitglied 
+außerhalb der Testkonten bleibt unberührt, auch mit Markierung
+TypeError: sweepTestResidue is not a function
+ ❯ tests/rls/sweep.test.ts:55:5
+     53|     const u = newId()
+     54|     const id = makeFirm(u, {}, `echt-${u.slice(0, 8)}@example.org`)
+     55|     sweepTestResidue(adm)
+       |     ^
+     56|     expect(status(id)).toBe('pending')
+     57|   }, 120_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma ohne Mitglied mit 
+fremder Kontaktadresse bleibt unberührt
+TypeError: sweepTestResidue is not a function
+ ❯ tests/rls/sweep.test.ts:63:5
+     61|     const id = makeFirm(u, { email: "'kontakt@beispiel.at'" })
+     62|     dropUser(u)
+     63|     sweepTestResidue(adm)
+       |     ^
+     64|     expect(status(id)).toBe('pending')
+     65|   }, 120_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  23:15:00
+   Duration  30.95s (tests 100%)
+
+EXIT=1

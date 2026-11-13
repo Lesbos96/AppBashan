@@ -1,0 +1,43 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: ja (tests/rls/sweep.test.ts neu, untracked)
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 1 failed) 19083ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 3966ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma, deren Nutzer 
+zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt
+AssertionError: expected +0 to be '0' // Object.is equality
+
+- Expected:
+"0"
+
++ Received:
+0
+
+ ❯ tests/rls/sweep.test.ts:41:107
+     39|     expect(status(id)).toBe('active')
+     40|     dropUser(u)
+     41|     expect(ownerSql(`select count(*) as n from public.partner_members …
+       |                                                                                                           ^
+     42|     sweepTestResidue(adm)
+     43|     expect(status(id)).toBeUndefined()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  22:32:14
+   Duration  21.53s (tests 100%)
+
+EXIT=1

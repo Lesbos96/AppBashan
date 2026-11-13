@@ -1,0 +1,13 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein (Aenderungen s9t-1 uncommittet)
+vorher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  23:53:02
+   Duration  20.32s (tests 100%)
+
+EXIT=0
+nachher: altfirmen aktiv/payment_hold = 0; altfirmen firma@movenow.test = 254; auth.users pt- = 132; echt-Konten = 0; Firmen in Bezirk 21 aktiv = 0; marker-firmen (pt-firma-hex) = 0; marker-firmen aktiv/payment_hold = 0; partners gesamt = 254; ungebunden gesamt (kein assignment/offer/journal) = 0; Waechter-Firmen = 0

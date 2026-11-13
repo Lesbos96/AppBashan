@@ -1,0 +1,36 @@
+Commit 7c4a53c, Arbeitsbaum sauber: nein; sweep.ts temporaer = Stand HEAD (alter Aufraeumer), Tests und partner.ts neu
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 1 failed) 78691ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 40371ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt
+AssertionError: expected 'pending' to be undefined
+
+- Expected:
+undefined
+
++ Received:
+"pending"
+
+ ❯ tests/rls/sweep.test.ts:49:24
+     47|     expect(Number(ownerSql(`select count(*) as n from public.partner_m…
+     48|     sweepTestResidue(adm)
+     49|     expect(status(id)).toBeUndefined()
+       |                        ^
+     50|   }, 120_000)
+     51|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  23:47:00
+   Duration  81.48s (tests 100%)
+
+EXIT=1

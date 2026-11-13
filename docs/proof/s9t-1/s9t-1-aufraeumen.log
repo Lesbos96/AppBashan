@@ -1,0 +1,13 @@
+Commit 156abcb (Branch s9t-1), Arbeitsbaum sauber: ja (nur untracked docs/VERBESSERUNGSVORSCHLAEGE.md)
+Skriptpfad: keiner. Es gibt kein Lösch-Skript und auf Dev wurde nichts gelöscht (Teil C).
+Begründung (Fable-Planprüfung tmp/proof/s9t-1-fable-plan.md, Frage 2: "Ja, nichts löschen, kein Skript"):
+  - 254 von 254 Firmen sind verwaist (kein Mitglied), alle Name "Testfirma GmbH", alle contact_email firma@movenow.test, alle suspended
+  - 254 von 254 sind gebunden (Zuordnung oder Angebot; 135 mit Journal, 320 Journalzeilen; 44 mit Beleg-Fotos; 41 mit Nachtrag-Revisionen)
+  - 0 ungebundene, 0 aktive/payment_hold; 132 pt-Nutzer, alle mit service_requests (312); Zuordnungen, Angebote, Journal per RESTRICT und Trigger unlöschbar
+Zahlen vorher (Auszug, vollständig: s9t-1-zaehlung-vorher.json, s9t-1-count2-vorher.json, s9t-1-kurz-vor-rot3.json):
+  partners 254 | partner_members 0 | partner_regions 464 | partner_categories 254 | partner_vat_rules 254 | job_listings 760 | assignments 227 | partner_offers 240 | commission_entries 320 | job_photos 120 | service_requests 312 | auth.users 134 (132 pt-) | storage.objects 0
+Gelöschte Zeilen je Tabelle inkl. Kaskaden durch dieses Aufräumen: partners 0, partner_members 0, partner_documents 0, partner_regions 0, partner_categories 0, partner_vat_rules 0, job_listings 0 (einzige Kaskade, 0030:33), auth.users 0
+Gesperrt: 0 (alle bereits suspended)
+Zahlen nachher (nach den Volläufen, s9t-1-kurz-nach-rls-2.json): Altfirmen firma@movenow.test 254 (unverändert), neue Marker-Firmen pt-firma-<hex> 14 (alle suspended, 0 aktiv, 0 ungebunden; Zuwachs durch die zwei rls-Läufe), partners 268, pt-Nutzer 140
+Hinweis: Die Testläufe selbst löschen wie bisher nur ihre eigenen ungebundenen Fixtures (sweep.ts, Fable-freigegeben).
+EXIT=0 (keine Ausführung, kein Befehl abgesetzt)

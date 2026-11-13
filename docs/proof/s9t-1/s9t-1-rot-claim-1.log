@@ -1,0 +1,43 @@
+﻿Commit 7c4a53c, Arbeitsbaum sauber: nein (job-photos.test.ts geaendert)
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/job-photos.test.ts (14 tests | 1 failed | 12 skipped) 11861ms
+   ❯ Abnahme S9d: Lücken (8)
+     × photo_claim: viele fremde offene Fotos davor ändern das Ergebnis für die eigene Anfrage nicht (Reste auf Dev) 5848ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/job-photos.test.ts > Abnahme S9d: Lücken > photo_claim: viele fremde offene Fotos davor ändern 
+das Ergebnis für die eigene Anfrage nicht (Reste auf Dev)
+AssertionError: = 0: expected '= 0' to be '= 1' // Object.is equality
+
+Expected: "= 1"
+Received: "= 0"
+
+ ❯ rows tests/rls/job-photos.test.ts:64:73
+     62| const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+     63| const err = (v: string | undefined, part: string) => expect(v?.include…
+     64| const rows = (v: string | undefined, n: number) => expect(v, String(v)…
+       |                                                                         ^
+     65| const uid = () => crypto.randomUUID()
+     66| // photo_claim liefert höchstens 50 Fotos je Aufruf, beginnend bei der…
+ ❯ tests/rls/job-photos.test.ts:460:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 12 skipped (14)
+   Start at  22:41:43
+   Duration  29.66s (tests 99%, transform 1%)
+
+[vitest-pool]: Timeout terminating forks worker for test files 
+C:/Users/gesch/Music/MoveNow/tests/rls/job-photos.test.ts.
+EXIT=1
