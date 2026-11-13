@@ -1,0 +1,41 @@
+﻿Datei | alt Datei s | neu Datei s | Faktor | alt Log s | neu Log s
+rls/partner-functions-live.test.ts |   62.2 |  211.4 | 3.4x |   82.1 |  234.6
+rls/quote-hardening.test.ts |   98.0 |   70.8 | 0.7x |  104.1 |   76.2
+rls/quote.test.ts |   49.1 |   61.1 | 1.2x |   55.8 |   69.7
+rls/partner-mfa.test.ts |   39.4 |   57.8 | 1.5x |   40.8 |   64.0
+rls/uploads.test.ts |  104.0 |   50.4 | 0.5x |  108.4 |   55.4
+rls/job-photos-concurrency.test.ts |   40.5 |   30.5 | 0.8x |   81.0 |   70.6
+rls/journal.test.ts |   73.7 |   23.1 | 0.3x |   73.7 |   23.1
+rls/status.test.ts |   26.8 |   20.4 | 0.8x |   45.0 |   27.8
+rls/outbox.test.ts |    2.5 |   17.1 | 6.7x |    2.5 |   17.1
+rls/partner-documents.test.ts |   19.1 |   17.1 | 0.9x |   27.6 |   24.6
+rls/partners.test.ts |   20.2 |   16.7 | 0.8x |   20.5 |   17.0
+rls/change-orders-concurrency.test.ts |   51.2 |   15.1 | 0.3x |   58.9 |   15.8
+rls/accept-concurrency.test.ts |   19.7 |   14.3 | 0.7x |   25.7 |   15.0
+rls/offers-concurrency.test.ts |   14.6 |   12.7 | 0.9x |   15.7 |   13.6
+rls/partner-admin.test.ts |   36.3 |   12.5 | 0.3x |   36.3 |   12.5
+rls/admin-correct.test.ts |    1.9 |   12.2 | 6.4x |    1.9 |   12.2
+rls/offers.test.ts |   46.8 |   11.6 | 0.2x |   46.8 |   11.6
+rls/job-photos.test.ts |   95.5 |   11.5 | 0.1x |   95.5 |   11.5
+rls/rls.test.ts |   21.7 |   11.2 | 0.5x |   51.2 |   25.2
+rls/sweep.test.ts |    -   |   11.0 | - |    -   |   17.7
+rls/listings.test.ts |   12.0 |    8.8 | 0.7x |   12.0 |    8.8
+rls/booking-open.test.ts |   11.1 |    6.8 | 0.6x |   12.9 |    8.1
+rls/change-orders.test.ts |    8.8 |    6.4 | 0.7x |    8.8 |    6.4
+rls/settings.test.ts |   25.4 |    6.2 | 0.2x |   35.1 |   10.5
+rls/partner-fee-read.test.ts |    1.1 |    6.1 | 5.8x |    1.1 |    6.1
+rls/route.test.ts |    5.6 |    5.2 | 0.9x |    7.0 |    6.7
+rls/delete-account-live.test.ts |    5.6 |    5.1 | 0.9x |    5.8 |    5.3
+rls/cancellation.test.ts |    4.7 |    3.7 | 0.8x |    4.7 |    3.7
+rls/cancellation-partner.test.ts |    3.1 |    3.1 | 1.0x |    3.1 |    3.1
+rls/account-deletion.test.ts |   18.0 |    3.0 | 0.2x |   18.0 |    3.0
+rls/cancellation-partner-preview.test.ts |    3.9 |    2.9 | 0.7x |    3.9 |    2.9
+rls/partner-my-jobs.test.ts |   23.8 |    2.8 | 0.1x |   23.8 |    2.8
+rls/partner-my-job-changes.test.ts |    8.7 |    2.7 | 0.3x |    8.7 |    2.7
+rls/partner-jobs.test.ts |   23.9 |    2.7 | 0.1x |   23.9 |    2.7
+rls/auth.test.ts |    2.4 |    2.3 | 0.9x |    2.8 |    2.6
+rls/completion.test.ts |   12.4 |    2.2 | 0.2x |   12.4 |    2.2
+SUMME JSON-Dateidauer: alt 994 s, neu 759 s
+SUMME JSON-Testdauer: alt 992 s, neu 757 s
+SUMME Log-Dateidauer: alt 1158 s, neu 893 s
+Tests: alt 327, neu 331
