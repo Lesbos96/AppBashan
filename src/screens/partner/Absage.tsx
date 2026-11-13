@@ -186,7 +186,13 @@ export function AbsageSheet({
 
   return (
     <Sheet open={open} onClose={close} locked={busy} title="Auftrag absagen" detents={[0.92]} fit>
-      <div className="flex flex-col gap-4 pt-2">
+      <div className="flex flex-col gap-3 pt-2">
+        {/* Fehler stehen im Inhalt, nicht in der Fußleiste: sie verdeckt sonst bei 320 px den Inhalt (Bildsicht s9i-7b2) */}
+        {error && (
+          <p role="alert" className="m-0 text-body text-destructive">
+            {error}
+          </p>
+        )}
         {preview === null && (
           <>
             <p className="m-0 text-subhead text-text-secondary">Der Kunde wird informiert. Was das für ihn und für dich bedeutet, siehst du im nächsten Schritt.</p>
@@ -205,12 +211,12 @@ export function AbsageSheet({
 
         {preview !== null && (
           <>
-            <p className="m-0 text-subhead text-text-secondary">Grund: {CANCEL_REASONS.find((r) => r.value === preview.reason)?.label}</p>
+            <p className="m-0 text-footnote text-text-secondary">Grund: {CANCEL_REASONS.find((r) => r.value === preview.reason)?.label}</p>
             {preview.callOutCents === 0 ? (
               <p className="m-0 text-body">Der Kunde muss nichts zahlen. Seine Anfrage geht an andere Firmen. Kontakt und Adresse sind danach für dich gesperrt.</p>
             ) : (
               <>
-                <div className="flex flex-col gap-2 rounded-grouped-list bg-surface p-4 shadow-card">
+                <div className="flex flex-col gap-1 rounded-grouped-list bg-surface px-4 py-3 shadow-card">
                   <Zeile label="Pauschale inkl. USt.">{euro(preview.callOutCents)}</Zeile>
                   <Zeile label="Gebühr">{euro(preview.callOutCents - preview.payoutCents)}</Zeile>
                   <Zeile label="Du erhältst" strong>
@@ -218,38 +224,35 @@ export function AbsageSheet({
                   </Zeile>
                 </div>
                 <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
-                  <legend className="mb-2 text-headline">Wie willst du absagen?</legend>
-                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
+                  <legend className="sr-only">Wie willst du absagen?</legend>
+                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface px-4 py-3 shadow-card">
                     <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'fee'} disabled={busy} onChange={() => setChoice('fee')} />
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="text-body font-semibold">Mit Pauschale</span>
                       <span className="text-subhead text-text-secondary">
-                        Der Kunde schuldet dir {euro(preview.callOutCents)}. Du stellst sie ihm außerhalb der App in Rechnung. Keine Weitervermittlung. Belegfoto nötig.
+                        Der Kunde schuldet dir {euro(preview.callOutCents)}, du stellst sie ihm außerhalb der App in Rechnung. Keine Weitervermittlung.
                       </span>
                     </span>
                   </label>
-                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
+                  <label className="flex min-h-11 items-start gap-3 rounded-grouped-list bg-surface px-4 py-3 shadow-card">
                     <input type="radio" name="absage" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={choice === 'free'} disabled={busy} onChange={() => setChoice('free')} />
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="text-body font-semibold">Ohne Pauschale</span>
-                      <span className="text-subhead text-text-secondary">Der Kunde zahlt nichts, seine Anfrage geht an andere Firmen. Kontakt danach gesperrt.</span>
+                      <span className="text-subhead text-text-secondary">Der Kunde zahlt nichts, seine Anfrage geht an andere Firmen.</span>
                     </span>
                   </label>
                 </fieldset>
               </>
             )}
-            <p className="m-0 text-footnote text-text-secondary">Mehrere Absagen in kurzer Zeit lösen eine Prüfung deiner Firma aus.</p>
+            <p className="m-0 text-footnote text-text-secondary">
+              {preview.callOutCents > 0 ? 'Ohne Pauschale sind Kontakt und Adresse danach für dich gesperrt. ' : ''}Mehrere Absagen in kurzer Zeit lösen eine Prüfung deiner Firma aus.
+            </p>
             {feeChosen && <BelegFotos have={have} files={files} setFiles={setFiles} fileKey={fileKey} setFileKey={setFileKey} busy={busy} />}
           </>
         )}
 
         {/* Fehler und Knöpfe kleben am unteren Rand des Sheets (wie beim Nachtrag): bei hohem Inhalt scrollt nur der Inhalt */}
-        <div className="sticky bottom-[calc(-1*max(var(--safe-bottom),16px))] -mx-4 -mb-[max(var(--safe-bottom),16px)] flex flex-col gap-4 border-t-[0.5px] border-separator bg-background px-4 pt-3 pb-[max(var(--safe-bottom),16px)]">
-          {error && (
-            <p role="alert" className="m-0 text-body text-destructive">
-              {error}
-            </p>
-          )}
+        <div className="sticky bottom-[calc(-1*max(var(--safe-bottom),16px))] -mx-4 -mb-[max(var(--safe-bottom),16px)] flex flex-col gap-2 border-t-[0.5px] border-separator bg-background px-4 pt-3 pb-[max(var(--safe-bottom),16px)]">
           {preview === null ? (
             <Button disabled={busy} onClick={() => void startCheck()}>
               {busy ? 'Wird geprüft …' : 'Folgen prüfen'}
@@ -271,7 +274,7 @@ export function AbsageSheet({
                     setError('')
                   }}
                 >
-                  Grund ändern
+                  Zurück
                 </Button>
               </div>
             )}

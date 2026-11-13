@@ -282,7 +282,7 @@ const shots: Shot[] = [
     jobs: { myJobs: [job()], changes: [change()] },
     steps: async (page) => {
       await page.getByRole('button', { name: 'Auftrag absagen' }).click()
-      await expect(page.getByRole('dialog').getByRole('radio', { name: /vor Ort anders als gebucht/ })).toBeVisible()
+      await expect(page.getByRole('dialog').getByRole('radio', { name: /Vor Ort anders als gebucht/ })).toBeVisible()
     },
     wait: heading('Angenommen'),
   },

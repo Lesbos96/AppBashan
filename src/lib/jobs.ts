@@ -64,7 +64,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   receipt_limit: 'Zu diesem Auftrag gibt es schon die höchste Zahl an Belegfotos (8).',
   bad_photo: 'Dieses Foto lässt sich nicht verwenden. Nimm ein anderes JPEG, PNG oder WebP.',
   under_review: 'Für diesen Auftrag läuft eine Prüfung. Absagen geht gerade nicht.',
-  late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Der Auftrag ist vor Ort anders als gebucht“ möglich.',
+  late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Vor Ort anders als gebucht“ möglich.',
   no_call_out: 'Für diese Absage gibt es keine Pauschale mehr.',
   receipt_missing: 'Für die Pauschale brauchst du mindestens ein gültiges Belegfoto zu diesem Auftrag.',
 }

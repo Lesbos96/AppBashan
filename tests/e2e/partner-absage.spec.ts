@@ -21,7 +21,7 @@ const photo = { name: 'beleg.png', mimeType: 'image/png', buffer: PNG_1PX }
 const fee = (d: ReturnType<typeof dialog>) => d.getByRole('radio', { name: /Mit Pauschale/ })
 const free = (d: ReturnType<typeof dialog>) => d.getByRole('radio', { name: /Ohne Pauschale/ })
 
-const REASON = { scope_impossible: /vor Ort anders als gebucht/, unavailable: /nicht durchführen/, other: /Anderer Grund/ }
+const REASON = { scope_impossible: /Vor Ort anders als gebucht/, unavailable: /nicht durchführen/, other: /Anderer Grund/ }
 const reasonRadio = (d: ReturnType<typeof dialog>, r: keyof typeof REASON) => d.getByRole('radio', { name: REASON[r] })
 
 async function startCheck(page: Page, reason?: keyof typeof REASON) {
@@ -86,7 +86,7 @@ test('Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Be
   const { jobs } = await open(page)
   await startCheck(page)
   const d = dialog(page)
-  await d.getByRole('button', { name: 'Grund ändern' }).click()
+  await d.getByRole('button', { name: 'Zurück' }).click()
   await reasonRadio(d, 'other').check()
   // der neue Grund braucht eine neue Vorschau: kein Absenden ohne sie
   await expect(d.getByRole('button', { name: 'Folgen prüfen' })).toBeVisible()
@@ -195,11 +195,13 @@ test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft 
   await startCheck(page)
   const d = dialog(page)
   await expect(d).toContainText('69,00 €')
-  // beide Wege stehen ohne Scrollen im Fenster (Bildsicht s9i-7b2)
-  await expect(fee(d)).toBeInViewport()
-  await expect(free(d)).toBeInViewport()
-  const [a, b] = await Promise.all([d.getByRole('button', { name: 'Grund ändern' }).boundingBox(), d.getByRole('button', { name: 'Doch nicht' }).boundingBox()])
+  // beide Wege stehen ohne Scrollen über der Fußleiste, nichts wird verdeckt (Bildsicht s9i-7b2; toBeInViewport ignoriert die Überdeckung, darum Maße)
+  const foot = await d.getByRole('button', { name: 'Absagen', exact: true }).boundingBox()
+  const optB = await d.locator('label', { hasText: 'Ohne Pauschale' }).boundingBox()
+  expect((optB?.y ?? 0) + (optB?.height ?? 0), '„Ohne Pauschale“ endet über der Fußleiste').toBeLessThanOrEqual((foot?.y ?? 0) - 8)
+  const [a, b] = await Promise.all([d.getByRole('button', { name: 'Zurück' }).boundingBox(), d.getByRole('button', { name: 'Doch nicht' }).boundingBox()])
   expect(a?.y, 'die zwei schlichten Knöpfe stehen nebeneinander').toBe(b?.y)
+  expect(a?.height, 'Zurück bleibt einzeilig').toBeLessThanOrEqual(48)
   await fee(d).check()
   const send = d.getByRole('button', { name: 'Für 69,00 € absagen' })
   const box = await send.boundingBox()

@@ -8,8 +8,8 @@ import { invoke, JobError, type JobErrorKind } from './jobs'
 
 export type CancelReason = 'scope_impossible' | 'unavailable' | 'other'
 export const CANCEL_REASONS: { value: CancelReason; label: string }[] = [
-  { value: 'scope_impossible', label: 'Der Auftrag ist vor Ort anders als gebucht' },
-  { value: 'unavailable', label: 'Ich kann den Auftrag nicht durchführen' },
+  { value: 'scope_impossible', label: 'Vor Ort anders als gebucht' },
+  { value: 'unavailable', label: 'Kann ich nicht durchführen' },
   { value: 'other', label: 'Anderer Grund' },
 ]
 
