@@ -44,7 +44,7 @@ async function fn(name: string, jwt: string | null, body: unknown): Promise<Res>
 /** Beleg wie die App: JPEG-Body, `?request=`. Je Aufruf eine andere Farbe, im Speicher erzeugt. */
 async function upload(jwt: string | null, req: string, body?: Uint8Array): Promise<Res> {
   const jpg = body ?? (await new Image(16, 16).fill(Image.rgbToColor(40 + ctx.receipts.length * 50, 120, 200)).encodeJPEG({ quality: 80 }))
-  const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/photo-receipt?request=${req}`, { method: 'POST', headers: hdr(jwt, { 'content-type': 'image/jpeg' }), body: jpg })
+  const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/photo-receipt?request=${req}`, { method: 'POST', headers: hdr(jwt, { 'content-type': 'image/jpeg' }), body: jpg as BodyInit })
   return { status: res.status, body: (await res.json().catch(() => ({}))) as Record<string, unknown> }
 }
 
@@ -244,7 +244,7 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
 
   live('Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert', async () => {
     const before = await pa.aal2.rpc('my_commissions')
-    expect((before.data ?? []).filter((r: { request_id: string }) => r.request_id === W1)).toHaveLength(0)
+    expect((before.data ?? []).filter((r) => r.request_id === W1)).toHaveLength(0)
     expect((await cust.db.rpc('complete_job', { p_request: W1 })).error).toBeNull()
     const s = step('W1', '7 complete_job (Kunde)', W1)
     expect(s.status).toBe('completed')
@@ -380,7 +380,7 @@ describe('W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confir
 
 type Row = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_rate: number; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string; partner_id: string }
 const mine = async (db: Aal2User['aal2']) => ((await (db.rpc('my_commissions') as unknown as Promise<{ data: Row[] | null; error: { code: string; message: string } | null }>)))
-const own = (rows: Row[] | null) => (rows ?? []).filter((r) => OURS.includes(r.request_id))
+const own = (rows: Row[] | null) => (rows ?? []).filter((r) => (OURS as string[]).includes(r.request_id))
 const total = (rows: Row[], req: string): Money => sum(rows.filter((r) => r.request_id === req).map((r) => ({ total: r.total_cents, fee: r.fee_cents, net: r.fee_net_cents, vat: r.fee_vat_cents, payout: r.payout_cents })))
 const cents = (s: string) => { const m = /^(-?)(\d+),(\d{2})$/.exec(s); if (!m) throw new Error(`Betrag ${s}`); return (m[1] ? -1 : 1) * (Number(m[2]) * 100 + Number(m[3])) }
 
