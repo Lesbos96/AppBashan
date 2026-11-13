@@ -1,0 +1,22 @@
+LAUF 2026-11-13T21:49:35.065Z commit ccec95f Kennung 7c2-1311-a
+W1 | 1 Anfrage (Fixture) | status=requested | journal=[] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2}
+W1 | 2 accept (pa, aal2) | status=accepted | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2,"request_accepted":1}
+W1 | 3 start_job (pa, aal2) | status=in_progress | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2,"request_accepted":1}
+W1 | 4 Beleg | id=8ab22c7d-9899-4f07-b435-ccb0f5fbc86f receipt/ready, Objekt im Bucket: 1
+W1 | 5a Vorschau | totalCents=76041 baseCents=68961
+W1 | 5b change-propose | status=in_progress | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=2 outbox={"change_proposed":1,"listing_new":2,"request_accepted":1}
+W1 | 6 change-decide accept (Kunde) | status=in_progress | journal=[booking:68961/10344/8620/1724/58617 change:7080/1062/885/177/6018] | folgeanfragen=0 listings=2 revisionen=2 outbox={"change_accepted":1,"change_proposed":1,"completion_ask":1,"listing_new":2,"request_accepted":1}
+W1 | 7 complete_job (Kunde) | status=completed | journal=[booking:68961/10344/8620/1724/58617 change:7080/1062/885/177/6018] | folgeanfragen=0 listings=2 revisionen=2 outbox={"change_accepted":1,"change_proposed":1,"completion_ask":1,"listing_new":2,"request_accepted":1}
+W2A | 1 accept | status=accepted | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2,"request_accepted":1}
+W2A | 2 cancel-partner unavailable | status=cancelled_by_partner | journal=[booking:68961/10344/8620/1724/58617 cancellation(Gegen):-68961/-10344/-8620/-1724/-58617] | folgeanfragen=1 listings=2 revisionen=1 outbox={"listing_new":2,"request_accepted":1}
+W2B | 1 accept, start_job | status=in_progress | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2,"request_accepted":1}
+W2B | 2 cancel-partner scope_impossible ohne Beleg | status=cancelled_by_partner | journal=[booking:68961/10344/8620/1724/58617 cancellation(Gegen):-68961/-10344/-8620/-1724/-58617] | folgeanfragen=0 listings=2 revisionen=1 outbox={"listing_new":2,"partner_cancelled":1,"request_accepted":1}
+W3 | 1 accept, start, Beleg, Nachtrag, abgelehnt | status=in_progress | journal=[booking:68961/10344/8620/1724/58617] | folgeanfragen=0 listings=2 revisionen=2 outbox={"change_declined":1,"change_proposed":1,"listing_new":2,"request_accepted":1}
+W3 | 2 cancel-partner mit Pauschale | status=cancelled_by_partner | journal=[booking:68961/10344/8620/1724/58617 cancellation(Gegen):-68961/-10344/-8620/-1724/-58617 cancellation_fee:6900/1035/863/172/5865] | folgeanfragen=0 listings=2 revisionen=2 outbox={"change_declined":1,"change_proposed":1,"listing_new":2,"partner_cancelled_fee":1,"request_accepted":1}
+SUMME W1 | my_commissions={"total":76041,"fee":11406,"net":9505,"vat":1901,"payout":64635} | csv={"total":76041,"fee":11406,"net":9505,"vat":1901,"payout":64635} | erwartet={"total":76041,"fee":11406,"net":9505,"vat":1901,"payout":64635}
+SUMME W2A | my_commissions={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | csv={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | erwartet={"total":0,"fee":0,"net":0,"vat":0,"payout":0}
+SUMME W2B | my_commissions={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | csv={"total":0,"fee":0,"net":0,"vat":0,"payout":0} | erwartet={"total":0,"fee":0,"net":0,"vat":0,"payout":0}
+SUMME W3 | my_commissions={"total":6900,"fee":1035,"net":863,"vat":172,"payout":5865} | csv={"total":6900,"fee":1035,"net":863,"vat":172,"payout":5865} | erwartet={"total":6900,"fee":1035,"net":863,"vat":172,"payout":5865}
+RECHTE | fremde Firma b: Zeilen der Aufträge=0, gesamt=0
+PAYMENT_HOLD | Zeilen vorher=9 nachher=9 (gleich)
+AUFRÄUMEN Belegobjekte gelöscht: 2
