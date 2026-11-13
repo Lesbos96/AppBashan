@@ -178,6 +178,22 @@ describe('Annahme (partner_accept)', () => {
     err(r['zweite Annahme gleiche Firma'], 'already_taken')
   })
 
+  // s9i-7c2 (S9i7c2-1): die Edge Function `accept` ruft diese Basis auf; bis 0060 warf sie 42804 (integer statt bigint), kein Test rief sie funktional auf
+  it('Basis für die Edge Function accept: genau eine Zeile mit Revision, Festpreis, Satz und Versionen; fremde Firma not_found; ohne Festpreis offer_required', () => {
+    const [R, RW] = [newId(), newId()]
+    const setup = `${BASE('a', 'b')} ${request({ id: R })} ${request({ id: RW, total: null })} ${dist(R)} ${dist(RW)}`
+    const basis = (user: string, req: string, key: string) => `public.partner_accept_basis('${user}', ${LID(req, key)})`
+    const steps: Step[] = [
+      { name: 'Basis', sql: `=(select (count(*) = 1 and bool_and(revision_id = ${rev(R)}) and min(total_cents) = 68961 and min(fee_rate) = ${RT.fr}::numeric and min(fee_vat_rate) = ${RT.vr}::numeric and min(fee_rate_version) = ${RT.frv} and min(fee_vat_rate_version) = ${RT.vrv})::text from ${basis(U.pa, R, 'a')})` },
+      { name: 'fremde Firma', as: 'service_role', sql: `perform ${basis(U.pb, R, 'a')}` },
+      { name: 'ohne Festpreis', as: 'service_role', sql: `perform ${basis(U.pa, RW, 'a')}` },
+    ]
+    const r = probes(setup, steps)
+    expect(r['Basis'], String(r['Basis'])).toBe('= true')
+    err(r['fremde Firma'], 'not_found')
+    err(r['ohne Festpreis'], 'offer_required')
+  })
+
   it('Zuständigkeit gilt bei der Annahme und beim Lesen (Abnahme H1): Scope entzogen → Listing unsichtbar, Annahme verweigert, keine Zuordnung', () => {
     const R = newId()
     const setup = `${BASE('a', 'b')} ${request({ id: R })} ${dist(R)} select set_config('app.l_a', ${LID(R, 'a')}::text, true);`
