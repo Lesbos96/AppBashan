@@ -165,6 +165,21 @@ describe('journalCsv: Kennungen und Zeit sind geprüft, keine Freitexte im Pfad'
   it.each([['null', null], ['Zahl', 0], ['kein ISO', 'gestern'], ['leer', '']])('Buchungszeit %s ist bad_row', (_n, v) => {
     expect(() => journalCsv([row({ created_at: v as never })])).toThrow('bad_row')
   })
+  // s9i-7c2 (S9i7c1-8): jedes Feld des Journalpfads ist ein fester Text, eine ID, eine Zeit oder eine Zahl; Freitext mit ; " CR LF ist bad_row, nie eine Zeile
+  const FREE = [['Semikolon', 'a;b'], ['Anführungszeichen', 'a"b'], ['CR', 'a\rb'], ['LF', 'a\nb'], ['CRLF', 'a\r\nb'], ['CR am Feldanfang', '\rabc']] as const
+  const FIELDS: [string, (v: string) => JournalRow][] = [
+    ['Auftrag', (v) => row({ request_id: v })],
+    ['Journal-ID', (v) => row({ entry_id: v })],
+    ['Bezug', (v) => row({ kind: 'cancellation', reverses_entry_id: v })],
+    ['Art', (v) => row({ kind: v })],
+    ['Abrechnungsmonat', (v) => row({ billing_month: v })],
+    ['Buchungszeit', (v) => row({ created_at: v })],
+    ['Betrag', (v) => row({ total_cents: v as never })],
+    ['Satz', (v) => row({ fee_rate: v as never })],
+  ]
+  it.each(FREE.flatMap(([n, v]) => FIELDS.map(([f, build]) => [`${f}: ${n}`, build(v)] as const)))('Journalpfad lehnt Freitext ab: %s ergibt bad_row', (_n, r) => {
+    expect(() => journalCsv([r])).toThrow('bad_row')
+  })
   it('Beträge werden nie entschärft: negative Beträge bleiben ohne Apostroph', () => {
     const l = lines([row({ total_cents: -6900, fee_cents: -1035, fee_net_cents: -863, fee_vat_cents: -172, payout_cents: -5865 })])[1]!
     expect(l).not.toContain("'")
@@ -194,6 +209,10 @@ describe('commissionsCsv (Admin): Quoting und Formelschutz, auch nach führenden
     [' -2', "' -2"],
   ])('Textfeld %j wird zu %j entschärft', (input, out) => {
     expect(name(input)).toContain(`;${out};`)
+  })
+  it('CR am Feldanfang wird entschärft (Apostroph) und gequotet; CRLF am Anfang ebenso', () => {
+    expect(name('\rx')).toContain(`;"'\rx";`)
+    expect(name('\r\nx')).toContain(`;"'\r\nx";`)
   })
   it('Formel mit Anführungszeichen wird erst entschärft, dann gequotet', () => {
     expect(name('=HYPERLINK("x")')).toContain(`;"'=HYPERLINK(""x"")";`)
