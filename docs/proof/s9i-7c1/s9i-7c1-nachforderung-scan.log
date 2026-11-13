@@ -1,0 +1,6 @@
+
+> movenow@0.1.0 scan:proof
+> dotenv -e .env.local -- node scripts/scan-proof.mjs
+
+proof-Scan: 529 Dateien, 6 Geheimnis-Werte geprüft, 0 Treffer
+EXIT=0
