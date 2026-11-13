@@ -1,5 +1,5 @@
 // Durchgangstest Kunde ↔ Partner gegen Dev (s9i-7c2): Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss und Storno über die deployten Wege mit echten Tokens
-// (Edge accept, photo-receipt, change-propose, change-decide, cancel-partner; RPC start_job, complete_job, job_contact, my_commissions) wie die App sie aufruft.
+// (Edge accept, photo-receipt, change-propose, change-decide, cancel-partner, cancel-customer, offer-confirm; RPC start_job, complete_job, job_contact, my_commissions) wie die App sie aufruft.
 // Anfrage = SQL-Fixture (Edge quote ist live nicht testbar: externer Routenanbieter); Termine relativ zur DB-Uhr. Plan: tmp/proof/s9i-7c2-fable-plan.md.
 // Fixtures sind committet (Journal ist unlöschbar); Rest nach dem Lauf: Kunde, Aufträge, Folgeanfrage, Firmen (gesperrt), Belegzeilen; Belegobjekte werden gelöscht.
 import { appendFileSync, writeFileSync } from 'node:fs'
@@ -20,11 +20,12 @@ import { tryAal2User, type Aal2User } from '../support/totp.ts'
 type Money = { total: number; fee: number; net: number; vat: number; payout: number }
 const BOOKED: Money = { total: 68961, fee: 10344, net: 8620, vat: 1724, payout: 58617 }
 const CALL_OUT: Money = { total: 6900, fee: 1035, net: 863, vat: 172, payout: 5865 }
+const OFFER: Money = { total: 150000, fee: 22500, net: 18750, vat: 3750, payout: 127500 }
 const ZERO: Money = { total: 0, fee: 0, net: 0, vat: 0, payout: 0 }
 
 const adm = newId()
-const [W1, W2A, W2B, W3] = [newId(), newId(), newId(), newId()]
-const OURS = [W1, W2A, W2B, W3]
+const [W1, W2A, W2B, W3, W4, W5] = [newId(), newId(), newId(), newId(), newId(), newId()]
+const OURS = [W1, W2A, W2B, W3, W4, W5]
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User
 let cust: TestUser
@@ -86,7 +87,7 @@ beforeAll(async () => {
   rates = { feeRate: Number(f.fr), vatRate: Number(f.vr) }
   monthStart = f.m
   // Auflage 1: Sätze gegen die Literale prüfen, bevor etwas committet ist
-  for (const [total, want] of [[BOOKED.total, BOOKED], [CALL_OUT.total, CALL_OUT]] as const) {
+  for (const [total, want] of [[BOOKED.total, BOOKED], [CALL_OUT.total, CALL_OUT], [OFFER.total, OFFER]] as const) {
     const s = splitFee(total, rates)
     const got = { total, fee: s.feeCents, net: s.feeNetCents, vat: s.feeVatCents, payout: s.payoutCents }
     if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`Erwartungskonstanten passen nicht zum Satz ${f.fr}/${f.vr}: ist ${JSON.stringify(got)}, Konstante ${JSON.stringify(want)} (s9p-1: Konstanten oben anpassen)`)
@@ -110,10 +111,18 @@ beforeAll(async () => {
     values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED.total},"lowCents":${BOOKED.total},"highCents":${BOOKED.total},"lines":[],${terms}}', ${f.pv}, ${BOOKED.total}, ${BOOKED.total}, ${BOOKED.total});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
     select public.distribute_request('${id}');`
+  // Auftrag ohne Festpreis (Spanne, awaiting_offer): Firmen senden Angebote, der Kunde bestätigt über offer-confirm
+  const ranged = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
+    values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'awaiting_offer', 21, now() + interval '14 days', now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
+    insert into public.request_contacts (request_id, name, phone, email, stairs_door) values ('${id}', 'Karl Kunde', '+43 1 234', 'karl@movenow.test', '3. Stock');
+    insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
+    values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","lowCents":100000,"highCents":200000,"lines":[],${terms}}', ${f.pv}, null, 100000, 200000);
+    update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
+    select public.distribute_request('${id}');`
   const past = "now() - interval '2 hours'"
   const future = "now() + interval '14 days'"
   const D21 = { districts: 'array[21]::smallint[]' }
-  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} commit;`)
+  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} ${job(W4, future)} ${ranged(W5)} commit;`)
   partnerA = partnerOf(pa.id)
 }, 600_000)
 
@@ -136,6 +145,8 @@ describe('Erwartungskonstanten', () => {
     expect([s0.feeCents, s0.feeNetCents, s0.feeVatCents, s0.payoutCents]).toEqual([BOOKED.fee, BOOKED.net, BOOKED.vat, BOOKED.payout])
     const c = splitFee(CALL_OUT.total, rates)
     expect([c.feeCents, c.feeNetCents, c.feeVatCents, c.payoutCents]).toEqual([CALL_OUT.fee, CALL_OUT.net, CALL_OUT.vat, CALL_OUT.payout])
+    const o = splitFee(OFFER.total, rates)
+    expect([o.feeCents, o.feeNetCents, o.feeVatCents, o.payoutCents]).toEqual([OFFER.fee, OFFER.net, OFFER.vat, OFFER.payout])
     expect(rates.feeRate).toBe(0.15)
   })
 })
@@ -312,6 +323,54 @@ describe('W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (
   })
 })
 
+describe('W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer', () => {
+  live('accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt', async () => {
+    expect((await fn('accept', pa.jwt2, { listingId: listingOf(W4, partnerA), revisionId: rev1(W4), shownPayoutCents: BOOKED.payout })).status).toBe(200)
+    expect(step('W4', '1 accept', W4).status).toBe('accepted')
+    expect((await fn('cancel-customer', null, { requestId: W4, shownFeeCents: 0 })).status).toBe(401)
+    expect((await fn('cancel-customer', pa.jwt2, { requestId: W4, shownFeeCents: 0 })).status).toBe(404) // Firma ist nicht der Kunde: not_found, kein Hinweis auf die Anfrage
+    const pv = await fn('cancel-customer', cust.jwt, { requestId: W4, preview: true })
+    expect(pv, JSON.stringify(pv)).toEqual({ status: 200, body: { cancelFeeCents: 0 } })
+    const wrong = await fn('cancel-customer', cust.jwt, { requestId: W4, shownFeeCents: 100 })
+    expect(wrong, JSON.stringify(wrong)).toMatchObject({ status: 409, body: { error: 'cancel_fee_changed', cancelFeeCents: 0 } })
+    expect(snap(W4).status).toBe('accepted')
+    const r = await fn('cancel-customer', cust.jwt, { requestId: W4, shownFeeCents: 0 })
+    expect(r, JSON.stringify(r)).toEqual({ status: 200, body: { status: 'cancelled_by_customer', cancelFeeCents: 0 } })
+    const s = step('W4', '2 cancel-customer', W4)
+    expect(s.status).toBe('cancelled_by_customer')
+    expect(kinds(s)).toEqual(['booking+', 'cancellation-'])
+    expect(sum(s.journal)).toEqual(ZERO)
+    // 0060 sperrt job_contact nur nach Storno durch die Firma; nach Storno durch den Kunden bleibt das Zugriffsfenster (Entscheidung 104)
+    const c = await contact(pa.aal2, W4)
+    expect(c.error).toBeNull()
+    expect(c.data).toHaveLength(1)
+  })
+})
+
+describe('W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confirm', () => {
+  live('send_offer, Bestätigung mit falschem Betrag 409, dann 200: eine Buchung über den Angebotsbetrag', async () => {
+    const lst = listingOf(W5, partnerA)
+    expect(step('W5', '1 Anfrage (Fixture, Spanne)', W5)).toMatchObject({ status: 'awaiting_offer', journal: [] })
+    expect((await pa.aal1.rpc('send_offer', { p_listing: lst, p_amount: OFFER.total })).error?.message).toBe('mfa_required')
+    const sent = await pa.aal2.rpc('send_offer', { p_listing: lst, p_amount: OFFER.total })
+    expect(sent.error, JSON.stringify(sent.error)).toBeNull()
+    expect(step('W5', '2 send_offer (pa, aal2)', W5)).toMatchObject({ status: 'offered', journal: [] })
+    const offer = String(ownerSql(`select id from public.partner_offers where request_id = '${W5}' and partner_id = '${partnerA}'`)[0]?.id)
+    const body = { offerId: offer, shownAmountCents: OFFER.total }
+    expect((await fn('offer-confirm', null, body)).status).toBe(401)
+    expect((await fn('offer-confirm', pa.jwt2, body)).status, 'Firma ist nicht der Kunde').toBe(404)
+    const wrong = await fn('offer-confirm', cust.jwt, { ...body, shownAmountCents: OFFER.total + 1 })
+    expect(wrong, JSON.stringify(wrong)).toMatchObject({ status: 409, body: { error: 'amount_changed' } })
+    expect(snap(W5).journal).toEqual([])
+    const ok = await fn('offer-confirm', cust.jwt, body)
+    expect(ok.status, JSON.stringify(ok)).toBe(200)
+    const s = step('W5', '3 offer-confirm (Kunde)', W5)
+    expect(s.status).toBe('accepted')
+    expect(s.journal).toEqual([{ kind: 'booking', rev: false, ...OFFER }])
+    expect((await contact(pa.aal2, W5)).data).toHaveLength(1)
+  })
+})
+
 type Row = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_rate: number; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string; partner_id: string }
 const mine = async (db: Aal2User['aal2']) => ((await (db.rpc('my_commissions') as unknown as Promise<{ data: Row[] | null; error: { code: string; message: string } | null }>)))
 const own = (rows: Row[] | null) => (rows ?? []).filter((r) => OURS.includes(r.request_id))
@@ -325,7 +384,7 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     const rows = own(r.data)
     const wantW1 = ctx.change1!
     const w1: Money = { total: BOOKED.total + wantW1.total, fee: BOOKED.fee + wantW1.fee, net: BOOKED.net + wantW1.net, vat: BOOKED.vat + wantW1.vat, payout: BOOKED.payout + wantW1.payout }
-    const want: [string, Money][] = [[W1, w1], [W2A, ZERO], [W2B, ZERO], [W3, CALL_OUT]]
+    const want: [string, Money][] = [[W1, w1], [W2A, ZERO], [W2B, ZERO], [W3, CALL_OUT], [W4, ZERO], [W5, ZERO /* angenommen, nicht abgeschlossen: noch keine Abrechnungszeile (wie W1 vor complete_job) */]]
     const csv = journalCsv(rows as never)
     writeFileSync('tmp/reports/flow-live.csv', csv)
     const lines = csv.split('\r\n').filter(Boolean)
@@ -342,7 +401,7 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
         fromCsv.payout += cents(c[10]!)
       }
       expect(fromCsv, `Datei ${req}`).toEqual(w)
-      ist(`SUMME ${req === W1 ? 'W1' : req === W2A ? 'W2A' : req === W2B ? 'W2B' : 'W3'} | my_commissions=${JSON.stringify(total(rows, req))} | csv=${JSON.stringify(fromCsv)} | erwartet=${JSON.stringify(w)}`)
+      ist(`SUMME ${req === W1 ? 'W1' : req === W2A ? 'W2A' : req === W2B ? 'W2B' : req === W3 ? 'W3' : req === W4 ? 'W4' : 'W5'} | my_commissions=${JSON.stringify(total(rows, req))} | csv=${JSON.stringify(fromCsv)} | erwartet=${JSON.stringify(w)}`)
     }
     expect(w1.total).toBe(ctx.t1)
     expect(csv).not.toContain(cust.id)
