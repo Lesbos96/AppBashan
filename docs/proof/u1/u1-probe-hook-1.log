@@ -1,0 +1,19 @@
+Probe trim-output.js (Kennung u1-1411-a, 2026-11-14). Von Hand notiert: die Tool-Ergebnisse der Sitzung, wörtlich. Der Hook war aktiv (Nachweis: erster PowerShell-Aufruf der Session lieferte "[trim-output hook: 115 earlier lines trimmed, 0 error lines kept]" für einen reinen Lesebefehl, der nur die Wörter vitest/playwright im Befehlstext trug).
+Befehl in allen Fällen: npx tsc -p does-not-exist.json (Treffer des NOISY-Musters 'tsc'; tsc endet mit Exit 1)
+
+1) Bash:        npx tsc -p does-not-exist.json; echo EXIT=$?
+   Ausgabe:     error TS5058: The specified path does not exist: 'does-not-exist.json'.
+                EXIT=1
+   Tool-Status: erfolgreich (kein "Exit code"-Hinweis). Das ist der Status von echo (0), der Hook ändert das nicht: ohne Hook ist der Status derselben Zeile ebenfalls 0.
+2) PowerShell:  npx tsc -p does-not-exist.json; "EXIT=$LASTEXITCODE"
+   Ausgabe:     (U+FEFF) error TS5058: ...
+                EXIT=1
+   Tool-Status: Exit code 1 (aus $LASTEXITCODE des letzten nativen Befehls, korrekt)
+3) Bash:        npx tsc -p does-not-exist.json            -> Tool-Status "Exit code 1", Ausgabe unverändert
+4) PowerShell:  npx tsc -p does-not-exist.json            -> Tool-Status "Exit code 1"; Ausgabe beginnt mit U+FEFF
+5) Lesebefehl mit dem Wort vitest (grep -c vitest package.json) wurde nicht gekürzt, weil die Ausgabe unter 35 Zeilen blieb; der Fall 0) (Get-CimInstance, Filter 'vitest|playwright' im Befehlstext) wurde gekürzt.
+
+Befund:
+- Die gedruckte EXIT-Zeile wird NICHT verfälscht (Fall 1 und 2: EXIT=1). Der Tool-Status eines roten Befehls bleibt 1 (Fälle 3 und 4). Die Aussage im Vorschlag 2.3, der Hook mache aus der EXIT-Zeile "strukturell ein falsches EXIT", ist für diese Fälle nicht belegt; der Status 0 bei "; echo EXIT=$?" entsteht auch ohne Hook.
+- Belegt: Überfangen (Fall 0: Befehlstext enthält nur das Wort), Kürzen auf die letzten 30 Zeilen, zusätzliches BOM-Zeichen am Anfang der PowerShell-Ausgabe.
+- Belegt aus dem Quelltext (nicht ausgeführt): die umgebaute Kette nimmt Berechtigungsregeln nicht mehr wörtlich; laut Doku werden sie gegen den umgeschriebenen Befehl geprüft ("evaluates permission rules ... against the input your hook returns").

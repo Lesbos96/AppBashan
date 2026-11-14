@@ -1,0 +1,10 @@
+Commit: 0722fff6ef425acfc2760b0e483ce5fbe9b84494
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/rot.mjs
+Start: 2026-11-14T07:28:17.515Z
+---
+rot
+
+---
+Dauer: 0.1 s
+EXIT=3

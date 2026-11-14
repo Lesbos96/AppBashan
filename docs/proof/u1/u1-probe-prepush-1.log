@@ -1,0 +1,12 @@
+Commit: 0722fff6ef425acfc2760b0e483ce5fbe9b84494
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/push-main.mjs
+Start: 2026-11-14T07:28:29.688Z
+---
+FERTIG BLOCKIERT (pre-push):
+- im Push fehlt genau ein neuer/geänderter docs/proof/<schritt>/bericht.json mit stand = aktuellem Code-Stand (fail-closed)
+error: failed to push some refs to 'https://github.com/bekhanidrisov74-hub/movenow.git'
+
+---
+Dauer: 1.4 s
+EXIT=1

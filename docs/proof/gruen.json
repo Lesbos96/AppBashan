@@ -1,0 +1,17 @@
+{
+  "check": {
+    "abdruck": "fff38080843eb64f26b196b6b3f814d06452be09a3844e19b52dd13636becb36",
+    "hash": "0722fff6ef425acfc2760b0e483ce5fbe9b84494",
+    "schritt": "u1"
+  },
+  "rls": {
+    "abdruck": "f05f01b4fc94277fd9f5870ad4951ea1194ef5c8163a05d9c6c3c88e69404b5d",
+    "hash": "0722fff6ef425acfc2760b0e483ce5fbe9b84494",
+    "schritt": "u1"
+  },
+  "e2e": {
+    "abdruck": "feb8f0f31f45055b9402c5c7f6731a8d6b461aff0cc72be02355cc2fd1b9d29c",
+    "hash": "0722fff6ef425acfc2760b0e483ce5fbe9b84494",
+    "schritt": "u1"
+  }
+}
