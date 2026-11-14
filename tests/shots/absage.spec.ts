@@ -1,7 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { price } from '../e2e/anfrage-helpers'
 import { mockAuth, signInWithCode } from '../e2e/auth-helpers'
-import { cors, expect, reply, test } from '../e2e/backend'
+import { expect, mockRpc, reply, test } from '../e2e/backend'
 
 /*
  * Bildsicht für die Absage der Firma beim Kunden (s9i-7b2): mit Pauschale, ohne Pauschale mit Folgeanfrage, ohne Folgeanfrage.
@@ -46,7 +46,7 @@ for (const width of [0, 320]) {
         if (r.request().url().includes('reissued_from=eq.')) return reply(r, single ? s.next : s.next ? [s.next] : [])
         return reply(r, single ? row : [row])
       })
-      await page.route('**/rest/v1/rpc/my_cancel_info**', (r) => (r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors }) : r.fulfill({ headers: cors, json: s.fee })))
+      await mockRpc(page, 'my_cancel_info', s.fee)
       await mockAuth(page)
       await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
       await page.goto(`/anmelden?next=${encodeURIComponent(`/auftraege/${ID}`)}`)

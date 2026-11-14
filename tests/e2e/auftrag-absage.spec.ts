@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { price } from './anfrage-helpers'
 import { mockAuth, signInWithCode } from './auth-helpers'
-import { cors, expect, reply, test } from './backend'
+import { expect, mockRpc, reply, test, type RpcReturn } from './backend'
 import { collectErrors } from './console'
 
 /*
@@ -27,7 +27,7 @@ const row = {
   price_revisions: { snapshot: price(68961) },
 }
 
-type State = { fee: unknown; next: { id: string; status: string } | null; info: Record<string, unknown>[]; urls: string[] }
+type State = { fee: number | null; next: { id: string; status: string } | null; info: Record<string, unknown>[]; urls: string[] }
 
 async function open(page: Page, init: Partial<State>) {
   const state: State = { fee: 0, next: null, info: [], urls: [], ...init }
@@ -38,10 +38,10 @@ async function open(page: Page, init: Partial<State>) {
     if (url.includes('reissued_from=eq.')) return reply(r, single ? state.next : state.next ? [state.next] : [])
     return reply(r, single ? row : [row])
   })
-  await page.route('**/rest/v1/rpc/my_cancel_info**', (r) => {
-    if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
-    state.info.push(r.request().postDataJSON() as Record<string, unknown>)
-    return r.fulfill({ headers: cors, json: state.fee })
+  await mockRpc(page, 'my_cancel_info', (args) => {
+    state.info.push(args)
+    // null liefert der Server nie; ein Test prüft absichtlich, wie die App einen unlesbaren Betrag zeigt
+    return state.fee as RpcReturn<'my_cancel_info'>
   })
   await mockAuth(page)
   await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))

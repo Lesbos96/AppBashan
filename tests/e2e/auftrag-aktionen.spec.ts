@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { price } from './anfrage-helpers'
 import { mockAuth, signInWithCode } from './auth-helpers'
-import { cors, expect, reply, rest, test } from './backend'
+import { cors, expect, mockRpc, rest, test, type RpcReturn } from './backend'
 import { collectErrors } from './console'
 
 /*
@@ -18,12 +18,13 @@ const PAST = '2026-01-01T07:00:00Z'
 const FUTURE = '2099-12-15T07:00:00Z'
 const TERMS = { cancel_free_hours: 48, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 0 }
 
+type Offer = RpcReturn<'my_request_offers'>[number]
 type Answer = { status?: number; json?: unknown; delay?: number }
 type State = {
   status: string
   termin: string
   reported: string | null
-  offers: unknown[]
+  offers: Offer[]
   change: unknown | null
   terms?: unknown
   waived?: boolean
@@ -34,7 +35,7 @@ type State = {
 }
 
 const state = (over: Partial<State> = {}): State => ({ status: 'accepted', termin: FUTURE, reported: null, offers: [], change: null, calls: [], answers: {}, after: {}, ...over })
-const offer = (over: object = {}) => ({ offer_id: OFFER, amount_cents: 72345, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte', ...over })
+const offer = (over: Partial<Offer> = {}): Offer => ({ offer_id: OFFER, amount_cents: 72345, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte', ...over })
 const change = (over: object = {}) => ({
   id: REV,
   total_cents: 80000,
@@ -61,7 +62,7 @@ async function mock(page: Page, s: State) {
   })
   await page.route('**/rest/v1/service_requests**', (r) => rest(r, [row()]))
   await page.route('**/rest/v1/price_revisions**', (r) => rest(r, s.change ? [s.change] : []))
-  await page.route('**/rest/v1/rpc/my_request_offers**', (r) => reply(r, s.offers))
+  await mockRpc(page, 'my_request_offers', () => s.offers)
   const answer = async (name: string, body: unknown, ok: (r: Answer) => unknown) => {
     s.calls.push({ name, body })
     const a = s.answers[name]?.shift() ?? {}

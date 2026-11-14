@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { test as base, expect, type BrowserContext, type Route } from '@playwright/test'
+import { test as base, expect, type BrowserContext, type Page, type Route } from '@playwright/test'
+import type { Database } from '../../supabase/functions/_shared/database.types.ts'
 
 /*
  * Gemocktes Backend für E2E und Shots: kein Aufruf verlässt den Browser.
@@ -55,6 +56,34 @@ export function rest(route: Route, rows: unknown[]) {
   return reply(route, single ? rows[0] : rows)
 }
 
+type Fns = Database['public']['Functions']
+type Nullable<T> = { [K in keyof T]: T[K] | null }
+/**
+ * Rückgabe einer SQL-Funktion wie der Generator sie beschreibt (`Functions[N]['Returns']`). Zeilen dürfen je Spalte null sein: der Generator
+ * markiert Spalten von Tabellenfunktionen nie als nullbar, echte Zeilen haben aber leere Felder (z. B. `ended_at`). `Json`-Rückgaben bindet der Typ nicht.
+ */
+export type RpcReturn<N extends keyof Fns> = Fns[N]['Returns'] extends readonly (infer R)[] ? Nullable<R>[] : Fns[N]['Returns']
+/** Fehlerantwort eines Funktionsaufrufs (Status und PostgREST-Fehlerobjekt). */
+export class RpcFail {
+  constructor(
+    readonly status: number,
+    readonly json: unknown,
+  ) {}
+}
+/**
+ * Mock für `POST /rest/v1/rpc/<name>`; die Antwort ist an die Typen der Datenbank gebunden (`mockRpc<'my_jobs'>`): weicht sie von `Returns` ab, scheitert der Typecheck.
+ * `undefined` (void) antwortet mit 204, eine Funktion bekommt die Argumente (`Args`) und darf eine `RpcFail` liefern.
+ */
+export function mockRpc<N extends keyof Fns>(target: Page | BrowserContext, name: N, answer: RpcReturn<N> | ((args: Fns[N]['Args']) => RpcReturn<N> | RpcFail)) {
+  // genau dieser Name: `withdraw` trifft nie `withdraw_offer`, `partner_accept` nie `partner_accept_basis`
+  return target.route(new RegExp(`/rest/v1/rpc/${name}(\\?.*)?$`), (r) => {
+    if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
+    const a = typeof answer === 'function' ? (answer as (args: Fns[N]['Args']) => RpcReturn<N> | RpcFail)((r.request().postDataJSON() ?? {}) as Fns[N]['Args']) : answer
+    if (a instanceof RpcFail) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    return a === undefined ? r.fulfill({ status: 204, headers: cors }) : r.fulfill({ headers: cors, json: a })
+  })
+}
+
 export type Backend = {
   /** Aufrufe an fremde Hosts ohne Mock (Methode und URL); muss am Testende leer sein. */
   unmocked: string[]
@@ -78,25 +107,22 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
     return rest(r, wanted === undefined || Number(wanted) === PRICE_VERSION.version ? PRICE_ROWS : [])
   })
   // Eine Funktion mit jsonb-Ergebnis liefert PostgREST als einzelnes Objekt.
-  await context.route('**/rest/v1/rpc/booking_terms**', (r) => reply(r, TERMS))
-  await context.route('**/rest/v1/rpc/booking_open**', (r) => reply(r, backend.bookingOpen))
+  await mockRpc(context, 'booking_terms', TERMS)
+  await mockRpc(context, 'booking_open', () => backend.bookingOpen)
   // Ohne eigenen Mock hat das Konto keine Anfragen.
   await context.route('**/rest/v1/service_requests**', (r) => rest(r, []))
   // Auftrags-Detail: ohne eigenen Mock gibt es weder offenen Nachtrag noch Angebote.
   await context.route('**/rest/v1/price_revisions**', (r) => rest(r, []))
-  await context.route('**/rest/v1/rpc/my_request_offers**', (r) => reply(r, []))
+  await mockRpc(context, 'my_request_offers', [])
   // Partner-Anfragen (s9i-6a): ohne eigenen Mock hat die aktive Firma keine Anfragen und keine Angebote (tests/e2e/jobs-helpers.ts überschreibt)
   await context.route('**/rest/v1/job_listings**', (r) => rest(r, []))
   await context.route('**/rest/v1/partner_offers**', (r) => rest(r, []))
   // Vorschau „Du erhältst“ (s9p-1): der Server rechnet mit Staffel v1 (15 %, half-up in Cent); der Client rechnet nichts selbst
-  await context.route('**/rest/v1/rpc/payout_preview**', (r) => {
-    const total = Number((r.request().postDataJSON() as { p_total: number }).p_total)
-    return reply(r, total - Math.round(total * 0.15))
-  })
+  await mockRpc(context, 'payout_preview', ({ p_total }) => p_total - Math.round(p_total * 0.15))
   // Aufträge der Firma (s9i-6b): ohne eigenen Mock hat die Firma keine
-  await context.route('**/rest/v1/rpc/my_jobs**', (r) => reply(r, []))
+  await mockRpc(context, 'my_jobs', [])
   // Preisgrundlage und Nachtrag der Firma (s9i-7a)
-  await context.route('**/rest/v1/rpc/my_job_changes**', (r) => reply(r, []))
+  await mockRpc(context, 'my_job_changes', [])
   return backend
 }
 

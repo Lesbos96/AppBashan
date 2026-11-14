@@ -1,5 +1,6 @@
 import type { Page, Route } from '@playwright/test'
-import { cors, reply, rest } from './backend'
+import type { Database, Json } from '../../supabase/functions/_shared/database.types.ts'
+import { cors, mockRpc, RpcFail, rest, type RpcReturn } from './backend'
 import { factor, openPartner, type OpenOpts } from './mfa-helpers'
 
 /*
@@ -41,7 +42,7 @@ export type JobRow = {
   termin_at: string
   accepted_at: string
   ended_at: string | null
-  ended_reason: string | null
+  ended_reason: Database['public']['Enums']['assignment_end'] | null
   district: number | null
   to_district: number | null
   service: 'transport' | 'move' | 'clearance' | 'assembly'
@@ -85,7 +86,7 @@ export type ChangeRow = {
   request_id: string
   service: 'transport' | 'move' | 'clearance' | 'assembly'
   source: string
-  inputs: Record<string, unknown>
+  inputs: Json
   total_cents: number | null
   change_id: string | null
   change_status: 'proposed' | 'accepted' | 'declined' | 'expired' | 'withdrawn' | null
@@ -247,13 +248,10 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     return rest(r, s.offers)
   })
   // Auszahlungsvorschau: der Server rechnet (Gesamt − Provision, half-up in Cent); sonst gilt der Standard aus backend.ts
-  await page.route('**/rest/v1/rpc/payout_preview**', (r) => {
-    const o = pre(r)
-    if (o) return o
+  await mockRpc(page, 'payout_preview', ({ p_total }) => {
     s.payoutReads++
-    if (s.payoutFails) return r.fulfill({ status: 500, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
-    const total = Number((r.request().postDataJSON() as { p_total: number }).p_total)
-    return reply(r, total - Math.round(total * s.payoutRate))
+    if (s.payoutFails) return new RpcFail(500, { code: 'XX000', message: 'boom', details: null, hint: null })
+    return p_total - Math.round(p_total * s.payoutRate)
   })
   await page.route('**/functions/v1/accept', (r) => {
     const o = pre(r)
@@ -268,23 +266,19 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     if (won) s.myJobs.push(job({ listing_id: won.id, service: won.service, district: won.district, to_district: won.to_district, preferred_date: won.preferred_date, time_window: won.time_window, total_cents: won.total_cents, payout_cents: body.shownPayoutCents as number }))
     return r.fulfill({ headers: cors, json: { assignmentId: A1 } })
   })
-  await page.route('**/rest/v1/rpc/my_jobs**', (r) => {
-    const o = pre(r)
-    if (o) return o
+  await mockRpc(page, 'my_jobs', () => {
     s.jobReads++
     const st = s.jobStatus.shift()
     // 403 steht für „Firma inzwischen gesperrt“ (P0001 partner_not_active), alles andere für einen Serverfehler
-    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: st === 403 ? 'P0001' : 'XX000', message: st === 403 ? 'partner_not_active' : 'boom', details: null, hint: null } })
-    return r.fulfill({ headers: cors, json: s.myJobs })
+    if (st && st >= 400) return new RpcFail(st, { code: st === 403 ? 'P0001' : 'XX000', message: st === 403 ? 'partner_not_active' : 'boom', details: null, hint: null })
+    return s.myJobs
   })
   // Nachtrag (s9i-7a): Der Mock verhält sich wie der Server: nur ein offener Nachtrag je Auftrag, der Betrag kommt aus `serverTotal`, ein anderer gezeigter Betrag ergibt 409
-  await page.route('**/rest/v1/rpc/my_job_changes**', (r) => {
-    const o = pre(r)
-    if (o) return o
+  await mockRpc(page, 'my_job_changes', () => {
     s.changeReads++
     const st = s.changeStatus.shift()
-    if (st && st >= 400) return r.fulfill({ status: st, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
-    return r.fulfill({ headers: cors, json: s.changes })
+    if (st && st >= 400) return new RpcFail(st, { code: 'XX000', message: 'boom', details: null, hint: null })
+    return s.changes
   })
   await page.route('**/functions/v1/change-propose', (r) => {
     const o = pre(r)
@@ -317,16 +311,13 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     if (row) row.receipt_ids = [...row.receipt_ids, id]
     return r.fulfill({ headers: cors, json: { id } })
   })
-  await page.route('**/rest/v1/rpc/withdraw_change**', (r) => {
-    const o = pre(r)
-    if (o) return o
-    const body = r.request().postDataJSON() as { p_revision: string }
-    s.withdrawnChanges.push(body.p_revision)
+  await mockRpc(page, 'withdraw_change', ({ p_revision }) => {
+    s.withdrawnChanges.push(p_revision)
     const a = s.withdrawChangeAnswers.shift()
-    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
-    const row = s.changes.find((c) => c.change_id === body.p_revision)
+    if (a) return new RpcFail(a.status, a.json)
+    const row = s.changes.find((c) => c.change_id === p_revision)
     if (row) Object.assign(row, { change_status: 'withdrawn', change_decided_at: '2026-11-30T12:00:00+00:00' })
-    return r.fulfill({ status: 204, headers: cors })
+    return undefined
   })
   // Absage (s9i-7b2): der Mock verhält sich wie der Server: Pauschale nur bei `scope_impossible`, anderer gezeigter Betrag ergibt 409 `amount_changed`
   await page.route('**/functions/v1/cancel-partner', (r) => {
@@ -342,44 +333,36 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     // Wie der Server: die Pauschale fällt nur mit Belegen an (`feeBaseCents = ids.length > 0 ? callOutCents : 0`)
     const due = Array.isArray(body.photoIds) && body.photoIds.length > 0 ? callOut : 0
     if (body.shownCallOutCents !== due) return r.fulfill({ status: 409, headers: cors, json: { error: 'amount_changed' } })
-    s.myJobs = s.myJobs.map((j) => (j.request_id === body.requestId ? { ...j, status: 'cancelled_by_partner' as const, ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: due, payout_cents: due - Math.round(due * 0.15) } : j))
+    s.myJobs = s.myJobs.map((j) => (j.request_id === body.requestId ? { ...j, status: 'cancelled_by_partner' as const, ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner' as const, total_cents: due, payout_cents: due - Math.round(due * 0.15) } : j))
     return r.fulfill({ headers: cors, json: { status: 'cancelled_by_partner', callOutCents: due } })
   })
   // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen
-  const act = (name: 'start_job' | 'complete_job' | 'job_contact', log: string[], answers: Ans[], apply: (id: string) => void, okJson?: unknown) =>
-    page.route(`**/rest/v1/rpc/${name}**`, (r) => {
-      const o = pre(r)
-      if (o) return o
-      const id = (r.request().postDataJSON() as { p_request: string }).p_request
+  const act = <N extends 'start_job' | 'complete_job' | 'job_contact'>(name: N, log: string[], answers: Ans[], apply: (id: string) => void, ok: RpcReturn<N>) =>
+    mockRpc(page, name, (args) => {
+      const id = (args as { p_request: string }).p_request
       log.push(id)
       const a = answers.shift()
-      if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+      if (a) return new RpcFail(a.status, a.json)
       apply(id)
-      return okJson === undefined ? r.fulfill({ status: 204, headers: cors }) : r.fulfill({ headers: cors, json: okJson })
+      return ok
     })
-  await act('start_job', s.starts, s.startAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'in_progress' as const, can_start: false } : j))))
-  await act('complete_job', s.completes, s.completeAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'completed' as const, ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' } : j))))
+  await act('start_job', s.starts, s.startAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'in_progress' as const, can_start: false } : j))), undefined)
+  await act('complete_job', s.completes, s.completeAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'completed' as const, ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' as const } : j))), undefined)
   await act('job_contact', s.contacts, s.contactAnswers, () => undefined, [CONTACT])
-  await page.route('**/rest/v1/rpc/send_offer**', (r) => {
-    const o = pre(r)
-    if (o) return o
-    const body = r.request().postDataJSON() as { p_listing: string; p_amount: number }
+  await mockRpc(page, 'send_offer', (body) => {
     s.sends.push(body)
     const a = s.sendAnswers.shift()
-    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    if (a) return new RpcFail(a.status, a.json)
     const l = s.listings.find((x) => x.id === body.p_listing)
     s.offers.push({ id: O1, base_revision_id: l?.revision_id ?? REV2, amount_cents: body.p_amount, status: 'sent', valid_until: '2026-12-03T10:00:00Z' })
-    return r.fulfill({ headers: cors, json: O1 })
+    return O1
   })
-  await page.route('**/rest/v1/rpc/withdraw_offer**', (r) => {
-    const o = pre(r)
-    if (o) return o
-    const body = r.request().postDataJSON() as { p_offer: string }
+  await mockRpc(page, 'withdraw_offer', (body) => {
     s.withdraws.push(body)
     const a = s.withdrawAnswers.shift()
-    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    if (a) return new RpcFail(a.status, a.json)
     s.offers = s.offers.map((x) => (x.id === body.p_offer ? { ...x, status: 'withdrawn' as const } : x))
-    return r.fulfill({ status: 204, headers: cors })
+    return undefined
   })
   await page.route('**/functions/v1/job-photo', (r) => {
     const o = pre(r)
