@@ -20,14 +20,17 @@ const MCP_DB = /(execute_sql|apply_migration|reset_branch|restore_project|delete
 // Verzeichnis und .cmd/.exe vor bekannten Programmnamen entfallen (node_modules/.bin/vitest, npm.cmd).
 function kern(segment) {
   let s = segment.trim().replace(/^&\s*/, '')
+  // Programmpfad in Anführungszeichen (auch mit Leerzeichen): `"C:\Program Files\Git\bin\bash.exe" x.sh` → `bash x.sh`
+  s = s.replace(new RegExp(`^["'](?:[^"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["'](?=\\s|$)`, 'i'), '$1')
   for (let i = 0; i < 4; i++) {
     s = s
+      .replace(/^(?:(?:export|local|declare|readonly|typeset)\s+)?\w+=(?=\$\(|`)/, '') // x=$(supabase …): die Zuweisung ist keine Variable mit Wert, das Programm steht in der Ersetzung
       .replace(/^(\w+=\S*\s+)+/, '')
-      .replace(/^[({!]+\s*|^\$\(\s*/, '')
+      .replace(/^[({!`]+\s*|^\$\(\s*/, '')
       .replace(/^(time|call|then|do|else|elif|exec|env|nohup|command|builtin|sudo)\s+/i, '')
       .replace(/^(npx|npm\s+exec)\s+(--\s+)?/, '')
       .replace(/^dotenv\s+(-e\s+\S+\s+)*--\s+/, '')
-      .replace(/^node\s+\S*supabase\.js\s+/, 'supabase ')
+      .replace(/^node\s+(?:-\S+\s+)*\S*supabase\.js\s+/, 'supabase ')
   }
   s = s.replace(/\s*[)}]+$/, '')
   return s.replace(new RegExp(`^["']?(?:[^\\s"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["']?(?=\\s|$)`, 'i'), (_m, name) => name.toLowerCase())
@@ -56,15 +59,30 @@ const norm = (p) => p.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase()
 // Innentext verschachtelter Shells grob entquotet (alle Anführungszeichen und Escapes entfernt) neu prüfen, statt ihn genau zu parsen.
 const grob = (t) => t.trim().replace(/\\(["'])/g, '$1').replace(/["'`]/g, '')
 
-// Liefert den Innentext einer Shell, die einen Befehl bekommt (bash -c, powershell -Command, cmd /c, eval, iex), sonst null; { verweigern } bei EncodedCommand.
+// Nur die äußere Ebene der Anführungszeichen entfernen (Pfade mit Leerzeichen bleiben ein Wort).
+const aussen = (t) => {
+  const s = t.trim().replace(/\\(["'])/g, '$1')
+  return /^(["'])([\s\S]*)\1$/.exec(s)?.[2] ?? s
+}
+
+// Liefert den Innentext einer Shell, die einen Befehl bekommt (bash -c, powershell -Command, cmd /c, eval, iex), sonst null: { texte } (zwei Lesarten: äußere Ebene entquotet, alles entquotet)
+// oder { verweigern } bei EncodedCommand.
 function innentext(k) {
   let m
-  if ((m = new RegExp(`^(?:bash|sh|zsh|dash|ksh)\\s+(?:-\\S+\\s+)*?-[a-z]*c\\s+([\\s\\S]*)$`, 'i').exec(k))) return grob(m[1])
-  if (/^(?:powershell|pwsh)\s(?:[\s\S]*?\s)?-(?:e|ec|enc\w*|encodedcommand)\s/i.test(k)) return { verweigern: 'PowerShell -EncodedCommand ist nicht prüfbar und gesperrt.' }
-  if ((m = /^(?:powershell|pwsh)\s+(?:-\S+(?:\s+[^-\s]\S*)?\s+)*?-(?:c|com\w*)\s+([\s\S]*)$/i.exec(k))) return grob(m[1])
-  if ((m = /^cmd\s+(?:\/\S+\s+)*?\/[ck]\s+([\s\S]*)$/i.exec(k))) return grob(m[1])
-  if ((m = /^(?:eval|iex|invoke-expression)\s+([\s\S]*)$/i.exec(k))) return grob(m[1])
-  return null
+  let rest
+  if ((m = new RegExp(`^(?:bash|sh|zsh|dash|ksh)\\s+(?:-\\S+\\s+)*?-[a-z]*c\\s+([\\s\\S]*)$`, 'i').exec(k))) rest = m[1]
+  else if (/^(?:powershell|pwsh)\s(?:[\s\S]*?\s)?-(?:e|ec|enc\w*|encodedcommand)\s/i.test(k)) return { verweigern: 'PowerShell -EncodedCommand ist nicht prüfbar und gesperrt.' }
+  else if ((m = /^(?:powershell|pwsh)\s+(?:-\S+(?:\s+[^-\s]\S*)?\s+)*?-(?:c|com\w*)\s+([\s\S]*)$/i.exec(k))) rest = m[1]
+  else if ((m = /^cmd\s+(?:\/\S+\s+)*?\/[ck]\s+([\s\S]*)$/i.exec(k))) rest = m[1]
+  else if ((m = /^(?:eval|iex|invoke-expression)\s+([\s\S]*)$/i.exec(k))) rest = m[1]
+  else return null
+  return { texte: [aussen(rest), rest.trim(), grob(rest)] } // außen entquotet, unverändert (ein Pfad mit Leerzeichen in Anführungszeichen bleibt ein Wort), alles entquotet
+}
+
+// Befehlsersetzungen $(…) und `…` (außerhalb einfacher Anführungszeichen, auch in doppelten) sind eigene Befehle; ein Heredoc (`cat <<`) ist Text.
+function ersetzungen(roh) {
+  const ohneEinfache = roh.replace(/'[^']*'/g, "''")
+  return [...ohneEinfache.matchAll(/\$\(((?:[^()]|\([^()]*\))*)\)|`([^`]*)`/g)].map((m) => m[1] ?? m[2]).filter((t) => t && !/^\s*cat\s+<</.test(t))
 }
 
 // Wörter eines Befehls, Anführungszeichen als ein Wort (Pfade mit Leerzeichen).
@@ -77,7 +95,7 @@ function skriptDatei(k) {
   const ENDUNG = /\.(sh|ps1|bat|cmd)$/i
   if (!/^(bash|sh|zsh|dash|ksh|source|\.|cmd|powershell|pwsh)(\.exe)?$/i.test(w[0] ?? '')) return ENDUNG.test(w[0] ?? '') ? w[0] : null
   const rest = w.slice(1).filter((x) => !/^call$/i.test(x))
-  return rest.find((x) => ENDUNG.test(x)) ?? (/^(bash|sh|zsh|dash|ksh|source|\.)(\.exe)?$/i.test(w[0]) ? rest.find((x) => !/^[-/]/.test(x)) ?? null : null)
+  return rest.find((x) => ENDUNG.test(x)) ?? (/^(bash|sh|zsh|dash|ksh|source|\.)(\.exe)?$/i.test(w[0]) ? rest.find((x) => !x.startsWith('-')) ?? null : null)
 }
 
 let registerCache
@@ -101,7 +119,8 @@ function loeschDirekt(k) {
   const r = ladeRegister()
   if (!r) return 'Das Lösch-Register (scripts/sys/loesch-register.json) oder package.json ist nicht lesbar; Aufruf sicherheitshalber verweigert.'
   // Nur das Skript zählt, das der Interpreter startet (erstes Wort mit Skript-Endung, Optionen samt Werten und Anführungszeichen übersprungen), nicht Wörter in den Argumenten.
-  const ziel = norm(woerter(k).slice(1).find((x) => /\.(mjs|cjs|js|mts|ts)$/i.test(x)) ?? '')
+  const w = woerter(k).slice(1)
+  const ziel = norm(w.find((x, i) => /\.(mjs|cjs|js|mts|ts)$/i.test(x) && !/^(-r|--require|--import|--loader|--experimental-loader|--env-file|-C|--conditions)$/.test(w[i - 1] ?? '')) ?? '')
   if (interpreter && r.skripte.some((p) => ziel.endsWith(p) || (p.endsWith('.mjs') && ziel === p.split('/').pop()))) return 'Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).'
   if (npmRun && r.aliase.includes(npmRun[1])) return `\`npm run ${npmRun[1]}\` startet ein Lösch-Skript: nur über \`npm run loesch -- <skript.mjs>\` (Lösch-Gate mit Fable-Freigabe).`
   return null
@@ -114,6 +133,10 @@ export function entscheideBefehl(befehl, tiefe = 0) {
     if (!seg) continue
     const k = kern(seg)
     const kk = kern(kahl.trim())
+    for (const inner of ersetzungen(roh)) {
+      const g = entscheideBefehl(inner, tiefe + 1)
+      if (g) return g
+    }
     if (/^(vitest|playwright\s+test)\b/.test(k) || /^npm\s+(t|tst|test)(\s|$)/.test(k) || /^npm\s+(?:run|run-script|rum|urn)\s+(check|test|test:\S+|shots(:all)?)(\s|$)/.test(k)) {
       return 'Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.'
     }
@@ -122,16 +145,17 @@ export function entscheideBefehl(befehl, tiefe = 0) {
     }
     if (/^psql\b/.test(k)) return 'psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.'
     if (new RegExp(`${SUPABASE}db\\s+query\\b`).test(kk)) {
-      if (!/^(supabase|echo|printf|grep|rg|cat|type|ls|dir|get-content|select-string|git|npm|node)\b/i.test(kk)) return '`db query` nur als eigener Befehl (nicht hinter xargs, einer Hülle o. ä.).'
+      if (!/^(supabase|echo|printf|grep|rg|cat|type|ls|dir|get-content|select-string|git)\b/i.test(kk)) return '`db query` nur als eigener Befehl (nicht hinter xargs, einer Hülle o. ä.).'
       // Schreibendes SQL im Segment (Mehrfachanweisungen in Anführungszeichen bleiben im Segment; Heredoc und `<` verweigert die Regel darunter), Dateiinhalt (-f) ist unsichtbar.
       if (/^supabase\b/.test(kk)) {
-        if (SQL_SCHREIBEND.test(roh) || /\s(--file|-f)(\s|=)/.test(kahl)) return 'Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.'
-        const ohneEinfache = roh.replace(/'[^']*'/g, "''")
+        if (SQL_SCHREIBEND.test(roh) || /\s--file\b|\s-[a-zA-Z]*f/.test(kahl)) return 'Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.'
+        const ohneEinfache = roh.replace(/'[^']*'/g, "''").replace(/^\s*(?:(?:export|local|declare|readonly|typeset)\s+)?(?:\w+=)?(?:\$\(|`)/, '') // die umschließende Ersetzung selbst (x=$(supabase …)) zählt nicht
         if (trenner === '|' || /</.test(kahl) || /\$[\w({]|`/.test(ohneEinfache)) return 'SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.'
         // Erlaubtform: nach `db query` nur Optionen (mit Wert) und höchstens ein Argument in Anführungszeichen; Klammerausdrücke, @, bloße Wörter werden verweigert.
         let vorOption = false
         let zitate = 0
-        for (const t of kk.replace(new RegExp(`^${SUPABASE}db\\s+query\\b`), '').trim().split(/\s+/).filter(Boolean)) {
+        // Umleitungen der Ausgabe (2>&1, > datei, >> datei) gehören nicht zu den Argumenten.
+        for (const t of kk.replace(new RegExp(`^${SUPABASE}db\\s+query\\b`), '').replace(/(?:\d*|&)>{1,2}(?:&\d+|\s*\S+)?/g, ' ').trim().split(/\s+/).filter(Boolean)) {
           if (t.startsWith('-')) vorOption = !t.includes('=')
           else if (/^(["']).*\1$/.test(t)) {
             zitate++
@@ -148,9 +172,11 @@ export function entscheideBefehl(befehl, tiefe = 0) {
     if (/^(node|tsx)\s+(-p|--print|-pe|-e|--eval)\b/.test(k) || /^deno\s+eval\b/.test(k)) return 'Kein Inline-JavaScript (-e/-p/eval): Skript unter tmp/ nutzen.'
     const innen = innentext(k)
     if (innen !== null) {
-      if (typeof innen === 'object') return innen.verweigern
-      const g = entscheideBefehl(innen, tiefe + 1)
-      if (g) return g
+      if (innen.verweigern) return innen.verweigern
+      for (const t of innen.texte) {
+        const g = entscheideBefehl(t, tiefe + 1)
+        if (g) return g
+      }
     }
     const datei = skriptDatei(k)
     if (datei !== null && innen === null) {
@@ -182,11 +208,15 @@ export function entscheideBefehl(befehl, tiefe = 0) {
       const umleitung = [...kahl.matchAll(/(^|\s)(\d|&|\*)?>>?\s*/g)].some((m) => /^['"]?\S*docs[\\/]+freigaben/i.test(roh.slice(m.index + m[0].length))) // `>` außerhalb von Anführungszeichen
       if ((offen && !lesen) || schreibt || umleitung) return 'docs/freigaben schreibt nur `npm run loesch -- uebernehme <tmp/proof/…/loesch-freigabe-N.md>`; nur Lesen und git add sind erlaubt.'
     }
-    const ziel = seg.split(/\s+/).pop().replace(/^['"]|['"]$/g, '')
+    // Ziel eines Kopierens/Schreibens/Umbenennens: Wort nach -Destination, sonst das letzte Wort; Vergleich aufgelöst und kleingeschrieben.
+    const worte = woerter(seg)
+    const iDest = worte.findIndex((x) => /^-(destination|literalpath)$/i.test(x))
+    const ziel = norm(iDest >= 0 ? (worte[iDest + 1] ?? '') : (worte.at(-1) ?? ''))
     if (/(^|\s)(\d|&|\*)?>>?\s*['"]?[^\s'"]*\b(tmp|docs)[\\/]proof\b/.test(seg) || (SCHREIBEN.test(k) && /\b(tmp|docs)[\\/]proof\b/.test(seg) && !/-ItemType\s+Directory\b/i.test(seg))) {
       return 'Nachweise schreibt nur das Start-Programm (tmp/proof) bzw. werden byte-genau mit cp kopiert (docs/proof). Keine Umleitung dorthin; Berichte schreibt der Berater selbst mit Write.'
     }
-    if ((KOPIEREN.test(k) || SCHREIBEN.test(k)) && /\btmp[\\/]proof\b/.test(ziel) && (SKRIPT_DATEI.test(ziel) || BERATER_DATEI.test(ziel))) {
+    // Berater-Namen (Freigabe, Abnahme) auch ohne Verzeichnis im Ziel (nach `cd tmp/proof/x`), Lauf-Dateien nur unter tmp/proof.
+    if ((KOPIEREN.test(k) || SCHREIBEN.test(k) || /^(ren|rename-item|git\s+mv)\b/i.test(k)) && ((/\btmp\/proof\b/.test(ziel) && (SKRIPT_DATEI.test(ziel) || BERATER_DATEI.test(ziel))) || (!ziel.includes('/') && BERATER_DATEI.test(ziel)))) {
       return 'Läufe, Logs, Anträge, Freigaben und Abnahmen entstehen nur durch Start-Programm bzw. advisor-report; nichts dorthin kopieren oder schreiben.'
     }
   }

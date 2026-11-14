@@ -359,6 +359,65 @@ describe('u1b Lösch-Gate im Guard', () => {
   })
 })
 
+describe('u1b Abnahme Runde 2: Befehlsersetzung, Umleitungen, Skriptpfade', () => {
+  it.each([
+    'x=$(supabase db query "delete from public.x" --linked)',
+    'out=$(npm run check 2>&1)',
+    'x=$(psql -c "select 1")',
+    'export X=$(supabase db push)',
+    'local x=$(npx vitest run)',
+    'echo $(supabase db query "delete from public.x" --linked)',
+    'echo `npm run check`',
+    'echo "$(npm run check)"',
+    'node --no-warnings node_modules/supabase/dist/supabase.js db query "delete from x" --linked',
+    'supabase db query --linked -ftmp/x.sql',
+    'node --import ./tmp/x.mjs scripts/storage-reset.mjs',
+    'node -r ./tmp/x.js scripts/storage-reset.mjs',
+    '& "C:\\Program Files\\Git\\bin\\bash.exe" -c "npm run check"',
+  ])('verweigert: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    'x=$(git rev-parse HEAD)',
+    'FOO=1 npm run build',
+    'x=$(supabase db query "select 1" --linked)',
+    'supabase db query "select 1" --linked 2>&1',
+    'supabase db query "select 1" --linked 2>&1 | tail -5',
+    'supabase db query "select 1" --linked > tmp/out.json',
+    'echo $(git rev-parse HEAD)',
+    'echo "a (b) c"',
+    'git commit -m "$(cat <<\'EOF\'\nu1b: npm run check psql\nnode scripts/storage-reset.mjs (Beispiel)\nx=$(supabase db push) im Text\nEOF\n)"',
+    'cp tmp/proof/u1b/001-x.log docs/proof/u1b/001-x.log',
+    'mv a.txt b.txt',
+    'bash -c "echo $(date)"',
+  ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+  it.each([
+    'cd tmp/proof/u1b && mv entwurf.md loesch-freigabe-2.md',
+    'Rename-Item tmp/proof/u1b/entwurf.md loesch-freigabe-2.md',
+    'cp x tmp/proof/u1b/Loesch-Freigabe-2.md',
+    'Copy-Item x -Destination tmp/proof/u1b/loesch-freigabe-2.md -Force',
+    'git mv x tmp/proof/u1b-abnahme.md',
+  ])('Berater-Dateien per Umbenennen, -Destination oder in anderer Schreibweise: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it('Skriptdateien: harmlose in denselben Formen gehen durch, absolute Pfade ohne Endung und Pfade mit Leerzeichen in Hüllen werden gelesen', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guard-skript3-'))
+    mkdirSync(join(dir, 'mit leer'))
+    writeFileSync(join(dir, 'gut.ps1'), 'echo hallo\n')
+    writeFileSync(join(dir, 'gut'), 'echo hallo\n')
+    writeFileSync(join(dir, 'gut.bat'), 'echo hallo\n')
+    writeFileSync(join(dir, 'mit leer', 'gut.ps1'), 'echo hallo\n')
+    writeFileSync(join(dir, 'mit leer', 'schlecht.ps1'), 'npm run check\n')
+    writeFileSync(join(dir, 'schlecht'), 'npm run check\n')
+    for (const c of ['powershell -NoProfile -ExecutionPolicy Bypass -File gut.ps1', '& "mit leer\\gut.ps1"', 'bash gut', 'cmd /c call gut.bat']) expect(bash(c, 'Bash', dir).exit, c).toBe(0)
+    for (const c of [`bash ${join(dir, 'schlecht').replace(/\\/g, '/')}`, `source ${join(dir, 'schlecht').replace(/\\/g, '/')}`, `powershell -Command "& 'mit leer\\schlecht.ps1'"`, 'cmd /c "mit leer\\schlecht.ps1"']) {
+      expect(bash(c, 'Bash', dir).exit, c).toBe(2)
+    }
+  })
+})
+
 describe('Wächter-Hook guard.mjs: Absturz sperrt selbst', () => {
   it.each([
     ['leere Eingabe', ''],
