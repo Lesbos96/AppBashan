@@ -27,7 +27,7 @@ Stand heute: Das Tool `advisor` steht in der Tool-Liste dieser Session (und laut
 
 **Prüfen:** In einer neuen Session `/advisor` eintippen: Der Befehl ist nicht mehr verfügbar. Frage die Session „Steht ein Tool namens advisor ohne Parameter in deiner Liste?“: Antwort nein. Der Subagent `advisor` (Fable, aus `.claude/agents/advisor.md`) bleibt unverändert nutzbar; das ist ein anderes Ding.
 
-## 3. Auto-Modus als Standard (optional, empfohlen erst nach der Probe-Session)
+## 3. Auto-Modus als Standard (optional; erst nach Schritt u1b, siehe OPEN_ISSUES u1-8: M17 und M18 sind Voraussetzung)
 Doku (code.claude.com/docs/en/permission-modes): `defaultMode: "auto"` wirkt nur in `~/.claude/settings.json`, nicht in `.claude/settings.json` des Projekts.
 
 1. In `C:\Users\gesch\.claude\settings.json` ergänzen: `"permissions": { "defaultMode": "auto" }` (gibt es `permissions` schon, nur `defaultMode` setzen).
@@ -67,4 +67,5 @@ Nicht über Claude, sondern selbst im Terminal im Repo:
 ## 8. Später (kein Teil von u1)
 - `/usage` notieren (Ausgangswert für die Fable-Grenze unter 50 %).
 - Nach dem ersten echten Schritt mit dem neuen System (Probe) und u2 können die bisherigen `ask`-Regeln für `git commit`, `git merge`, `git push`, `rm` und `npx dotenv` in `.claude/settings.json` entfallen (Vorschlag a7). Bis dahin bleiben sie.
+- Die `ask`-Regeln erst entfernen, wenn M17 und M18 (OPEN_ISSUES u1-8) behoben sind: Bis dahin lassen sich Datenbankbefehle in Anführungszeichen einer Hülle (`bash -c "…"`) am Guard vorbeischreiben.
 - Das Aufräumen von Testdaten (Gate für Löschskripte, Vorschlag a2 letzter Punkt) ist nicht gebaut; siehe `docs/OPEN_ISSUES.md`.

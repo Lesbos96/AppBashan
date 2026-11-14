@@ -1,6 +1,20 @@
 {
   "model": "sonnet",
   "effortLevel": "medium",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.mjs"], "onFailure": "block" }
+        ]
+      }
+    ],
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session.mjs"] }] }],
+    "SubagentStart": [{ "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session.mjs"] }] }],
+    "SubagentStop": [{ "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session.mjs"] }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session.mjs"] }] }]
+  },
   "permissions": {
     "defaultMode": "default",
     "deny": [
@@ -35,7 +49,24 @@
       "Bash(npx supabase config push:*)",
       "Bash(supabase config push:*)",
       "Bash(git push --force:*)",
-      "Bash(git push -f:*)"
+      "Bash(git push -f:*)",
+      "PowerShell(node -e:*)",
+      "PowerShell(node --eval:*)",
+      "PowerShell(git stash:*)",
+      "PowerShell(git add -A:*)",
+      "PowerShell(git add .:*)",
+      "PowerShell(git checkout --:*)",
+      "PowerShell(git reset:*)",
+      "PowerShell(git restore:*)",
+      "PowerShell(git clean:*)",
+      "PowerShell(npx supabase config push:*)",
+      "PowerShell(supabase config push:*)",
+      "PowerShell(git push --force:*)",
+      "PowerShell(git push -f:*)",
+      "Agent(general-purpose)",
+      "Agent(claude)",
+      "mcp__d7859db5-7e7e-4e6b-a9d5-ae276b32608a",
+      "Edit(./docs/proof/**)"
     ],
     "ask": [
       "Bash(npm run db:push:*)",
@@ -58,7 +89,32 @@
       "PowerShell(Set-Content:*)",
       "PowerShell(Add-Content:*)",
       "PowerShell(Out-File:*)",
-      "PowerShell(Remove-Item:*)"
+      "PowerShell(Remove-Item:*)",
+      "PowerShell(npm run db:push:*)",
+      "PowerShell(npx supabase db:*)",
+      "PowerShell(supabase db:*)",
+      "PowerShell(npx supabase functions deploy:*)",
+      "PowerShell(supabase functions deploy:*)",
+      "PowerShell(git push:*)",
+      "PowerShell(git commit:*)",
+      "PowerShell(git merge:*)",
+      "PowerShell(npx dotenv:*)",
+      "PowerShell(dotenv:*)",
+      "PowerShell(npx supabase migration repair:*)",
+      "PowerShell(supabase migration repair:*)",
+      "PowerShell(npx supabase secrets:*)",
+      "PowerShell(supabase secrets:*)",
+      "PowerShell(npx supabase link:*)",
+      "PowerShell(supabase link:*)",
+      "Bash(npm run fertig:*)",
+      "PowerShell(npm run fertig:*)",
+      "Bash(npm run prod:*)",
+      "PowerShell(npm run prod:*)",
+      "Edit(./scripts/sys/**)",
+      "Edit(./.githooks/**)",
+      "Edit(./.claude/**)",
+      "Edit(./package.json)",
+      "Edit(./CLAUDE.md)"
     ]
   }
 }
