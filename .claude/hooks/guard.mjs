@@ -154,9 +154,14 @@ export function entscheideBefehl(befehl, tiefe = 0) {
     }
     if (/^python3?\s+-(\s|$)/.test(k)) return 'Kein Python über stdin (hängt unter Windows). Node-Skript oder temporäre Datei unter tmp/ nutzen.'
     // docs/freigaben (Lösch-Freigaben) schreibt nur `npm run loesch -- uebernehme`: jedes Segment mit diesem Pfad, das kein Lesebefehl ist, und jede Umleitung dorthin wird verweigert.
+    // Steht der Pfad nur in Anführungszeichen (Text, Argument eines Programms), zählt er nur bei einem schreibenden Programm oder einer Umleitung.
     if (/docs[\\/]+freigaben/i.test(seg)) {
-      const lesen = /^(cat|ls|dir|grep|rg|head|tail|type|wc|echo|printf|get-content|get-childitem|select-string|test-path)\b/i.test(k) || /^git\s+(status|log|show|diff|ls-files|ls-tree|add|commit|blame|rev-parse)\b/i.test(k)
-      if (!lesen || /(^|\s)(\d|&|\*)?>>?\s*['"]?\S*docs[\\/]+freigaben/i.test(seg)) return 'docs/freigaben schreibt nur `npm run loesch -- uebernehme <tmp/proof/…/loesch-freigabe-N.md>`; nur Lesen und git add sind erlaubt.'
+      const offen = /docs[\\/]+freigaben/i.test(kahl)
+      // node und npm gelten als Leser: ein Skript kann überall schreiben (Grenze, OPEN_ISSUES u1b-3), ein Pfad als Argument ändert daran nichts.
+      const lesen = /^(cat|ls|dir|grep|rg|head|tail|type|wc|echo|printf|diff|cmp|stat|sha256sum|get-content|get-childitem|get-filehash|select-string|test-path|node|npm)\b/i.test(k) || /^git\s+(status|log|show|diff|ls-files|ls-tree|add|commit|blame|rev-parse)\b/i.test(k)
+      const schreibt = /^(cp|mv|copy|move|copy-item|move-item|tee|out-file|set-content|add-content|new-item|ni|sc|ac|touch|rm|del|erase|remove-item|ri|install|rsync|robocopy|xcopy)\b/i.test(k) || /^git\s+(mv|rm|checkout|restore|apply|am)\b/i.test(k)
+      const umleitung = [...kahl.matchAll(/(^|\s)(\d|&|\*)?>>?\s*/g)].some((m) => /^['"]?\S*docs[\\/]+freigaben/i.test(roh.slice(m.index + m[0].length))) // `>` außerhalb von Anführungszeichen
+      if ((offen && !lesen) || schreibt || umleitung) return 'docs/freigaben schreibt nur `npm run loesch -- uebernehme <tmp/proof/…/loesch-freigabe-N.md>`; nur Lesen und git add sind erlaubt.'
     }
     const ziel = seg.split(/\s+/).pop().replace(/^['"]|['"]$/g, '')
     if (/(^|\s)(\d|&|\*)?>>?\s*['"]?[^\s'"]*\b(tmp|docs)[\\/]proof\b/.test(seg) || (SCHREIBEN.test(k) && /\b(tmp|docs)[\\/]proof\b/.test(seg) && !/-ItemType\s+Directory\b/i.test(seg))) {
