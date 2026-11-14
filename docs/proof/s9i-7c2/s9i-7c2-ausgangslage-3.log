@@ -1,0 +1,16 @@
+﻿Kennung 7c2-1311-c (Fortsetzung von -2: dort migration-list-Parser fehlerhaft, Eintraege=0; functions list roh)
+Branch: s9i-7c2 HEAD=6394a49 main=6e6bd5c origin/main=6e6bd5c origin/s9i-7c2=6394a49
+Befehl: npx dotenv -e .env.local -- supabase migration list --linked
+Format JSON-Paare=61 Tabellenzeilen=0
+Eintraege=61 abweichend=0 letzte=20261113110000/20261113110000
+EXIT_migration_list=0
+Befehl: npx dotenv -e .env.local -- supabase functions list --project-ref vcpbbzdyltvffvzjrzdi
+change-propose status=ACTIVE version=4
+change-decide status=ACTIVE version=4
+cancel-partner status=ACTIVE version=3
+photo-receipt status=ACTIVE version=2
+cancel-customer status=ACTIVE version=3
+offer-confirm status=ACTIVE version=3
+admin-correct status=ACTIVE version=2
+accept status=ACTIVE version=1
+EXIT_functions_list=0

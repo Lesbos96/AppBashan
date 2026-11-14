@@ -1,0 +1,327 @@
+﻿
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/flow-live.test.ts (14 tests | 12 failed) 32855ms
+   ✓ Erwartungskonstanten (1)
+     ✓ Buchung, Pauschale und Nachtragszeile entsprechen splitFee/splitChange mit dem Satz aus platform_settings 2ms
+   ❯ W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden) (6)
+     × accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409 4987ms
+     × start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft 454ms
+     × Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile receipt/ready von Firma a 1213ms
+     × Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung 417ms
+     × Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag 4488ms
+     × Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert 166ms
+   ❯ W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) (1)
+     × accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a 1785ms
+   ❯ W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) (1)
+     × accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage 1856ms
+   ❯ W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) (1)
+     × accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale 1934ms
+   ❯ Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold (4)
+     × Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe aus Vorschau T, 0, 0, 6900) 70ms
+     ✓ Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge 286ms
+     × Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder 380ms
+     × payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen 803ms
+node.exe : 
+In Zeile:1 Zeichen:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\gesch\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409
+AssertionError: {"status":500,"body":{"error":"internal"}}: expected { status: 500, …(1) } to match object { status: 
+409, …(1) }
+
+- Expected
++ Received
+
+  {
+    "body": {
+-     "error": "payout_changed",
++     "error": "internal",
+    },
+-   "status": 409,
++   "status": 500,
+  }
+
+ ❯ tests/rls/flow-live.test.ts:156:42
+    154|     expect((await fn('accept', pb.jwt2, body)).status).toBe(404)
+    155|     const wrong = await fn('accept', pa.jwt2, { ...body, shownPayoutCe…
+    156|     expect(wrong, JSON.stringify(wrong)).toMatchObject({ status: 409, …
+       |                                          ^
+    157|     expect(snap(W1)).toMatchObject({ status: 'requested', journal: [] …
+    158|     const ok = await fn('accept', pa.jwt2, body)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft
+AssertionError: expected { code: 'P0001', details: null, …(2) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "code": "P0001",
+  "details": null,
+  "hint": null,
+  "message": "not_assigned",
+}
+
+ ❯ tests/rls/flow-live.test.ts:171:71
+    169|     expect((await cust.db.rpc('start_job', { p_request: W1 })).error).…
+    170|     expect((await pa.aal1.rpc('start_job', { p_request: W1 })).error?.…
+    171|     expect((await pa.aal2.rpc('start_job', { p_request: W1 })).error).…
+       |                                                                       ^
+    172|     expect(step('W1', '3 start_job (pa, aal2)', W1).status).toBe('in_p…
+    173|   })
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile 
+receipt/ready von Firma a
+AssertionError: {"status":404,"body":{"error":"not_found"}}: expected { status: 404, …(1) } to match object { status: 
+422, …(1) }
+
+- Expected
++ Received
+
+  {
+    "body": {
+-     "error": "not_jpeg",
++     "error": "not_found",
+    },
+-   "status": 422,
++   "status": 404,
+  }
+
+ ❯ tests/rls/flow-live.test.ts:181:46
+    179|     expect((await upload(pb.jwt2, W1)).status).toBe(404)
+    180|     const notJpeg = await upload(pa.jwt2, W1, new TextEncoder().encode…
+    181|     expect(notJpeg, JSON.stringify(notJpeg)).toMatchObject({ status: 4…
+       |                                              ^
+    182|     expect(photosOf(W1)).toHaveLength(0)
+    183|     const ok = await upload(pa.jwt2, W1)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung
+AssertionError: {"status":404,"body":{"error":"not_found"}}: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/rls/flow-live.test.ts:194:47
+    192|   live('Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bl…
+    193|     const prev = await fn('change-propose', pa.jwt2, { requestId: W1, …
+    194|     expect(prev.status, JSON.stringify(prev)).toBe(200)
+       |                                               ^
+    195|     ctx.t1 = Number(prev.body.totalCents)
+    196|     expect(prev.body.baseCents).toBe(BOOKED.total)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch 
+splitChange); Kunde sieht den Betrag
+AssertionError: expected 400 to be 404 // Object.is equality
+
+- Expected
++ Received
+
+- 404
++ 400
+
+ ❯ tests/rls/flow-live.test.ts:215:123
+    213|     const want: Money = { total: ctx.t1 - BOOKED.total, fee: fee - BOO…
+    214|     ctx.change1 = want
+    215|     expect((await fn('change-decide', pa.jwt2, { revisionId: rev, deci…
+       |                                                                                                               
+            ^
+    216|     expect(await fn('change-decide', cust.jwt, { revisionId: rev, deci…
+    217|     expect(await fn('change-decide', cust.jwt, { revisionId: rev, deci…
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss 
+(Termin vor 2 Stunden) > Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 
+und Zustand unverändert
+AssertionError: expected { code: 'P0001', details: null, …(2) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "code": "P0001",
+  "details": null,
+  "hint": null,
+  "message": "invalid_transition",
+}
+
+ ❯ tests/rls/flow-live.test.ts:230:74
+    228|     const before = await pa.aal2.rpc('my_commissions')
+    229|     expect((before.data ?? []).filter((r: { request_id: string }) => r…
+    230|     expect((await cust.db.rpc('complete_job', { p_request: W1 })).erro…
+       |                                                                          ^
+    231|     const s = step('W1', '7 complete_job (Kunde)', W1)
+    232|     expect(s.status).toBe('completed')
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) > accept, 
+job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne 
+Listing für Firma a
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ tests/rls/flow-live.test.ts:242:147
+    240| describe('W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen…
+    241|   live('accept, job_contact (1 Zeile), cancel-partner unavailable: Geg…
+    242|     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W2A, pa…
+       |                                                                                                               
+                                    ^
+    243|     expect(step('W2A', '1 accept', W2A).status).toBe('accepted')
+    244|     const c = await contact(pa.aal2, W2A)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) > accept, 
+start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ tests/rls/flow-live.test.ts:263:147
+    261| describe('W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stund…
+    262|   live('accept, start, unavailable nach dem Termin 409, scope_impossib…
+ Test Files  1 failed (1)
+      Tests  12 failed | 2 passed (14)
+   Start at  22:30:32
+   Duration  36.73s (tests 98%, import 1%, transform 1%)
+    263|     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W2B, pa…
+       |                                                                                                               
+                                    ^
+    264|     expect((await pa.aal2.rpc('start_job', { p_request: W2B })).error)…
+    265|     const run = step('W2B', '1 accept, start_job', W2B)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg 
+(Termin vor 2 Stunden) > accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau 
+eine Pauschale
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ tests/rls/flow-live.test.ts:283:145
+    281| describe('W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossibl…
+    282|   live('accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900…
+    283|     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W3, par…
+       |                                                                                                               
+                                  ^
+    284|     expect((await pa.aal2.rpc('start_job', { p_request: W3 })).error).…
+    285|     const up = await upload(pa.jwt2, W3)
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
+unsichtbar, payment_hold > Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe 
+aus Vorschau T, 0, 0, 6900)
+AssertionError: my_commissions aeea005d-43c5-4aa2-9c38-c6613a6cdfb5: expected { total: +0, fee: +0, net: +0, …(2) } to 
+deeply equal { total: 6900, fee: 1035, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "fee": 1035,
+-   "net": 863,
+-   "payout": 5865,
+-   "total": 6900,
+-   "vat": 172,
++   "fee": 0,
++   "net": 0,
++   "payout": 0,
++   "total": 0,
++   "vat": 0,
+  }
+
+ ❯ tests/rls/flow-live.test.ts:333:57
+    331|     expect(lines).toHaveLength(rows.length + 1)
+    332|     for (const [req, w] of want) {
+    333|       expect(total(rows, req), `my_commissions ${req}`).toEqual(w)
+       |                                                         ^
+    334|       const cs = lines.slice(1).map((l) => l.split(';')).filter((c) =>…
+    335|       const fromCsv: Money = { total: 0, fee: 0, net: 0, vat: 0, payou…
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
+unsichtbar, payment_hold > Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, 
+Snapshot des Nachtrags ohne Gebührenfelder
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/rls/flow-live.test.ts:372:30
+    370|     empty(await cust.db.from('platform_settings').select('key').eq('ke…
+    371|     const snaps = await cust.db.from('price_revisions').select('snapsh…
+    372|     expect(snaps.data ?? []).toHaveLength(1)
+       |                              ^
+    373|     expect(JSON.stringify(snaps.data)).not.toMatch(/payout|commission|…
+    374|   })
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
+unsichtbar, payment_hold > payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, 
+my_commissions liefert dieselben Zeilen und Summen
+AssertionError: expected 0 to be greater than or equal to 8
+ ❯ tests/rls/flow-live.test.ts:383:27
+
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-flow.json

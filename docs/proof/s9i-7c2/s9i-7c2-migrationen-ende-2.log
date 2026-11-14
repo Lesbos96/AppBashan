@@ -1,0 +1,4 @@
+﻿Kennung 7c2-1311-c Migrationsliste am Ende (Fortsetzung von -1: Parser erwartete Tabelle, Ausgabe ist JSON), 2026-11-14 02:07:41
+Befehl: npx dotenv -e .env.local -- supabase migration list --linked
+Eintraege=61 abweichend=0 letzte=20261113110000/20261113110000
+EXIT=0

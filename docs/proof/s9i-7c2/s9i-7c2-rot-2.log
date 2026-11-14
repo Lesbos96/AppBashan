@@ -1,0 +1,14 @@
+﻿Kennung 7c2-1311-a; Commit 6e6bd5c; Arbeitsbaum sauber: nein (absichtlich falsche Erwartung, Unit-Rot; rot-1 war durch Select-Object -First abgeschnitten)
+× Journalpfad lehnt Freitext ab: Auftrag: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Journal-ID: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Bezug: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Art: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Abrechnungsmonat: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Buchungszeit: CR am Feldanfang ergibt bad_row 1ms
+× Journalpfad lehnt Freitext ab: Betrag: CR am Feldanfang ergibt bad_row 0ms
+× Journalpfad lehnt Freitext ab: Satz: CR am Feldanfang ergibt bad_row 0ms
+× CR am Feldanfang wird entschärft (Apostroph) und gequotet; CRLF am Anfang ebenso 2ms
+Journalpfad lehnt Freitext ab: Auftrag: CR am Feldanfang ergibt bad_row
+Journalpfad lehnt Freitext ab: Journal-ID: CR am Feldanfang ergibt bad_row
+Journalpfad lehnt Freitext ab: Bezug: CR am Feldanfang ergibt bad_row
+EXIT=1

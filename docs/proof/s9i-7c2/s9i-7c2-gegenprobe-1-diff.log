@@ -1,0 +1,4 @@
+﻿Kennung 7c2-1311-c; Proben zurueckgenommen mit: git restore tests/rls/flow-live.test.ts
+Befehl: git diff --exit-code
+Hash 012c802; Arbeitsbaum sauber: ja
+EXIT=0

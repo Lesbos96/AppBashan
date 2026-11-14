@@ -1,0 +1,55 @@
+s9i-7c2 Dauer rls · Kennung 7c2-1311-c
+Quelle: alt = tmp/proof/s9i-7c1-rls-2.json/.log (s9i-7c1), neu = tmp/proof/s9i-7c2-rls-1.json/.log (Hash c1e2aa8, EXIT=0)
+Erzeugt mit: node tmp/dauer.mjs tmp/proof/s9i-7c1-rls-2.json tmp/proof/s9i-7c1-rls-2.log tmp/proof/s9i-7c2-rls-1.json tmp/proof/s9i-7c2-rls-1.log tmp/proof/s9i-7c1-e2e-2.json tmp/proof/s9i-7c2-e2e-1.json
+Drei Maße: (1) Datei s = Summe der Testdauern je Datei aus dem JSON-Report, (2) Log s = Dateidauer aus der Logzeile "✓ |rls| tests/<datei> (n tests) <ms>", (3) Gesamt = "Duration" am Logende.
+
+Maß 3 Gesamt (Duration im Log): alt 788.25 s (38 Dateien, 341 Tests) · neu 820.54 s (39 Dateien, 358 Tests) · Faktor 1.04
+Maß 1 Summe Datei s: alt 584.6 · neu 662.4 · Faktor 1.13
+Maß 2 Summe Log s: alt 740.3 · neu 797.3
+
+Datei | alt Datei s | neu Datei s | Faktor | alt Log s | neu Log s
+uploads.test.ts | 80.2 | 109.9 | 1.4x | 87.1 | 117.3
+quote-hardening.test.ts | 67.0 | 75.9 | 1.1x | 72.4 | 82.2
+partner-functions-live.test.ts | 115.2 | 58.6 | 0.5x | 152.6 | 76.9
+flow-live.test.ts (neu) | - | 56.8 | - | - | 76.9
+partner-mfa.test.ts | 12.1 | 47.5 | 3.9x | 13.3 | 53.7
+quote.test.ts | 54.4 | 44.1 | 0.8x | 65.0 | 50.2
+offers-concurrency.test.ts | 12.3 | 26.9 | 2.2x | 13.1 | 27.7
+status.test.ts | 20.8 | 21.5 | 1.0x | 28.9 | 30.4
+partners.test.ts | 16.6 | 19.5 | 1.2x | 16.9 | 19.8
+job-photos-concurrency.test.ts | 17.6 | 17.8 | 1.0x | 22.9 | 23.4
+accept-concurrency.test.ts | 14.3 | 14.2 | 1.0x | 15.1 | 15.0
+change-orders-concurrency.test.ts | 13.9 | 13.7 | 1.0x | 14.6 | 14.5
+partner-documents.test.ts | 17.8 | 13.7 | 0.8x | 50.5 | 21.6
+job-photos.test.ts | 12.3 | 12.4 | 1.0x | 12.3 | 12.4
+listings.test.ts | 12.4 | 11.8 | 1.0x | 12.4 | 11.8
+offers.test.ts | 8.6 | 11.8 | 1.4x | 8.6 | 11.8
+rls.test.ts | 10.5 | 11.0 | 1.0x | 23.2 | 23.2
+sweep.test.ts | 11.4 | 10.7 | 0.9x | 18.1 | 17.5
+journal.test.ts | 8.4 | 8.3 | 1.0x | 8.4 | 8.3
+change-orders.test.ts | 6.8 | 8.1 | 1.2x | 6.8 | 8.1
+partner-admin.test.ts | 8.9 | 7.0 | 0.8x | 9.0 | 7.0
+booking-open.test.ts | 7.7 | 6.8 | 0.9x | 9.1 | 8.1
+settings.test.ts | 8.4 | 6.3 | 0.7x | 12.0 | 10.0
+route.test.ts | 5.6 | 5.6 | 1.0x | 7.2 | 7.5
+delete-account-live.test.ts | 4.9 | 4.7 | 1.0x | 5.0 | 4.9
+partner-my-job-changes.test.ts | 2.8 | 4.5 | 1.6x | 2.8 | 4.5
+cancellation.test.ts | 3.7 | 3.8 | 1.0x | 3.7 | 3.8
+partner-jobs.test.ts | 2.7 | 3.5 | 1.3x | 2.7 | 3.5
+cancellation-partner-preview.test.ts | 3.4 | 3.5 | 1.0x | 3.4 | 3.5
+partner-my-jobs.test.ts | 2.9 | 3.1 | 1.1x | 2.9 | 3.1
+auth.test.ts | 2.3 | 2.9 | 1.2x | 2.6 | 3.2
+account-deletion.test.ts | 3.9 | 2.9 | 0.7x | 3.9 | 2.9
+cancellation-partner.test.ts | 3.1 | 2.8 | 0.9x | 3.1 | 2.8
+completion.test.ts | 2.2 | 2.7 | 1.2x | 2.3 | 2.7
+outbox.test.ts | 2.6 | 2.3 | 0.9x | 2.6 | 2.3
+journal-live.test.ts | 2.1 | 1.9 | 0.9x | 20.9 | 21.2
+admin-correct.test.ts | 2.1 | 1.6 | 0.7x | 2.1 | 1.6
+job-contact-after-cancel.test.ts | 1.5 | 1.5 | 1.0x | 1.5 | 1.5
+partner-fee-read.test.ts | 1.0 | 0.7 | 0.7x | 1.0 | 0.7
+SUMME | 584.6 | 662.4 | 1.13x | 740.3 | 797.3
+
+Schwellen (Auftrag): Datei über 150 s oder mehr als doppelte Dauer.
+- Über 150 s: keine Datei neu (alt: partner-functions-live 152.6 s Log, jetzt 76.9 s).
+- Mehr als doppelt: partner-mfa 12.1 → 47.5 s (3.9x), offers-concurrency 12.3 → 26.9 s (2.2x). Beide absolut unter 60 s. Eine Änderung an beiden Dateien liegt in s9i-7c2 nicht vor (git diff c1e2aa8 gegen 6394a49 berührt nur flow-live.test.ts); Ursache vermutlich Auth-Rate-Limits/Last des Dev-Projekts. → OPEN_ISSUES.
+- flow-live.test.ts (neu, 14 Tests): 56.8 s Datei, 76.9 s Log.

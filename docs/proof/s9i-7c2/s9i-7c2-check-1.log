@@ -1,0 +1,40 @@
+Kennung 7c2-1311-c
+Hash 6d623a3; Arbeitsbaum sauber: ja
+Befehl: npm run check >> tmp/proof/s9i-7c2-check-1.log 2>&1 < /dev/null
+Start: 2026-11-13T23:56:05+01:00
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+tests/rls/flow-live.test.ts(47,178): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BodyInit | null | undefined'.
+      Type 'Uint8Array<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BodyInit | null | undefined'.
+      Type 'Uint8Array<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
+tests/rls/flow-live.test.ts(247,39): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(predicate: (value: { entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }, index: number, array: { ...; }[]) => value is { ...; }, thisArg?: any): { ...; }[]', gave the following error.
+    Argument of type '(r: { request_id: string; }) => boolean' is not assignable to parameter of type '(value: { entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }, index: number, array: { ...; }[]) => value is { ...; }'.
+      Types of parameters 'r' and 'value' are incompatible.
+        Type '{ entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }' is not assignable to type '{ request_id: string; }'.
+          Types of property 'request_id' are incompatible.
+            Type 'string | null' is not assignable to type 'string'.
+              Type 'null' is not assignable to type 'string'.
+  Overload 2 of 2, '(predicate: (value: { entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }, index: number, array: { ...; }[]) => unknown, thisArg?: any): { ...; }[]', gave the following error.
+    Argument of type '(r: { request_id: string; }) => boolean' is not assignable to parameter of type '(value: { entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }, index: number, array: { ...; }[]) => unknown'.
+      Types of parameters 'r' and 'value' are incompatible.
+        Type '{ entry_id: string | null; request_id: string | null; partner_id: string | null; partner_name: string | null; kind: "change" | "booking" | "cancellation" | "cancellation_fee" | "correction" | null; ... 11 more ...; billing_month: string | null; }' is not assignable to type '{ request_id: string; }'.
+          Types of property 'request_id' are incompatible.
+            Type 'string | null' is not assignable to type 'string'.
+              Type 'null' is not assignable to type 'string'.
+tests/rls/flow-live.test.ts(383,78): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+EXIT=2

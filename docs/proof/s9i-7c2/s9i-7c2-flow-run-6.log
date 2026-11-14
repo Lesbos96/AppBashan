@@ -1,0 +1,59 @@
+﻿Kennung 7c2-1311-c; Hash 3b864cf; Arbeitsbaum sauber: nein (flow-live.test.ts: W4 cancel-customer neu, Erwartung 404 statt 403)
+Befehl: cmd /c "npx dotenv -e .env.local -- vitest run --project rls tests/rls/flow-live.test.ts --reporter=default --reporter=json --outputFile=tmp/reports/vitest-flow-6.json >> tmp/proof/s9i-7c2-flow-run-6.log 2>&1"
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/flow-live.test.ts (15 tests | 1 failed) 101176ms
+   ✓ Erwartungskonstanten (1)
+     ✓ Buchung, Pauschale und Nachtragszeile entsprechen splitFee/splitChange mit dem Satz aus platform_settings 2ms
+   ✓ W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden) (6)
+     ✓ accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409 13828ms
+     ✓ start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft 1457ms
+     ✓ Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile receipt/ready von Firma a 3260ms
+     ✓ Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung 3045ms
+     ✓ Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag 3366ms
+     ✓ Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert 2838ms
+   ✓ W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) (1)
+     ✓ accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a 4255ms
+   ✓ W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) (1)
+     ✓ accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage 4669ms
+   ✓ W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) (1)
+     ✓ accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale 8028ms
+   ❯ W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer (1)
+     × accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt 5241ms
+   ✓ Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold (4)
+     ✓ Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe aus Vorschau T, 0, 0, 6900) 866ms
+     ✓ Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge 283ms
+     ✓ Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder 454ms
+     ✓ payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen 3678ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer > accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt
+AssertionError: expected undefined to be 'not_assigned' // Object.is equality
+
+- Expected:
+"not_assigned"
+
++ Received:
+undefined
+
+ ❯ tests/rls/flow-live.test.ts:332:57
+    330|     expect(kinds(s)).toEqual(['booking+', 'cancellation-'])
+    331|     expect(sum(s.journal)).toEqual(ZERO)
+    332|     expect((await contact(pa.aal2, W4)).error?.message).toBe('not_assi…
+       |                                                         ^
+    333|   })
+    334| })
+ ❯ tests/rls/flow-live.test.ts:131:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  23:06:34
+   Duration  119.18s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-flow-6.json
+EXIT=1

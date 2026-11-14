@@ -1,0 +1,154 @@
+﻿Kennung 7c2-1311-c; Gegenprobe (5 absichtlich falsche Erwartungen in flow-live.test.ts); Hash 012c802 (WIP-Commit davor); Arbeitsbaum sauber: nein (Proben)
+Proben: W1-Summe +1 ct (Zustimmung), W3 Gebuehr +1 ct, fremde Firma soll Zeilen sehen, job_contact nach W2A soll erlaubt sein, payment_hold soll 0 Zeilen liefern
+Befehl: cmd /c "npx dotenv -e .env.local -- vitest run --project rls tests/rls/flow-live.test.ts --reporter=default --reporter=json --outputFile=tmp/reports/vitest-gegenprobe-1.json >> tmp/proof/s9i-7c2-gegenprobe-1.log 2>&1"
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/flow-live.test.ts (16 tests | 5 failed) 112972ms
+   ✓ Erwartungskonstanten (1)
+     ✓ Buchung, Pauschale und Nachtragszeile entsprechen splitFee/splitChange mit dem Satz aus platform_settings 4ms
+   ❯ W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden) (6)
+     ✓ accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409 15724ms
+     ✓ start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft 1155ms
+     ✓ Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile receipt/ready von Firma a 3081ms
+     ✓ Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung 3646ms
+     × Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag 3450ms
+     ✓ Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert 2702ms
+   ❯ W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) (1)
+     × accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a 4441ms
+   ✓ W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) (1)
+     ✓ accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage 5250ms
+   ❯ W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) (1)
+     × accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale 12213ms
+   ✓ W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer (1)
+     ✓ accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt 5503ms
+   ✓ W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confirm (1)
+     ✓ send_offer, Bestätigung mit falschem Betrag 409, dann 200: eine Buchung über den Angebotsbetrag 5484ms
+   ❯ Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold (4)
+     ✓ Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe aus Vorschau T, 0, 0, 6900) 749ms
+     × Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge 307ms
+     ✓ Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder 408ms
+     × payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen 3621ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden) > Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag
+AssertionError: expected 76041 to be 76042 // Object.is equality
+
+- Expected
++ Received
+
+- 76042
++ 76041
+
+ ❯ tests/rls/flow-live.test.ts:235:34
+    233|     expect([c.feeCents, c.feeNetCents, c.feeVatCents, c.payoutCents]).…
+    234|     for (const j of s.journal) expect([j.net + j.vat, j.total - j.fee]…
+    235|     expect(sum(s.journal).total).toBe(ctx.t1 + 1)
+       |                                  ^
+    236|   })
+    237|
+ ❯ tests/rls/flow-live.test.ts:140:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) > accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a
+AssertionError: expected { code: 'P0001', details: null, …(2) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "code": "P0001",
+  "details": null,
+  "hint": null,
+  "message": "not_assigned",
+}
+
+ ❯ tests/rls/flow-live.test.ts:266:49
+
+ ❯ tests/rls/flow-live.test.ts:140:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) > accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale
+AssertionError: expected { fee: 1035, …(6) } to deeply equal { kind: 'cancellation_fee', …(6) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "fee": 1036,
++   "fee": 1035,
+    "kind": "cancellation_fee",
+    "net": 863,
+    "payout": 5865,
+    "rev": false,
+    "total": 6900,
+
+ ❯ tests/rls/flow-live.test.ts:313:66
+    311|     // Gegenbuchung und Pauschale entstehen in einer Transaktion (glei…
+    312|     expect(kinds(s).sort()).toEqual(['booking+', 'cancellation-', 'can…
+    313|     expect(s.journal.find((j) => j.kind === 'cancellation_fee')).toEqu…
+       |                                                                  ^
+    314|     expect(sum(s.journal)).toEqual(CALL_OUT)
+    315|     expect(s.followups).toBe(0)
+ ❯ tests/rls/flow-live.test.ts:140:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold > Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge
+AssertionError: expected 0 to be greater than 0
+ ❯ tests/rls/flow-live.test.ts:422:32
+    420|     expect(b.error).toBeNull()
+    421|     ist(`RECHTE | fremde Firma b: Zeilen der Aufträge=${own(b.data).le…
+    422|     expect(own(b.data).length).toBeGreaterThan(0)
+       |                                ^
+    423|   })
+    424|
+ ❯ tests/rls/flow-live.test.ts:140:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  |rls| tests/rls/flow-live.test.ts > Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold > payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen
+AssertionError: expected [ …(11) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "302819ae-47a0-4cdf-bd9a-d41e54d2d0fd|booking|68961|10344|58617",
++   "4738b658-23d1-4f00-ad3d-c11a682889a0|booking|68961|10344|58617",
++   "4d982099-d347-4f33-8cb7-796f9c939df6|change|7080|1062|6018",
++   "597010e3-7dff-4fab-a1a9-1ebb351c6d98|cancellation|-68961|-10344|-58617",
++   "7d2d7c21-a1d7-440b-afc0-ec5375993b2b|cancellation|-68961|-10344|-58617",
++   "a16aa568-efea-42a2-9aca-ba0e81e9c24d|booking|68961|10344|58617",
++   "b1fddc3a-5d53-498f-900b-4c4b78e536ef|cancellation_fee|6900|1035|5865",
++   "cf447395-9097-49f2-88ba-e254b9780a9b|booking|68961|10344|58617",
++   "e64fba30-aaba-4195-b27e-5f30d28e0955|cancellation|-68961|-10344|-58617",
++   "e92916d3-8ce6-47f1-936b-f3f3fdbc01c6|cancellation|-68961|-10344|-58617",
++   "fc960e0a-d5db-49a9-b8a4-1d4482ee6641|booking|68961|10344|58617",
++ ]
+
+ ❯ tests/rls/flow-live.test.ts:450:29
+    448|     const after = await mine(pa.aal2)
+    449|     expect(after.error).toBeNull()
+    450|     expect(key(after.data)).toEqual([])
+       |                             ^
+    451|     ist(`PAYMENT_HOLD | Zeilen vorher=${before.length} nachher=${key(a…
+    452|   })
+ ❯ tests/rls/flow-live.test.ts:140:114
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 11 passed (16)
+   Start at  23:26:31
+   Duration  131.97s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-gegenprobe-1.json
+EXIT=1

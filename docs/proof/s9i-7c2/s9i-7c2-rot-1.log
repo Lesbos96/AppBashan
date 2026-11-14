@@ -1,0 +1,27 @@
+﻿Kennung 7c2-1311-a; Commit 6e6bd5c; Arbeitsbaum sauber: nein (Probe)
+ ❯ |unit| tests/unit/journal-csv.test.ts (114 tests | 49 failed) 30ms
+     × Journalpfad lehnt Freitext ab: Auftrag: Semikolon ergibt bad_row 4ms
+     × Journalpfad lehnt Freitext ab: Journal-ID: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Bezug: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Art: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Abrechnungsmonat: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Buchungszeit: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Betrag: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Satz: Semikolon ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Auftrag: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Journal-ID: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Bezug: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Art: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Abrechnungsmonat: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Buchungszeit: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Betrag: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Satz: Anführungszeichen ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Auftrag: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Journal-ID: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Bezug: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Art: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Abrechnungsmonat: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Buchungszeit: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Betrag: CR ergibt bad_row 0ms
+     × Journalpfad lehnt Freitext ab: Satz: CR ergibt bad_row 0ms
+EXIT=-1

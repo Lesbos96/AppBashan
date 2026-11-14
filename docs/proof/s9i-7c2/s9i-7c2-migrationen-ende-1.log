@@ -1,0 +1,4 @@
+﻿Kennung 7c2-1311-c Migrationsliste am Ende, 2026-11-14 02:02:37
+Befehl: npx dotenv -e .env.local -- supabase migration list --linked
+Eintraege lokal=remote: 0 abweichend: 0 letzte: 
+EXIT=0

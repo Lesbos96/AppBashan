@@ -1,0 +1,10 @@
+﻿Kennung 7c2-1311-a; Commit 4b754b8; Arbeitsbaum sauber: nein (neuer Test, Migration 0061 fehlt)
+× Basis für die Edge Function accept: genau eine Zeile mit Revision, Festpreis, Satz und Versionen; fremde Firma not_found; ohne Festpreis offer_required 958ms
+FAIL  |rls| tests/rls/listings.test.ts > Annahme (partner_accept) > Basis für die Edge Function accept: genau eine
+AssertionError: 42804: structure of query does not match function result type: expected '42804: structure of query
+Expected: "= true"
+Received: "42804: structure of query does not match function result type"
+192|     expect(r['Basis'], String(r['Basis'])).toBe('= true')
+Test Files  1 failed (1)
+Tests  1 failed | 13 skipped (14)
+EXIT=1

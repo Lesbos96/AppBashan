@@ -1,0 +1,29 @@
+﻿
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/flow-live.test.ts (14 tests) 113212ms
+   ✓ W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden) (6)
+     ✓ accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409 7487ms
+     ✓ start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft 1046ms
+     ✓ Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile receipt/ready von Firma a 3088ms
+     ✓ Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung 3163ms
+     ✓ Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag 3927ms
+     ✓ Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert 3077ms
+   ✓ W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) (1)
+     ✓ accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a 4448ms
+   ✓ W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) (1)
+     ✓ accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage 24770ms
+   ✓ W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) (1)
+     ✓ accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale 43688ms
+   ✓ Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold (4)
+     ✓ Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (80000-Summe aus Vorschau T, 0, 0, 6900) 1050ms
+     ✓ Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge 345ms
+     ✓ Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder 378ms
+     ✓ payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen 3224ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  22:49:32
+   Duration  115.64s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-flow.json

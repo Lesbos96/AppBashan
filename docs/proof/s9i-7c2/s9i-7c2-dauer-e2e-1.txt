@@ -1,0 +1,34 @@
+s9i-7c2 Dauer e2e · Kennung 7c2-1311-c
+Quelle: alt = tmp/proof/s9i-7c1-e2e-2.json, neu = tmp/proof/s9i-7c2-e2e-1.json (Hash c1e2aa8, EXIT=0)
+Erzeugt mit: tmp/dauer.mjs (siehe s9i-7c2-dauer-rls-1.txt). Testzeit = Summe der Testdauern je Spec über alle Worker (nicht Wanduhr).
+
+Gesamt (stats.duration): alt 984.2 s · neu 1051.5 s · Faktor 1.07 (Wanduhr, Worker parallel)
+Anzahl: expected 734, skipped 2, unexpected 0, flaky 0 (alt und neu gleich)
+
+Datei | alt s | neu s | Faktor
+anfrage.spec.ts | 521.2 | 543.7 | 1.0x
+fotos.spec.ts | 186.4 | 195.9 | 1.1x
+wege.spec.ts | 152.0 | 158.7 | 1.0x
+auftrag-aktionen.spec.ts | 122.4 | 127.2 | 1.0x
+partner-anfragen.spec.ts | 102.6 | 111.9 | 1.1x
+partner-mfa.spec.ts | 99.3 | 108.7 | 1.1x
+partner-nachtrag.spec.ts | 99.6 | 104.5 | 1.0x
+barrierefreiheit.spec.ts | 77.4 | 91.2 | 1.2x
+konto.spec.ts | 78.3 | 84.8 | 1.1x
+partner-auftraege.spec.ts | 73.7 | 80.4 | 1.1x
+auftrag.spec.ts | 77.2 | 79.3 | 1.0x
+partner-absage.spec.ts | 69.9 | 75.3 | 1.1x
+partner-journal.spec.ts | 48.0 | 52.3 | 1.1x
+partner.spec.ts | 47.2 | 51.9 | 1.1x
+konfigurator.spec.ts | 42.7 | 49.4 | 1.2x
+shell.spec.ts | 24.3 | 26.3 | 1.1x
+dienste.spec.ts | 23.0 | 25.4 | 1.1x
+anmelden.spec.ts | 17.8 | 19.3 | 1.1x
+auftrag-absage.spec.ts | 5.1 | 5.8 | 1.1x
+komponenten.spec.ts | 3.8 | 4.6 | 1.2x
+backend.spec.ts | 1.3 | 1.7 | 1.3x
+smoke.spec.ts | 1.4 | 1.6 | 1.2x
+SUMME Testzeit | 1874.6 | 1999.7 | 1.07x
+
+Schwellen: Wanduhr 1051 s verteilt auf Worker; Summen je Spec über 150 s (anfrage, fotos, wege) waren schon bei s9i-7c1 so (Faktor 1.0 bis 1.1x) und sind Summen über viele Tests, keine Einzeldauer. Keine Spec mehr als doppelt. Kein Eintrag nötig.
+Anzahl aus den Specs abgeleitet: 734 erwartet laut Auftrag, Report expected 734 + skipped 2 (alt und neu identisch).
