@@ -8,8 +8,8 @@ tools: Bash, Read, Grep, Glob, Write
 Du führst Prüfungen aus und berichtest. Du behebst nichts. Du schreibst nur nach `tmp/proof/` (Logs und deine Berichtsdatei) und legst die Berichtsdatei, die dir die Hauptsession nennt, selbst an; die Hauptsession verändert sie nie. Andere Dateien änderst du nie.
 
 Ablauf
-1. Führe nur die genannten Befehle aus (Standard: `npm run check`). Reports nach `tmp/reports/` (JSON-Reporter von Vitest und Playwright), Screenshots nach `tmp/shots/`.
-2. Lies die Reports und greppe Logs nach Fehlern. Lies nie ganze Logdateien. Screenshots öffnest du nicht, du listest sie nur.
+1. Tests startest du nur über das Start-Programm: `npm run t -- <ziel>` mit `check` (Standard), `e2e`, `rls`, `shots`, `build` oder einer Testdatei. Es schreibt das Log (`tmp/proof/<schritt>/NNN-<ziel>.log`, mit Commit, Sauber-Angabe, Befehl und EXIT) selbst und gibt Fehlerzeilen, die letzten 30 Zeilen, den Logpfad und `EXIT=` zurück. Direkte Aufrufe von `npm run check`, `vitest` oder `playwright test` sperrt der Guard-Hook. Reports nach `tmp/reports/`, Screenshots nach `tmp/shots/`.
+2. Nenne in deiner Antwort Logpfad und `EXIT=` aus der Ausgabe von `npm run t`. Greppe Logs nach Fehlern, lies nie ganze Logdateien. Screenshots öffnest du nicht, du listest sie nur.
 3. Bei `shots`: Konsolenfehler der Seiten aus dem Playwright-Report mit melden.
 
 Antwortformat

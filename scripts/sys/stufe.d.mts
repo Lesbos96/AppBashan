@@ -1,0 +1,1 @@
+export function stufeAus(pfade: string[]): 'R0' | 'R1' | 'R2' | 'R3'

@@ -1,5 +1,12 @@
 # MoveNow
 
+## Arbeitssystem
+- Beschluss von Beks, 2026-11-14: Alle Sessions in diesem Repo arbeiten nach `docs/SYSTEM_VORSCHLAG.md` (Kennung sys1-1411-a). Was ein Skript prüfen kann, prüft ein Skript; Text bleibt nur, wo Urteil nötig ist. Ein Lauf, der nicht über das Start-Programm lief, zählt nicht.
+- Umstellung in Schritten u1 bis u3 (Plan: Abschnitt 6 dort, Stand: `docs/AUTOPILOT.md`, „WEITER MIT“). u1 (Gates und Hooks) ist gebaut: `scripts/sys/`, `.claude/hooks/`, `.githooks/pre-push`; Einrichtung durch Beks: `docs/BEKS_EINRICHTUNG.md`.
+- **Eine Session pro Arbeitsordner.** Ein zweiter Auftrag wartet, bis die laufende Session ihren Commit gemacht hat. Parallel nur mit eigenem Worktree und nur wie im Vorschlag (Abschnitt 3 h): eine R3-Session neben einer R0/R1-Session ohne Datenbank, vor dem Merge Rebase und `npm run t -- check`.
+- Tests: `npm run t -- check|e2e|rls|shots|build|<testdatei>`. Das Programm schreibt das Log mit Hash, Sauber-Angabe, Befehl und echtem EXIT selbst (nur neu anlegen) und liefert Fehlerzeilen. Der Guard-Hook sperrt direkte Aufrufe von `npm run check`, `vitest`, `playwright test`, `supabase db push` und Ähnliches. Datenbank: `npm run db:antrag`, dann Freigabe durch `advisor-report`, dann `npm run db:push`. Abschluss: `npm run bericht`, `npm run fertig`.
+- **Übergangsregel:** Bis u2 (Doku-Umbau) gelten alle bisherigen Textregeln dieser Datei unverändert weiter (Arbeits-Loop, Sessions und Modelle, Nachweis, Berichtspunkte, Rückfragen). Die Skripte kommen hinzu und ersetzen keine Regel, bevor u2 sie ausdrücklich streicht. Die bisherigen `ask`-Regeln für commit, merge, push, rm und dotenv bleiben bis dahin.
+
 Vermittlungsplattform, Start Wien: Möbeltransport, Umzug, Entrümpelung, Montage/Demontage, Transportermiete. Kunden bekommen einen Richtpreis und senden eine verbindliche Buchungsanfrage; der Partner nimmt in der App an (`docs/S9_KONZEPT.md`). MoveNow behält eine gestaffelte Provision vom Gesamtpreis (inkl. 20 % USt.) als Plattformgebühr ein (Staffel siehe „Geld“). Keine Zusatzgebühr für Kunden, und Kunden sehen die Gebühr nirgends.
 
 Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „Später" in `docs/ROADMAP.md` steht (z. B. Partner-Portal, Admin-Oberfläche, Zahlung), baust du nur nach meiner Freigabe.

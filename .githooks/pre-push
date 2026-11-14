@@ -1,0 +1,2 @@
+#!/bin/sh
+exec node scripts/sys/fertig.mjs --pre-push
