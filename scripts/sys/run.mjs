@@ -15,6 +15,7 @@ const CMD_ERLAUBT = [
   (s) => /^scripts\/sys\/fixtures\/[\w.-]+\.mjs$/.test(s[0]),
   (s) => s[0] === 'scripts/sys/stufe.mjs',
   (s) => s[0] === 'scripts/sys/gate-db.mjs' && s.includes('--trocken'),
+  (s) => s[0] === 'scripts/sys/gate-loesch.mjs' && s[1] === '--trocken', // Gate-Optionen stehen immer vor dem Skriptpfad, hier also zuerst
   (s) => s[0] === 'scripts/sys/fertig.mjs' && s.includes('--nur-pruefen') && !s.includes('--pre-push'),
 ]
 
@@ -69,7 +70,8 @@ const start = Date.now()
 writeSync(fd, `Commit: ${hash}\nArbeitsbaum sauber: ${saubervor ? 'ja' : 'nein'}\nBefehl: ${befehl.anzeige}\nStart: ${new Date(start).toISOString()}\n---\n`)
 const kopfEnde = readFileSync(logPfad).length
 
-const kind = spawn(befehl.prog, befehl.args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+// MV_LAUF: Kennung des Laufs; Module mit Lösch-Gate (tests/support/sweep.ts) arbeiten nur in einem Lauf dieses Programms.
+const kind = spawn(befehl.prog, befehl.args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, env: { ...process.env, MV_LAUF: `${schrittName()}/${nr}` } })
 kind.stdout.on('data', (b) => writeSync(fd, b))
 kind.stderr.on('data', (b) => writeSync(fd, b))
 const code = await new Promise((resolve) => {

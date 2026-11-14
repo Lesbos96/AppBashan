@@ -4,7 +4,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|Write|Edit",
+        "matcher": "Bash|PowerShell|Write|Edit|mcp__.*",
         "hooks": [
           { "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.mjs"], "onFailure": "block" }
         ]
@@ -108,6 +108,8 @@
       "PowerShell(supabase link:*)",
       "Bash(npm run fertig:*)",
       "PowerShell(npm run fertig:*)",
+      "Bash(npm run loesch:*)",
+      "PowerShell(npm run loesch:*)",
       "Bash(npm run prod:*)",
       "PowerShell(npm run prod:*)",
       "Edit(./scripts/sys/**)",

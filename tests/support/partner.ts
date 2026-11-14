@@ -1,5 +1,6 @@
 // SQL-Bausteine für die Partner-Tests (S9b). Alles läuft in `probes(setup, steps)`: eine Transaktion mit Rollback, keine Firma bleibt zurück.
 // Nutzer sind Zeilen in auth.users mit selbst erzeugten UUIDs (das Profil legt der Trigger an); Firmen-IDs stehen in app.p_<schlüssel>.
+import { COVER_FIRM } from './marker.ts'
 import { ownerSql } from './owner.ts'
 
 export const STATUSES = ['pending', 'active', 'payment_hold', 'suspended', 'rejected'] as const
@@ -7,11 +8,7 @@ export type PStatus = (typeof STATUSES)[number]
 
 export const newId = () => crypto.randomUUID()
 
-/**
- * Marker der Testfirmen: ihre Kontaktadresse. Die Domain .test ist reserviert (RFC 2606) und nie zustellbar, `pt-firma-` und die Lauf-ID
- * hängen nur Tests an. `sweepTestResidue` findet Testfirmen daran und nicht an der Mitgliedschaft (die geht mit dem Nutzer verloren).
- */
-export const FIRM_MAIL_RE = '^pt-firma-[0-9a-f]{8}@movenow[.]test$' // PostgreSQL-Regex; [.] statt \. (Template-Literal)
+// Marker der Testfirmen (FIRM_MAIL_RE, COVER_FIRM): tests/support/marker.ts. FIRM_MAIL ist die zufällige Adresse einer Testfirma, die zum Muster passt.
 export const FIRM_MAIL = `pt-firma-${crypto.randomUUID().slice(0, 8)}@movenow.test`
 
 export const insertUsers = (ids: string[]) =>
@@ -57,8 +54,6 @@ export function firm(user: string, key: string, status: PStatus, admin: string, 
  * Committete, aktive Testfirma für alle Leistungen und Bezirke: Anfragen der quote-Tests bleiben `requested`/`awaiting_offer`, statt
  * sofort `unmatched` zu werden (S9c: `quote` verteilt beim Speichern). Rückgabe: Aufräumfunktion (Firma ohne Zuordnung, löschbar).
  */
-export const COVER_FIRM = 'Testabdeckung GmbH'
-
 export function committedCoverFirm(): () => void {
   // Reste eines abgebrochenen Laufs entfernen (Name ist eindeutig), dann neu anlegen
   for (const old of ownerSql(`select id from public.partners where name = '${COVER_FIRM}'`)) ownerDeletePartner(String(old.id))

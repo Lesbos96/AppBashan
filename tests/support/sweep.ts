@@ -4,9 +4,15 @@
 // einer Firma sind unlöschbar (ON DELETE RESTRICT): solche Firmen werden gesperrt, damit sie nie Empfänger anderer Tests sind und bleiben als Waisen stehen
 // (ihre Mitglieder gehen mit den Nutzern verloren); Nutzer, an denen Aufträge hängen, bleiben (OPEN_ISSUES S9c-7).
 // Es darf nur ein test:rls-Lauf gleichzeitig auf Dev laufen (der Marker gehört keinem Lauf einzeln).
+// Lösch-Gate (scripts/sys/gate-loesch-lib.mjs): beide Funktionen prüfen vor dem ersten Löschen die Freigabe dieser Datei und von marker.ts (docs/freigaben, im Commit) und
+// protokollieren Lauf-ID und Zahlen in tmp/proof/<schritt>/loesch-lauf.jsonl. Ohne Freigabe: Fehler, auch bei `final`.
 import '../../scripts/dev-guard.mjs'
+import { loeschFreigabe, loeschLog } from '../../scripts/sys/gate-loesch-lib.mjs'
+import { COVER_FIRM, FIRM_MAIL_RE } from './marker.ts'
 import { ownerSql } from './owner.ts'
-import { COVER_FIRM, FIRM_MAIL_RE } from './partner.ts'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+const MAX_LOESCHEN = 1000 // Obergrenze je Aufruf für Testnutzer und Testfirmen; mehr deutet auf ein zu weites Muster, dann wird nichts gelöscht
 
 // Testfirma = Marker-Kontaktadresse, nicht die Abdeckungsfirma und kein Mitglied außerhalb der Testkonten (pt-*@movenow.test).
 // Die Mitgliedschaft ist kein Marker: sie geht mit dem Nutzer verloren (partner_members.user_id on delete cascade), die Firma bliebe unauffindbar.
@@ -25,6 +31,7 @@ const UUID_FILE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
  * Mehr als 50 Treffer oder ein Pfad ohne UUID-Muster: Abbruch ohne Löschen. Danach muss die Zählung 0 sein. Gibt die Zahl der gelöschten Objekte zurück.
  */
 export async function sweepReceiptObjects(): Promise<number> {
+  loeschFreigabe(import.meta.url)
   const { service } = await import('./db.ts')
   const exists = `exists (select 1 from storage.objects o where o.bucket_id = 'job-photos' and o.name = j.storage_path)`
   const sel = `from public.job_photos j join public.partners p on p.id = j.uploaded_partner_id where j.kind = 'receipt' and ${TEST_FIRM} and ${exists}`
@@ -34,6 +41,7 @@ export async function sweepReceiptObjects(): Promise<number> {
   const { error } = await service.storage.from('job-photos').remove(paths)
   if (error) throw error
   const left = Number(ownerSql(`select count(*) as n ${sel}`)[0]?.n)
+  loeschLog('tests/support/sweep.ts', { belegObjekteGeloescht: paths.length, belegObjekteRest: left })
   if (left !== 0) throw new Error(`Belegobjekte: ${left} nach dem Löschen noch vorhanden`)
   return paths.length
 }
@@ -44,11 +52,17 @@ export async function sweepReceiptObjects(): Promise<number> {
  * ungebundene (also nicht gelöschte) Testfirmen übrig sind (sie wären Empfänger fremder Tests); im `afterAll` (`final`) bleibt es bei einer Warnung.
  */
 export function sweepTestResidue(admin: string, final = false) {
+  loeschFreigabe(import.meta.url) // vor dem try: ein fehlender Freigabe-Nachweis darf auch bei `final` nicht zur Warnung werden
+  if (!UUID.test(admin)) throw new Error('Aufräumen: admin ist keine UUID, nichts gelöscht')
   let left = { active: 0, unbound: 0 }
   try {
     const r = ownerSql(`do $sweep$
       declare f record; u record;
       begin
+        if (select count(*) from auth.users where email like 'pt-%@movenow.test') > ${MAX_LOESCHEN}
+          or (select count(*) from public.partners p where ${TEST_FIRM}) > ${MAX_LOESCHEN} then
+          raise exception 'sweep: mehr als ${MAX_LOESCHEN} Testnutzer oder Testfirmen, nichts gelöscht';
+        end if;
         for f in select p.id, p.status::text as st, ${BOUND} as bound
           from public.partners p where ${TEST_FIRM} loop
           begin
@@ -78,6 +92,7 @@ export function sweepTestResidue(admin: string, final = false) {
         from public.partners p where ${TEST_FIRM};`)[0]
     left = { active: Number(r?.active), unbound: Number(r?.unbound) }
     if (!Number.isFinite(left.active) || !Number.isFinite(left.unbound)) throw new Error('Aufräumen: Restzählung ohne Ergebnis')
+    loeschLog('tests/support/sweep.ts', { testfirmenAktivNach: left.active, testfirmenUngebundenNach: left.unbound }, { final })
   } catch (e) {
     console.warn('Aufräumen fehlgeschlagen:', (e as Error).message.slice(0, 200))
     if (!final) throw e

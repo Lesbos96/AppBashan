@@ -1,0 +1,33 @@
+{
+  "skripte": {
+    "tests/support/sweep.ts": ["tests/support/marker.ts"],
+    "scripts/admin-call.mjs": [],
+    "scripts/live-auth.mjs": [],
+    "scripts/live-quote-app.mjs": [],
+    "scripts/live-test.mjs": [],
+    "scripts/live-uploads.mjs": [],
+    "scripts/redproof-cleanup.mjs": [],
+    "scripts/redproof-restore.mjs": ["scripts/redproof-lib.mjs", "scripts/redproof-deploy.mjs"],
+    "scripts/redproof-s9a3.mjs": ["scripts/redproof-lib.mjs", "scripts/redproof-deploy.mjs", "scripts/redproof-sql.mjs"],
+    "scripts/redproof-s9a4.mjs": ["scripts/redproof-lib.mjs", "scripts/redproof-sql.mjs"],
+    "scripts/setup-photo-cleanup.mjs": [],
+    "scripts/setup-photo-publish.mjs": [],
+    "scripts/storage-reset.mjs": []
+  },
+  "ausgenommen": {
+    "scripts/db-seed-dev.mjs": { "grund": "spielt supabase/seed.sql ein: nur Einfügen und Upsert eigener Demo-Zeilen, kein Löschen", "sha256": "dbc82b012e45293e2012b54eabe6badcab193189d9aeb2c67264143c7d3e4d80" },
+    "scripts/dev-guard.mjs": { "grund": "Schutz gegen falsche Projekt-Ref, ändert keine Daten", "sha256": "216839f0e89d2a61a0cb284219d872f3595983c0f15c67b61cff5fd9733dac2a" },
+    "scripts/dev-ref.mjs": { "grund": "liefert nur die Dev-Ref", "sha256": "d3d25e1ba76355f81967bae3b571ba10a4b58e9c16a0dd174b5a6e784729fc7e" },
+    "scripts/golive-check.mjs": { "grund": "POST nur mit falschen Zugangsdaten, erwartet 401 (Prüfung, ändert nichts)", "sha256": "78059761425f985ecb95631bbaf34c5e85f880f7d3d4e93eb49211e76d99ee30" },
+    "scripts/import-districts.mjs": { "grund": "Geodaten-Import (Upsert der 23 Bezirke), kein Löschen", "sha256": "2563a31efbf0134d691a23301544d6e467342338b6bcb304318af3a0f3d07225" },
+    "scripts/redproof-lib.mjs": { "grund": "Bibliothek der Redproof-Läufe; das Muster trifft nur Hash-Aufrufe, Löschen läuft in den Registerskripten", "sha256": "4773ddbec520b771bdb5e99a143df50538d3a93c2d999b0787d8850f6e0a9440" },
+    "scripts/redproof-migrations.mjs": { "grund": "Offline-Analyse der Migrationsdateien (Hash), keine Datenbank", "sha256": "a5792d28ad7b33a68da8f06d413c361117240fdbdd6743ea3f00fcb2902521ee" },
+    "scripts/redproof-soll.mjs": { "grund": "liest Dev (Snapshot), schreibt nur lokale Dateien", "sha256": "801e6ed3388c5b97a65b9157944741630fa652b5c1eefbb2feb23887bf435050" },
+    "tests/support/db.ts": { "grund": "Test-Fixture: löscht nur die im Test selbst angelegten Konten (deleteUsers)", "sha256": "c60da712ada0eb951bc58fd2490d2efd59432a7498907754e9af9dd91a1746fe" },
+    "tests/support/dev-guard-setup.ts": { "grund": "bindet nur den Dev-Guard ein", "sha256": "dca2e87043d5651273664e6abbaafa333ca730e6dedeb435e4d7de8072f2abd1" },
+    "tests/support/owner.ts": { "grund": "führt das SQL des Aufräumens aus (Argumentliste ohne Shell, --linked, Fehler werden geworfen); die Löschbedingung steht in sweep.ts und marker.ts (Fable, Lösch-Freigabe 1, M3)", "sha256": "4510b9ec958c045c5ca33c4587198bc6967bbce56e95da8c379b065a3dc89bbd" },
+    "tests/support/partner.ts": { "grund": "Test-Fixture: löscht nur Firmen und Nutzer mit selbst erzeugten IDs; die Löschbedingung der Reste liegt in marker.ts und sweep.ts", "sha256": "2556324e61c9c36758e5388b706c18d13c2ff4604ceca02a30ac572058de51f6" },
+    "tests/support/quote-rls.ts": { "grund": "Test-Fixture: löscht nur Cache- und Rate-Limit-Zeilen mit Lauf-Marker des eigenen Tests", "sha256": "54c9f1ac3532da4d52958ee69b2e50a38712ec5951a3ad4b372fdf9f4dff6636" },
+    "tests/support/quote.ts": { "grund": "Test-Fixture: ruft die Edge Function quote auf (POST), löscht nichts", "sha256": "9f619b69f87404e2e92e21f4127df34b3ed2462d68865cdc0637b6a1682bd890" }
+  }
+}

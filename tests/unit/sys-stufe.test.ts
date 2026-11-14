@@ -15,6 +15,8 @@ describe('Risikostufe aus Pfaden (Arbeitssystem)', () => {
     [['CLAUDE.md'], 'R3'],
     [['package.json'], 'R3'],
     [['docs/reference/design/tokens.json'], 'R1'],
+    [['docs/freigaben/u1b-loesch-freigabe-1.md'], 'R3'],
+    [['docs/PROGRESS.md', 'docs/freigaben/u1b-loesch-freigabe-1.md'], 'R3'],
     [['public/icon.svg'], 'R2'],
   ])('%j → %s', (pfade, soll) => {
     expect(stufeAus(pfade)).toBe(soll)

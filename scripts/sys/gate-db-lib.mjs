@@ -48,14 +48,30 @@ export function parseFreigabe(text) {
   }
 }
 
+// Alle Freigaben zu Pfad und SHA-256 müssen in Ordnung sein: ein „gesperrt“ neben einem „frei“ für dieselbe Datei blockiert.
 export function pruefePush(offen, freigaben) {
   const gruende = []
   for (const m of offen) {
-    const f = freigaben.find((x) => x.dateien.some((d) => d.sha === m.sha256 && d.pfad === m.pfad))
-    if (!f) gruende.push(`${m.pfad}: keine Freigabe für Pfad und SHA256 ${m.sha256}`)
-    else if (!f.modell.toLowerCase().includes('fable')) gruende.push(`${m.pfad}: Freigabe nicht von Fable (Modell: ${f.modell || 'fehlt'})`)
-    else if (f.urteil !== 'frei') gruende.push(`${m.pfad}: Urteil ${f.urteil || 'fehlt oder mehrfach'}`)
-    else if (f.hoch !== 0) gruende.push(`${m.pfad}: Offene Findings hoch ${Number.isNaN(f.hoch) ? 'fehlt oder mehrfach' : f.hoch}`)
+    const treffer = freigaben.filter((x) => x.dateien.some((d) => d.sha === m.sha256 && d.pfad === m.pfad))
+    if (treffer.length === 0) gruende.push(`${m.pfad}: keine Freigabe für Pfad und SHA256 ${m.sha256}`)
+    for (const f of treffer) {
+      if (!f.modell.toLowerCase().includes('fable')) gruende.push(`${m.pfad}: Freigabe nicht von Fable (Modell: ${f.modell || 'fehlt'})`)
+      else if (f.urteil !== 'frei') gruende.push(`${m.pfad}: Urteil ${f.urteil || 'fehlt oder mehrfach'}`)
+      else if (f.hoch !== 0) gruende.push(`${m.pfad}: Offene Findings hoch ${Number.isNaN(f.hoch) ? 'fehlt oder mehrfach' : f.hoch}`)
+    }
   }
   return { ok: gruende.length === 0, gruende }
+}
+
+// Marken nach einem Push (auch einem teilweisen): je tatsächlich angewendeter Migration (vorher offen, nachher nicht mehr) { pfad, sha256 } mit dem SHA,
+// der vor dem Push freigegeben war. Weicht der SHA der Datei nach dem Push ab, gibt es für sie keine Marke und einen Grund.
+export function marken(vorher, nachher, shaJetzt) {
+  const noch = new Set(nachher.map((m) => m.version))
+  const marken = []
+  const gruende = []
+  for (const m of vorher.filter((x) => !noch.has(x.version))) {
+    if (shaJetzt(m.pfad) === m.sha256) marken.push({ pfad: m.pfad, sha256: m.sha256 })
+    else gruende.push(`${m.pfad}: Inhalt hat sich seit der Freigabe geändert (SHA256 ${m.sha256} freigegeben), keine Marke`)
+  }
+  return { marken, gruende }
 }

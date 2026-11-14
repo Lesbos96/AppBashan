@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { offeneMigrationen, parseFreigabe, pruefePush } from '../../scripts/sys/gate-db-lib.mjs'
+import { marken, offeneMigrationen, parseFreigabe, pruefePush } from '../../scripts/sys/gate-db-lib.mjs'
 
 const SQL = 'select 1;\n'
 const sha = (t: string) => createHash('sha256').update(t).digest('hex')
@@ -76,8 +76,38 @@ describe('Datenbank-Gate (Trockenlauf mit Attrappe, keine DB, kein Push)', () =>
   it('--trocken ohne die drei Optionen: Exit 2', () => {
     expect(spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', 'push', '--trocken'], { encoding: 'utf8' }).status).toBe(2)
   })
-  it('marke gibt es nur gegen die echte Datenbank, nicht als Attrappe', () => {
+  it('den Modus marke gibt es nicht mehr: der Push schreibt die Marken selbst', () => {
+    expect(spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', 'marke'], { encoding: 'utf8' }).status).toBe(2)
     expect(spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', 'marke', '--trocken', '--liste', 'x', '--dir', 'y', '--freigaben', 'z'], { encoding: 'utf8' }).status).toBe(2)
+  })
+})
+
+describe('M16: Marken nach dem Push binden den Inhalt', () => {
+  const v = (version: string, sha256: string) => ({ version, pfad: `supabase/migrations/${version}_x.sql`, sha256 })
+  const A = 'a'.repeat(64)
+  const B = 'b'.repeat(64)
+  const C = 'c'.repeat(64)
+  it('angewendete Migration: Marke mit Pfad und freigegebenem SHA-256', () => {
+    expect(marken([v('1', A)], [], () => A)).toEqual({ marken: [{ pfad: 'supabase/migrations/1_x.sql', sha256: A }], gruende: [] })
+  })
+  it('Datei nach der Freigabe geändert (SHA weicht ab): keine Marke und ein Grund', () => {
+    const r = marken([v('1', A)], [], () => C)
+    expect(r.marken).toEqual([])
+    expect(r.gruende.join()).toMatch(/Inhalt hat sich seit der Freigabe geändert/)
+  })
+  it('Teil-Push (1 angewendet, 2 gescheitert): nur 1 hat eine Marke, 2 bleibt offen', () => {
+    const r = marken([v('1', A), v('2', B)], [v('2', B)], (p) => (p.includes('/1_') ? A : B))
+    expect(r.marken.map((m) => m.sha256)).toEqual([A])
+    expect(r.gruende).toEqual([])
+  })
+  it('zweiter Versuch nach der Korrektur: die zuvor gescheiterte Migration bekommt ihre Marke', () => {
+    expect(marken([v('2', B)], [], () => B).marken).toEqual([{ pfad: 'supabase/migrations/2_x.sql', sha256: B }])
+  })
+  it('M3: „gesperrt“ neben „frei“ für denselben Pfad und SHA-256 blockiert', () => {
+    const f = { modell: 'claude-fable-5-2', dateien: [{ sha: A, pfad: 'a.sql' }], urteil: 'frei', hoch: 0 }
+    expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [f, { ...f, urteil: 'gesperrt' }]).ok).toBe(false)
+    expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [{ ...f, urteil: 'gesperrt' }, f]).ok).toBe(false)
+    expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [f]).ok).toBe(true)
   })
 })
 

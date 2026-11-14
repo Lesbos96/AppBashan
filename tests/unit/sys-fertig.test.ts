@@ -40,7 +40,7 @@ const r3 = (extra: Partial<FertigKontext> = {}) =>
     stufe: 'R3',
     runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 })],
     neueMigrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: SHA }],
-    dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: ['supabase/migrations/1_x.sql'] }],
+    dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: SHA }] }],
     freigaben: [frei],
     abnahme: { modell: 'claude-fable-5-2', dateien: [{ sha: SHA, pfad: 'scripts/sys/run.mjs' }], urteil: '', hoch: 0 },
     ...extra,
@@ -75,13 +75,36 @@ describe('Merge-Gate: pruefeFertig', () => {
     expect(pruefeFertig(ctx({ runs: [lauf('check')], gruen: { e2e: { abdruck: 'alt' } } })).join()).toMatch(/e2e/)
   })
   it('rls zählt nur, wenn er nach dem letzten db-push startete', () => {
-    const c = r3({ dbPushes: [{ start: '2026-11-14T11:00:00.000Z', migrationen: ['supabase/migrations/1_x.sql'] }] })
+    const c = r3({ dbPushes: [{ start: '2026-11-14T11:00:00.000Z', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: SHA }] }] })
     expect(pruefeFertig(c).join()).toMatch(/rls: .*nach dem letzten db-push/)
     expect(pruefeFertig(r3())).toEqual([])
   })
   it('neue oder geänderte Migration ohne Marke db-push (Push gescheitert oder umgangen) blockiert', () => {
     expect(pruefeFertig(r3({ dbPushes: [] })).join()).toMatch(/keine Marke db-push/)
-    expect(pruefeFertig(r3({ dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: ['supabase/migrations/anderer.sql'] }] })).join()).toMatch(/keine Marke db-push/)
+    expect(pruefeFertig(r3({ dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: [{ pfad: 'supabase/migrations/anderer.sql', sha256: SHA }] }] })).join()).toMatch(/keine Marke db-push/)
+  })
+  it('M16: Marke mit anderem SHA-256 (Datei nach dem Push geändert) oder im alten Format (nur Pfad) zählt nicht', () => {
+    const marke = (m: unknown) => r3({ dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: m as { pfad: string; sha256: string }[] }] })
+    expect(pruefeFertig(marke([{ pfad: 'supabase/migrations/1_x.sql', sha256: 'c'.repeat(64) }])).join()).toMatch(/keine Marke db-push für Pfad und SHA256/)
+    expect(pruefeFertig(marke(['supabase/migrations/1_x.sql'])).join()).toMatch(/keine Marke db-push/)
+    expect(pruefeFertig(marke([{ pfad: 'supabase/migrations/1_x.sql', sha256: SHA }]))).toEqual([])
+  })
+  describe('Lösch-Gate (zweite Ebene)', () => {
+    const SKRIPT = { pfad: 'scripts/storage-reset.mjs', sha256: SHA }
+    const lf = { modell: 'claude-fable-5-2', dateien: [{ sha: SHA, pfad: 'scripts/storage-reset.mjs' }], urteil: 'frei', hoch: 0 }
+    it('geändertes Registerskript braucht eine Freigabe für den neuen SHA-256', () => {
+      expect(pruefeFertig(ctx({ loeschGeaendert: [SKRIPT], loeschFreigaben: [] })).join()).toMatch(/Lösch-Gate: scripts\/storage-reset\.mjs: keine Freigabe/)
+      expect(pruefeFertig(ctx({ loeschGeaendert: [SKRIPT], loeschFreigaben: [{ ...lf, dateien: [{ sha: 'c'.repeat(64), pfad: SKRIPT.pfad }] }] })).join()).toMatch(/keine Freigabe/)
+      expect(pruefeFertig(ctx({ loeschGeaendert: [SKRIPT], loeschFreigaben: [lf] }))).toEqual([])
+    })
+    it('Freigabe von einem anderen Modell oder mit Urteil gesperrt blockiert', () => {
+      expect(pruefeFertig(ctx({ loeschGeaendert: [SKRIPT], loeschFreigaben: [{ ...lf, modell: 'claude-sonnet-5-5' }] })).join()).toMatch(/nicht von Fable/)
+      expect(pruefeFertig(ctx({ loeschGeaendert: [SKRIPT], loeschFreigaben: [lf, { ...lf, urteil: 'gesperrt' }] })).join()).toMatch(/Urteil gesperrt/)
+    })
+    it('geänderte oder gelöschte Datei in docs/freigaben blockiert, neue nicht', () => {
+      expect(pruefeFertig(ctx({ freigabenGeaendert: ['docs/freigaben/u1b-loesch-freigabe-1.md'] })).join()).toMatch(/unveränderlich/)
+      expect(pruefeFertig(ctx({ freigabenGeaendert: [] }))).toEqual([])
+    })
   })
   it('nicht sauber, kein ff, Hook-Pfad falsch', () => {
     const g = pruefeFertig(ctx({ sauber: false, ffMoeglich: false, hooksAktiv: false })).join('|')

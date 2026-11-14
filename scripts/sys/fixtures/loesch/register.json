@@ -1,0 +1,4 @@
+{
+  "skripte": { "scripts/sys/fixtures/loesch/skript.mjs": ["scripts/sys/fixtures/loesch/gebunden.txt"] },
+  "ausgenommen": {}
+}

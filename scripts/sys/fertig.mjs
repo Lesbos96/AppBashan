@@ -6,12 +6,13 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { fingerabdruck, KANON, SUITEN } from './fingerabdruck.mjs'
 import { parseFreigabe, pruefePush } from './gate-db-lib.mjs'
+import { freigabenAusGit, leseRegister } from './gate-loesch-lib.mjs'
 import { git, hooksAktiv, leseRuns, PROOF_ROOT, sauber, schrittName, sha256, sha256Datei } from './lib.mjs'
 import { stufeAus } from './stufe.mjs'
 
 const PFLICHT = { R0: [], R1: ['check', 'e2e'], R2: ['check', 'e2e', 'rls'], R3: ['check', 'e2e', 'rls'] }
 // Diese geänderten Pfade muss die Abnahme mit einer SHA256-Zeile nennen (Mindestmenge für R3).
-export const MUSS_ABNAHME = /^(supabase\/functions\/|src\/lib\/money|scripts\/sys\/[^/]+\.mjs$|\.claude\/hooks\/|\.claude\/settings\.json$|\.githooks\/|package\.json$)/
+export const MUSS_ABNAHME = /^(supabase\/functions\/|src\/lib\/money|scripts\/sys\/[^/]+\.mjs$|scripts\/sys\/loesch-register\.json$|tests\/support\/|docs\/freigaben\/|\.claude\/hooks\/|\.claude\/settings\.json$|\.githooks\/|package\.json$)/
 
 // Gültiger Nachweis der ganzen Suite s oder null.
 export function gueltigerLauf(c, s) {
@@ -41,7 +42,9 @@ export function pruefeFertig(c) {
     if (c.stufe === 'R3') {
       g.push(...pruefePush(c.neueMigrationen, c.freigaben).gruende)
       for (const m of c.neueMigrationen) {
-        if (!(c.dbPushes ?? []).some((p) => (p.migrationen ?? []).includes(m.pfad))) g.push(`${m.pfad}: keine Marke db-push (Push nicht über npm run db:push erfolgt oder gescheitert)`)
+        if (!(c.dbPushes ?? []).some((p) => (p.migrationen ?? []).some((x) => x.pfad === m.pfad && x.sha256 === m.sha256))) {
+          g.push(`${m.pfad}: keine Marke db-push für Pfad und SHA256 ${m.sha256} (Push nicht über npm run db:push, gescheitert oder Datei nach dem Push geändert)`)
+        }
       }
       if (!c.abnahme) g.push('R3: Abnahme-Datei fehlt')
       else {
@@ -57,6 +60,9 @@ export function pruefeFertig(c) {
         if (!ersterGruen || !lauf.some((r) => r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen`)
       }
     }
+    // Lösch-Gate (zweite Ebene): geänderte Register-Skripte brauchen eine Freigabe für den neuen SHA-256, Freigaben bleiben unverändert.
+    g.push(...pruefePush(c.loeschGeaendert ?? [], c.loeschFreigaben ?? []).gruende.map((x) => `Lösch-Gate: ${x}`))
+    for (const p of c.freigabenGeaendert ?? []) g.push(`${p}: Freigaben in docs/freigaben sind unveränderlich (nur neue Dateien)`)
     if (!c.ohneBericht) {
       if (c.berichtStand !== c.abdruck.check) g.push('bericht.json fehlt im Commit oder ist nicht aktuell (npm run bericht, dann committen)')
       else if (c.berichtGate !== 'bestanden') g.push('bericht.json meldet das Gate nicht als bestanden')
@@ -113,7 +119,11 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
   const abnahme = abnahmeText === null ? null : parseFreigabe(abnahmeText)
   const genannt = new Set((abnahme?.dateien ?? []).map((d) => d.pfad))
   const { runs, dbPushes } = leseGepruefteRuns()
+  const loesch = Object.entries(leseRegister().skripte).flatMap(([p, bindet]) => [p, ...bindet])
   return {
+    loeschGeaendert: [...new Set(pfade.filter((p) => loesch.includes(p) && existsSync(p)))].map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
+    loeschFreigaben: freigabenAusGit('HEAD'),
+    freigabenGeaendert: geaendert('MD', 'docs/freigaben'),
     stufe: stufeAus(pfade),
     sauber: sauber(),
     runs,

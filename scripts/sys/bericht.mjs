@@ -16,8 +16,8 @@ const ziel = join('docs', 'proof', schritt)
 mkdirSync(ziel, { recursive: true })
 
 // Nachweise werden nie überschrieben: bei anderem Inhalt (z. B. zweite Abnahme-Runde) entsteht eine Kopie mit Kurz-Hash im Namen.
-function kopiere(quelle) {
-  const name = quelle.split(/[\\/]/).pop()
+function kopiere(quelle, zielName) {
+  const name = zielName ?? quelle.split(/[\\/]/).pop()
   let z = join(ziel, name)
   if (existsSync(z) && sha256Datei(z) !== sha256Datei(quelle)) z = join(ziel, name.replace(/(\.[^.]*)?$/, `-${sha256Datei(quelle).slice(0, 8)}$1`))
   if (!existsSync(z)) copyFileSync(quelle, z, constants.COPYFILE_EXCL)
@@ -46,7 +46,19 @@ const kopien = []
 const abnahmePfad = join(PROOF_ROOT, `${schritt}-abnahme.md`)
 if (existsSync(abnahmePfad)) kopien.push(kopiere(abnahmePfad))
 const ordner = join(PROOF_ROOT, schritt)
-for (const f of existsSync(ordner) ? readdirSync(ordner).filter((x) => /^db-(freigabe|antrag)-/.test(x)) : []) kopien.push(kopiere(join(ordner, f)))
+for (const f of existsSync(ordner) ? readdirSync(ordner).filter((x) => /^(db-(freigabe|antrag)-|loesch-(freigabe-|lauf\.jsonl$))/.test(x)) : []) kopien.push(kopiere(join(ordner, f)))
+// Schrittdateien (tmp/proof/<schritt>-*.md|log|json: Plan, Beraterberichte, Ausgangslage) und die Logs der Proben (`npm run t -- cmd node scripts/sys/…`), benannt <schritt>-probe-<skript>-<nr>.log.
+for (const f of readdirSync(PROOF_ROOT).filter((x) => x.startsWith(`${schritt}-`) && /\.(md|log|json)$/.test(x))) kopien.push(kopiere(join(PROOF_ROOT, f)))
+for (const r of c.runs.filter((x) => x.schritt === schritt && x.ziel === 'cmd')) {
+  const skript = /scripts\/sys\/(?:fixtures\/)?([\w-]+)\.mjs/.exec(r.befehl)?.[1]
+  if (skript) kopien.push(kopiere(join(PROOF_ROOT, schritt, `${String(r.nr).padStart(3, '0')}-cmd.log`), `${schritt}-probe-${skript}-${String(r.nr).padStart(3, '0')}.log`))
+}
+// Weitere Läufe anderer Schritte, ausdrücklich genannt: `npm run bericht -- tmp/proof/u1/039-e2e.log` (Kopie als <quellschritt>-<datei>).
+for (const a of process.argv.slice(2).map((x) => x.replace(/\\/g, '/'))) {
+  const m = /^tmp\/proof\/([\w-]+)\/([\w.-]+)$/.exec(a)
+  if (!m || !existsSync(a)) throw new Error(`Aufruf: npm run bericht [-- tmp/proof/<schritt>/<datei>…]; ${a} ungültig oder nicht vorhanden`)
+  kopien.push(kopiere(a, `${m[1]}-${m[2]}`))
+}
 
 const rot = c.runs.filter((r) => r.schritt === schritt && r.exit !== 0).length
 const geaendert = {}
@@ -70,7 +82,7 @@ const json = {
   versuche: { gesamt: c.runs.filter((r) => r.schritt === schritt).length, rot },
   migrationen: c.neueMigrationen.map((m) => ({ pfad: m.pfad, sha256: m.sha256 })),
   abnahme: c.abnahme ? { datei: abnahmePfad, hoch: c.abnahme.hoch, modell: c.abnahme.modell } : null,
-  kopien,
+  kopien: [...new Set(kopien)],
 }
 // Erst die Kopien scannen; bei einem Treffer (Exit ≠ 0) wird weder bericht.json noch gruen.json geschrieben, fertig blockiert dann.
 if (!process.env.npm_execpath) throw new Error('Aufruf nur über `npm run bericht`')

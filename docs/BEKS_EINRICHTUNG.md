@@ -27,7 +27,9 @@ Stand heute: Das Tool `advisor` steht in der Tool-Liste dieser Session (und laut
 
 **Prüfen:** In einer neuen Session `/advisor` eintippen: Der Befehl ist nicht mehr verfügbar. Frage die Session „Steht ein Tool namens advisor ohne Parameter in deiner Liste?“: Antwort nein. Der Subagent `advisor` (Fable, aus `.claude/agents/advisor.md`) bleibt unverändert nutzbar; das ist ein anderes Ding.
 
-## 3. Auto-Modus als Standard (optional; erst nach Schritt u1b, siehe OPEN_ISSUES u1-8: M17 und M18 sind Voraussetzung)
+## 3. Auto-Modus als Standard (optional; freigegeben seit Schritt u1b: M17 und M18 sind behoben, Abnahme `docs/proof/u1b/u1b-abnahme.md`)
+Stand bei u1b: `defaultMode: "auto"` steht in `C:\Users\gesch\.claude\settings.json` bereits. Der Guard erkennt Pipes, verschachtelte Shells (`bash -c`, `powershell -Command`, `cmd /c`), Skriptdateien (`bash x.sh`, `pwsh -File x.ps1`) und Lösch-Skripte am Gate vorbei; Grenzen (nicht prüfbar: ein Skript schreiben und mit `node tmp/x.mjs` ausführen) stehen in `docs/OPEN_ISSUES.md`, Punkt u1b-3.
+
 Doku (code.claude.com/docs/en/permission-modes): `defaultMode: "auto"` wirkt nur in `~/.claude/settings.json`, nicht in `.claude/settings.json` des Projekts.
 
 1. In `C:\Users\gesch\.claude\settings.json` ergänzen: `"permissions": { "defaultMode": "auto" }` (gibt es `permissions` schon, nur `defaultMode` setzen).
@@ -67,5 +69,6 @@ Nicht über Claude, sondern selbst im Terminal im Repo:
 ## 8. Später (kein Teil von u1)
 - `/usage` notieren (Ausgangswert für die Fable-Grenze unter 50 %).
 - Nach dem ersten echten Schritt mit dem neuen System (Probe) und u2 können die bisherigen `ask`-Regeln für `git commit`, `git merge`, `git push`, `rm` und `npx dotenv` in `.claude/settings.json` entfallen (Vorschlag a7). Bis dahin bleiben sie.
-- Die `ask`-Regeln erst entfernen, wenn M17 und M18 (OPEN_ISSUES u1-8) behoben sind: Bis dahin lassen sich Datenbankbefehle in Anführungszeichen einer Hülle (`bash -c "…"`) am Guard vorbeischreiben.
-- Das Aufräumen von Testdaten (Gate für Löschskripte, Vorschlag a2 letzter Punkt) ist nicht gebaut; siehe `docs/OPEN_ISSUES.md`.
+- Die `ask`-Regeln dürfen erst nach dem ersten echten Schritt mit dem neuen System entfallen (M17 und M18 sind seit u1b behoben). Neu in u1b: `npm run loesch` steht in der `ask`-Liste.
+- Lösch-Gate (u1b): Skripte, die auf Dev löschen oder Status ändern (Register `scripts/sys/loesch-register.json`), starten für Claude nur über `npm run loesch -- <skript.mjs>`, mit Fable-Freigabe (Pfad + SHA-256) aus `docs/freigaben/`. `npm run admin:call`, `setup:photo-cleanup`, `setup:photo-publish` sind für Claude gesperrt; im eigenen Terminal laufen sie unverändert. Freigabe erteilen: `advisor-report` schreibt `tmp/proof/<schritt>/loesch-freigabe-N.md`, dann `npm run loesch -- uebernehme <datei>` (kopiert nach `docs/freigaben/`), dann committen.
+- Offen für dich: Schritt 1 (trim-output) und Schritt 2 (`CLAUDE_CODE_DISABLE_ADVISOR_TOOL`) sind laut Prüfung in u1b nicht wirksam (`docs/proof/u1b/u1b-ausgangslage.log`).

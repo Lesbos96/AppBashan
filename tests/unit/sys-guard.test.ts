@@ -1,15 +1,15 @@
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const GUARD = '.claude/hooks/guard.mjs'
-function guard(eingabe: unknown, roh?: string) {
-  const r = spawnSync(process.execPath, [GUARD], { input: roh ?? JSON.stringify(eingabe), encoding: 'utf8' })
+const GUARD = resolve('.claude/hooks/guard.mjs')
+function guard(eingabe: unknown, roh?: string, cwd?: string) {
+  const r = spawnSync(process.execPath, [GUARD], { input: roh ?? JSON.stringify(eingabe), encoding: 'utf8', cwd })
   return { exit: r.status, stderr: r.stderr }
 }
-const bash = (command: string, tool_name = 'Bash') => guard({ tool_name, tool_input: { command } })
+const bash = (command: string, tool_name = 'Bash', cwd?: string) => guard({ tool_name, tool_input: { command } }, undefined, cwd)
 const datei = (file_path: string, agent_type?: string) => guard({ tool_name: 'Write', agent_type, tool_input: { file_path } })
 
 describe('Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund)', () => {
@@ -138,6 +138,167 @@ describe('Wächter-Hook guard.mjs: lässt durch (Exit 0, keine Ausgabe)', () => 
   it('Eingabe ohne tool_input wird nicht verweigert', () => {
     expect(guard({ tool_name: 'Read' }).exit).toBe(0)
     expect(guard({}).exit).toBe(0)
+  })
+})
+
+describe('u1b M17: SQL und Befehle per Pipe', () => {
+  it.each([
+    'echo "delete from public.x" | psql',
+    'echo "select 1" | psql -h x',
+    'psql -c "select 1"',
+    'dotenv -e .env.local -- psql',
+    'Get-Content tmp/x.sql | supabase db query --linked',
+    'cat tmp/x.sql | npx supabase db query --linked',
+    'supabase db query --linked < tmp/x.sql',
+    'supabase db query "$(cat tmp/x.sql)" --linked',
+    'echo "supabase db push" | bash',
+    '"npm run check" | powershell',
+    'echo x | iex',
+    'echo x | node',
+  ])('verweigert (Bash): %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each(['Get-Content tmp/x.sql | psql', 'Get-Content tmp/x.sql | supabase db query --linked', '"npm run check" | Invoke-Expression'])('verweigert (PowerShell): %s', (c) => {
+    expect(bash(c, 'PowerShell').exit).toBe(2)
+  })
+  it.each([
+    'supabase db query "select public.admin_set_partner_status(1)" --linked',
+    'supabase db query "do $$ begin null; end $$" --linked',
+    'supabase db query "select set_config(1)" --linked',
+    'supabase db query "merge into x using y" --linked',
+    'supabase storage rm x',
+    'supabase functions delete foo',
+    'supabase db query --db-url x "select 1"',
+  ])('Statusfunktionen und weitere schreibende Wege: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    'grep -n psql docs/BEKS_EINRICHTUNG.md',
+    'echo "psql delete from x"',
+    'cat docs/a.md | grep delete',
+    'grep -rn "delete from" tests/support',
+    'git commit -m "psql und delete from erwähnt"',
+    'Get-Content docs/PROGRESS.md | Select-String psql',
+    'supabase db query "select 1 where 2 < 3" --linked',
+    'cat a.json | node scripts/sys/x.mjs',
+  ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+})
+
+describe('u1b M18: verschachtelte Shells', () => {
+  it.each([
+    'bash -c "npm run check"',
+    "sh -c 'npx vitest run'",
+    'bash -lc "npm run check"',
+    'bash.exe -c "npm run check"',
+    'powershell -Command "npm run check"',
+    'powershell -NoProfile -ExecutionPolicy Bypass -Command "npm run test:rls"',
+    'pwsh -c "vitest run"',
+    'cmd /c npm run check',
+    'cmd /c "npm run test:e2e"',
+    'cmd /d /s /c "echo a & npm run check"',
+    'C:\\Windows\\System32\\cmd.exe /c npm run check',
+    'bash -c "supabase db push"',
+    'sh -c "echo x | psql"',
+    'powershell -Command "supabase db query \\"delete from x\\" --linked"',
+    'bash -c "bash -c \\"npm run check\\""',
+    'powershell -EncodedCommand bnBtIHJ1biBjaGVjaw==',
+    'eval npm run check',
+    'iex "npm run check"',
+    'Invoke-Expression "supabase db push"',
+  ])('verweigert: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it('auch im PowerShell-Werkzeug', () => {
+    expect(bash('powershell -Command "npm run check"', 'PowerShell').exit).toBe(2)
+    expect(bash('cmd /c npm run check', 'PowerShell').exit).toBe(2)
+  })
+  it.each(['sleep 1 & npm run check', 'if true; then npm run check; fi', '(npm run check)', 'node_modules/.bin/vitest run', 'npm run-script check', 'npm.cmd run check', 'node -p "1"', 'deno eval "1"'])('weitere Schreibweisen: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it('zu tiefe Verschachtelung wird verweigert', () => {
+    let c = 'ls'
+    for (let i = 0; i < 7; i++) c = `bash -c "${c.replace(/(["\\])/g, '\\$1')}"`
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each(['bash -c "ls"', 'sh -c "echo hallo"', 'powershell -Command "Get-ChildItem"', 'cmd /c dir'])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+  it('Skriptdateien: der Inhalt wird mitgeprüft, nicht lesbar heißt verweigert', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guard-skript-'))
+    writeFileSync(join(dir, 'schlecht.sh'), 'echo a\nnpm run check\n')
+    writeFileSync(join(dir, 'schlecht.ps1'), 'supabase db push --linked\n')
+    writeFileSync(join(dir, 'gut.sh'), 'echo hallo\n')
+    for (const c of ['bash schlecht.sh', './schlecht.sh', '. schlecht.sh', 'source schlecht.sh', 'pwsh -File schlecht.ps1', '.\\schlecht.ps1', 'cmd /c schlecht.ps1', 'bash fehlt.sh']) expect(bash(c, 'Bash', dir).exit, c).toBe(2)
+    expect(bash('bash gut.sh', 'Bash', dir).exit).toBe(0)
+  })
+})
+
+describe('u1b Lösch-Gate im Guard', () => {
+  it.each([
+    'node scripts/storage-reset.mjs',
+    'npx dotenv -e .env.local -- node scripts/admin-call.mjs',
+    'node SCRIPTS/Storage-Reset.mjs',
+    'cd scripts && node storage-reset.mjs',
+    'node ./scripts/live-test.mjs',
+    'node --max-old-space-size=4096 scripts/live-test.mjs --x',
+    'node scripts/live-test.mjs tests/support/sweep.ts',
+    'dotenv -e .env.local -- node scripts/redproof-s9a4.mjs',
+    'npm run admin:call',
+    'npm run setup:photo-cleanup',
+  ])('Registerskript am Gate vorbei: %s', (c) => {
+    const r = bash(c)
+    expect(r.exit).toBe(2)
+    expect(r.stderr).toMatch(/npm run loesch/)
+  })
+  it.each([
+    'supabase db query "delete from public.x" --linked',
+    'echo "delete from public.x" | psql',
+    'bash -c "supabase db query \\"delete from public.x\\" --linked"',
+  ])('direktes DELETE am Gate vorbei: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    'cp foo docs/freigaben/x.md',
+    'echo x > docs/freigaben/x.md',
+    'cp -t docs/freigaben x',
+    'git mv a docs/freigaben/b',
+    'Copy-Item a -Destination docs/freigaben/b',
+    'cat a > docs/freigaben/b',
+    'rm docs/freigaben/u1b-loesch-freigabe-1.md',
+    'cp foo tmp/proof/u1b/loesch-freigabe-1.md',
+    'cp foo tmp/proof/u1b/loesch-lauf.jsonl',
+    'echo x > tmp/proof/u1b/loesch-lauf.jsonl',
+  ])('Freigaben und Lauf-Log fälschen: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it('Write und Edit auf docs/freigaben immer verweigert, loesch-freigabe in tmp/proof nur von advisor-report, loesch-lauf nie', () => {
+    for (const a of [undefined, 'advisor-report']) expect(datei('/p/docs/freigaben/u1b-loesch-freigabe-1.md', a).exit).toBe(2)
+    expect(datei('/p/tmp/proof/u1b/loesch-freigabe-1.md').exit).toBe(2)
+    expect(datei('/p/tmp/proof/u1b/loesch-freigabe-1.md', 'advisor-report').exit).toBe(0)
+    for (const a of [undefined, 'advisor-report']) expect(datei('/p/tmp/proof/u1b/loesch-lauf.jsonl', a).exit).toBe(2)
+  })
+  it.each([
+    'npm run loesch -- scripts/storage-reset.mjs',
+    'npm run loesch -- uebernehme tmp/proof/u1b/loesch-freigabe-1.md',
+    'npm run t -- cmd node scripts/sys/gate-loesch.mjs --trocken --register a.json --freigaben b scripts/storage-reset.mjs',
+    'node scripts/sys/gate-loesch.mjs --trocken',
+    'ls docs/freigaben',
+    'cat docs/freigaben/u1b-loesch-freigabe-1.md',
+    'git add docs/freigaben/u1b-loesch-freigabe-1.md',
+    'git commit -m "docs/freigaben u1b"',
+    'echo "docs/freigaben"',
+    'node tmp/scan.mjs',
+    'node tmp/hash.mjs tests/support/sweep.ts scripts/storage-reset.mjs',
+    'node --max-old-space-size=4096 tmp/hash.mjs scripts/storage-reset.mjs',
+  ])('erlaubt: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+  it('MCP-Datenbankwerkzeuge werden verweigert, andere MCP-Werkzeuge nicht', () => {
+    expect(guard({ tool_name: 'mcp__abc__execute_sql', tool_input: { query: 'select 1' } }).exit).toBe(2)
+    expect(guard({ tool_name: 'mcp__abc__apply_migration', tool_input: {} }).exit).toBe(2)
+    expect(guard({ tool_name: 'mcp__Claude_Browser__navigate', tool_input: { url: 'x' } }).exit).toBe(0)
   })
 })
 

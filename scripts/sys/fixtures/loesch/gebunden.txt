@@ -1,0 +1,1 @@
+Fixture: vom Skript gebundene Datei (zählt bei der Freigabe mit).

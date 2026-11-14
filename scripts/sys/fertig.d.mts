@@ -18,7 +18,10 @@ export interface FertigKontext {
   ffMoeglich?: boolean
   hooksAktiv?: boolean
   runs: Lauf[]
-  dbPushes?: { start: string; migrationen: string[] }[]
+  dbPushes?: { start: string; migrationen: { pfad: string; sha256: string }[] }[]
+  loeschGeaendert?: { pfad: string; sha256: string }[]
+  loeschFreigaben?: Freigabe[]
+  freigabenGeaendert?: string[]
   abdruck: Record<string, string>
   gruen?: Record<string, { abdruck: string }>
   neueMigrationen: { pfad: string; sha256: string }[]

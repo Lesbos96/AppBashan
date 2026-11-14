@@ -13,6 +13,7 @@ const REGELN = [
   [/^supabase\//, 3],
   [/^src\/lib\/money/, 3],
   [/^tests\/(rls|support)\//, 3],
+  [/^docs\/freigaben\//, 3], // Lösch-Freigaben (Gate)
   [/^docs\/reference\/design\/tokens\.json$/, 1], // wird von src/ importiert (Fingerabdruck: DOCS_IMPORTE)
   [/^docs\//, 0],
   [/\.md$/, 0],
