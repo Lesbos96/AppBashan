@@ -1,7 +1,7 @@
 // Provisionsjournal commission_entries (S9b-4, Migration 0028). Journalzeilen sind unlöschbar (append_only, ON DELETE RESTRICT):
 // jede Prüfung läuft als Rollback-Probe, es bleibt nichts zurück. Beträge rechnet `splitFee` aus @pricing, nie der Test selbst.
 import { describe, expect, it } from 'vitest'
-import { type FeeTier, negateSplit, splitFee } from '@pricing'
+import { type FeeTier, negateSplit, splitChange, splitFee } from '@pricing'
 import { probes, type Step } from '../support/owner.ts'
 import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
@@ -215,8 +215,9 @@ describe('Provisionsjournal', () => {
     const J = journal(RT)
     const s = RT.split(68961)
     const R = { r3: newId(), r4: newId(), r5: newId(), r6: newId(), rn: newId() }
-    const diff = RT.split(80000 - 68961)
+    const diff = splitChange(80000, { tiers: RT.tiers, vatRate: RT.vr }, s) // Provision(Gesamt nach) − Provision(Gesamt vor), nicht Staffel auf die Differenz
     const same = { vr: null, fsv: null, vrv: null } as const // leere Sätze: nur Gegenbuchungen dürfen sie weglassen
+    expect([s.feeCents, diff.feeCents, diff.payoutCents]).toEqual([7896, 1104, 9935]) // Vorgabe v2: 68961 → 7896, 80000 → 9000, Differenz 1104 (nicht 12 % auf 11039 = 1325)
     const steps: Step[] = [
       { name: 'change mit leerem Satz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, ...same }) },
       { name: 'Stornogebühr mit leerem Satz', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000), ...same }) },
@@ -277,7 +278,7 @@ describe('Provisionsjournal', () => {
     const RT = rates()
     const J = journal(RT)
     const s = RT.split(68961)
-    const diff = RT.split(80000 - 68961)
+    const diff = splitChange(80000, { tiers: RT.tiers, vatRate: RT.vr }, s)
     const R = { o: newId(), x: newId(), c: newId() }
     const steps: Step[] = [
       { name: 'change auf Revision aus partner_offer', sql: J.step({ p: 'a', req: R.o, kind: 'change', rev: rev2(R.o), s: diff }) },

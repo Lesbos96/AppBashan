@@ -386,7 +386,7 @@ describe('Abnahme S9f (0041)', () => {
       named('expire_changes: Angenommenes bleibt', { as: 'service_role', sql: `=public.expire_changes()` }),
       named('keine Ablauf-Mail für den angenommenen', { sql: `=${count(`public.outbox where kind = 'change_expired' and request_id = '${R}'`)}` }),
       named('Satzwechsel', {
-        sql: `insert into public.fee_schedules (version, valid_from, label) values (99, ${today}, 'test'); insert into public.fee_schedule_tiers (version, tier, up_to_cents, rate_bp) values (99, 1, null, 1000);`,
+        sql: `insert into public.fee_schedules (version, valid_from, label) values (99, ${today}, 'test'); insert into public.fee_schedule_tiers (version, tier, up_to_cents, rate_bp) values (99, 1, null, 1000)`,
       }),
       svc('neue Version abgelehnt', decide(R2, { version: 99 })),
       named('Satz der Buchung gilt', { as: 'service_role', sql: `=${decide(R2)}` }),
@@ -412,7 +412,7 @@ describe('Abnahme S9f (0041)', () => {
     ok(r['Satzwechsel'])
     err(r['neue Version abgelehnt'], 'fee_basis_changed')
     expect(r['Satz der Buchung gilt']).toBe('= accepted')
-    expect(r['change-Zeile trägt den eingefrorenen Satz']).toBe('= true')
+    expect(r['change-Zeile trägt die eingefrorene Version']).toBe('= true')
     ok(r['suspended'])
     expect(r['System-Rückzug']).toBe('= partner_not_active')
     rows(r['Audit System-Rückzug'], 1)
