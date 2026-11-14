@@ -21,11 +21,15 @@ const MCP_DB = /(execute_sql|apply_migration|reset_branch|restore_project|delete
 function kern(segment) {
   let s = segment.trim().replace(/^&\s*/, '')
   // Programmpfad in Anführungszeichen (auch mit Leerzeichen): `"C:\Program Files\Git\bin\bash.exe" x.sh` → `bash x.sh`
-  s = s.replace(new RegExp(`^["'](?:[^"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["'](?=\\s|$)`, 'i'), '$1')
+  const zitiert = new RegExp(`^["'](?:[^"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["'](?=\\s|$)`, 'i')
+  s = s.replace(zitiert, '$1')
   for (let i = 0; i < 4; i++) {
     s = (zuweisung(s) ?? s) // NAME=Wert (auch NAME="$(…)", export/local/declare davor) ist keine Hülle mit Programm; der Inhalt einer Ersetzung wird als eigener Befehl geprüft
-      .replace(/^[({!`]+\s*|^\$\(\s*/, '')
-      .replace(/^(time|call|then|do|else|elif|exec|env|nohup|command|builtin|sudo)\s+/i, '')
+      .replace(/^(?:\[[^\]]+\]\s*)*\$[\w:.]+\s*[-+*/%]?=\s*["'][\s\S]*$/, '') // PowerShell: ein Wert in Anführungszeichen ist Text, kein Befehl (Befehl nur hinter `&`)
+      .replace(/^(?:\[[^\]]+\]\s*)*\$[\w:.]+\s*[-+*/%]?=\s*/, '') // PowerShell: `$o = befehl`, `[string]$o = befehl`, `$o += befehl`
+      .replace(/^[({!`@&]+\s*|^\$\(\s*/, '') // auch `& befehl` und `@(befehl)` nach einer Zuweisung
+      .replace(zitiert, '$1')
+      .replace(/^(time|call|if|elif|while|until|then|do|else|exec|env|nohup|command|builtin|sudo)\s+/i, '')
       .replace(/^(npx|npm\s+exec)\s+(--\s+)?/, '')
       .replace(/^dotenv\s+(-e\s+\S+\s+)*--\s+/, '')
       .replace(/^node\s+(?:-\S+\s+)*\S*supabase\.js\s+/, 'supabase ')
@@ -177,9 +181,57 @@ function loeschDirekt(k) {
   return null
 }
 
-export function entscheideBefehl(roherBefehl, tiefe = 0) {
+// Wie `maskiere`, aber mit richtiger Schachtelung: Inhalt von "…", '…', $(…) und `…` samt Escapes wird durch Unterstriche ersetzt (Länge bleibt gleich).
+function blankiere(s) {
+  const out = s.split('') // UTF-16-Einheiten wie die Indizes darunter (`[...s]` zählt Codepunkte und verschöbe Zeichen außerhalb der BMP)
+  const leer = (a, b) => {
+    for (let j = a; j < Math.min(b, s.length); j++) if (out[j] !== '\n') out[j] = '_'
+  }
+  let i = 0
+  while (i < s.length) {
+    const c = s[i]
+    let e = i + 1
+    if (c === '\\') e = s[i + 1] === '$' && s[i + 2] === '(' ? abtasten(s, i + 3, 'sub').ende : i + 2
+    else if (c === "'") e = hinter(s, "'", i + 1)
+    else if (c === '"') e = abtasten(s, i + 1, 'dq').ende
+    else if (c === '$' && s[i + 1] === '(') e = abtasten(s, i + 2, 'sub').ende
+    else if (c === '`') e = (s.indexOf('`', i + 1) < 0 ? s.length : s.indexOf('`', i + 1) + 1)
+    else {
+      i++
+      continue
+    }
+    leer(i, e)
+    i = e
+  }
+  return out.join('')
+}
+
+// Teilstücke eines Segments zwischen Klammern `(` `)` und Blockklammern `{` `}` (nur mit Leerraum innen, damit `HEAD@{1}`, `${x}` und `{a,b}` ganz bleiben):
+// `if (npm run check) { … }`, `[void](npm run check)`, `Write-Output (npm run check)`. Jedes Stück wird zusätzlich als eigener Befehl geprüft; das Segment selbst bleibt ungeteilt.
+function klammerStuecke(roh, kahl) {
+  const out = []
+  let start = 0
+  for (const m of kahl.matchAll(/[()]|\{(?=\s|$)|(?<=\s|^)\}/g)) {
+    out.push(roh.slice(start, m.index))
+    start = m.index + 1
+  }
+  out.push(roh.slice(start))
+  return out.map((x) => x.trim()).filter(Boolean)
+}
+
+export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
   if (tiefe > 4) return 'Shell-Verschachtelung tiefer als 4: nicht prüfbar.'
   const befehl = ohneHeredoc(roherBefehl)
+  if (!stueck) {
+    for (const { roh } of segmente(befehl)) {
+      const kahl = blankiere(roh)
+      if (!/[()]|\{\s|\s\}|\{$/.test(kahl)) continue
+      for (const s of klammerStuecke(roh, kahl)) {
+        const g = entscheideBefehl(s, tiefe, true) // gleiche Tiefe: der Schalter `stueck` verhindert die Rekursion
+        if (g) return g
+      }
+    }
+  }
   // Befehlsersetzungen $(…) und `…` (auch in doppelten Anführungszeichen, beliebig geschachtelt) sind eigene Befehle.
   for (const inner of abtasten(befehl, 0, 'top').subs) {
     if (!inner.trim()) continue
@@ -246,10 +298,30 @@ export function entscheideBefehl(roherBefehl, tiefe = 0) {
     const direkt = loeschDirekt(k)
     if (direkt) return direkt
     if (/^git\b/.test(k) && /--no-verify\b/.test(kahl)) return 'Git-Hooks bleiben an (`--no-verify` ist gesperrt).'
-    if (/^git\b/.test(k) && /core\.hooksPath/.test(kahl)) {
-      // Lesen (`git config core.hooksPath`, `--get`) bleibt erlaubt; Setzen, Löschen und `-c core.hooksPath=…` nicht.
-      const nurLesen = /^git\s+config\s+(--get\s+)?core\.hooksPath\s*$/.test(kahl.trim())
-      if (!nurLesen) return 'Git-Hooks bleiben an (`core.hooksPath` setzen ist gesperrt; `npm run prepare` setzt es richtig).'
+    if (/^git\b/.test(k)) {
+      // Wortweise (Anführungszeichen entfallen je Wort, `git "-c" "core.hooksPath=x"`): Git vergleicht den Schlüssel ohne Beachtung der Groß- und Kleinschreibung.
+      // Globale Optionen (`-c k=v`, `--config-env=k=v`) stehen vor dem Unterbefehl; Wörter in Anführungszeichen hinter `commit -m` sind keine Optionen.
+      // Shell-artige Zerlegung: ein Wort ist eine Folge aus Stücken in Anführungszeichen und Zeichen ohne Leerraum (`user.name="A B"`); Umleitungswörter (`2>$null`) zählen nicht.
+      const w = [...k.matchAll(/(?:"[^"]*"|'[^']*'|[^\s"'])+/g)].map((m) => m[0].replace(/["']/g, '')).filter((x) => !/^\d*>/.test(x))
+      const optionen = []
+      let i = 1
+      while (i < w.length && w[i].startsWith('-')) {
+        const mitWert = /^(-c|-C|--config-env|--git-dir|--work-tree|--exec-path|--namespace|--attr-source)$/.test(w[i])
+        optionen.push(...w.slice(i, i + (mitWert ? 2 : 1)))
+        i += mitWert ? 2 : 1
+      }
+      const unterbefehl = (w[i] ?? '').toLowerCase()
+      const rest = w.slice(i + 1)
+      const SCHLUESSEL = /core\.hookspath/i
+      // Lesen (`git config core.hooksPath`, `--get`, `get`) bleibt erlaubt; Setzen, Löschen und `-c core.hooksPath=…` nicht.
+      const lesewoerter = rest.filter((x) => !/^(--(local|global|system|worktree|show-origin|get|get-all)|get)$/i.test(x))
+      const nurLesen = unterbefehl === 'config' && lesewoerter.length === 1 && SCHLUESSEL.test(lesewoerter[0])
+      if (optionen.some((x) => SCHLUESSEL.test(x)) || (unterbefehl === 'config' && rest.some((x) => SCHLUESSEL.test(x)) && !nurLesen)) {
+        return 'Git-Hooks bleiben an (`core.hooksPath` setzen ist gesperrt; `npm run prepare` setzt es richtig).'
+      }
+      if (unterbefehl === 'config' && rest.some((x) => /^(--)?(remove-section|rename-section|edit)$|^-e$/i.test(x))) {
+        return 'Git-Hooks bleiben an (`git config edit`, `remove-section` und `rename-section` sind gesperrt).'
+      }
     }
     if (/^python3?\s+-(\s|$)/.test(k)) return 'Kein Python über stdin (hängt unter Windows). Node-Skript oder temporäre Datei unter tmp/ nutzen.'
     // docs/freigaben (Lösch-Freigaben) schreibt nur `npm run loesch -- uebernehme`: jedes Segment mit diesem Pfad, das kein Lesebefehl ist, und jede Umleitung dorthin wird verweigert.
@@ -266,7 +338,7 @@ export function entscheideBefehl(roherBefehl, tiefe = 0) {
     const worte = woerter(seg)
     const iDest = worte.findIndex((x) => /^-(destination|literalpath)$/i.test(x))
     const ziel = norm(iDest >= 0 ? (worte[iDest + 1] ?? '') : (worte.at(-1) ?? ''))
-    if (/(^|\s)(\d|&|\*)?>>?\s*['"]?[^\s'"]*\b(tmp|docs)[\\/]proof\b/.test(seg) || (SCHREIBEN.test(k) && /\b(tmp|docs)[\\/]proof\b/.test(seg) && !/-ItemType\s+Directory\b/i.test(seg))) {
+    if (/(^|\s)(\d|&|\*)?>>?\s*['"]?[^\s'"]*\b(tmp|docs)[\\/]proof\b/.test(seg) || (SCHREIBEN.test(k) && /\b(tmp|docs)[\\/]proof\b/.test(seg) && !/-ItemType\s+Directory\b/i.test(kahl))) {
       return 'Nachweise schreibt nur das Start-Programm (tmp/proof) bzw. werden byte-genau mit cp kopiert (docs/proof). Keine Umleitung dorthin; Berichte schreibt der Berater selbst mit Write.'
     }
     // Berater-Namen (Freigabe, Abnahme) auch ohne Verzeichnis im Ziel (nach `cd tmp/proof/x`), Lauf-Dateien nur unter tmp/proof.

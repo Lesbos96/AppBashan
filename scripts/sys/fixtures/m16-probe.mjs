@@ -38,6 +38,7 @@ const gruende = pruefeFertig({
   sauber: true,
   runs: [lauf('check', 'npm run check'), lauf('e2e', 'npm run test:e2e'), lauf('rls', 'npm run test:rls')],
   abdruck: ab,
+  jetzt: Date.parse('2026-11-14T12:00:00.000Z'), // der rls-Lauf muss bei R3 jung sein (fertig.mjs)
   neueMigrationen: [{ pfad: datei, sha256: jetzt }],
   dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: m.marken }],
   freigaben: [frei],

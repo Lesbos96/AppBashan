@@ -454,6 +454,95 @@ describe('u1b Abnahme Runde 3: Abtaster für Befehlsersetzungen (AM9, AN22, AN23
   })
 })
 
+describe('Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b', () => {
+  it.each([
+    '$o = npm run check',
+    '[string]$o = & npm run check',
+    '$o = (npm run check)',
+    '$o += npm test',
+    '$o = & "C:\\Program Files\\nodejs\\npm.cmd" run check',
+    '$r = npx supabase db push --linked',
+    '$o = @(npm run test:rls)',
+    'if (npm run check) { 1 }',
+    'foreach ($x in 1..2) { npm run test:rls }',
+    'try { npm run test:e2e } catch { 1 }',
+    'if npm run check; then echo ok; fi',
+    'while npm run test:e2e; do :; done',
+    'until npx vitest run; do sleep 1; done',
+    'if ! npm run check; then exit 1; fi',
+    'if true; then npm run check; fi',
+    '{ npm run check; }',
+    'if supabase db push; then echo ok; fi',
+    'Write-Output (npm run check)',
+    '[void](npm run check)',
+    'if (-not (npm run check)) { 1 }',
+    'git push origin HEAD@{0}:main --no-verify',
+    'git -c a={} -c core.hooksPath=x push',
+    'Set-Content -Value @{} -Path tmp/proof/u/x.md',
+    '$o = & "npm" run check',
+    'Write-Output "😀" (npm run check)',
+    'git -c user.name="A B" -c core.hooksPath=x push',
+    'git --git-dir="a b/.git" -c core.hooksPath=x push',
+    'git -c user.name="A B" config core.hooksPath x',
+    'git --attr-source tree -c core.hooksPath=x push',
+    'git "-c" "core.hooksPath=x" push',
+    'git --config-env="core.hooksPath=X" push',
+    'git config remove-section core',
+    'git config rename-section core x',
+    'git config edit',
+    'git config "core.hooksPath" x',
+    'git config core.hookspath x',
+    'git config --remove-section core',
+    'git config --edit',
+    'git -c CORE.HOOKSPATH=x push',
+    'New-Item tmp/proof/u1-abnahme.md -Value "x -ItemType Directory y"',
+  ])('verweigert: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    '$o = npm run build',
+    '$o = npm run build 2>&1',
+    '$x = 5',
+    "$env:FOO = 'bar'",
+    'if (Test-Path x) { echo ok }',
+    'if [ -f x ]; then echo ok; fi',
+    'while read l; do echo $l; done < f',
+    'if git status; then echo ok; fi',
+    'git commit -m "if npm run check; then x; fi"',
+    'echo {a,b}',
+    'foreach ($f in Get-ChildItem) { Write-Output $f }',
+    'git show HEAD@{1}:scripts/x.sh',
+    'git show stash@{0}:x.ps1',
+    'ls node_modules/{vitest,x}',
+    'echo ${psql}',
+    "$s = 'vitest'",
+    '$p = "psql"',
+    'git log @{u}..',
+    "$env:X = 'a'; npm run build",
+    'git config "core.hooksPath"',
+    'git config get core.hooksPath',
+    'git config --get core.hooksPath 2>$null',
+    'git config --get core.hooksPath 2>/dev/null',
+    'git config --local core.hooksPath',
+    'git -c user.name="A B" commit -m x',
+    '$v = git config core.hooksPath',
+    'git commit -m "docs: git -c core.hooksPath=x ist gesperrt"',
+    'f() { x=$(a "$(b "$(c)")"); }',
+    'git config core.hooksPath',
+    'git config --get core.hookspath',
+    'git config user.name x',
+    'New-Item -ItemType Directory tmp/proof/u2b',
+    'New-Item tmp/proof/x -ItemType Directory',
+  ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+  it('N3: dreifach geschachtelte Ersetzung in einem Block einer Skriptdatei ist erlaubt (Stücke ohne zusätzliche Tiefe)', () => {
+    const f = join(mkdtempSync(join(tmpdir(), 'guard-')), 'x.sh')
+    writeFileSync(f, 'f() { x=$(a "$(b "$(c)")"); }\n')
+    expect(bash(`bash ${f.replace(/\\/g, '/')}`).exit).toBe(0)
+  })
+})
+
 describe('Wächter-Hook guard.mjs: Absturz sperrt selbst', () => {
   it.each([
     ['leere Eingabe', ''],

@@ -1,5 +1,5 @@
 // Sitzungsprotokoll (Hooks SessionStart, SubagentStart, SubagentStop, UserPromptSubmit).
-// Das Modell kommt vom Programm (Feld `model`, laut Doku optional), nicht von der Selbstauskunft des Modells.
+// Das Modell kommt vom Programm (Feld `model`, laut Doku optional; fehlt es, nennt der Bericht das Modell aus dem Transkript), nicht von der Selbstauskunft des Modells.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -24,10 +24,16 @@ export function pruefePrompt(prompt, modell, erwartet) {
 
 export function verarbeite(e) {
   const jetzt = new Date().toISOString()
+  // Liefert ein späteres Ereignis derselben Sitzung den Transkript-Pfad, den SessionStart nicht hatte, wird er nachgetragen (Ersatzquelle für das Modell, scripts/sys/modell.mjs).
+  if (e.hook_event_name !== 'SessionStart' && e.transcript_path && existsSync(sessionDatei)) {
+    const s = JSON.parse(readFileSync(sessionDatei, 'utf8'))
+    if (!s.transcript && s.session_id && s.session_id === e.session_id) schreibe(sessionDatei, JSON.stringify({ ...s, transcript: e.transcript_path }, null, 2) + '\n')
+  }
   switch (e.hook_event_name) {
     case 'SessionStart': {
       const modell = e.model ?? null
-      schreibe(sessionDatei, JSON.stringify({ modell, quelle: e.source ?? null, zeit: jetzt, session_id: e.session_id ?? null }, null, 2) + '\n')
+      // `felder`: Schlüssel der Hook-Eingabe als Beleg, ob `model` und `transcript_path` ankommen (Stand 2026-11-14: `model` fehlt, siehe docs/ENTSCHEIDUNGEN.md).
+      schreibe(sessionDatei, JSON.stringify({ modell, quelle: e.source ?? null, zeit: jetzt, session_id: e.session_id ?? null, transcript: e.transcript_path ?? null, felder: Object.keys(e) }, null, 2) + '\n')
       return { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `Sitzungsprotokoll (Hook): Modell ${modell ?? 'unbekannt (Feld fehlt)'}, Quelle ${e.source ?? '?'}.` } }
     }
     case 'SubagentStart':

@@ -6,6 +6,7 @@ export interface Offene {
 export interface Freigabe {
   modell: string
   dateien: { sha: string; pfad: string }[]
+  geloescht?: string[]
   urteil: string
   hoch: number
 }

@@ -12,14 +12,25 @@ import { stufeAus } from './stufe.mjs'
 
 const PFLICHT = { R0: [], R1: ['check', 'e2e'], R2: ['check', 'e2e', 'rls'], R3: ['check', 'e2e', 'rls'] }
 // Diese geänderten Pfade muss die Abnahme mit einer SHA256-Zeile nennen (Mindestmenge für R3).
-export const MUSS_ABNAHME = /^(supabase\/functions\/|src\/lib\/money|scripts\/sys\/[^/]+\.mjs$|scripts\/sys\/loesch-register\.json$|tests\/support\/|docs\/freigaben\/|\.claude\/hooks\/|\.claude\/settings\.json$|\.githooks\/|package\.json$)/
+export const MUSS_ABNAHME = /^(supabase\/functions\/|src\/lib\/money|scripts\/sys\/[^/]+\.mjs$|scripts\/sys\/loesch-register\.json$|tests\/support\/|docs\/freigaben\/|\.claude\/hooks\/|\.claude\/agents\/|\.claude\/settings\.json$|\.githooks\/|package\.json$)/
+// Bei R3 ist ein übernommener rls-Lauf (gruen.json) nur dann gültig, wenn er höchstens so alt ist.
+const RLS_MAX_ALTER_MS = 7 * 24 * 3600 * 1000
 
-// Gültiger Nachweis der ganzen Suite s oder null.
+const spaetestePush = (c) => (c.dbPushes ?? []).reduce((m, p) => (p.start > m ? p.start : m), '')
+// Zeitpunkt höchstens 7 Tage vor `c.jetzt` und nicht in der Zukunft; fehlendes `jetzt`, fehlende oder unlesbare Zeit gelten als abgelaufen (fail closed).
+const frisch = (zeit, c) => {
+  const alter = c.jetzt - Date.parse(zeit)
+  return alter >= 0 && alter <= RLS_MAX_ALTER_MS
+}
+
+// Gültiger Nachweis der ganzen Suite s oder null. Bei R3 zählt ein rls-Lauf nur, wenn er höchstens 7 Tage alt ist (auch ein Lauf eines früheren Schritts).
 export function gueltigerLauf(c, s) {
-  const spaetestePush = (c.dbPushes ?? []).reduce((m, p) => (p.start > m ? p.start : m), '')
+  const push = spaetestePush(c)
   return (
     c.runs.find(
-      (r) => r.ziel === s && (r.args ?? []).length === 0 && r.befehl === KANON[s] && r.exit === 0 && r.sauber && r.stabil !== false && r.logOk && r.abdruck === c.abdruck[s] && (s !== 'rls' || (r.start ?? '') > spaetestePush),
+      (r) =>
+        r.ziel === s && (r.args ?? []).length === 0 && r.befehl === KANON[s] && r.exit === 0 && r.sauber && r.stabil !== false && r.logOk && r.abdruck === c.abdruck[s] &&
+        (s !== 'rls' || ((r.start ?? '') > push && (c.stufe !== 'R3' || frisch(r.start, c)))),
     ) ?? null
   )
 }
@@ -34,8 +45,13 @@ export function pruefeFertig(c) {
   if (c.hooksAktiv === false) g.push('core.hooksPath ist nicht .githooks (npm run prepare), der pre-push-Hook wäre wirkungslos')
   if (c.ffMoeglich === false) g.push('main ist kein Vorfahr des Branches oder main weicht von origin/main ab (kein ff-Merge möglich)')
   for (const s of PFLICHT[c.stufe] ?? PFLICHT.R3) {
-    if (!gueltigerLauf(c, s) && c.gruen?.[s]?.abdruck !== c.abdruck[s]) {
+    if (gueltigerLauf(c, s)) continue
+    if (c.gruen?.[s]?.abdruck !== c.abdruck[s]) {
       g.push(`${s}: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert${s === 'rls' ? ', nach dem letzten db-push' : ''}) für den aktuellen Fingerabdruck`)
+    } else if (c.stufe === 'R3' && s === 'rls') {
+      // Übernahme bei unverändertem Fingerabdruck nur mit frischem grünem Lauf (`zeit` = Start dieses Laufs, nie erneuert) nach dem letzten db-push.
+      const zeit = c.gruen[s].zeit
+      if (!(frisch(zeit, c) && zeit > spaetestePush(c))) g.push('rls: Übernahme aus gruen.json bei R3 nur mit einem grünen Lauf von höchstens 7 Tagen und nach dem letzten db-push (Feld zeit fehlt oder passt nicht): voller Lauf nötig')
     }
   }
   if (c.schrittPruefen) {
@@ -63,7 +79,18 @@ export function pruefeFertig(c) {
     // Lösch-Gate (zweite Ebene): geänderte Register-Skripte brauchen eine Freigabe für den neuen SHA-256, Freigaben bleiben unverändert.
     g.push(...pruefePush(c.loeschGeaendert ?? [], c.loeschFreigaben ?? []).gruende.map((x) => `Lösch-Gate: ${x}`))
     for (const p of c.freigabenGeaendert ?? []) g.push(`${p}: Freigaben in docs/freigaben sind unveränderlich (nur neue Dateien)`)
+    for (const p of c.geloeschtMuss ?? []) {
+      if (!(c.abnahme?.geloescht ?? []).includes(p)) g.push(`${p}: gelöscht, gehört aber zur Mindestmenge der Abnahme; die Abnahme muss die Löschung mit der Zeile „Geloescht: ${p}“ nennen`)
+    }
     if (!c.ohneBericht) {
+      for (const p of c.berichtKopienFehlen ?? []) g.push(`${p}: in bericht.json genannt, aber nicht im Commit (ignorierte Logs mit git add -f)`)
+      // gruen.json im Commit: jeder Eintrag ist entweder der von origin/main oder der des gültigen Laufs (Abdruck, Hash, Schritt, Start); von Hand gesetzte Einträge zählen nicht.
+      const gleich = (a, b) => ['abdruck', 'hash', 'schritt', 'zeit'].every((k) => a?.[k] === b?.[k])
+      for (const [s, h] of Object.entries(c.gruenHead ?? {})) {
+        if (gleich(h, c.gruen?.[s])) continue
+        const r = gueltigerLauf(c, s)
+        if (!r || !gleich(h, { abdruck: c.abdruck[s], hash: r.hash, schritt: r.schritt, zeit: r.start })) g.push(`docs/proof/gruen.json: Eintrag ${s} stammt weder aus origin/main noch von einem gültigen Lauf (npm run bericht neu ausführen)`)
+      }
       if (c.berichtStand !== c.abdruck.check) g.push('bericht.json fehlt im Commit oder ist nicht aktuell (npm run bericht, dann committen)')
       else if (c.berichtGate !== 'bestanden') g.push('bericht.json meldet das Gate nicht als bestanden')
     }
@@ -98,6 +125,14 @@ export function leseGepruefteRuns() {
   return { runs, dbPushes: alle.filter((r) => r.ziel === 'db-push').map((r) => ({ start: r.start, migrationen: r.migrationen ?? [] })) }
 }
 
+const imHead = (p) => {
+  try {
+    git('cat-file', '-e', `HEAD:${p}`)
+    return true
+  } catch {
+    return false
+  }
+}
 const lies = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null)
 const ausGit = (rev, p) => {
   try {
@@ -129,12 +164,17 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
     runs,
     dbPushes,
     abdruck: Object.fromEntries(SUITEN.map((s) => [s, fingerabdruck(s)])),
+    jetzt: Date.now(),
     gruen: JSON.parse(ausGit('origin/main', 'docs/proof/gruen.json') ?? '{}'),
+    gruenHead: JSON.parse(ausGit('HEAD', 'docs/proof/gruen.json') ?? '{}'),
     neueMigrationen: geaendert('AM', 'supabase/migrations').map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
     freigaben: existsSync(ordner) ? readdirSync(ordner).filter((f) => /^db-freigabe-.*\.md$/.test(f)).map((f) => parseFreigabe(readFileSync(join(ordner, f), 'utf8'))) : [],
     abnahme,
     abnahmeVeraltet: (abnahme?.dateien ?? []).filter((d) => !existsSync(d.pfad) || sha256Datei(d.pfad) !== d.sha).map((d) => d.pfad),
     abnahmeFehlt: pfade.filter((p) => MUSS_ABNAHME.test(p) && existsSync(p) && !genannt.has(p)),
+    geloeschtMuss: pfade.filter((p) => MUSS_ABNAHME.test(p) && !existsSync(p)),
+    // Kopien und Logs, die bericht.json nennt, müssen im Commit liegen (`*.log` ist ignoriert: ein vergessenes `git add -f` fiele sonst nicht auf).
+    berichtKopienFehlen: [...(bericht?.kopien ?? []), ...Object.values(bericht?.laeufe ?? {}).map((l) => l?.log)].filter(Boolean).map((p) => p.replace(/\\/g, '/')).filter((p) => !imHead(p)),
     neueRlsTests: geaendert('A', 'tests/rls').filter((f) => f.endsWith('.test.ts')),
     berichtStand: bericht?.stand ?? null,
     berichtGate: bericht?.gate ?? null,

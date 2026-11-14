@@ -120,7 +120,8 @@ describe('Datenbank-Gate: reine Logik', () => {
   })
   it('parseFreigabe liest streng zeilenverankert', () => {
     const f = parseFreigabe(`Modell: claude-fable-5-2\nSHA256: ${'A'.repeat(64)} a/b.sql\nUrteil: frei\nOffene Findings hoch: 0\n`)
-    expect(f).toEqual({ modell: 'claude-fable-5-2', dateien: [{ sha: 'a'.repeat(64), pfad: 'a/b.sql' }], urteil: 'frei', hoch: 0 })
+    expect(f).toEqual({ modell: 'claude-fable-5-2', dateien: [{ sha: 'a'.repeat(64), pfad: 'a/b.sql' }], geloescht: [], urteil: 'frei', hoch: 0 })
+    expect(parseFreigabe('Geloescht: .githooks/pre-push\nGeloescht: x y\nim Text Geloescht: z').geloescht).toEqual(['.githooks/pre-push'])
     expect(parseFreigabe('Urteil: frei im Text mit mehr').urteil).toBe('')
     expect(Number.isNaN(parseFreigabe('nichts').hoch)).toBe(true)
   })

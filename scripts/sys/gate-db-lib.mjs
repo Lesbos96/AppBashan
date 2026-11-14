@@ -33,6 +33,7 @@ export function offeneMigrationen(liste, dir) {
 // Bericht des Beraters, streng zeilenverankert:
 //   Modell: <id>                       genau eine Zeile (die erste zählt)
 //   SHA256: <64 hex> <pfad>            je geprüfter Datei eine Zeile
+//   Geloescht: <pfad>                  je ausdrücklich gebilligter Löschung einer Datei der Mindestmenge (fertig.mjs, N22)
 //   Urteil: frei|gesperrt              genau eine Zeile (sonst Urteil '')
 //   Offene Findings hoch: N            genau eine Zeile (sonst NaN)
 export function parseFreigabe(text) {
@@ -43,6 +44,7 @@ export function parseFreigabe(text) {
   return {
     modell: alle(/^Modell:\s*(\S+)/)[0]?.[1] ?? '',
     dateien: alle(/^SHA256:\s*([0-9a-fA-F]{64})\s+(\S+)\s*$/).map((m) => ({ sha: m[1].toLowerCase(), pfad: norm(m[2]) })),
+    geloescht: alle(/^Geloescht:\s*(\S+)\s*$/).map((m) => norm(m[1])), // gelöschte Dateien der Mindestmenge, die die Abnahme ausdrücklich nennt
     urteil: urteile.length === 1 ? urteile[0][1] : '',
     hoch: hoch.length === 1 ? Number(hoch[0][1]) : Number.NaN,
   }

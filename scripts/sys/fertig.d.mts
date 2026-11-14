@@ -9,8 +9,16 @@ export interface Lauf {
   sauber: boolean
   stabil?: boolean
   start?: string
+  hash?: string
+  schritt?: string
   abdruck: string | null
   logOk: boolean
+}
+export interface GruenEintrag {
+  abdruck: string
+  hash?: string
+  schritt?: string
+  zeit?: string
 }
 export interface FertigKontext {
   stufe: 'R0' | 'R1' | 'R2' | 'R3'
@@ -23,7 +31,11 @@ export interface FertigKontext {
   loeschFreigaben?: Freigabe[]
   freigabenGeaendert?: string[]
   abdruck: Record<string, string>
-  gruen?: Record<string, { abdruck: string }>
+  jetzt?: number
+  gruen?: Record<string, GruenEintrag>
+  gruenHead?: Record<string, GruenEintrag>
+  geloeschtMuss?: string[]
+  berichtKopienFehlen?: string[]
   neueMigrationen: { pfad: string; sha256: string }[]
   freigaben: Freigabe[]
   abnahme: Freigabe | null

@@ -3,6 +3,40 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { modelleAusTranskript, modellDerSitzung, transkriptPfad } from '../../scripts/sys/modell.mjs'
+
+const eintrag = (model: string, extra: object = {}) => JSON.stringify({ type: 'assistant', message: { model }, ...extra })
+
+describe('Modell aus dem Transkript (Ersatz für das fehlende Hook-Feld)', () => {
+  it('häufigstes Modell der Hauptsitzung; Subagenten, Platzhalter und fremde Zeilen zählen nicht', () => {
+    const text = [
+      eintrag('claude-sonnet-5-5'),
+      eintrag('claude-sonnet-5-5'),
+      eintrag('claude-fable-5-2', { isSidechain: true }),
+      eintrag('claude-fable-5-2', { isSidechain: true }),
+      eintrag('claude-fable-5-2', { isSidechain: true }),
+      eintrag('<synthetic>'),
+      JSON.stringify({ type: 'user', message: { model: 'claude-haiku-5-5' } }),
+      'kein json',
+    ].join('\n')
+    expect(modelleAusTranskript(text)).toEqual({ 'claude-sonnet-5-5': 2 })
+  })
+  it('ohne Assistenten-Eintrag: leer', () => {
+    expect(modelleAusTranskript('')).toEqual({})
+    expect(modelleAusTranskript(JSON.stringify({ type: 'user' }))).toEqual({})
+  })
+  it('Hook-Wert geht vor; sonst Transkript aus session.json oder aus Projekt-Slug und Sitzungs-ID', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'modell-'))
+    const datei = join(dir, 't.jsonl')
+    writeFileSync(datei, eintrag('claude-sonnet-5-5'))
+    expect(modellDerSitzung({ modell: 'claude-haiku-5-5', transcript: datei })).toEqual({ modell: 'claude-haiku-5-5', modelle: { 'claude-haiku-5-5': 1 }, quelle: 'Hook' })
+    expect(modellDerSitzung({ modell: null, transcript: datei })).toEqual({ modell: 'claude-sonnet-5-5', modelle: { 'claude-sonnet-5-5': 1 }, quelle: 'Transkript' })
+    expect(modellDerSitzung({ modell: null, transcript: join(dir, 'fehlt.jsonl') })).toEqual({ modell: null, modelle: {}, quelle: null })
+    expect(modellDerSitzung(null)).toEqual({ modell: null, modelle: {}, quelle: null })
+    expect(modellDerSitzung({ modell: null, transcript: dir })).toEqual({ modell: null, modelle: {}, quelle: null }) // Lesefehler (Ordner statt Datei): kein Abbruch
+    expect(transkriptPfad({ session_id: 'abc' }, 'C:\\Users\\x\\Music\\MoveNow')).toMatch(/projects[\\/]C--Users-x-Music-MoveNow[\\/]abc\.jsonl$/)
+  })
+})
 
 describe('Sitzungsprotokoll session.mjs', () => {
   const projekt = mkdtempSync(join(tmpdir(), 'session-'))
@@ -20,6 +54,21 @@ describe('Sitzungsprotokoll session.mjs', () => {
     const r = start('claude-haiku-5-5')
     expect(r.out.hookSpecificOutput.additionalContext).toMatch(/claude-haiku-5-5/)
     expect(JSON.parse(readFileSync(join(root, 'session.json'), 'utf8')).modell).toBe('claude-haiku-5-5')
+  })
+  it('SessionStart ohne Modellfeld hält Transkript und Feldnamen fest (Beleg für das fehlende Feld)', () => {
+    hook({ hook_event_name: 'SessionStart', source: 'startup', session_id: 's', transcript_path: '/x/s.jsonl' })
+    const s = JSON.parse(readFileSync(join(root, 'session.json'), 'utf8'))
+    expect(s.modell).toBeNull()
+    expect(s.transcript).toBe('/x/s.jsonl')
+    expect(s.felder).toEqual(['hook_event_name', 'source', 'session_id', 'transcript_path'])
+  })
+  it('ein späteres Ereignis derselben Sitzung trägt den Transkript-Pfad nach, eine andere Sitzung nicht', () => {
+    hook({ hook_event_name: 'SessionStart', source: 'startup', session_id: 's' })
+    expect(JSON.parse(readFileSync(join(root, 'session.json'), 'utf8')).transcript).toBeNull()
+    hook({ hook_event_name: 'UserPromptSubmit', prompt: 'x', session_id: 'andere', transcript_path: '/x/andere.jsonl' })
+    expect(JSON.parse(readFileSync(join(root, 'session.json'), 'utf8')).transcript).toBeNull()
+    hook({ hook_event_name: 'UserPromptSubmit', prompt: 'x', session_id: 's', transcript_path: '/x/s.jsonl' })
+    expect(JSON.parse(readFileSync(join(root, 'session.json'), 'utf8')).transcript).toBe('/x/s.jsonl')
   })
   it('falsches Modell: /schritt wird geblockt', () => {
     start('claude-haiku-5-5')

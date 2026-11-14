@@ -25,7 +25,7 @@ export function sauber() {
 // Der pre-push-Hook ist nur wirksam, wenn Git ihn findet (`npm run prepare` setzt es, läuft sonst nur bei `npm install`).
 export const hooksAktiv = () => {
   try {
-    return git('config', 'core.hooksPath') === '.githooks'
+    return git('config', 'core.hooksPath') === '.githooks' && existsSync('.githooks/pre-push') // ohne die Hook-Datei läuft kein Gate
   } catch {
     return false
   }
