@@ -418,6 +418,42 @@ describe('u1b Abnahme Runde 2: Befehlsersetzung, Umleitungen, Skriptpfade', () =
   })
 })
 
+describe('u1b Abnahme Runde 3: Abtaster für Befehlsersetzungen (AM9, AN22, AN23, AN25)', () => {
+  it.each([
+    'OUT="$(supabase db query "insert into public.x (a) values (now())" --linked)"',
+    'OUT="$(supabase db query "update public.x set a = 1 where id = 2; select 1" --linked)"',
+    'OUT="$(supabase db query "update public.x set a = 1;\nselect 1" --linked)"',
+    'echo $(supabase db query "delete from public.x where id = (select max(id) from public.y)" --linked)',
+    'OUT="$(npm run check 2>&1 | grep -E "FAIL|Error")"',
+    'OUT="$(psql -c "select 1; delete from public.x")"',
+    'OUT="$(supabase db query "delete from public.x" --linked)"',
+    'echo "$(npm run check)"',
+    'echo "a $(echo "b $(npm run check)")"',
+    'x=$(npm run check',
+    'FOO=$(pwd) npm run check',
+    'FOO=$(cat tmp/wert) supabase db query "delete from public.x" --linked',
+    'FOO=$(cat tmp/wert) psql -c "select 1"',
+    'node --import=./tmp/x.mjs scripts/storage-reset.mjs',
+    'node --import ./scripts/storage-reset.mjs tmp/x.mjs',
+  ])('verweigert: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    'OUT="$(supabase db query "select count(*) from public.x where a = coalesce(b, lower(c))" --linked)"',
+    'OUT="$(git log --format="%h;%s" -1)"',
+    'FOO=$(pwd) npm run build',
+    'x="a b"',
+    'export X=1',
+    'git commit -m "update (a) und $(date)"',
+    'echo "kosten: $(( 1 + 2 ))"',
+    'x=$(( 1 + 2 ))',
+    'echo \\$(npm run check)',
+    "git commit -m \"$(cat <<'EOF'\nu1b: Guard (Rest (AM9)) sperrt\n1) supabase db push in `Backticks`\nund `npm run check`\nEOF\n)\"",
+  ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+})
+
 describe('Wächter-Hook guard.mjs: Absturz sperrt selbst', () => {
   it.each([
     ['leere Eingabe', ''],

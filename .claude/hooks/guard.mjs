@@ -23,9 +23,7 @@ function kern(segment) {
   // Programmpfad in Anführungszeichen (auch mit Leerzeichen): `"C:\Program Files\Git\bin\bash.exe" x.sh` → `bash x.sh`
   s = s.replace(new RegExp(`^["'](?:[^"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["'](?=\\s|$)`, 'i'), '$1')
   for (let i = 0; i < 4; i++) {
-    s = s
-      .replace(/^(?:(?:export|local|declare|readonly|typeset)\s+)?\w+=(?=\$\(|`)/, '') // x=$(supabase …): die Zuweisung ist keine Variable mit Wert, das Programm steht in der Ersetzung
-      .replace(/^(\w+=\S*\s+)+/, '')
+    s = (zuweisung(s) ?? s) // NAME=Wert (auch NAME="$(…)", export/local/declare davor) ist keine Hülle mit Programm; der Inhalt einer Ersetzung wird als eigener Befehl geprüft
       .replace(/^[({!`]+\s*|^\$\(\s*/, '')
       .replace(/^(time|call|then|do|else|elif|exec|env|nohup|command|builtin|sudo)\s+/i, '')
       .replace(/^(npx|npm\s+exec)\s+(--\s+)?/, '')
@@ -34,6 +32,62 @@ function kern(segment) {
   }
   s = s.replace(/\s*[)}]+$/, '')
   return s.replace(new RegExp(`^["']?(?:[^\\s"']*[\\\\/])?(${PROGRAMME})(?:\\.cmd|\\.exe|\\.ps1)?["']?(?=\\s|$)`, 'i'), (_m, name) => name.toLowerCase())
+}
+
+const hinter = (s, zeichen, von) => {
+  const j = s.indexOf(zeichen, von)
+  return j < 0 ? s.length : j + 1
+}
+
+// Abtaster für Befehlsersetzungen. modus: 'top' bis zum Ende, 'dq' bis zum schließenden ", 'sub' bis zur passenden ). Rückgabe: ende (Index hinter dem Abschluss), geschlossen und
+// subs (Innentexte der Ersetzungen $(…) und `…` dieser und tieferer Ebenen). Einfache Anführungszeichen schützen (außer in "…"), ein Backslash macht das nächste Zeichen wörtlich;
+// eine nicht geschlossene Ersetzung reicht bis zum Ende des Textes.
+function abtasten(s, start, modus) {
+  const subs = []
+  let i = start
+  let tiefe = 0
+  while (i < s.length) {
+    const c = s[i]
+    if (c === '\\') i += 2
+    else if (modus === 'dq' && c === '"') return { ende: i + 1, geschlossen: true, subs }
+    else if (modus !== 'dq' && c === "'") i = hinter(s, "'", i + 1)
+    else if (c === '"') {
+      const r = abtasten(s, i + 1, 'dq')
+      subs.push(...r.subs)
+      i = r.ende
+    } else if (c === '$' && s[i + 1] === '(') {
+      const r = abtasten(s, i + 2, 'sub')
+      subs.push(s.slice(i + 2, r.geschlossen ? r.ende - 1 : r.ende), ...r.subs)
+      i = r.ende
+    } else if (c === '`') {
+      const j = s.indexOf('`', i + 1)
+      subs.push(s.slice(i + 1, j < 0 ? s.length : j))
+      i = j < 0 ? s.length : j + 1
+    } else if (modus === 'sub' && c === '(') {
+      tiefe++
+      i++
+    } else if (modus === 'sub' && c === ')') {
+      if (tiefe === 0) return { ende: i + 1, geschlossen: true, subs }
+      tiefe--
+      i++
+    } else i++
+  }
+  return { ende: s.length, geschlossen: false, subs }
+}
+
+// Heredoc-Körper mit zitiertem Endwort bei `cat` (Commit-Nachrichten) sind Text: bis zur Endwort-Zeile entfernen, damit ihre Zeilen weder als Befehle noch als Ersetzungen gelten.
+const ohneHeredoc = (t) => t.replace(/((?:^|[\s($`])cat\b[^\n<]*<<-?[ \t]*(["'])(\w+)\2[^\n]*)\n[\s\S]*?\n[ \t]*\3[ \t]*(?=\n|$)/g, '$1')
+
+// Entfernt eine führende Zuweisung NAME=Wert (Wert: Wort, "…", '…', $(…) oder `…`) samt export/local/declare/readonly/typeset; null ohne Zuweisung.
+function zuweisung(s) {
+  const m = /^(?:(?:export|local|declare|readonly|typeset)\s+)?\w+=/.exec(s)
+  if (!m) return null
+  let i = m[0].length
+  if (s[i] === '$' && s[i + 1] === '(') i = abtasten(s, i + 2, 'sub').ende
+  else if (s[i] === '"') i = abtasten(s, i + 1, 'dq').ende
+  else if (s[i] === '`' || s[i] === "'") i = hinter(s, s[i], i + 1)
+  else while (i < s.length && !/\s/.test(s[i])) i++
+  return s.slice(i).trimStart()
 }
 
 // Inhalt von Anführungszeichen durch Unterstriche ersetzen (Länge bleibt gleich): Trennzeichen und Sperrwörter im Text zählen nicht.
@@ -79,12 +133,6 @@ function innentext(k) {
   return { texte: [aussen(rest), rest.trim(), grob(rest)] } // außen entquotet, unverändert (ein Pfad mit Leerzeichen in Anführungszeichen bleibt ein Wort), alles entquotet
 }
 
-// Befehlsersetzungen $(…) und `…` (außerhalb einfacher Anführungszeichen, auch in doppelten) sind eigene Befehle; ein Heredoc (`cat <<`) ist Text.
-function ersetzungen(roh) {
-  const ohneEinfache = roh.replace(/'[^']*'/g, "''")
-  return [...ohneEinfache.matchAll(/\$\(((?:[^()]|\([^()]*\))*)\)|`([^`]*)`/g)].map((m) => m[1] ?? m[2]).filter((t) => t && !/^\s*cat\s+<</.test(t))
-}
-
 // Wörter eines Befehls, Anführungszeichen als ein Wort (Pfade mit Leerzeichen).
 const woerter = (k) => [...k.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)].map((m) => m[1] ?? m[2] ?? m[3])
 
@@ -119,24 +167,30 @@ function loeschDirekt(k) {
   const r = ladeRegister()
   if (!r) return 'Das Lösch-Register (scripts/sys/loesch-register.json) oder package.json ist nicht lesbar; Aufruf sicherheitshalber verweigert.'
   // Nur das Skript zählt, das der Interpreter startet (erstes Wort mit Skript-Endung, Optionen samt Werten und Anführungszeichen übersprungen), nicht Wörter in den Argumenten.
+  // Vorgeladene Module (--import, -r, --require, --loader, auch mit =) werden ausgeführt und zählen deshalb ebenfalls; Wörter mit führendem Bindestrich sind nie das Ziel.
   const w = woerter(k).slice(1)
-  const ziel = norm(w.find((x, i) => /\.(mjs|cjs|js|mts|ts)$/i.test(x) && !/^(-r|--require|--import|--loader|--experimental-loader|--env-file|-C|--conditions)$/.test(w[i - 1] ?? '')) ?? '')
-  if (interpreter && r.skripte.some((p) => ziel.endsWith(p) || (p.endsWith('.mjs') && ziel === p.split('/').pop()))) return 'Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).'
+  const VORLADEN = /^(-r|--require|--import|--loader|--experimental-loader)$/
+  const vorgeladen = w.flatMap((x, i) => (VORLADEN.test(w[i - 1] ?? '') ? [x] : /^--(require|import|loader|experimental-loader)=/.test(x) ? [x.slice(x.indexOf('=') + 1)] : []))
+  const ziel = w.find((x, i) => !x.startsWith('-') && /\.(mjs|cjs|js|mts|ts)$/i.test(x) && !/^(-r|--require|--import|--loader|--experimental-loader|--env-file|-C|--conditions)$/.test(w[i - 1] ?? ''))
+  if (interpreter && [ziel ?? '', ...vorgeladen].map(norm).some((z) => r.skripte.some((p) => z.endsWith(p) || (p.endsWith('.mjs') && z === p.split('/').pop())))) return 'Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).'
   if (npmRun && r.aliase.includes(npmRun[1])) return `\`npm run ${npmRun[1]}\` startet ein Lösch-Skript: nur über \`npm run loesch -- <skript.mjs>\` (Lösch-Gate mit Fable-Freigabe).`
   return null
 }
 
-export function entscheideBefehl(befehl, tiefe = 0) {
+export function entscheideBefehl(roherBefehl, tiefe = 0) {
   if (tiefe > 4) return 'Shell-Verschachtelung tiefer als 4: nicht prüfbar.'
+  const befehl = ohneHeredoc(roherBefehl)
+  // Befehlsersetzungen $(…) und `…` (auch in doppelten Anführungszeichen, beliebig geschachtelt) sind eigene Befehle.
+  for (const inner of abtasten(befehl, 0, 'top').subs) {
+    if (!inner.trim()) continue
+    const g = entscheideBefehl(inner, tiefe + 1)
+    if (g) return g
+  }
   for (const { roh, kahl, trenner } of segmente(befehl)) {
     const seg = roh.trim()
     if (!seg) continue
     const k = kern(seg)
     const kk = kern(kahl.trim())
-    for (const inner of ersetzungen(roh)) {
-      const g = entscheideBefehl(inner, tiefe + 1)
-      if (g) return g
-    }
     if (/^(vitest|playwright\s+test)\b/.test(k) || /^npm\s+(t|tst|test)(\s|$)/.test(k) || /^npm\s+(?:run|run-script|rum|urn)\s+(check|test|test:\S+|shots(:all)?)(\s|$)/.test(k)) {
       return 'Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.'
     }
