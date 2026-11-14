@@ -1,125 +1,55 @@
 # MoveNow
 
-## Arbeitssystem
-- Beschluss von Beks, 2026-11-14: Alle Sessions in diesem Repo arbeiten nach `docs/SYSTEM_VORSCHLAG.md` (Kennung sys1-1411-a). Was ein Skript prüfen kann, prüft ein Skript; Text bleibt nur, wo Urteil nötig ist. Ein Lauf, der nicht über das Start-Programm lief, zählt nicht.
-- Umstellung in Schritten u1 bis u3 (Plan: Abschnitt 6 dort, Stand: `docs/AUTOPILOT.md`, „WEITER MIT“). u1 (Gates und Hooks) ist gebaut: `scripts/sys/`, `.claude/hooks/`, `.githooks/pre-push`; Einrichtung durch Beks: `docs/BEKS_EINRICHTUNG.md`.
-- **Eine Session pro Arbeitsordner.** Ein zweiter Auftrag wartet, bis die laufende Session ihren Commit gemacht hat. Parallel nur mit eigenem Worktree und nur wie im Vorschlag (Abschnitt 3 h): eine R3-Session neben einer R0/R1-Session ohne Datenbank, vor dem Merge Rebase und `npm run t -- check`.
-- Tests: `npm run t -- check|e2e|rls|shots|build|<testdatei>`. Das Programm schreibt das Log mit Hash, Sauber-Angabe, Befehl und echtem EXIT selbst (nur neu anlegen) und liefert Fehlerzeilen. Der Guard-Hook sperrt direkte Aufrufe von `npm run check`, `vitest`, `playwright test`, `supabase db push` und Ähnliches. Datenbank: `npm run db:antrag`, dann Freigabe durch `advisor-report`, dann `npm run db:push`. Abschluss: `npm run bericht`, `npm run fertig`.
-- **Übergangsregel:** Bis u2 (Doku-Umbau) gelten alle bisherigen Textregeln dieser Datei unverändert weiter (Arbeits-Loop, Sessions und Modelle, Nachweis, Berichtspunkte, Rückfragen). Die Skripte kommen hinzu und ersetzen keine Regel, bevor u2 sie ausdrücklich streicht. Die bisherigen `ask`-Regeln für commit, merge, push, rm und dotenv bleiben bis dahin. Die Regel „Exit-Code per `echo` ins Log“ gilt für Testläufe als erfüllt durch das Log von `npm run t` (EXIT-Zeile vom Programm geschrieben); `test-runner` startet Tests über `npm run t`.
+Vermittlungsplattform, Start Wien: Möbeltransport, Umzug, Entrümpelung, Montage/Demontage, Transportermiete. Kunden bekommen einen Richtpreis und senden eine verbindliche Buchungsanfrage; der Partner nimmt in der App an (`docs/S9_KONZEPT.md`). MoveNow behält eine gestaffelte Provision vom Gesamtpreis (inkl. 20 % USt.) als Plattformgebühr ein. Keine Zusatzgebühr für Kunden, und Kunden sehen die Gebühr nirgends.
 
-Vermittlungsplattform, Start Wien: Möbeltransport, Umzug, Entrümpelung, Montage/Demontage, Transportermiete. Kunden bekommen einen Richtpreis und senden eine verbindliche Buchungsanfrage; der Partner nimmt in der App an (`docs/S9_KONZEPT.md`). MoveNow behält eine gestaffelte Provision vom Gesamtpreis (inkl. 20 % USt.) als Plattformgebühr ein (Staffel siehe „Geld“). Keine Zusatzgebühr für Kunden, und Kunden sehen die Gebühr nirgends.
+Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „Später“ in `docs/ROADMAP.md` steht (z. B. Admin-Oberfläche, Zahlung, Miete), baust du nur nach meiner Freigabe.
 
-Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „Später" in `docs/ROADMAP.md` steht (z. B. Partner-Portal, Admin-Oberfläche, Zahlung), baust du nur nach meiner Freigabe.
+## Arbeitssystem (Beschluss Beks 2026-11-14, `docs/SYSTEM_VORSCHLAG.md`)
+- Was ein Skript prüfen kann, prüft ein Skript; Text bleibt nur, wo Urteil nötig ist. Ein Lauf, der nicht über das Start-Programm lief, zählt nicht.
+- Jeder Schritt läuft über `/schritt <name>` (`.claude/skills/schritt/SKILL.md`): Ablauf, Risikostufen R0 bis R3, Pflichten, Agents. Ohne `/schritt` nur Fragen beantworten und lesen.
+- Eine Session = ein Schritt = ein Branch. Sessions startet nur Beks. Nach `npm run fertig`: Bericht, Stopp.
+- Eine Session pro Arbeitsordner. Parallel nur mit eigenem Worktree: eine R3-Session neben einer R0/R1-Session ohne Datenbank, vor dem Merge Rebase und `npm run t -- check`.
+- Modell der Hauptsession: Sonnet 5.5 (Effort hoch bei R3, sonst mittel). Ein anderes Modell nur auf mein Wort; läufst du mit einem anderen, sag es im ersten Satz.
+- Fragen an mich stehen in `docs/BEKS.md`, nicht verstreut. Ändert ein Schritt eine frühere Entscheidung von mir, braucht er mein wörtliches Ja im Prompt, sonst hältst du an.
+- Gates (`scripts/sys/**`, `.claude/**`, `.githooks/**`, `package.json`, diese Datei) nie abschwächen. Blockiert eines zu Unrecht: anhalten, berichten. Rettungswege: `docs/BEKS_EINRICHTUNG.md`.
+- Übergang: Die `ask`-Regeln für commit, merge, push, rm und dotenv bleiben bis nach dem Probe-Schritt.
 
 ## Quellen und Rangfolge
 - **Optik:** `docs/reference/design/` (Screens, HTML-Quelltext, `tokens.json`, `README.md`). Verbindlich.
 - **Design-Sprache, Inhalt, Ablauf:** `docs/DESIGN_BRIEF.md`. Der Kopf der Datei sagt, welche Abschnitte gelten.
 - **Preise:** Code im Prototyp `docs/reference/MoveNow_Prototyp.html`. Optik und Seitenstruktur des Prototyps sind nicht maßgeblich.
-- **Plan:** `docs/ROADMAP.md` · Architektur: `docs/ARCHITECTURE.md` · Stand: `docs/PROGRESS.md` · Offenes: `docs/OPEN_ISSUES.md`
-- Bei Widerspruch gilt diese Datei. Danach: für die Optik die Design-Referenz, für Inhalt und Ablauf DESIGN_BRIEF, für Preise der Prototyp-Code (Abweichungen in `docs/PRICING.md` melden).
-- Große Referenzdateien nie komplett in den Hauptkontext laden. `Explore` liefert die nötigen Stellen.
+- **Stand:** `docs/STAND.md` (wo wir stehen, nächster Schritt) · Plan: `docs/ROADMAP.md` · Start: `docs/GOLIVE.md`
+- **Offenes:** `docs/OFFEN.md` · Fragen an Beks: `docs/BEKS.md` · Entscheidungen: `docs/ENTSCHEIDUNGEN.md` (nur bei Bedarf)
+- **Nachschlagen, nur abschnittsweise über `Explore`:** `docs/S9_KONZEPT.md`, `docs/ARCHITECTURE.md`, `docs/PRICING.md`
+- `docs/archiv/` liest niemand mehr. Verweise im Code auf `docs/OPEN_ISSUES.md`, `PROGRESS.md` oder `AUTOPILOT.md` meinen die Dateien dort.
+- Bei Widerspruch gilt diese Datei mit den Regeln in `.claude/rules/`. Danach: für die Optik die Design-Referenz, für Inhalt und Ablauf DESIGN_BRIEF, für Preise der Prototyp-Code (Abweichungen in `docs/PRICING.md` melden).
+- Große Referenzdateien nie komplett in den Hauptkontext laden.
+
+## Feste Regeln (`.claude/rules/`, laden bei passenden Dateien; für Pläne und Abnahmen selbst lesen)
+- `geld.md`: Integer-Cent, Server rechnet, Provisionsstaffel, Gebühr für Kunden unsichtbar und unlesbar.
+- `daten.md`: RLS, Rollen, Schlüssel, `.env*`, Datenbank-Weg mit Freigabe.
+- `karten.md`: Routing nur über `route`, Einwilligung, Attribution.
+- `ui.md`: Sprache, Beträge, Icons, Barrierefreiheit, Bildsicht.
+- `tests.md`: Start-Programm, Nachweise, Rot-Beweis.
 
 ## Stack
 - Vite + React + TypeScript strict, React Router mit Seitenübergängen im iOS-Stil
-- Tailwind CSS mit Theme aus `tokens.json` (als CSS-Variablen, Light und Dark), Motion für Federanimationen
-- Mobile-first PWA, später per Capacitor in den App Store. Nichts bauen, was nativ nicht funktioniert.
-- Supabase (EU-Region): Postgres + PostGIS, Auth (E-Mail-Magic-Link wie im Design, dieselbe Mail enthält zusätzlich einen Code als Ausweichweg), Storage, Edge Functions. Die App ist eine reine Client-App, alle Geschäftslogik mit Vertrauensbedarf läuft in Supabase.
-- Vitest (Unit, Integration), Playwright (E2E, Screenshots). Die App wird als statischer Build ausgeliefert; den Hosting-Anbieter lege ich vor dem Launch fest.
+- Tailwind CSS mit Theme aus `tokens.json` (CSS-Variablen, Light und Dark), Motion für Federanimationen
+- Mobile-first PWA, später per Capacitor in den App Store
+- Supabase (EU-Region): Postgres + PostGIS, Auth (E-Mail-Magic-Link, dieselbe Mail enthält zusätzlich einen Code), Storage, Edge Functions. Reine Client-App; alle Geschäftslogik mit Vertrauensbedarf läuft in Supabase.
+- Vitest (Unit, Integration), Playwright (E2E, Screenshots). Statischer Build; den Hosting-Anbieter lege ich vor dem Launch fest.
 
 ## Befehle
 - `npm run dev`, `npm run build`
-- `npm run check`: Lint, Typecheck, Unit-Tests
-- `npm run test:e2e`: Playwright
-- `npm run shots`: Full-Page-Screenshots 390×844 mit Faktor 2 (gleiche Breite wie die Referenz), Light und Dark, nach `tmp/shots/`
-- `npm run shots:all`: zusätzlich 430×932, 768×1024, 1280×800, je Light und Dark
-- `npm run db:types`, `npm run db:push`: Supabase-Typen bzw. Migrationen (laufen über dotenv-cli)
-- `npm run env:check`: meldet nur, welche Variablennamen gesetzt sind
-- `npm run svg:extract`: alle SVGs aus `docs/reference/design/html/` byte-genau nach `tmp/svg/`, Fundstellen in `tmp/svg/index.tsv`
-- Neue Migration: `npx supabase migration new <name>`
+- `npm run start-schritt -- <name>`, `npm run bericht`, `npm run fertig`
+- `npm run t -- check|e2e|rls|shots|shots:all|build|<testdatei>` (einziger Weg für Tests; `shots` = 390×844, Faktor 2, Light und Dark, nach `tmp/shots/`; `shots:all` zusätzlich 430×932, 768×1024, 1280×800)
+- `npm run db:antrag`, `npm run db:push`, `npm run db:types`; neue Migration: `npx supabase migration new <name>`
+- `npm run loesch -- <skript.mjs>` (Lösch- und Aufräumskripte, nur mit Freigabe)
+- `npm run env:check` (nur Variablennamen), `npm run scan:proof`, `npm run svg:extract` (SVGs byte-genau nach `tmp/svg/`)
 
-## Sessions und Modelle
-- Eine Session = ein Abschnitt aus `docs/ROADMAP.md`. Am Ende: Checks grün, ROADMAP abhaken, 3–5 Zeilen in `docs/PROGRESS.md`, Commit, Push (falls ein Remote gesetzt ist), Bericht, Stopp.
-- Ein Commit beendet die Session. Danach keine weitere Aufgabe beginnen; die nächste Session starte ich.
-- Eine Session startet keine weiteren Sessions; neue Sessions startet nur Beks.
-- Ab etwa 150.000 Tokens Kontext: Zwischenstand committen, in PROGRESS.md festhalten, wo es weitergeht, Bescheid geben, Stopp. Ich setze die Session in einer neuen Session fort.
-- Zwischenstände, die nicht alle Tests bestehen, auf einen eigenen Branch, nicht auf main.
-- Hauptsession: Sonnet 5.5, Effort medium (beides in `.claude/settings.json`). Opus 5.5 nur auf meine ausdrückliche Anfrage (Architektur, harte Fehlersuche). Effort high nur, wo die ROADMAP-Überschrift es vermerkt, sonst nur bei harten Problemen.
-- Zu Beginn prüfen, ob du mit dem vorgesehenen Modell läufst (S1: Opus 5.5, sonst Sonnet 5.5). Wenn nicht: sag es mir und warte. Vermerkt die ROADMAP-Überschrift „Effort high", erinnere mich im ersten Satz daran.
-- Mechanische Arbeit gibst du an Haiku 5.5 (`mech-editor`), Prüfläufe und Screenshots an Haiku 5.5 (`test-runner`), Reviews an Sonnet 5.5 (`reviewer`). Der Hauptkontext bleibt klein.
-- Subagents aus `.claude/agents/`, immer die benannten, nie general-purpose:
-  - `Explore` (Haiku): Suche, liefert Pfade und Zeilen
-  - `test-runner` (Haiku): `check`, `test:e2e`, `shots`, `shots:all`, `build`. Diese Befehle laufen nie im Hauptkontext.
-  - `mech-editor` (Haiku): mechanische Arbeit nach exakter Vorgabe (SVG-Farben auf Tokens umstellen, Texte, Umbenennungen, Formatierung, Fixtures, Doku)
-  - `reviewer` (Sonnet): prüft Diff und Screenshots gegen Spec, diese Regeln und die Referenz-Screens
-  - `advisor` (Fable 5.2): der Kopf. Entscheidet Architektur-, Geld- und Sicherheitsfragen und nimmt Geld- und Sicherheitslogik vor dem Commit ab, schreibt keinen Code
-- Den `advisor` fragst du gebündelt, nicht je Einzelentscheidung:
-  - Plan-Freigabe zu Beginn jeder Session, die Datenmodell, Migrationen, RLS und Rollen, Preis- und Gebührenlogik, Edge Functions mit Vertrauensbedarf oder Auth berührt: alle Entscheidungen dazu in einer Frage.
-  - Abnahme vor dem Commit in S2, S8a und S9: nur die Dateien mit Geld- oder Sicherheitslogik, nicht der ganze Diff.
-  - Wenn ein Fehler nach 2 Runden rot bleibt oder unterwegs eine solche Entscheidung auftaucht, die der Plan nicht abdeckt.
-- Gib ihm eine kurze Frage mit den betroffenen Dateien, nicht die ganze Session. Seine Entscheidung gilt; weichst du ab, sag mir warum. Für UI, Texte und Routinearbeit fragst du ihn nicht.
-  - `advisor-report` (Fable 5.2): derselbe Berater (Geld, Sicherheit, Schema), aber mit Write; schreibt ausschließlich seinen Bericht nach `tmp/proof/` und ändert nie andere Dateien. Immer, wenn der Berater eine Berichtsdatei liefern soll, nimmst du ihn; `general-purpose` bleibt verboten.
-- „advisor" meint immer diesen Subagent (Agent-Tool). Ein eingebautes `advisor`-Tool ohne Parameter, das den ganzen Verlauf weitergibt, benutzt du nicht; steht es in deiner Tool-Liste, sag es mir zu Beginn.
-- Jede Delegation hat eine schriftliche Spec: Ziel, Dateien, Akzeptanzkriterien, auszuführende Tests, passende Referenz-Screens.
-- Wenige große Delegationen statt vieler kleiner. Nur ein editierender Agent zur selben Zeit.
-
-## Arbeits-Loop
-bauen → `test-runner` → bei UI `shots` + `reviewer` (Vergleich mit `docs/reference/design/screens/`) → fixen. Wiederholen, bis alles grün ist, höchstens 5 Runden je Screen bzw. Aufgabe. Was danach rot bleibt: in `docs/OPEN_ISSUES.md` mit Begründung, dann weiter oder Blocker einmal berichten.
-- In jeder Runde: `shots` nur für die betroffenen Screens bei 390 px, 430 px und Desktop (1280 px), je Light und Dark. Der `reviewer` prüft dann im Modus „Runde": nur die UI und nur die geänderten Screens.
-- Screenshots beurteilt nur der `reviewer` (öffnet Bilder nachweislich mit Read, geprüft 2026-11-01 an einem Bild mit nicht erratbaren Inhalten). Der `test-runner` nimmt auf und meldet Exit-Codes, beurteilt keine Bilder (er lehnte es in S8b-Abschluss ab). Jede Zeile einer Shot-Tabelle enthält eine Beobachtung, die nur mit Bildsicht möglich ist (Farbe, Position oder Text eines Elements); Standardsätze wie „kein Überlauf“ allein zählen nicht. Jede Zeile braucht ihre eigene Bildbeobachtung; „wie Light“ oder „wie 390 px“ zählt nicht. Fehlt das, gilt die Zeile als ungeprüft. Maße (Breiten, Abstände, Überlauf) misst du nur per Playwright `boundingBox()` oder `getComputedStyle`, nie aus dem Bild geschätzt.
-- `shots:all` höchstens einmal am Ende einer UI-Session und nur bei mehr als 3 betroffenen Screens; sonst genügen die Shots der Runden. Der `reviewer` prüft im Modus „Abnahme" Spec, Sicherheit, Geld, Tests und die vorhandenen Größen auf Überlauf, Abschneiden und Safe Areas. Sessions ohne UI bekommen nur die Abnahme.
-- Jede UI-Session: Konsole ohne Fehler, Tastaturbedienung des Hauptflows als E2E-Test.
-- Nachweis sind Exit-Codes und Report-Dateien in `tmp/`, nie eine Zusammenfassung allein.
-- Abschlussberichte jedes Schritts nach `docs/proof/<schritt>/`, vorher Secret-Scan (`npm run scan:proof`, Exit 0 nötig); `tmp/proof/` bleibt Arbeitsordner.
-- Ein Rot-Beweis zählt nur, wenn die fehlschlagende Prüfung die Wirkung der gelockerten Sperre misst (Ist-Wert: Zeilen sichtbar, Aufruf erfolgreich, Wert geändert), nicht nur, dass ein Schritt fehlschlägt.
-- Jeder Testlauf schreibt seinen Exit-Code ins Log (Bash: `; echo EXIT=$?`, PowerShell: `; "EXIT=$LASTEXITCODE"`) und nennt ihn im Bericht.
-- Nachweisdateien werden nach dem Schreiben nie verändert; Hinweise (z. B. warum eine Datei fehlt oder ein Scanner-Fehlalarm vorlag) gehören in `docs/PROGRESS.md`, keine README in `docs/proof/`.
-
-## Ausgaben
-- Befehlsausgaben nur bei Fehlern im Wortlaut zeigen, sonst nur „bestanden".
-- Logs nie komplett lesen, nur nach Fehlern greppen.
-- Dateien per Edit ändern statt komplett neu ausgeben.
-
-## Feste Regeln
-
-### Werkzeuge
+## Werkzeuge und Ausgaben
 - Kein Python über stdin-Heredoc (`python3 - <<EOF`), das hängt unter Windows. Stattdessen Node-Skript oder temporäre Datei unter `tmp/`.
-- Doku- und Markdown-Dateien nur mit den Werkzeugen Write und Edit ändern. Keine Skripte dafür (node, python, sed, PowerShell, Shell-Umleitungen), auch nicht in tmp/. Ausnahme: Nachweisdateien werden byte-genau mit `cp` nach `docs/proof/<schritt>/` kopiert.
-
-### Geld
-- Beträge als Integer-Cent in DB und API. Rechnen wie der Prototyp, erst am Ende auf Cent runden (wie `cents()` dort).
-- Den gespeicherten Preis berechnet der Server (Edge Function `quote`) aus `price_config`. Die App nutzt dasselbe Modul (`@pricing`) nur für die Vorschau. Gespeichert wird ein Snapshot mit `price_version`.
-- Plattformgebühr (Provisionsstaffel, s9p-1): progressiv auf den Brutto-Gesamtpreis in Integer-Cent, Provision inkl. USt.: bis 50.000 ct 12 %, 50.001 bis 100.000 ct 10 %, darüber 7 % (Version 2); die Stufenanteile werden summiert und einmal kaufmännisch gerundet: fee = round(Σ Stufenanteil); netto = round(fee / 1,2); USt. = fee − netto; Partner = total − fee. Version 1 (15 % flach) gilt nur für Bestandszeilen. Nachtrag = Provision(Gesamt nach) − Provision(Gesamt vor); Pauschale: Staffel auf die Pauschale allein. Die Version wird beim Angebot bzw. bei der Annahme gespeichert, der Auftrag erbt sie.
-- Kunden können die Gebühr weder sehen noch per API lesen. Die Gebührenaufteilung liegt im Journal `commission_entries` (entsteht bei der Annahme, nur anfügen), die Staffel in den eigenen Tabellen `fee_schedules` und `fee_schedule_tiers`, nicht in der öffentlich lesbaren `price_config`. Journal lesen nur die eigene Partner-Firma (mit aal2) und admin (mit aal2); die Staffel lesen alle Partner-Konten unabhängig vom Status (P2B-Transparenz) und admin; Kunden ohne Partner-Konto nichts. Beides per RLS-Test abgesichert.
-- Die Gebührenfunktion bekommt die Stufen als Parameter. Im App-Code steht kein fester Satz; „Du erhältst“ liefert der Server (`payout_preview`). Kundenpreise brauchen die Staffel nicht, weil die Gebühr im Gesamtpreis enthalten ist.
-- Angezeigt wird die Gebühr nur in der Vermieter-Abrechnung und später auf der Rechnung (und in der Auszahlungsübersicht des Partner-Portals, sobald es freigegeben ist). Die `feeHTML`-Hinweise des Prototyps werden nicht übernommen.
-- Kaution und Kraftstoff sind nie Teil der Berechnungsbasis.
-- Keine erfundenen Preise, Partner, Bewertungen oder Verfügbarkeiten. Beispieldaten aus der Design-Referenz kommen nicht in die App.
-
-### Daten und Sicherheit
-- RLS auf jeder Tabelle. Kein `using (true)` auf personenbezogenen Daten. Views mit `security_invoker = true`. SECURITY-DEFINER-Funktionen mit festem `search_path`.
-- Skripte, die Sperren lockern oder Daten löschen, brechen ab, wenn die Ref nicht die Dev-Ref ist (`scripts/dev-guard.mjs` als erster Import).
-- Admin-Funktionen mit p_actor laufen nur über service_role aus Skripten; p_actor darf nie aus Anfragedaten stammen. Eine Admin-Function für Nutzer-JWTs muss aal2 serverseitig prüfen und p_actor aus dem geprüften Token nehmen.
-- Neue Supabase-Schlüssel (publishable / secret). Der Secret-Key nur in Edge Functions, nie in der App, nie in Logs. In der App nur Variablen mit `NEXT_PUBLIC_`-Präfix (Vite `envPrefix`), und davon nur URL und Publishable Key.
-- `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über dotenv-cli an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
-- Annahme, Angebot, Nachtrag und Storno laufen über Funktionen mit festem Akteur je Übergang (`docs/S9_KONZEPT.md`, Abschnitt 4.4). Kein direktes UPDATE auf Status.
-- Partner-Portal (Phase 1, S9a ff.): Partner sehen vor Annahme ihres Angebots nur PLZ/Bezirk, Umfang und Fotos. Keine Hausnummer, kein Name, keine Kontaktdaten.
-- Fotos: privater Bucket, signierte URLs, höchstens 8 Bilder à 10 MB, EXIF-Daten (Standort) vor dem Upload entfernen.
-- Seed-Daten nur in `supabase/seed.sql`, nie in Migrationen.
-- Integrationstests gegen Supabase laufen sequenziell und gepaced (Auth-Rate-Limits).
-- Keine Google Fonts oder andere Drittanbieter-Fonts vom CDN (DSGVO). Inter als Fallback, falls nötig, selbst hosten.
-
-### Karten
-- Geocoding und Routing nur über die Edge Function `route` (Adapter, Anbieter austauschbar, Ergebnisse gecacht, Rate-Limit). Keine direkten Aufrufe öffentlicher OSM-Demo-Dienste aus der App.
-- Wiener Stadtgrenze als PostGIS-Geometrie in der DB. Kilometer außerhalb Wiens per Geometrie-Schnitt.
-- Einwilligung vor der Adressübermittlung und Bestätigung der gefundenen Adresse wie im Prototyp. Keine geschätzten Kilometer ohne berechnete Route.
-- OpenStreetMap-Attribution sichtbar.
-
-### UI
-- Deutsch (de-AT), per Du, kurz und ruhig. Beträge `de-AT` mit `tabular-nums`, formatiert nur über `formatEuro` (`src/lib/money.ts`, Ausgabe wie in der Referenz: „1.175,00 €“).
-- Beträge brechen nie um: Zahl und € bleiben in einer Zeile (`white-space: nowrap`), lange Beschreibungen umbrechen stattdessen. Die Referenz zeigt solche Umbrüche in 05 („354,00 €") und 14 („689,61 €"); diesen Fehler nicht übernehmen.
-- Kein Gerätemockup, keine Intro-Spalte, keine „Prototyp"/„Konzeptdemo"-Texte.
-- Tab-Bar: Start · Aufträge · Profil (Phase 1; „Miete“ kommt erst in Phase 2 zurück). In Buchungsflows ausgeblendet, dort die fixierte Aktionsleiste.
-- Icons und Illustrationen aus der Referenz als SVG-Komponenten, Pfade unverändert: Pfaddaten tippt kein Modell ab, sie werden aus `tmp/svg/` kopiert (`npm run svg:extract`). Icons über `currentColor` und Tokens. Illustrationen in den natürlichen Materialfarben der Palette `illustration` aus `tokens.json`, Teal nur als Marken-Akzent, Dark-Varianten aus `02_Start_Dark.html`. Keine Emojis, keine Rasterbilder, wo Vektor reicht.
-- Kein Hinweis auf „15 %", „Plattformgebühr", „Provision" oder „MoveNow-Gebühr" in Kunden-Screens.
-- Für Zustände ohne Referenz-Screen: im selben Stil ergänzen, `frontend-design`-Skill nutzen, falls installiert.
-- Touch-Ziele ≥ 44 px, Fokus sichtbar, jedes Feld mit Label, Kontrast AA, `prefers-reduced-motion` (dann nur Fades).
+- `.env*` (außer `.env.example`) nie lesen, ausgeben oder committen, auch nicht über Skripte, `node -e` oder andere Umwege. Werte gehen nur über die npm-Skripte (dotenv-cli) an Befehle. Ein blockierter Tool-Aufruf ist endgültig.
+- Doku- und Markdown-Dateien nur mit Write und Edit ändern, nie per Skript oder Shell-Umleitung. Verschieben mit `git mv` ist erlaubt, außer in `docs/proof/` und `docs/freigaben/`.
+- Befehlsausgaben nur bei Fehlern im Wortlaut zeigen, sonst nur „bestanden“. Logs nie komplett lesen, nur nach Fehlern greppen.
+- Dateien per Edit ändern statt komplett neu ausgeben.
