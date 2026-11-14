@@ -2,8 +2,19 @@
 // niemand schreibt (auch service_role nicht), Zeilen sind unveränderlich. Die Vorschau payout_preview rechnet der Server (Firmenmitglied, aal2).
 // Rollback-Proben mit aal als Claim.
 import { describe, expect, it } from 'vitest'
+import { tierFee } from '@pricing'
 import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, STATUSES } from '../support/partner.ts'
+
+// Erwartungswerte der Vorgabe (Basis, Provision) je Version; Rundung: .4 ab, genau .5 und .9 auf
+const V2_VEC = [
+  [0, 0], [30000, 3600], [50000, 6000], [50001, 6000], [68961, 7896], [76041, 8604], [80000, 9000], [100000, 11000], [100001, 11000],
+  [150000, 14500], [300000, 25000], [6900, 828], [50004, 6000], [50005, 6001], [50009, 6001], [100050, 11004],
+] as const
+const V1_VEC = [[68961, 10344], [7080, 1062], [76041, 11406], [6900, 1035], [10, 2], [68970, 10346]] as const
+// Kreuztest SQL gegen @pricing: Grenzen ±1 und 20 feste Pseudo-Zufallsbeträge (lineare Kongruenz, reproduzierbar)
+const CROSS = [49999, 50000, 50001, 99999, 100000, 100001, 1, 2, ...Array.from({ length: 20 }, (_, i) => 1 + ((i + 1) * 7919 * 104729) % 400000)]
 
 const NO_TABLE = (t: string) => `42501: permission denied for table ${t}`
 const N = (t: string) => `=(select count(*) from public.${t})`
@@ -48,16 +59,10 @@ describe('Provisionsstaffel: Lesen, Schreibsperre, Vorschau', () => {
       { name: 'Stufen v2', sql: "=(select string_agg(coalesce(up_to_cents::text, 'offen') || ':' || rate_bp, ',' order by tier) from public.fee_schedule_tiers where version = 2)" },
       { name: 'Geltende Version', sql: '=private.current_fee_schedule()' },
       // fee_cents: Summe der Stufenanteile, einmal half-up
-      ...(
-        [
-          [0, 0],
-          [50000, 6000],
-          [100000, 11000],
-          [150000, 14500],
-          [68961, 7896],
-        ] as const
-      ).map(([base, fee]): Step => ({ name: `fee_cents v2 ${base}`, sql: `?private.fee_cents(2, ${base}) = ${fee}` })),
-      { name: 'fee_cents v1 68961', sql: '?private.fee_cents(1, 68961) = 10344' },
+      ...V2_VEC.map(([base, fee]): Step => ({ name: `fee_cents v2 ${base}`, sql: `?private.fee_cents(2, ${base}) = ${fee}` })),
+      ...V1_VEC.map(([base, fee]): Step => ({ name: `fee_cents v1 ${base}`, sql: `?private.fee_cents(1, ${base}) = ${fee}` })),
+      // Kreuztest (Fable M3): die bindende SQL-Rechnung und tierFee aus @pricing liefern für Grenzen ±1 und feste Pseudo-Zufallsbeträge dasselbe
+      ...CROSS.map((x): Step => ({ name: `Vorschau ${x}`, sql: `=public.payout_preview(${x})`, ...auth(U.active) })),
       { name: 'fee_cents unbekannte Version', sql: 'perform private.fee_cents(99, 100)' },
       { name: 'fee_cents negativ', sql: 'perform private.fee_cents(2, -1)' },
       // Vorschau: nur Firmenmitglieder mit aal2, der Server rechnet
@@ -96,8 +101,10 @@ describe('Provisionsstaffel: Lesen, Schreibsperre, Vorschau', () => {
     expect(r['Stufen v1']).toBe('= offen:1500')
     expect(r['Stufen v2']).toBe('= 50000:1200,100000:1000,offen:700')
     expect(r['Geltende Version']).toBe('= 2')
-    for (const base of [0, 50000, 100000, 150000, 68961]) expect(r[`fee_cents v2 ${base}`], `v2 ${base}`).toBe('ok')
-    expect(r['fee_cents v1 68961']).toBe('ok')
+    for (const [base] of V2_VEC) expect(r[`fee_cents v2 ${base}`], `v2 ${base}`).toBe('ok')
+    for (const [base] of V1_VEC) expect(r[`fee_cents v1 ${base}`], `v1 ${base}`).toBe('ok')
+    const tiers = currentFee().tiers
+    for (const x of CROSS) expect(r[`Vorschau ${x}`], `Vorschau ${x}`).toBe(`= ${x - tierFee(x, tiers)}`)
     expect(r['fee_cents unbekannte Version']).toBe('P0001: setting_missing')
     expect(r['fee_cents negativ']).toBe('P0001: amount_mismatch')
     for (const s of STATUSES) expect(r[`Vorschau ${s} aal2`], `Vorschau ${s}`).toBe('= 135500')

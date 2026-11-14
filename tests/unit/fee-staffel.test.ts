@@ -26,6 +26,15 @@ describe('Provisionsstaffel Version 2 (12/10/7, progressiv, einmal gerundet)', (
   ])('Basis %i ct → Provision %i ct', (base, fee) => {
     expect(tierFee(base, V2)).toBe(fee)
   })
+  // Rundung: kaufmännisch, genau ein halber Cent rundet auf (Fable M1); Bruchteile .4 und .9 sichern „nicht abschneiden“
+  it.each([
+    [50004, 6000], // 6000,4
+    [50005, 6001], // 6000,5
+    [50009, 6001], // 6000,9
+    [100050, 11004], // 11003,5 (halber Cent in Stufe 3)
+  ])('Rundung: Basis %i ct → Provision %i ct', (base, fee) => {
+    expect(tierFee(base, V2)).toBe(fee)
+  })
 })
 
 describe('Version 1 (15 % flach) liefert die alten Werte', () => {
@@ -33,6 +42,9 @@ describe('Version 1 (15 % flach) liefert die alten Werte', () => {
     [68961, 10344],
     [7080, 1062],
     [6900, 1035],
+    [76041, 11406],
+    [10, 2], // 1,5
+    [68970, 10346], // 10345,5
   ])('Basis %i ct → Provision %i ct', (base, fee) => {
     expect(tierFee(base, V1)).toBe(fee)
   })
@@ -47,6 +59,10 @@ describe('Aufteilung und Nachtrag', () => {
     const rates = { tiers: V2, vatRate: VAT }
     const d = splitChange(76041, rates, splitFee(68961, rates))
     expect([d.totalCents, d.feeCents, d.payoutCents]).toEqual([7080, 708, 6372])
+  })
+  it('Netto halber Cent rundet auf: Basis 25 → Provision 3, Netto 3, USt. 0', () => {
+    const s = splitFee(25, { tiers: V2, vatRate: VAT })
+    expect([s.feeCents, s.feeNetCents, s.feeVatCents]).toEqual([3, 3, 0])
   })
   it('Pauschale 6900 allein: Provision 828, Auszahlung 6072', () => {
     const s = splitFee(6900, { tiers: V2, vatRate: VAT })

@@ -217,6 +217,7 @@ describe('Provisionsjournal', () => {
     const R = { r3: newId(), r4: newId(), r5: newId(), r6: newId(), rn: newId() }
     const diff = splitChange(80000, { tiers: RT.tiers, vatRate: RT.vr }, s) // Provision(Gesamt nach) − Provision(Gesamt vor), nicht Staffel auf die Differenz
     const same = { vr: null, fsv: null, vrv: null } as const // leere Sätze: nur Gegenbuchungen dürfen sie weglassen
+    // Feste Werte gelten für Version 2 als geltende Version; bei Version 3 hier und in der Migration der neuen Version mit anpassen (Fable N8)
     expect([s.feeCents, diff.feeCents, diff.payoutCents]).toEqual([7896, 1104, 9935]) // Vorgabe v2: 68961 → 7896, 80000 → 9000, Differenz 1104 (nicht 12 % auf 11039 = 1325)
     const steps: Step[] = [
       { name: 'change mit leerem Satz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, ...same }) },

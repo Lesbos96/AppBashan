@@ -107,14 +107,12 @@ export async function loadListings(): Promise<Listing[]> {
 }
 
 // Auszahlung -----------------------------------------------------------------------------------------------------------------
-/** „Du erhältst“ in Cent laut Server (payout_preview: geltende Staffel, aal2, Firmenmitglied). Fehler oder ungültige Antwort: 
-ull (keine Auszahlung zeigen). */
+/** „Du erhältst“ in Cent laut Server (payout_preview: geltende Staffel, aal2, Firmenmitglied). Fehler oder ungültige Antwort: null (keine Auszahlung zeigen). */
 export async function payoutPreview(totalCents: number): Promise<number | null> {
   try {
     const { data, error } = await supabase.rpc('payout_preview', { p_total: totalCents })
-    if (error) return null
-    const v = Number(data)
-    return Number.isSafeInteger(v) && v >= 0 && v <= totalCents ? v : null
+    if (error || typeof data !== 'number') return null
+    return Number.isSafeInteger(data) && data >= 0 && data <= totalCents ? data : null
   } catch {
     return null
   }

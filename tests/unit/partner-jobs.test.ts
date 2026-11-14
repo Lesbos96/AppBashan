@@ -60,6 +60,8 @@ describe('payoutPreview (Auszahlung aus payout_preview, Fehler und ungültige An
     ['negativ', -1],
     ['Nachkommastellen', 1.5],
     ['Text', 'abc'],
+    ['null ohne Fehler', null],
+    ['leerer Text', ''],
   ])('ungültige Antwort (%s) ergibt null', async (_n, data) => {
     rpc.mockResolvedValue({ data, error: null })
     expect(await payoutPreview(5000)).toBeNull()

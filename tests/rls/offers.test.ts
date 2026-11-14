@@ -192,6 +192,54 @@ describe('Rechte und Unveränderlichkeit', () => {
   })
 })
 
+describe('Version des Angebots (s9p-1, Fable M2)', () => {
+  it('Angebot erbt die beim Senden geltende Version: nach einem Versionswechsel gilt für alte Angebote die alte, für neue die neue; Version unveränderlich', () => {
+    const [R, R2] = [newId(), newId()]
+    const V99: FeeTierLike[] = [{ upToCents: null, bp: 1000 }]
+    const sp99 = splitFee(150000, { tiers: V99, vatRate: r0.vr })
+    const confirmV = (req: string, key: string, sp: ReturnType<typeof split>, fsv: number) =>
+      `public.confirm_offer('${U.cust}', ${OFF(req, key)}, 150000, ${r0.vr}, ${sp.feeCents}, ${sp.feeNetCents}, ${sp.feeVatCents}, ${sp.payoutCents}, ${fsv}, ${r0.vrv})`
+    const today = "(now() at time zone 'Europe/Vienna')::date"
+    const setup = `${BASE('a', 'b', 'c')} ${request({ id: R })} ${request({ id: R2 })} ${dist(R)} ${dist(R2)}
+      select set_config('request.jwt.claims', '{"sub":"${U.pa}","role":"authenticated","aal":"aal2"}', true); set local role authenticated; select ${SO(U.pa, R, 150000)}; reset role;
+      select set_config('request.jwt.claims', '{"sub":"${U.pb}","role":"authenticated","aal":"aal2"}', true); set local role authenticated; select ${SO(U.pb, R, 160000)}; reset role;`
+    const steps: Step[] = [
+      named('Version gespeichert', { sql: `=(select fee_schedule_version from public.partner_offers where id = ${OFF(R, 'a')})` }),
+      named('Versionswechsel', {
+        sql: `insert into public.fee_schedules (version, valid_from, label) values (99, ${today}, 'test'); insert into public.fee_schedule_tiers (version, tier, up_to_cents, rate_bp) values (99, 1, null, 1000)`,
+      }),
+      named('Geltende Version', { sql: '=private.current_fee_schedule()' }),
+      named('Basis alt: Version und Stufen des Angebots', { as: 'service_role', sql: `=(select fee_schedule_version || '/' || (fee_tiers = '${JSON.stringify(r0.tiers)}'::jsonb) from public.confirm_offer_basis('${U.cust}', ${OFF(R, 'a')}))` }),
+      named('confirm mit geltender Version 99', { as: 'service_role', sql: `perform ${confirmV(R, 'a', split(150000), 99)}` }),
+      named('confirm mit Angebotsversion', { as: 'service_role', sql: `=${confirmV(R, 'a', split(150000), r0.fsv)}` }),
+      named('Journal alt: Version und Gebühr', { sql: `=(select fee_schedule_version || '/' || fee_cents from public.commission_entries where request_id = '${R}' and kind = 'booking')` }),
+      named('Version ändern beim Statuswechsel', { sql: `update public.partner_offers set status = 'withdrawn', fee_schedule_version = 99 where id = ${OFF(R, 'b')}` }),
+      sendAs('neues Angebot nach dem Wechsel', U.pc, R2, 150000),
+      named('Version neu', { sql: `=(select fee_schedule_version from public.partner_offers where id = ${OFF(R2, 'c')})` }),
+      named('confirm neu mit Version 2', { as: 'service_role', sql: `perform ${confirmV(R2, 'c', split(150000), r0.fsv)}` }),
+      named('confirm neu mit Version 99', { as: 'service_role', sql: `=${confirmV(R2, 'c', sp99, 99)}` }),
+      named('Journal neu: Version und Gebühr', { sql: `=(select fee_schedule_version || '/' || fee_cents from public.commission_entries where request_id = '${R2}' and kind = 'booking')` }),
+    ]
+    const r = probes(setup, steps)
+    expect(r['Version gespeichert']).toBe(`= ${r0.fsv}`)
+    ok(r['Versionswechsel'])
+    expect(r['Geltende Version']).toBe('= 99')
+    expect(r['Basis alt: Version und Stufen des Angebots']).toBe(`= ${r0.fsv}/true`)
+    err(r['confirm mit geltender Version 99'], 'rate_mismatch')
+    expect(r['confirm mit Angebotsversion']).toBe('= confirmed')
+    expect(r['Journal alt: Version und Gebühr']).toBe(`= ${r0.fsv}/${split(150000).feeCents}`)
+    err(r['Version ändern beim Statuswechsel'], 'offer_immutable')
+    ok(r['neues Angebot nach dem Wechsel'])
+    expect(r['Version neu']).toBe('= 99')
+    err(r['confirm neu mit Version 2'], 'rate_mismatch')
+    expect(r['confirm neu mit Version 99']).toBe('= confirmed')
+    expect(r['Journal neu: Version und Gebühr']).toBe(`= 99/${sp99.feeCents}`)
+    expect(sp99.feeCents).toBe(15000) // 10 % flach auf 150000 (Gegenprobe: Version 2 ergäbe 14500)
+  })
+})
+
+type FeeTierLike = { upToCents: number | null; bp: number }
+
 describe('Bestätigung (confirm_offer)', () => {
   const sp = split(150000)
   it('Erfolg: Revision, Zeiger, Journal, Zuordnung, Listings, Ereignis, Audit, Outbox; ohne Gebühr im Snapshot; doppelt = einmal', () => {

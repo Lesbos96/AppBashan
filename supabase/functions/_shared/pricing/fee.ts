@@ -1,4 +1,4 @@
-// Plattformgebühr (CLAUDE.md „Geld"). Die Sätze kommen als Parameter aus `platform_settings`; nur diese Funktion kennt die Gebühr.
+// Plattformgebühr (CLAUDE.md „Geld"). Die Stufen kommen als Parameter aus `fee_schedule_tiers`, die USt.-Rate aus `platform_settings`; nur diese Funktion kennt die Gebühr.
 
 /** Eine Stufe der Provisionsstaffel (Tabelle `fee_schedule_tiers`): obere Grenze in Cent (null = letzte, offene Stufe) und Satz in Basispunkten. */
 export type FeeTier = { upToCents: number | null; bp: number }
