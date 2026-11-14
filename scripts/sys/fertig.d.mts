@@ -18,17 +18,21 @@ export interface FertigKontext {
   ffMoeglich?: boolean
   hooksAktiv?: boolean
   runs: Lauf[]
-  dbPushes?: string[]
+  dbPushes?: { start: string; migrationen: string[] }[]
   abdruck: Record<string, string>
   gruen?: Record<string, { abdruck: string }>
   neueMigrationen: { pfad: string; sha256: string }[]
   freigaben: Freigabe[]
   abnahme: Freigabe | null
   abnahmeVeraltet?: string[]
+  abnahmeFehlt?: string[]
   neueRlsTests: string[]
   berichtStand: string | null
+  berichtGate?: string | null
   standZeilen: number | null
   schrittPruefen: boolean
+  ohneBericht?: boolean
 }
+export const MUSS_ABNAHME: RegExp
 export function gueltigerLauf(c: FertigKontext, suite: string): Lauf | null
 export function pruefeFertig(c: FertigKontext): string[]

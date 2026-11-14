@@ -2,6 +2,14 @@
 
 Je Punkt: Session, Problem, Begründung bzw. nächster Schritt.
 
+## Arbeitssystem (u1, 2026-11-14)
+- **u1-1 · Gate für Lösch- und Aufräum-Skripte nicht gebaut:** Vorschlag a2 letzter Punkt (`tests/support/sweep.ts` und alles mit `delete` soll dasselbe Gate durchlaufen) ist offen: Es fehlt die Festlegung, welche Skripte gemeint sind und wie ein Aufruf einer Freigabe zugeordnet wird. Der Guard sperrt schreibendes SQL über `supabase db query` und `db push`/`reset` direkt; `tests/support/**` und `scripts/sys/**` sind R3. Entscheidung in u2/u3.
+- **u1-2 · `supabase functions deploy` bleibt `ask` statt Gate:** Der Vorschlag verweist auf ein Skript `fn:deploy`, das es nicht gibt. Der Guard sperrt Funktions-Deploys darum nicht; die bestehende `ask`-Regel bleibt. Ein `npm run fn:deploy` mit Gate wäre ein eigener R3-Schritt.
+- **u1-3 · Abnahme-Antrag von Hand:** Die Hashes der von Fable geprüften Dateien (`SHA256:`-Zeilen im Abnahme-Bericht) kommen in u1 aus `sha256sum` und einer handgeschriebenen Antragsdatei; für Migrationen erzeugt `npm run db:antrag` sie. Ein allgemeines `npm run abnahme:antrag -- <dateien>` fehlt.
+- **u1-4 · `bericht.md` ohne Migrationsliste und ohne Bewertungsblock:** Der Bericht enthält Stufe, Läufe, Freigaben, Abnahme; `supabase migration list` und die fünf Zeilen „Bewertung“ aus Abschnitt 5 des Vorschlags fehlen (die Migrationsliste braucht dotenv, die Bewertung schreibt die Session im Chat).
+- **u1-5 · Stufenberechnung grob:** Alle Pfade unter `supabase/` zählen als R3 (der Pfad verrät nicht, ob eine Function Geld oder Rechte berührt). Herabstufen durch Beks ist nicht implementiert; wer es braucht, ändert die Regeltabelle in `scripts/sys/stufe.mjs` (R3-Änderung).
+- **u1-6 · Nicht belegt in der Doku:** ob Hook-Eingaben den Effort enthalten (daher wird er nicht abgefragt); ob `Agent(general-purpose)`-Deny-Regeln für eingebaute Agents wirken (Doku nennt `Agent(Explore)`, `Agent(Plan)` und eigene Namen); ob die Hooks in einer schon laufenden Session sofort laden (Probe in der nächsten Session: `docs/BEKS_EINRICHTUNG.md`, Schritt 5).
+
 ## Daten und Betrieb
 - **S1 · Freigegebene Angebote ändern:** Vermieter ändern Preise eines freigegebenen Angebots ohne erneute Prüfung, Kunden sehen das sofort (wie in 18 beschrieben). Alternative: ein Trigger setzt das Angebot bei Preisänderungen auf `pending` zurück. Bleibt bis Phase 2 offen (`docs/S9_KONZEPT.md`, 5.3).
 - **S1 · Konto löschen:** Bisher kaskadiert das Löschen eines Auth-Nutzers auf Profil, Anfragen, Mietanfragen und `fee_splits`; Storage-Dateien bleiben liegen. Ein Vermieter mit Mietanfragen auf seinen Angeboten lässt sich nicht löschen (FK `rental_bookings.offer_id`). Vorgesehen: eine eigene Edge Function „Konto löschen", die Storage leert und Abrechnungsdaten anonymisiert. Spätestens mit Rechnungen (Später) `fee_splits` auf `restrict` plus Anonymisierung umstellen (Aufbewahrung BAO § 132).

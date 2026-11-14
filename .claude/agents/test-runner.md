@@ -1,6 +1,6 @@
 ---
 name: test-runner
-description: Führt check, test:e2e, shots, shots:all und build aus und meldet nur Ergebnisse. Ändert nie Code.
+description: Führt check, e2e, rls, shots, shots:all und build über `npm run t -- <ziel>` aus und meldet nur Ergebnisse. Ändert nie Code.
 model: haiku
 effort: low
 tools: Bash, Read, Grep, Glob, Write

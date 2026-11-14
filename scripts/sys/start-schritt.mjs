@@ -12,7 +12,7 @@ else {
   if (git('rev-parse', 'main') !== git('rev-parse', 'origin/main')) fehler.push('main weicht von origin/main ab')
   if (!sauber()) fehler.push('Arbeitsbaum nicht sauber')
   if (!hooksAktiv()) fehler.push('core.hooksPath ist nicht .githooks (npm run prepare ausführen)')
-  const prozesse = execFileSync('powershell.exe', ['-NoProfile', '-Command', "(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match 'vitest|playwright' }).Count"], { encoding: 'utf8' }).trim()
+  const prozesse = execFileSync('powershell.exe', ['-NoProfile', '-Command', "(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.CommandLine -match '(vitest|playwright)[^ ]* (run|test)( |$)' }).Count"], { encoding: 'utf8' }).trim()
   if (prozesse !== '0' && prozesse !== '') fehler.push(`${prozesse} laufende vitest/playwright-Prozesse`)
 }
 if (fehler.length) {

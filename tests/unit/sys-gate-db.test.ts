@@ -61,10 +61,23 @@ describe('Datenbank-Gate (Trockenlauf mit Attrappe, keine DB, kein Push)', () =>
   it('Attrappe-Optionen ohne --trocken: Exit 2, nie ein Push-Pfad', () => {
     expect(cli(aufbau(text()), 'push', []).status).toBe(2)
   })
-  it('unbekannte Form der Migrationsliste: fail-closed (Exit 1)', () => {
+  it.each([
+    ['unbekannte Form der Liste', '{"fehler":"x"}'],
+    ['Einträge ohne local (umbenannte Felder)', '{"migrations":[{"version":"20261201100000","applied":false}]}'],
+    ['leere Liste trotz vorhandener Migrationsdatei', '{"migrations":[]}'],
+    ['Datei fehlt in der Liste', '{"migrations":[{"local":"20261101100000","remote":"20261101100000"}]}'],
+  ])('fail-closed (Exit 1): %s', (_n, inhalt) => {
     const a = aufbau(text())
-    writeFileSync(join(a.dir, 'liste.json'), '{"fehler":"x"}')
-    expect(cli(a).status).toBe(1)
+    writeFileSync(join(a.dir, 'liste.json'), inhalt)
+    const r = cli(a)
+    expect(r.status).toBe(1)
+    expect(r.stdout).not.toMatch(/würde durchlassen/)
+  })
+  it('--trocken ohne die drei Optionen: Exit 2', () => {
+    expect(spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', 'push', '--trocken'], { encoding: 'utf8' }).status).toBe(2)
+  })
+  it('marke gibt es nur gegen die echte Datenbank, nicht als Attrappe', () => {
+    expect(spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', 'marke', '--trocken', '--liste', 'x', '--dir', 'y', '--freigaben', 'z'], { encoding: 'utf8' }).status).toBe(2)
   })
 })
 

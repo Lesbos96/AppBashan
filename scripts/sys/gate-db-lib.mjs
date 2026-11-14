@@ -10,7 +10,16 @@ const norm = (p) => p.replace(/\\/g, '/')
 export function offeneMigrationen(liste, dir) {
   const eintraege = Array.isArray(liste) ? liste : liste?.migrations
   if (!Array.isArray(eintraege)) throw new Error('Unerwartete Form der Migrationsliste (erwartet { migrations: [...] })')
+  if (eintraege.some((e) => typeof e?.local !== 'string' || !['string', 'undefined'].includes(typeof e?.remote))) {
+    throw new Error('Unerwartete Form eines Listeneintrags (erwartet Zeichenketten local und remote)')
+  }
   const dateien = existsSync(dir) ? readdirSync(dir) : []
+  // Gegenprobe: jede lokale Migrationsdatei muss in der Liste stehen, sonst ist die Liste unvollständig (z. B. leer) und nicht verlässlich.
+  const bekannt = new Set(eintraege.map((e) => e.local))
+  for (const d of dateien.filter((x) => x.endsWith('.sql'))) {
+    const v = /^(\d+)_/.exec(d)?.[1]
+    if (v && !bekannt.has(v)) throw new Error(`Migrationsdatei ${d} fehlt in der Liste (Liste unvollständig)`)
+  }
   return eintraege
     .filter((m) => m.local && !m.remote)
     .map((m) => {

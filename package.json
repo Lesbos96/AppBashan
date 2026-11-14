@@ -66,7 +66,7 @@
     "setup:photo-cleanup":"dotenv -e .env.local -- node scripts/setup-photo-cleanup.mjs",
     "setup:photo-publish": "dotenv -e .env.local -- node scripts/setup-photo-publish.mjs",
     "db:antrag": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs antrag",
-    "db:push": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs push && dotenv -e .env.local -- supabase db push --linked --yes && npm run db:types",
+    "db:push": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs push && dotenv -e .env.local -- supabase db push --linked --yes && dotenv -e .env.local -- node scripts/sys/gate-db.mjs marke && npm run db:types",
     "t": "node scripts/sys/run.mjs",
     "bericht": "node scripts/sys/bericht.mjs",
     "fertig": "node scripts/sys/fertig.mjs",

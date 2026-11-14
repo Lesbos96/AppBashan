@@ -41,6 +41,12 @@ describe('Test-Startprogramm run.mjs', () => {
     ['cmd', 'npx', 'vitest', 'run'],
     ['cmd', 'node', 'scripts/sys/../x.mjs'],
     ['cmd', 'node', 'src/main.tsx'],
+    ['cmd', 'node', 'scripts/sys/fertig.mjs'],
+    ['cmd', 'node', 'scripts/sys/fertig.mjs', '--pre-push'],
+    ['cmd', 'node', 'scripts/sys/gate-db.mjs', 'push'],
+    ['cmd', 'node', 'scripts/sys/bericht.mjs'],
+    ['cmd', 'node', 'scripts/sys/run.mjs', 'check'],
+    ['cmd', 'node', 'scripts/sys/fixtures/../fertig.mjs', '--nur-pruefen'],
     ['cmd'],
     ['unbekannt'],
   ])('verbotenes Ziel %j: Exit 2, kein Log', (...args) => {

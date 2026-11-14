@@ -38,16 +38,38 @@ describe('Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund)', () => {
     'npx supabase db reset',
     'supabase db query "delete from public.x" --linked',
     'supabase db query --linked "DROP TABLE x"',
+    'supabase db query "select 1; delete from public.x" --linked',
+    'supabase db query "select 1;\ndelete from public.x" --linked',
+    'supabase db query --linked <<EOF\nselect 1;\nupdate public.x set a = 1;\nEOF',
+    'supabase db query --linked "create table x (a int)"',
+    'supabase db query --linked --file tmp/x.sql',
+    'supabase db query --linked -f tmp/x.sql',
+    'supabase --debug db push',
+    'supabase migration up --linked',
+    'npx supabase migration squash',
   ])('Datenbank am Gate vorbei: %s', (c) => {
     expect(bash(c).exit).toBe(2)
   })
-  it.each(['git commit --no-verify -m x', 'git push --no-verify', 'git config core.hooksPath /dev/null', 'python - <<EOF'])('Git-Hooks und Python-stdin: %s', (c) => {
+  it('SQL-Sperre gilt auch im PowerShell-Werkzeug', () => {
+    expect(bash('supabase db query "select 1; delete from public.x" --linked', 'PowerShell').exit).toBe(2)
+  })
+  it.each([
+    'git commit --no-verify -m x',
+    'git push --no-verify',
+    'git config core.hooksPath /dev/null',
+    'git config --global core.hooksPath x',
+    'git config --unset core.hooksPath',
+    'git -c core.hooksPath=x push',
+    'python - <<EOF',
+  ])('Git-Hooks und Python-stdin: %s', (c) => {
     expect(bash(c).exit).toBe(2)
   })
   it.each([
     'echo x > tmp/proof/u1/001-check.log',
     'echo x >> docs/proof/u1/a.log',
     'cat a 1> tmp\\proof\\u1\\b.txt',
+    'cmd &> tmp/proof/u1/a.txt',
+    'Get-Process *> tmp/proof/u1/a.txt',
     'Set-Content tmp/proof/u1/a.txt x',
     'Out-File docs/proof/u1/a.txt',
     'cp foo tmp/proof/u1/runs.jsonl',
@@ -94,6 +116,12 @@ describe('Wächter-Hook guard.mjs: lässt durch (Exit 0, keine Ausgabe)', () => 
     'npm run db:push',
     'git status',
     'git commit -m "erwähnt npm run check und supabase db push"',
+    'git commit -m "a; npm run check; supabase db push\nzweite Zeile --no-verify"',
+    'grep "x; supabase db push" docs/a.md',
+    'git config core.hooksPath',
+    'git config --get core.hooksPath',
+    'supabase db query "select count(*) from public.x" --linked',
+    'New-Item -ItemType Directory tmp/proof/u1',
     'grep -c vitest package.json',
     'npx supabase migration list',
     'cp tmp/proof/u1/001-check.log docs/proof/u1/001-check.log',
@@ -105,7 +133,7 @@ describe('Wächter-Hook guard.mjs: lässt durch (Exit 0, keine Ausgabe)', () => 
     expect(r.stderr).toBe('')
   })
   it('Dateien außerhalb der Sperrlisten', () => {
-    for (const p of ['/p/src/lib/x.ts', '/p/tmp/proof/u1-plan.md', '/p/docs/PROGRESS.md', '/p/tmp/proof/u1/probe.md']) expect(datei(p).exit, p).toBe(0)
+    for (const p of ['/p/src/lib/x.ts', '/p/tmp/proof/u1-plan.md', '/p/docs/PROGRESS.md', '/p/tmp/proof/u1/probe.md', '/p/scripts/sys/fixtures/db/ok/db-freigabe-1.md']) expect(datei(p).exit, p).toBe(0)
   })
   it('Eingabe ohne tool_input wird nicht verweigert', () => {
     expect(guard({ tool_name: 'Read' }).exit).toBe(0)

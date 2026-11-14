@@ -8,15 +8,18 @@ import { SUITEN } from './fingerabdruck.mjs'
 import { git, hooksAktiv, PROOF_ROOT, schrittName, sha256Datei } from './lib.mjs'
 
 const schritt = schrittName()
-const c = sammle({ von: 'origin/main', schritt, schrittPruefen: false })
+// R3-Prüfungen (Freigaben, Abnahme, Rot-vor-Grün) zählen mit; nur die Prüfung des Berichts selbst entfällt.
+const c = sammle({ von: 'origin/main', schritt, schrittPruefen: true, ohneBericht: true })
 c.hooksAktiv = hooksAktiv()
 const gruende = pruefeFertig(c)
 const ziel = join('docs', 'proof', schritt)
 mkdirSync(ziel, { recursive: true })
 
+// Nachweise werden nie überschrieben: bei anderem Inhalt (z. B. zweite Abnahme-Runde) entsteht eine Kopie mit Kurz-Hash im Namen.
 function kopiere(quelle) {
-  const z = join(ziel, quelle.split(/[\\/]/).pop())
-  if (existsSync(z) && sha256Datei(z) !== sha256Datei(quelle)) throw new Error(`${z} existiert mit anderem Inhalt (Nachweise werden nie überschrieben)`)
+  const name = quelle.split(/[\\/]/).pop()
+  let z = join(ziel, name)
+  if (existsSync(z) && sha256Datei(z) !== sha256Datei(quelle)) z = join(ziel, name.replace(/(\.[^.]*)?$/, `-${sha256Datei(quelle).slice(0, 8)}$1`))
   if (!existsSync(z)) copyFileSync(quelle, z, constants.COPYFILE_EXCL)
   return z
 }
@@ -69,6 +72,9 @@ const json = {
   abnahme: c.abnahme ? { datei: abnahmePfad, hoch: c.abnahme.hoch, modell: c.abnahme.modell } : null,
   kopien,
 }
+// Erst die Kopien scannen; bei einem Treffer (Exit ≠ 0) wird weder bericht.json noch gruen.json geschrieben, fertig blockiert dann.
+if (!process.env.npm_execpath) throw new Error('Aufruf nur über `npm run bericht`')
+execFileSync(process.execPath, [process.env.npm_execpath, 'run', 'scan:proof'], { stdio: 'inherit' })
 writeFileSync(join(ziel, 'bericht.json'), JSON.stringify(json, null, 2) + '\n')
 const zeile = (s) => {
   const l = laeufe[s]
@@ -94,6 +100,4 @@ writeFileSync(
 )
 writeFileSync('docs/proof/gruen.json', JSON.stringify(gruenNeu, null, 2) + '\n')
 console.log(readFileSync(join(ziel, 'bericht.md'), 'utf8'))
-if (!process.env.npm_execpath) throw new Error('Aufruf nur über `npm run bericht`')
-execFileSync(process.execPath, [process.env.npm_execpath, 'run', 'scan:proof'], { stdio: 'inherit' })
 process.exit(gruende.length === 0 ? 0 : 1)

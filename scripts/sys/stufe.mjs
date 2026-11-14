@@ -6,11 +6,14 @@ import { pathToFileURL } from 'node:url'
 const REGELN = [
   [/^\.claude\//, 3],
   [/^\.githooks\//, 3],
+  [/^CLAUDE\.md$/, 3], // Regeln für alle Sessions: läuft nicht an den Gates vorbei
+  [/^package\.json$/, 3], // enthält die Gate-Ketten (t, check, test:rls, db:push, prepare, fertig, bericht)
   [/^scripts\/sys\//, 3],
   [/^tests\/unit\/sys-/, 3],
   [/^supabase\//, 3],
   [/^src\/lib\/money/, 3],
   [/^tests\/(rls|support)\//, 3],
+  [/^docs\/reference\/design\/tokens\.json$/, 1], // wird von src/ importiert (Fingerabdruck: DOCS_IMPORTE)
   [/^docs\//, 0],
   [/\.md$/, 0],
   [/^src\/(screens|components|assets)\//, 1],
@@ -19,7 +22,8 @@ const REGELN = [
   [/^src\/(lib|app|dev)\//, 2],
   [/^tests\/unit\//, 2],
   [/^scripts\//, 2],
-  [/^(src\/[^/]+\.(ts|tsx)|index\.html|public\/|vite\.config\.ts|playwright\.config\.ts|tsconfig[^/]*\.json|eslint\.config\.js|package(-lock)?\.json)$/, 2],
+  [/^public\//, 2],
+  [/^(src\/[^/]+\.(ts|tsx)|index\.html|vite\.config\.ts|playwright\.config\.ts|tsconfig[^/]*\.json|eslint\.config\.js|package-lock\.json)$/, 2],
 ]
 
 export function stufeAus(pfade) {
@@ -34,6 +38,6 @@ export function stufeAus(pfade) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { git } = await import('./lib.mjs')
-  const pfade = git('diff', '--name-only', 'main...HEAD').split('\n').filter(Boolean)
+  const pfade = git('diff', '--no-renames', '--name-only', 'main...HEAD').split('\n').filter(Boolean)
   console.log(`${stufeAus(pfade)} (${pfade.length} Pfade gegen main)`)
 }

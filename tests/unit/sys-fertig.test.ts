@@ -28,6 +28,7 @@ const ctx = (extra: Partial<FertigKontext> = {}): FertigKontext => ({
   abnahme: null,
   neueRlsTests: [],
   berichtStand: 'a1',
+  berichtGate: 'bestanden',
   standZeilen: null,
   schrittPruefen: true,
   ...extra,
@@ -39,6 +40,7 @@ const r3 = (extra: Partial<FertigKontext> = {}) =>
     stufe: 'R3',
     runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 })],
     neueMigrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: SHA }],
+    dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: ['supabase/migrations/1_x.sql'] }],
     freigaben: [frei],
     abnahme: { modell: 'claude-fable-5-2', dateien: [{ sha: SHA, pfad: 'scripts/sys/run.mjs' }], urteil: '', hoch: 0 },
     ...extra,
@@ -73,9 +75,13 @@ describe('Merge-Gate: pruefeFertig', () => {
     expect(pruefeFertig(ctx({ runs: [lauf('check')], gruen: { e2e: { abdruck: 'alt' } } })).join()).toMatch(/e2e/)
   })
   it('rls zählt nur, wenn er nach dem letzten db-push startete', () => {
-    const c = r3({ dbPushes: ['2026-11-14T11:00:00.000Z'] })
+    const c = r3({ dbPushes: [{ start: '2026-11-14T11:00:00.000Z', migrationen: ['supabase/migrations/1_x.sql'] }] })
     expect(pruefeFertig(c).join()).toMatch(/rls: .*nach dem letzten db-push/)
-    expect(pruefeFertig(r3({ dbPushes: ['2026-11-14T09:00:00.000Z'] }))).toEqual([])
+    expect(pruefeFertig(r3())).toEqual([])
+  })
+  it('neue oder geänderte Migration ohne Marke db-push (Push gescheitert oder umgangen) blockiert', () => {
+    expect(pruefeFertig(r3({ dbPushes: [] })).join()).toMatch(/keine Marke db-push/)
+    expect(pruefeFertig(r3({ dbPushes: [{ start: '2026-11-14T09:00:00.000Z', migrationen: ['supabase/migrations/anderer.sql'] }] })).join()).toMatch(/keine Marke db-push/)
   })
   it('nicht sauber, kein ff, Hook-Pfad falsch', () => {
     const g = pruefeFertig(ctx({ sauber: false, ffMoeglich: false, hooksAktiv: false })).join('|')
@@ -83,9 +89,11 @@ describe('Merge-Gate: pruefeFertig', () => {
     expect(g).toMatch(/kein ff-Merge/)
     expect(g).toMatch(/hooksPath/)
   })
-  it('bericht.json muss zum Code-Stand passen', () => {
+  it('bericht.json muss zum Code-Stand passen und das Gate als bestanden melden', () => {
     expect(pruefeFertig(ctx({ berichtStand: 'alt' })).join()).toMatch(/bericht\.json/)
     expect(pruefeFertig(ctx({ berichtStand: null })).join()).toMatch(/bericht\.json/)
+    expect(pruefeFertig(ctx({ berichtGate: 'blockiert' })).join()).toMatch(/Gate nicht als bestanden/)
+    expect(pruefeFertig(ctx({ berichtStand: null, ohneBericht: true }))).toEqual([])
   })
   it('STAND.md über 40 Zeilen blockiert', () => {
     expect(pruefeFertig(ctx({ standZeilen: 41 })).join()).toMatch(/STAND/)
@@ -104,6 +112,7 @@ describe('Merge-Gate: pruefeFertig', () => {
       expect(pruefeFertig(r3({ abnahme: { modell: 'claude-sonnet-5-5', dateien: [{ sha: SHA, pfad: 'a' }], urteil: '', hoch: 0 } })).join()).toMatch(/nicht von Fable/)
       expect(pruefeFertig(r3({ abnahme: { modell: 'claude-fable-5-2', dateien: [{ sha: SHA, pfad: 'a' }], urteil: '', hoch: 1 } })).join()).toMatch(/hoch: 0/)
       expect(pruefeFertig(r3({ abnahmeVeraltet: ['scripts/sys/run.mjs'] })).join()).toMatch(/seit der Abnahme geändert/)
+      expect(pruefeFertig(r3({ abnahmeFehlt: ['supabase/functions/quote/index.ts'] })).join()).toMatch(/nicht von der Abnahme genannt/)
     })
     it('neuer rls-Test ohne roten Lauf davor blockiert', () => {
       const c = r3({ neueRlsTests: ['tests/rls/n.test.ts'], runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 }), lauf('tests/rls/n.test.ts', { nr: 2 })] })

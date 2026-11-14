@@ -1,5 +1,6 @@
 // Datenbank-Gate. `antrag`: schreibt die Hashes der noch nicht auf Dev liegenden Migrationen.
-// `push`: lässt nur durch, wenn zu jeder offenen Migration eine Fable-Freigabe mit gleichem Pfad und SHA-256 vorliegt (fail-closed).
+// `push`: lässt nur durch, wenn zu jeder offenen Migration eine Fable-Freigabe mit gleichem Pfad und SHA-256 vorliegt (fail-closed) und merkt die Migrationen vor.
+// `marke`: nach dem Push; verlangt „keine Migration mehr offen“ und schreibt erst dann die Marke `db-push` in runs.jsonl.
 // `--trocken --liste <json> --dir <ordner> --freigaben <ordner>`: Attrappe ohne Datenbank, nur die Prüfung. Diese Optionen gibt es nur mit --trocken.
 import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -9,10 +10,15 @@ import { PROOF_ROOT, schrittName } from './lib.mjs'
 
 const [modus, ...rest] = process.argv.slice(2)
 const trocken = rest.includes('--trocken')
-const opt = (name) => rest[rest.indexOf(name) + 1]
-const attrappe = ['--liste', '--dir', '--freigaben'].some((o) => rest.includes(o))
-if ((modus !== 'antrag' && modus !== 'push') || (attrappe && !trocken) || (trocken && !['--liste', '--dir', '--freigaben'].every((o) => opt(o)))) {
-  console.error('Aufruf: gate-db.mjs antrag|push   (Attrappe nur mit: --trocken --liste <json> --dir <ordner> --freigaben <ordner>)')
+const opt = (name) => {
+  const i = rest.indexOf(name)
+  return i === -1 ? undefined : rest[i + 1]
+}
+const OPTIONEN = ['--liste', '--dir', '--freigaben']
+const attrappe = OPTIONEN.some((o) => rest.includes(o))
+const ungueltig = !['antrag', 'push', 'marke'].includes(modus ?? '') || (attrappe && !trocken) || (trocken && (modus === 'marke' || !OPTIONEN.every((o) => opt(o))))
+if (ungueltig) {
+  console.error('Aufruf: gate-db.mjs antrag|push|marke   (Attrappe nur mit: antrag|push --trocken --liste <json> --dir <ordner> --freigaben <ordner>)')
   process.exit(2)
 }
 
@@ -28,18 +34,18 @@ try {
     liste = JSON.parse(readFileSync(opt('--liste'), 'utf8'))
   } else {
     await import('../dev-guard.mjs') // bricht ab, wenn die Ref nicht die Dev-Ref ist
-    liste = JSON.parse(
-      execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'migration', 'list', '--linked', '-o', 'json'], {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }),
-    )
+    const aus = execFileSync(process.execPath, ['node_modules/supabase/dist/supabase.js', 'migration', 'list', '--linked', '--output-format', 'json'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    liste = JSON.parse(aus.slice(Math.max(0, aus.search(/[{[]/)))) // ein eventueller Vorspann vor der Klammer wird abgeschnitten
   }
   offen = offeneMigrationen(liste, trocken ? opt('--dir') : 'supabase/migrations')
 } catch (e) {
-  fehler(`Migrationsliste nicht lesbar (${e.message.split('\n')[0]}). Ohne verlässliche Liste kein Push.`)
+  fehler(`Migrationsliste nicht lesbar oder unvollständig (${e.message.split('\n')[0]}). Ohne verlässliche Liste kein Push.`)
 }
 const ordner = trocken ? opt('--freigaben') : join(PROOF_ROOT, schrittName())
+const geplant = join(ordner, 'db-push-geplant.json')
 
 if (modus === 'antrag') {
   mkdirSync(ordner, { recursive: true })
@@ -51,6 +57,15 @@ if (modus === 'antrag') {
   process.exit(0)
 }
 
+if (modus === 'marke') {
+  if (offen.length > 0) fehler(`${offen.length} Migration(en) sind noch offen; der Push ist nicht (vollständig) erfolgt, keine Marke`)
+  const migrationen = existsSync(geplant) ? JSON.parse(readFileSync(geplant, 'utf8')).migrationen : []
+  mkdirSync(ordner, { recursive: true })
+  appendFileSync(join(ordner, 'runs.jsonl'), JSON.stringify({ ziel: 'db-push', start: new Date().toISOString(), migrationen }) + '\n')
+  console.log(`GATE-DB: Marke db-push geschrieben (${migrationen.length} Migration(en))`)
+  process.exit(0)
+}
+
 const freigaben = existsSync(ordner)
   ? readdirSync(ordner)
       .filter((f) => /^db-freigabe-.*\.md$/.test(f))
@@ -58,9 +73,8 @@ const freigaben = existsSync(ordner)
   : []
 const { ok, gruende } = pruefePush(offen, freigaben)
 if (!ok) fehler(gruende.join('\n- '))
-if (!trocken && offen.length > 0) {
-  // Marke: ein rls-Lauf muss nach dem Push liegen, sonst gilt er gegen das alte Schema.
+if (!trocken) {
   mkdirSync(ordner, { recursive: true })
-  appendFileSync(join(ordner, 'runs.jsonl'), JSON.stringify({ ziel: 'db-push', start: new Date().toISOString(), migrationen: offen.map((m) => m.pfad) }) + '\n')
+  writeFileSync(geplant, JSON.stringify({ migrationen: offen.map((m) => m.pfad) }) + '\n')
 }
 console.log(trocken ? `GATE-DB: würde durchlassen (${offen.length} offene Migration(en), Trockenlauf, kein Push)` : `GATE-DB: frei (${offen.length} offene Migration(en))`)

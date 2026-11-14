@@ -6,11 +6,20 @@ import { join } from 'node:path'
 import { fingerabdruck, SUITEN } from './fingerabdruck.mjs'
 import { git, runRoot, sauber, schrittName, sha256Datei } from './lib.mjs'
 
-const [ziel = '', ...extra] = process.argv.slice(2)
-const npmZiele = { check: ['run', 'check'], e2e: ['run', 'test:e2e'], rls: ['run', 'test:rls'], shots: ['run', 'shots'], build: ['run', 'build'] }
+const [zielRoh = '', ...extraRoh] = process.argv.slice(2)
+const ziel = zielRoh.replace(/\\/g, '/') // Dateipfade normalisiert speichern (Rot-vor-Grün vergleicht Pfade)
+const extra = extraRoh[0] === '--' ? extraRoh.slice(1) : extraRoh // `npm run t -- check -- --grep x` ergibt kein doppeltes --
+const npmZiele = { check: ['run', 'check'], e2e: ['run', 'test:e2e'], rls: ['run', 'test:rls'], shots: ['run', 'shots'], 'shots:all': ['run', 'shots:all'], build: ['run', 'build'] }
+// Skripte, die `cmd` starten darf: Proben-Fixtures, die reinen Prüfungen und nur die Trocken- bzw. Nur-prüfen-Form der Gates (nie ein Merge oder Push ohne Nachfrage).
+const CMD_ERLAUBT = [
+  (s) => /^scripts\/sys\/fixtures\/[\w.-]+\.mjs$/.test(s[0]),
+  (s) => s[0] === 'scripts/sys/stufe.mjs',
+  (s) => s[0] === 'scripts/sys/gate-db.mjs' && s.includes('--trocken'),
+  (s) => s[0] === 'scripts/sys/fertig.mjs' && s.includes('--nur-pruefen') && !s.includes('--pre-push'),
+]
 
 function befehlFuer() {
-  const datei = ziel.replace(/\\/g, '/')
+  const datei = ziel
   let npmArgs
   if (npmZiele[ziel]) npmArgs = [...npmZiele[ziel], ...(extra.length ? ['--', ...extra] : [])]
   else if (/^tests\/unit\/.+\.test\.ts$/.test(datei)) npmArgs = ['test', '--', datei, ...extra]
@@ -21,8 +30,8 @@ function befehlFuer() {
     if (!npm) throw new Error('Aufruf nur über `npm run t -- <ziel>` (npm_execpath fehlt)')
     return { prog: process.execPath, args: [npm, ...npmArgs], anzeige: `npm ${npmArgs.join(' ')}` }
   }
-  // cmd nur für Skripte aus scripts/sys (Proben); sonst wäre es eine Hintertür am Guard vorbei. Erfüllt nie eine Pflichtsuite.
-  if (ziel === 'cmd' && extra[0] === 'node' && /^scripts\/sys\/[\w./-]+\.mjs$/.test(extra[1] ?? '') && !extra[1].includes('..')) {
+  // cmd nur mit fester Liste (Proben); sonst wäre es eine Hintertür am Guard vorbei. Erfüllt nie eine Pflichtsuite.
+  if (ziel === 'cmd' && extra[0] === 'node' && extra[1] && !extra[1].includes('..') && CMD_ERLAUBT.some((ok) => ok(extra.slice(1)))) {
     return { prog: process.execPath, args: extra.slice(1), anzeige: extra.join(' ') }
   }
   throw new Error(`Unbekanntes Ziel "${ziel}". Erlaubt: ${Object.keys(npmZiele).join(', ')}, Testdatei, cmd node scripts/sys/<datei>.mjs [args]`)
@@ -38,7 +47,7 @@ try {
 
 const ordner = join(runRoot(), schrittName())
 mkdirSync(ordner, { recursive: true })
-const marke = ziel === 'cmd' ? 'cmd' : ziel.replace(/[\\/]/g, '_')
+const marke = ziel.replace(/[\\/:]/g, '_')
 let nr = readdirSync(ordner).reduce((m, f) => Math.max(m, Number(/^(\d{3})-/.exec(f)?.[1] ?? 0)), 0) + 1
 let logPfad
 let fd

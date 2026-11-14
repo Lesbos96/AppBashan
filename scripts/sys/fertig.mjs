@@ -1,5 +1,5 @@
 // Merge-Gate: `npm run fertig` prüft, dann ff-Merge nach main und Push. `--nur-pruefen`: nur prüfen. `--pre-push`: Git-Hook, prüft Pushes auf main.
-// Liest immer den festen Ordner tmp/proof (nie PROOF_ROOT) und gruen.json nur aus origin/main (nie aus dem Arbeitsbaum).
+// Liest immer den festen Ordner tmp/proof (nie PROOF_ROOT), gruen.json nur aus origin/main und den Bericht nur aus dem Commit (nie aus dem Arbeitsbaum).
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -10,13 +10,12 @@ import { git, hooksAktiv, leseRuns, PROOF_ROOT, sauber, schrittName, sha256, sha
 import { stufeAus } from './stufe.mjs'
 
 const PFLICHT = { R0: [], R1: ['check', 'e2e'], R2: ['check', 'e2e', 'rls'], R3: ['check', 'e2e', 'rls'] }
+// Diese geänderten Pfade muss die Abnahme mit einer SHA256-Zeile nennen (Mindestmenge für R3).
+export const MUSS_ABNAHME = /^(supabase\/functions\/|src\/lib\/money|scripts\/sys\/[^/]+\.mjs$|\.claude\/hooks\/|\.claude\/settings\.json$|\.githooks\/|package\.json$)/
 
-// Reine Prüfung. Liefert die Liste der Gründe (leer = grün).
-// c: { stufe, sauber, ffMoeglich, hooksAktiv, runs, dbPushes, abdruck, gruen, neueMigrationen, freigaben, abnahme, abnahmeVeraltet, neueRlsTests, berichtStand, standZeilen, schrittPruefen }
-// runs: { nr, ziel, args, befehl, exit, sauber, stabil, start, abdruck, logOk }
 // Gültiger Nachweis der ganzen Suite s oder null.
 export function gueltigerLauf(c, s) {
-  const spaetestePush = (c.dbPushes ?? []).reduce((m, x) => (x > m ? x : m), '')
+  const spaetestePush = (c.dbPushes ?? []).reduce((m, p) => (p.start > m ? p.start : m), '')
   return (
     c.runs.find(
       (r) => r.ziel === s && (r.args ?? []).length === 0 && r.befehl === KANON[s] && r.exit === 0 && r.sauber && r.stabil !== false && r.logOk && r.abdruck === c.abdruck[s] && (s !== 'rls' || (r.start ?? '') > spaetestePush),
@@ -24,6 +23,10 @@ export function gueltigerLauf(c, s) {
   )
 }
 
+// Reine Prüfung. Liefert die Liste der Gründe (leer = grün).
+// c: { stufe, sauber, ffMoeglich, hooksAktiv, runs, dbPushes: [{start, migrationen}], abdruck, gruen, neueMigrationen, freigaben, abnahme, abnahmeVeraltet, abnahmeFehlt, neueRlsTests,
+//      berichtStand, berichtGate, standZeilen, schrittPruefen, ohneBericht }
+// runs: { nr, ziel, args, befehl, exit, sauber, stabil, start, abdruck, logOk }
 export function pruefeFertig(c) {
   const g = []
   if (!c.sauber) g.push('Arbeitsbaum nicht sauber')
@@ -37,12 +40,16 @@ export function pruefeFertig(c) {
   if (c.schrittPruefen) {
     if (c.stufe === 'R3') {
       g.push(...pruefePush(c.neueMigrationen, c.freigaben).gruende)
+      for (const m of c.neueMigrationen) {
+        if (!(c.dbPushes ?? []).some((p) => (p.migrationen ?? []).includes(m.pfad))) g.push(`${m.pfad}: keine Marke db-push (Push nicht über npm run db:push erfolgt oder gescheitert)`)
+      }
       if (!c.abnahme) g.push('R3: Abnahme-Datei fehlt')
       else {
         if (!c.abnahme.modell.toLowerCase().includes('fable')) g.push('R3: Abnahme nicht von Fable')
         if (c.abnahme.hoch !== 0) g.push('R3: Abnahme ohne genau eine Zeile „Offene Findings hoch: 0“')
         if (c.abnahme.dateien.length === 0) g.push('R3: Abnahme nennt keine geprüfte Datei (SHA256-Zeilen)')
         for (const p of c.abnahmeVeraltet ?? []) g.push(`R3: ${p} hat sich seit der Abnahme geändert`)
+        for (const p of c.abnahmeFehlt ?? []) g.push(`R3: ${p} ist geändert, aber nicht von der Abnahme genannt`)
       }
       for (const t of c.neueRlsTests) {
         const lauf = c.runs.filter((r) => r.ziel === t && r.logOk).sort((a, b) => a.nr - b.nr)
@@ -50,7 +57,10 @@ export function pruefeFertig(c) {
         if (!ersterGruen || !lauf.some((r) => r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen`)
       }
     }
-    if (c.berichtStand !== c.abdruck.check) g.push('bericht.json fehlt oder ist nicht aktuell (npm run bericht)')
+    if (!c.ohneBericht) {
+      if (c.berichtStand !== c.abdruck.check) g.push('bericht.json fehlt im Commit oder ist nicht aktuell (npm run bericht, dann committen)')
+      else if (c.berichtGate !== 'bestanden') g.push('bericht.json meldet das Gate nicht als bestanden')
+    }
   }
   if (c.standZeilen !== null && c.standZeilen > 40) g.push('docs/STAND.md hat mehr als 40 Zeilen')
   return g
@@ -59,46 +69,49 @@ export function pruefeFertig(c) {
 // Läufe lesen und gegen die Logdatei prüfen: Hash, Kopf (Commit, Befehl, Sauber-Angabe), Schlusszeile EXIT.
 export function leseGepruefteRuns() {
   const alle = leseRuns()
-  const runs = alle.filter((r) => r.ziel !== 'db-push' && r.nr).map((r) => {
-    const marke = r.ziel === 'cmd' ? 'cmd' : String(r.ziel).replace(/[\\/]/g, '_')
-    const log = join(PROOF_ROOT, r.schritt, `${String(r.nr).padStart(3, '0')}-${marke}.log`)
-    let logOk = false
-    try {
-      if (existsSync(log) && sha256Datei(log) === r.logSha) {
-        const text = readFileSync(log, 'utf8')
-        const kopf = text.split('\n').slice(0, 3)
-        logOk =
-          kopf[0] === `Commit: ${r.hash}` &&
-          kopf[1] === `Arbeitsbaum sauber: ${r.sauber ? 'ja' : 'nein'}` &&
-          kopf[2] === `Befehl: ${r.befehl}` &&
-          new RegExp(`\\nEXIT=${r.exit}\\s*$`).test(text)
+  const runs = alle
+    .filter((r) => r.ziel !== 'db-push' && r.nr)
+    .map((r) => {
+      const log = join(PROOF_ROOT, r.schritt, `${String(r.nr).padStart(3, '0')}-${String(r.ziel).replace(/[\\/:]/g, '_')}.log`)
+      let logOk = false
+      try {
+        if (existsSync(log) && sha256Datei(log) === r.logSha) {
+          const text = readFileSync(log, 'utf8')
+          const kopf = text.split('\n').slice(0, 3)
+          logOk =
+            kopf[0] === `Commit: ${r.hash}` &&
+            kopf[1] === `Arbeitsbaum sauber: ${r.sauber ? 'ja' : 'nein'}` &&
+            kopf[2] === `Befehl: ${r.befehl}` &&
+            new RegExp(`\\nEXIT=${r.exit}\\s*$`).test(text)
+        }
+      } catch {
+        logOk = false
       }
-    } catch {
-      logOk = false
-    }
-    return { ...r, logOk }
-  })
-  return { runs, dbPushes: alle.filter((r) => r.ziel === 'db-push').map((r) => r.start) }
+      return { ...r, logOk }
+    })
+  return { runs, dbPushes: alle.filter((r) => r.ziel === 'db-push').map((r) => ({ start: r.start, migrationen: r.migrationen ?? [] })) }
 }
 
 const lies = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null)
-const ausOrigin = (p) => {
+const ausGit = (rev, p) => {
   try {
-    return git('show', `origin/main:${p}`)
+    return git('show', `${rev}:${p}`)
   } catch {
     return null
   }
 }
 
-export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen }) {
+export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht = false }) {
   const bereich = `${von}...${bis}`
   const pfade = git('diff', '--no-renames', '--name-only', bereich).split('\n').filter(Boolean)
-  const neue = (ordner) => git('diff', '--no-renames', '--name-only', '--diff-filter=A', bereich, '--', ordner).split('\n').filter(Boolean)
+  const geaendert = (filter, ordner) => git('diff', '--no-renames', '--name-only', `--diff-filter=${filter}`, bereich, '--', ordner).split('\n').filter(Boolean)
   const stand = lies('docs/STAND.md')
   const ordner = join(PROOF_ROOT, schritt)
-  const bericht = lies(join('docs', 'proof', schritt, 'bericht.json'))
+  const berichtText = ausGit('HEAD', `docs/proof/${schritt}/bericht.json`)
+  const bericht = berichtText ? JSON.parse(berichtText) : null
   const abnahmeText = lies(join(PROOF_ROOT, `${schritt}-abnahme.md`))
   const abnahme = abnahmeText === null ? null : parseFreigabe(abnahmeText)
+  const genannt = new Set((abnahme?.dateien ?? []).map((d) => d.pfad))
   const { runs, dbPushes } = leseGepruefteRuns()
   return {
     stufe: stufeAus(pfade),
@@ -106,27 +119,30 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen }) {
     runs,
     dbPushes,
     abdruck: Object.fromEntries(SUITEN.map((s) => [s, fingerabdruck(s)])),
-    gruen: JSON.parse(ausOrigin('docs/proof/gruen.json') ?? '{}'),
-    neueMigrationen: neue('supabase/migrations').map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
+    gruen: JSON.parse(ausGit('origin/main', 'docs/proof/gruen.json') ?? '{}'),
+    neueMigrationen: geaendert('AM', 'supabase/migrations').map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
     freigaben: existsSync(ordner) ? readdirSync(ordner).filter((f) => /^db-freigabe-.*\.md$/.test(f)).map((f) => parseFreigabe(readFileSync(join(ordner, f), 'utf8'))) : [],
     abnahme,
     abnahmeVeraltet: (abnahme?.dateien ?? []).filter((d) => !existsSync(d.pfad) || sha256Datei(d.pfad) !== d.sha).map((d) => d.pfad),
-    neueRlsTests: neue('tests/rls').filter((f) => f.endsWith('.test.ts')),
-    berichtStand: bericht ? JSON.parse(bericht).stand : null,
-    standZeilen: stand === null ? null : stand.split(/\r?\n/).length,
+    abnahmeFehlt: pfade.filter((p) => MUSS_ABNAHME.test(p) && existsSync(p) && !genannt.has(p)),
+    neueRlsTests: geaendert('A', 'tests/rls').filter((f) => f.endsWith('.test.ts')),
+    berichtStand: bericht?.stand ?? null,
+    berichtGate: bericht?.gate ?? null,
+    standZeilen: stand === null ? null : stand.replace(/\r?\n$/, '').split(/\r?\n/).length,
     schrittPruefen,
+    ohneBericht,
   }
 }
 
-// Schritt eines Berichts, dessen Stand dem aktuellen Code entspricht (nach dem Merge heißt der Branch main).
-export function schrittAusBericht(checkAbdruck) {
-  const wurzel = join('docs', 'proof')
-  if (!existsSync(wurzel)) return null
-  return (
-    readdirSync(wurzel, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && existsSync(join(wurzel, d.name, 'bericht.json')))
-      .find((d) => JSON.parse(readFileSync(join(wurzel, d.name, 'bericht.json'), 'utf8')).stand === checkAbdruck)?.name ?? null
-  )
+// Schritt des Berichts, der in diesem Push hinzugefügt oder geändert wurde: genau einer, und sein Stand muss dem aktuellen Code entsprechen (nach dem Merge heißt der Branch main).
+export function schrittAusBericht(von, checkAbdruck) {
+  const berichte = git('diff', '--no-renames', '--name-only', '--diff-filter=AM', `${von}...HEAD`, '--', 'docs/proof')
+    .split('\n')
+    .map((p) => /^docs\/proof\/([^/]+)\/bericht\.json$/.exec(p)?.[1])
+    .filter(Boolean)
+  if (berichte.length !== 1) return null
+  const text = ausGit('HEAD', `docs/proof/${berichte[0]}/bericht.json`)
+  return text && JSON.parse(text).stand === checkAbdruck ? berichte[0] : null
 }
 
 function meldeUndEnde(gruende, modus) {
@@ -145,8 +161,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const [, lokal, , remote] = aufMain[0]
     if (lokal !== git('rev-parse', 'HEAD')) meldeUndEnde(['auf main darf nur HEAD gepusht werden (der Fingerabdruck gilt für den ausgecheckten Stand)'], 'pre-push')
     const von = /^0+$/.test(remote) ? git('rev-list', '--max-parents=0', 'HEAD').split('\n')[0] : remote
-    const schritt = schrittAusBericht(fingerabdruck('check'))
-    if (!schritt) meldeUndEnde(['kein docs/proof/<schritt>/bericht.json mit stand = aktuellem Code-Stand (fail-closed)'], 'pre-push')
+    const schritt = schrittAusBericht(von, fingerabdruck('check'))
+    if (!schritt) meldeUndEnde(['im Push fehlt genau ein neuer/geänderter docs/proof/<schritt>/bericht.json mit stand = aktuellem Code-Stand (fail-closed)'], 'pre-push')
     meldeUndEnde(pruefeFertig({ ...sammle({ von, schritt, schrittPruefen: true }), hooksAktiv: hooksAktiv() }), 'pre-push')
     process.exit(0)
   }

@@ -25,3 +25,4 @@ supabase/.branches/
 .DS_Store
 Thumbs.db
 *.log
+!docs/proof/**/*.log

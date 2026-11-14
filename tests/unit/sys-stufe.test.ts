@@ -3,7 +3,7 @@ import { stufeAus } from '../../scripts/sys/stufe.mjs'
 
 describe('Risikostufe aus Pfaden (Arbeitssystem)', () => {
   it.each([
-    [['docs/PROGRESS.md', 'CLAUDE.md'], 'R0'],
+    [['docs/PROGRESS.md', 'docs/ROADMAP.md'], 'R0'],
     [['src/screens/Start.tsx', 'tests/e2e/start.spec.ts'], 'R1'],
     [['src/lib/draft.ts', 'tests/unit/draft.test.ts', 'scripts/golive-check.mjs'], 'R2'],
     [['supabase/migrations/20261114100000_x.sql'], 'R3'],
@@ -12,6 +12,10 @@ describe('Risikostufe aus Pfaden (Arbeitssystem)', () => {
     [['scripts/sys/run.mjs'], 'R3'],
     [['.githooks/pre-push'], 'R3'],
     [['tests/unit/sys-guard.test.ts'], 'R3'],
+    [['CLAUDE.md'], 'R3'],
+    [['package.json'], 'R3'],
+    [['docs/reference/design/tokens.json'], 'R1'],
+    [['public/icon.svg'], 'R2'],
   ])('%j → %s', (pfade, soll) => {
     expect(stufeAus(pfade)).toBe(soll)
   })
