@@ -1,0 +1,61 @@
+{
+  "schritt": "u2",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "unbekannt",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 9,
+    "mech-editor": 2
+  },
+  "hash": "2dce1ed87d03788bca7f812518a31906d35086aa",
+  "stand": "b12da95a7bc657e92846849954213b5f715001191b9358aba20ffbb58caf63b0",
+  "mainVorher": "a80e51599eae8f99ab3c845c69570466715dcddf",
+  "commits": 1,
+  "geaendert": {
+    ".claude": 10,
+    "andere": 2,
+    "docs": 20
+  },
+  "laeufe": {
+    "check": {
+      "nr": 37,
+      "exit": 0,
+      "tests": "1668 passed (1668)",
+      "sek": 40.6,
+      "hash": "c9ec7c8140c41abaa8beec0e9d8c5faaf40ea518",
+      "log": "docs\\proof\\u2\\037-check.log"
+    },
+    "rls": {
+      "nr": 33,
+      "exit": 0,
+      "tests": "360 passed (360)",
+      "sek": 1657.4,
+      "hash": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a",
+      "log": "docs\\proof\\u2\\033-rls.log"
+    },
+    "e2e": {
+      "nr": 32,
+      "exit": 0,
+      "tests": "734 passed (18.2m)",
+      "sek": 1091.5,
+      "hash": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a",
+      "log": "docs\\proof\\u2\\032-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 0,
+    "rot": 0
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "tmp\\proof\\u2-abnahme.md",
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\u2\\u2-abnahme.md",
+    "docs\\proof\\u2\\u2-runde1-bericht.md"
+  ]
+}
