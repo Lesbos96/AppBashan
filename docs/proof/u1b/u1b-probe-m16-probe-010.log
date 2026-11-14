@@ -1,0 +1,13 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/m16-probe.mjs unveraendert
+Start: 2026-11-14T10:26:02.579Z
+---
+Migration (Attrappe): C:/Users/gesch/AppData/Local/Temp/m16-rMMVSt/migrations/20261201100000_probe.sql
+Freigegebener SHA256: 4a45092ccf992ea92250053a80b931b787924ba61648f420555511b84f10ab6c
+Push-Gate: Marken [{"pfad":"C:/Users/gesch/AppData/Local/Temp/m16-rMMVSt/migrations/20261201100000_probe.sql","sha256":"4a45092ccf992ea92250053a80b931b787924ba61648f420555511b84f10ab6c"}] Gründe []
+Merge-Gate: ohne Grund (würde durchlassen)
+
+---
+Dauer: 0.1 s
+EXIT=0

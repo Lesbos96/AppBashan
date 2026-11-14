@@ -1,0 +1,12 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: nein
+Befehl: node scripts/sys/gate-loesch.mjs --trocken --register scripts/sys/fixtures/loesch/register.json --freigaben scripts/sys/fixtures/loesch/gesperrt scripts/sys/fixtures/loesch/skript.mjs
+Start: 2026-11-14T10:27:05.346Z
+---
+LÖSCH-GATE BLOCKIERT:
+- scripts/sys/fixtures/loesch/skript.mjs: Urteil gesperrt
+- scripts/sys/fixtures/loesch/gebunden.txt: Urteil gesperrt
+
+---
+Dauer: 0.1 s
+EXIT=1

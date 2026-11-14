@@ -1,0 +1,35 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs frei Bash grep -n psql docs/BEKS_EINRICHTUNG.md echo 'psql delete from x' cat docs/PROGRESS.md | grep delete git commit -m 'psql und delete from erwähnt' supabase db query 'select 1 where 2 < 3' --linked
+Start: 2026-11-14T10:26:19.265Z
+---
+Werkzeug: Bash
+Befehl: grep -n psql docs/BEKS_EINRICHTUNG.md
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: echo 'psql delete from x'
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: cat docs/PROGRESS.md | grep delete
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: git commit -m 'psql und delete from erwähnt'
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: supabase db query 'select 1 where 2 < 3' --linked
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Ergebnis: 5 von 5 wie erwartet (frei)
+
+---
+Dauer: 0.4 s
+EXIT=0

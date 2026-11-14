@@ -1,0 +1,10 @@
+Commit: 49c923734b7877d3a07854dc3efa32e0773e5e93
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/gate-loesch.mjs --trocken --register scripts/sys/fixtures/loesch/register.json --freigaben scripts/sys/fixtures/loesch/frei scripts/sys/fixtures/loesch/skript.mjs
+Start: 2026-11-14T14:24:29.522Z
+---
+LÖSCH-GATE: würde durchlassen (scripts/sys/fixtures/loesch/skript.mjs, Trockenlauf, nichts gestartet)
+
+---
+Dauer: 0.1 s
+EXIT=0

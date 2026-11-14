@@ -1,0 +1,65 @@
+Commit: 49c923734b7877d3a07854dc3efa32e0773e5e93
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs verweigert Bash bash -c 'npm run check' sh -c 'npx vitest run' bash -lc 'supabase db push' sh -c 'echo x | psql' powershell -Command 'npm run test:rls' pwsh -c 'vitest run' cmd /c npm run check cmd /c 'npm run test:e2e' bash -c 'bash -c npm run check' powershell -EncodedCommand bnBtIHJ1biBjaGVjaw== eval npm run check
+Start: 2026-11-14T14:24:42.763Z
+---
+Werkzeug: Bash
+Befehl: bash -c 'npm run check'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: sh -c 'npx vitest run'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: bash -lc 'supabase db push'
+Guard-Antwort: GUARD: Datenbank-Änderungen nur über `npm run db:push` (Gate mit Fable-Freigabe). Direkt verboten.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: sh -c 'echo x | psql'
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: powershell -Command 'npm run test:rls'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: pwsh -c 'vitest run'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: cmd /c npm run check
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: cmd /c 'npm run test:e2e'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: bash -c 'bash -c npm run check'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: powershell -EncodedCommand bnBtIHJ1biBjaGVjaw==
+Guard-Antwort: GUARD: PowerShell -EncodedCommand ist nicht prüfbar und gesperrt.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: eval npm run check
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Ergebnis: 11 von 11 wie erwartet (verweigert)
+
+---
+Dauer: 0.7 s
+EXIT=0

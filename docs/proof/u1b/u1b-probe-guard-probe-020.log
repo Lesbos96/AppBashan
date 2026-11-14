@@ -1,0 +1,35 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs frei Bash bash -c 'ls' sh -c 'echo hallo' powershell -Command 'Get-ChildItem' cmd /c dir grep -rn psql docs
+Start: 2026-11-14T10:26:28.022Z
+---
+Werkzeug: Bash
+Befehl: bash -c 'ls'
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: sh -c 'echo hallo'
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: powershell -Command 'Get-ChildItem'
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: cmd /c dir
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: grep -rn psql docs
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Ergebnis: 5 von 5 wie erwartet (frei)
+
+---
+Dauer: 0.4 s
+EXIT=0

@@ -1,0 +1,16 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/m16-probe.mjs nach-push
+Start: 2026-11-14T10:26:04.333Z
+---
+Migration (Attrappe): C:/Users/gesch/AppData/Local/Temp/m16-IqyzJk/migrations/20261201100000_probe.sql
+Freigegebener SHA256: 4a45092ccf992ea92250053a80b931b787924ba61648f420555511b84f10ab6c
+Push-Gate: Marken [{"pfad":"C:/Users/gesch/AppData/Local/Temp/m16-IqyzJk/migrations/20261201100000_probe.sql","sha256":"4a45092ccf992ea92250053a80b931b787924ba61648f420555511b84f10ab6c"}] Gründe []
+Datei nach der Freigabe geändert, SHA256 jetzt: 9f37a1d7ede6c4eaa0c82bffcdd3828ff0c9ee36826824ec8cafb781eef4525b
+Merge-Gate: BLOCKIERT:
+- C:/Users/gesch/AppData/Local/Temp/m16-IqyzJk/migrations/20261201100000_probe.sql: keine Freigabe für Pfad und SHA256 9f37a1d7ede6c4eaa0c82bffcdd3828ff0c9ee36826824ec8cafb781eef4525b
+- C:/Users/gesch/AppData/Local/Temp/m16-IqyzJk/migrations/20261201100000_probe.sql: keine Marke db-push für Pfad und SHA256 9f37a1d7ede6c4eaa0c82bffcdd3828ff0c9ee36826824ec8cafb781eef4525b (Push nicht über npm run db:push, gescheitert oder Datei nach dem Push geändert)
+
+---
+Dauer: 0.1 s
+EXIT=1

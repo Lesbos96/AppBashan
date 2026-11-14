@@ -1,0 +1,19 @@
+Kennung: u1b-1411-a
+Schritt: u1b (Branch u1b von main 85251f9)
+Datum: 2026-11-14
+Modell: claude-sonnet-5-5 (Systemprompt: "The exact model ID is claude-sonnet-5-5")
+Effort: Feld reasoning_effort, Wert 10
+Berater-Sperre: Das eingebaute advisor-Tool (ohne Parameter) steht in der Tool-Liste dieser Session. CLAUDE_CODE_DISABLE_ADVISOR_TOOL ist in der Session-Umgebung ungesetzt, darum kein Probeaufruf. Subagent advisor/advisor-report: im Auftrag wird das eingebaute Tool verboten.
+
+Ausgangslage
+- main = origin/main = 85251f98847361241a8319d801204eeee8774af6; Arbeitsbaum: nur unverfolgt docs/VERBESSERUNGSVORSCHLAEGE.md (nicht committen)
+- keine node-Prozesse mit vitest/playwright (Get-CimInstance leer)
+- npm run db:antrag: 0 offene Migration(en) (lokal = remote bis 0062), tmp/proof/u1b/db-antrag-1.json
+- npm run start-schritt -- u1b: Branch angelegt, alle Prüfungen bestanden
+
+Einrichtung durch Beks (docs/BEKS_EINRICHTUNG.md)
+- Schritt 1 (trim-output.js, Zeile fuer MoveNow): NICHT wirksam. C:\Users\gesch\.claude\hooks\trim-output.js Zeile 23 und 24: kein cwd-MoveNow-Return.
+- Schritt 2 (CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1): NICHT wirksam. C:\Users\gesch\.claude\settings.json enthält keinen Eintrag; Variable in der Session ungesetzt; advisor-Tool in der Liste.
+- Schritt 3 (defaultMode auto): gesetzt (C:\Users\gesch\.claude\settings.json Zeile 6: "defaultMode": "auto"), obwohl M17/M18 noch nicht behoben sind.
+- Schritt 4 (core.hooksPath): wirksam (.githooks).
+- Schritt 5 (Guard-Hook lädt): wirksam. Probe `npx vitest --version` wurde vom Hook mit "GUARD: Tests nur über das Start-Programm" verweigert.

@@ -1,0 +1,10 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/gate-db.mjs push --trocken --liste scripts/sys/fixtures/db/liste.json --dir scripts/sys/fixtures/db/migrations --freigaben scripts/sys/fixtures/db/ok
+Start: 2026-11-14T10:26:11.396Z
+---
+GATE-DB: würde durchlassen (1 offene Migration(en), Trockenlauf, kein Push)
+
+---
+Dauer: 0.1 s
+EXIT=0

@@ -1,0 +1,35 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs verweigert PowerShell powershell -Command 'npm run check' powershell -NoProfile -Command 'supabase db push' cmd /c npm run check bash -c 'npx vitest run' iex 'npm run check'
+Start: 2026-11-14T10:26:26.937Z
+---
+Werkzeug: PowerShell
+Befehl: powershell -Command 'npm run check'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: powershell -NoProfile -Command 'supabase db push'
+Guard-Antwort: GUARD: Datenbank-Änderungen nur über `npm run db:push` (Gate mit Fable-Freigabe). Direkt verboten.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: cmd /c npm run check
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: bash -c 'npx vitest run'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: iex 'npm run check'
+Guard-Antwort: GUARD: Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.
+Guard-Exit: 2
+
+Ergebnis: 5 von 5 wie erwartet (verweigert)
+
+---
+Dauer: 0.4 s
+EXIT=0

@@ -1,0 +1,25 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: nein
+Befehl: node scripts/sys/fixtures/guard-probe.mjs frei Bash npm run loesch -- scripts/storage-reset.mjs ls docs/freigaben git add docs/freigaben/u1b-loesch-freigabe-1.md
+Start: 2026-11-14T10:27:12.275Z
+---
+Werkzeug: Bash
+Befehl: npm run loesch -- scripts/storage-reset.mjs
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: ls docs/freigaben
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Werkzeug: Bash
+Befehl: git add docs/freigaben/u1b-loesch-freigabe-1.md
+Guard-Antwort: (keine, durchgelassen)
+Guard-Exit: 0
+
+Ergebnis: 3 von 3 wie erwartet (frei)
+
+---
+Dauer: 0.3 s
+EXIT=0

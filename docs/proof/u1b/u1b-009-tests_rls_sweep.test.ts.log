@@ -1,0 +1,90 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: nein
+Befehl: npm run test:rls -- tests/rls/sweep.test.ts
+Start: 2026-11-14T10:24:27.381Z
+---
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/sweep.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |rls| tests/rls/sweep.test.ts (3 tests | 3 failed) 57341ms
+   ❯ sweepTestResidue findet Testfirmen an der Markierung (3)
+     × Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 28841ms
+     × Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung 2158ms
+     × Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt 3711ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts [ tests/rls/sweep.test.ts ]
+Error: LÖSCH-GATE BLOCKIERT: tests/support/marker.ts: keine Freigabe für Pfad und SHA256 79befc1e0125c49e346e9648c524f9d60f01c4276c193c69a7dfac54481420d4
+ ❯ loeschFreigabe scripts/sys/gate-loesch-lib.mjs:43:18
+     41|   if (!bindet) throw new Error(`LÖSCH-GATE: ${pfad} steht nicht im Reg…
+     42|   const { ok, gruende } = pruefeLoesch([pfad, ...bindet], freigaben())
+     43|   if (!ok) throw new Error(`LÖSCH-GATE BLOCKIERT: ${gruende.join('; ')…
+       |                  ^
+     44| }
+     45|
+ ❯ sweepTestResidue tests/support/sweep.ts:55:3
+ ❯ tests/rls/sweep.test.ts:40:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt
+Error: LÖSCH-GATE BLOCKIERT: tests/support/marker.ts: keine Freigabe für Pfad und SHA256 79befc1e0125c49e346e9648c524f9d60f01c4276c193c69a7dfac54481420d4
+ ❯ loeschFreigabe scripts/sys/gate-loesch-lib.mjs:43:18
+     41|   if (!bindet) throw new Error(`LÖSCH-GATE: ${pfad} steht nicht im Reg…
+     42|   const { ok, gruende } = pruefeLoesch([pfad, ...bindet], freigaben())
+     43|   if (!ok) throw new Error(`LÖSCH-GATE BLOCKIERT: ${gruende.join('; ')…
+       |                  ^
+     44| }
+     45|
+ ❯ sweepTestResidue tests/support/sweep.ts:55:3
+ ❯ tests/rls/sweep.test.ts:50:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung
+Error: LÖSCH-GATE BLOCKIERT: tests/support/marker.ts: keine Freigabe für Pfad und SHA256 79befc1e0125c49e346e9648c524f9d60f01c4276c193c69a7dfac54481420d4
+ ❯ loeschFreigabe scripts/sys/gate-loesch-lib.mjs:43:18
+     41|   if (!bindet) throw new Error(`LÖSCH-GATE: ${pfad} steht nicht im Reg…
+     42|   const { ok, gruende } = pruefeLoesch([pfad, ...bindet], freigaben())
+     43|   if (!ok) throw new Error(`LÖSCH-GATE BLOCKIERT: ${gruende.join('; ')…
+       |                  ^
+     44| }
+     45|
+ ❯ sweepTestResidue tests/support/sweep.ts:55:3
+ ❯ tests/rls/sweep.test.ts:57:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |rls| tests/rls/sweep.test.ts > sweepTestResidue findet Testfirmen an der Markierung > Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt
+Error: LÖSCH-GATE BLOCKIERT: tests/support/marker.ts: keine Freigabe für Pfad und SHA256 79befc1e0125c49e346e9648c524f9d60f01c4276c193c69a7dfac54481420d4
+ ❯ loeschFreigabe scripts/sys/gate-loesch-lib.mjs:43:18
+     41|   if (!bindet) throw new Error(`LÖSCH-GATE: ${pfad} steht nicht im Reg…
+     42|   const { ok, gruende } = pruefeLoesch([pfad, ...bindet], freigaben())
+     43|   if (!ok) throw new Error(`LÖSCH-GATE BLOCKIERT: ${gruende.join('; ')…
+       |                  ^
+     44| }
+     45|
+ ❯ sweepTestResidue tests/support/sweep.ts:55:3
+ ❯ tests/rls/sweep.test.ts:65:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  11:24:28
+   Duration  74.88s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+
+---
+Dauer: 77.2 s
+EXIT=1

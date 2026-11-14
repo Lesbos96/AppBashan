@@ -1,0 +1,11 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/gate-db.mjs push --trocken --liste scripts/sys/fixtures/db/liste.json --dir scripts/sys/fixtures/db/migrations --freigaben scripts/sys/fixtures/db/falsch
+Start: 2026-11-14T10:26:10.253Z
+---
+GATE-DB BLOCKIERT:
+- scripts/sys/fixtures/db/migrations/20261201100000_probe.sql: keine Freigabe für Pfad und SHA256 3ecdac512135a656a54770e27b1f08a7e81951a021479fd7fa85a1ca1c08a875
+
+---
+Dauer: 0.1 s
+EXIT=1

@@ -1,0 +1,30 @@
+Commit: 49c923734b7877d3a07854dc3efa32e0773e5e93
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs verweigert PowerShell Get-Content tmp/x.sql | psql Get-Content tmp/x.sql | supabase db query --linked 'npm run check' | Invoke-Expression 'npm run check' | powershell
+Start: 2026-11-14T14:24:40.772Z
+---
+Werkzeug: PowerShell
+Befehl: Get-Content tmp/x.sql | psql
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: Get-Content tmp/x.sql | supabase db query --linked
+Guard-Antwort: GUARD: SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: 'npm run check' | Invoke-Expression
+Guard-Antwort: GUARD: Ein Befehl per Pipe an eine Shell oder einen Interpreter ist nicht prüfbar.
+Guard-Exit: 2
+
+Werkzeug: PowerShell
+Befehl: 'npm run check' | powershell
+Guard-Antwort: GUARD: Ein Befehl per Pipe an eine Shell oder einen Interpreter ist nicht prüfbar.
+Guard-Exit: 2
+
+Ergebnis: 4 von 4 wie erwartet (verweigert)
+
+---
+Dauer: 0.3 s
+EXIT=0

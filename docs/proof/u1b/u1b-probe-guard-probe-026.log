@@ -1,0 +1,55 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: nein
+Befehl: node scripts/sys/fixtures/guard-probe.mjs verweigert Bash supabase db query 'delete from public.partners' --linked echo 'delete from public.partners' | psql bash -c 'supabase db query delete-from-public.partners --linked | psql' node scripts/storage-reset.mjs npx dotenv -e .env.local -- node scripts/admin-call.mjs npm run setup:photo-cleanup cp x docs/freigaben/y.md echo x > docs/freigaben/y.md cp x tmp/proof/u1b/loesch-freigabe-9.md
+Start: 2026-11-14T10:27:10.942Z
+---
+Werkzeug: Bash
+Befehl: supabase db query 'delete from public.partners' --linked
+Guard-Antwort: GUARD: Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: echo 'delete from public.partners' | psql
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: bash -c 'supabase db query delete-from-public.partners --linked | psql'
+Guard-Antwort: GUARD: Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: node scripts/storage-reset.mjs
+Guard-Antwort: GUARD: Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: npx dotenv -e .env.local -- node scripts/admin-call.mjs
+Guard-Antwort: GUARD: Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: npm run setup:photo-cleanup
+Guard-Antwort: GUARD: `npm run setup:photo-cleanup` startet ein Lösch-Skript: nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: cp x docs/freigaben/y.md
+Guard-Antwort: GUARD: docs/freigaben schreibt nur `npm run loesch -- uebernehme <tmp/proof/…/loesch-freigabe-N.md>`; nur Lesen und git add sind erlaubt.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: echo x > docs/freigaben/y.md
+Guard-Antwort: GUARD: docs/freigaben schreibt nur `npm run loesch -- uebernehme <tmp/proof/…/loesch-freigabe-N.md>`; nur Lesen und git add sind erlaubt.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: cp x tmp/proof/u1b/loesch-freigabe-9.md
+Guard-Antwort: GUARD: Läufe, Logs, Anträge, Freigaben und Abnahmen entstehen nur durch Start-Programm bzw. advisor-report; nichts dorthin kopieren oder schreiben.
+Guard-Exit: 2
+
+Ergebnis: 9 von 9 wie erwartet (verweigert)
+
+---
+Dauer: 0.6 s
+EXIT=0

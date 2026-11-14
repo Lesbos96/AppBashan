@@ -1,0 +1,28 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: ja
+Befehl: npm run test:rls -- tests/rls/sweep.test.ts
+Start: 2026-11-14T10:22:53.436Z
+---
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json tests/rls/sweep.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/sweep.test.ts (3 tests) 62669ms
+   ✓ sweepTestResidue findet Testfirmen an der Markierung (3)
+     ✓ Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 32947ms
+     ✓ Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung 2892ms
+     ✓ Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt 3562ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  11:22:54
+   Duration  81.46s (tests 100%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+
+---
+Dauer: 84.1 s
+EXIT=0

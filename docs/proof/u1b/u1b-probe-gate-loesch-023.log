@@ -1,0 +1,11 @@
+Commit: abd95cdbee620338898abda830ae691526497b96
+Arbeitsbaum sauber: nein
+Befehl: node scripts/sys/gate-loesch.mjs --trocken --register scripts/sys/fixtures/loesch/register.json --freigaben scripts/sys/fixtures/loesch/gebunden-geaendert scripts/sys/fixtures/loesch/skript.mjs
+Start: 2026-11-14T10:27:04.207Z
+---
+LÖSCH-GATE BLOCKIERT:
+- scripts/sys/fixtures/loesch/gebunden.txt: keine Freigabe für Pfad und SHA256 d80c70a5547d91456fb4d3acfa0aa272c85861ffdd6efb5fd6a20ca4513ddcd0
+
+---
+Dauer: 0.1 s
+EXIT=1

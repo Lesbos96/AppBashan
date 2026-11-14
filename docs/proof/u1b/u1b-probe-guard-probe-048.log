@@ -1,0 +1,40 @@
+Commit: 49c923734b7877d3a07854dc3efa32e0773e5e93
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fixtures/guard-probe.mjs verweigert Bash echo 'delete from public.x' | psql echo 'select 1' | psql -h x psql -c 'select 1' cat tmp/x.sql | npx supabase db query --linked supabase db query --linked < tmp/x.sql echo 'supabase db push' | bash
+Start: 2026-11-14T14:24:39.689Z
+---
+Werkzeug: Bash
+Befehl: echo 'delete from public.x' | psql
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: echo 'select 1' | psql -h x
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: psql -c 'select 1'
+Guard-Antwort: GUARD: psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: cat tmp/x.sql | npx supabase db query --linked
+Guard-Antwort: GUARD: SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: supabase db query --linked < tmp/x.sql
+Guard-Antwort: GUARD: SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.
+Guard-Exit: 2
+
+Werkzeug: Bash
+Befehl: echo 'supabase db push' | bash
+Guard-Antwort: GUARD: Ein Befehl per Pipe an eine Shell oder einen Interpreter ist nicht prüfbar.
+Guard-Exit: 2
+
+Ergebnis: 6 von 6 wie erwartet (verweigert)
+
+---
+Dauer: 0.4 s
+EXIT=0
