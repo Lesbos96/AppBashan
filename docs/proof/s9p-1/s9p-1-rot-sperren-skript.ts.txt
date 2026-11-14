@@ -1,0 +1,63 @@
+import '../../scripts/dev-guard.mjs'
+// Lockerungsproben s9p-1 (Fable M5): jede Sperre wird im Rollback gelockert; der Ist-Wert zeigt die Wirkung (Zeilen sichtbar, Buchung entsteht, Version geändert).
+import { writeFileSync } from 'node:fs'
+import { describe, it } from 'vitest'
+import { splitFee } from '@pricing'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
+import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
+
+const r0 = currentFee()
+const U = { adm: newId(), cust: newId(), pa: newId() }
+const USERS = insertUsers(Object.values(U))
+const FA = firm(U.pa, 'a', 'active', U.adm, { districts: 'array[17, 18]::smallint[]' })
+const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
+const named = (name: string, s: Omit<Step, 'name'>): Step => ({ ...s, name })
+
+function request(id: string, fixed: boolean): string {
+  const snap = fixed ? '{"kind":"price","totalCents":68961,"lowCents":68961,"highCents":68961,"lines":[]}' : '{"kind":"price","lowCents":100000,"highCents":200000,"lines":[],"terms":{"x":1}}'
+  const vals = fixed ? '68961, 68961, 68961' : 'null, 100000, 200000'
+  return `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline)
+    values ('${id}', '${U.cust}', gen_random_uuid(), 'move', '${fixed ? 'requested' : 'awaiting_offer'}', 17, now() + interval '14 days', now() + interval '1 day');
+    insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
+    values ('${id}', 1, 'submit', '{}', '${snap}', 1, ${vals});
+    update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';`
+}
+
+const s1 = splitFee(68961, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: r0.vr })
+const GUARD_LINE = "if ev is distinct from new.fee_schedule_version then raise exception ''rate_mismatch''; end if;"
+const loosenGuard = `execute replace(pg_get_functiondef('private.guard_commission_insert()'::regprocedure), '${GUARD_LINE}', '')`
+const loosenOffer = `execute replace(replace(pg_get_functiondef('private.guard_partner_offer()'::regprocedure), ', new.fee_schedule_version)', ')'), ', old.fee_schedule_version)', ')')`
+
+describe('Lockerungsproben Staffel', () => {
+  it('Ist-Werte vorher und nachher', () => {
+    const [R, R2] = [newId(), newId()]
+    const book = `insert into public.commission_entries (partner_id, request_id, revision_id, kind, total_cents, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, fee_vat_rate, vat_rule, price_version, fee_schedule_version, fee_vat_rate_version)
+      values (${P('a')}, '${R}', (select id from public.price_revisions where request_id = '${R}' and n = 1), 'booking', ${s1.totalCents}, ${s1.feeCents}, ${s1.feeNetCents}, ${s1.feeVatCents}, ${s1.payoutCents}, ${r0.vr}, 'standard_20', 1, 1, ${r0.vrv})`
+    const offerId = `(select id from public.partner_offers where request_id = '${R2}' and partner_id = ${P('a')})`
+    const withdraw = `update public.partner_offers set status = 'withdrawn', decided_at = now(), fee_schedule_version = 1 where id = ${offerId}`
+    const setup = `${USERS} ${grantAdmin(U.adm)} ${FA} ${request(R, true)} ${request(R2, false)} select public.distribute_request('${R2}'); select set_config('app.l_x', (select id::text from public.job_listings where request_id = '${R2}' and partner_id = ${P('a')}), true);`
+    const steps: Step[] = [
+      named('a vorher: Kunde liest fee_schedule_tiers', { as: 'authenticated', claims: A2(U.cust), sql: '=(select count(*) from public.fee_schedule_tiers)' }),
+      named('a lockern', { sql: 'alter policy fee_schedule_tiers_select on public.fee_schedule_tiers using (true)' }),
+      named('a nachher: Kunde liest fee_schedule_tiers', { as: 'authenticated', claims: A2(U.cust), sql: '=(select count(*) from public.fee_schedule_tiers)' }),
+      named('b vorher: Firma liest fee_rate', { as: 'authenticated', claims: A2(U.pa), sql: "=(select count(*) from public.platform_settings where key = 'fee_rate')" }),
+      named('b lockern (Stand 0027)', { sql: "alter policy platform_settings_select on public.platform_settings using ((select private.is_admin()) or (key in ('fee_rate', 'fee_vat_rate') and (select private.my_member_partner_id()) is not null))" }),
+      named('b nachher: Firma liest fee_rate', { as: 'authenticated', claims: A2(U.pa), sql: "=(select count(*) from public.platform_settings where key = 'fee_rate')" }),
+      named('c vorher: booking mit Version 1 (geltend 2)', { sql: book }),
+      named('c lockern (Versionsprüfung im Guard)', { sql: loosenGuard }),
+      named('c nachher: booking mit Version 1 (geltend 2)', { sql: book }),
+      named('d Angebot senden', {
+        as: 'authenticated',
+        claims: A2(U.pa),
+        sql: `perform public.send_offer(current_setting('app.l_x')::uuid, 150000)`,
+      }),
+      named('d vorher: Version beim Statuswechsel ändern', { sql: withdraw }),
+      named('d lockern (Version aus guard_partner_offer)', { sql: loosenOffer }),
+      named('d nachher: Version beim Statuswechsel ändern', { sql: withdraw }),
+      named('d nachher: gespeicherte Version', { sql: `=(select fee_schedule_version from public.partner_offers where id = ${offerId})` }),
+    ]
+    const r = probes(setup, steps)
+    writeFileSync('tmp/reports/rot-sperren-ist.txt', Object.entries(r).map(([k, v]) => `${k} | ${v}`).join('\n') + '\n')
+  })
+})

@@ -1,0 +1,14 @@
+a vorher: Kunde liest fee_schedule_tiers | = 0
+a lockern | ok
+a nachher: Kunde liest fee_schedule_tiers | = 4
+b vorher: Firma liest fee_rate | = 0
+b lockern (Stand 0027) | ok
+b nachher: Firma liest fee_rate | = 1
+c vorher: booking mit Version 1 (geltend 2) | P0001: rate_mismatch
+c lockern (Versionsprüfung im Guard) | ok
+c nachher: booking mit Version 1 (geltend 2) | ok
+d Angebot senden | ok
+d vorher: Version beim Statuswechsel ändern | P0001: offer_immutable
+d lockern (Version aus guard_partner_offer) | ok
+d nachher: Version beim Statuswechsel ändern | ok
+d nachher: gespeicherte Version | = 1
