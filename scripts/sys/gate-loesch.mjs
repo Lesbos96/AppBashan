@@ -21,7 +21,7 @@ const aus = (code, text) => {
 
 if (args[0] === 'uebernehme') {
   const quelle = norm(args[1] ?? '')
-  if (args.length !== 2 || !/^tmp\/proof\/(?!.*\.\.)[\w./-]*loesch-freigabe-[\w.-]+\.md$/.test(quelle)) aus(2, 'Aufruf: gate-loesch.mjs uebernehme tmp/proof/<ordner>/loesch-freigabe-N.md')
+  if (args.length !== 2 || !/^tmp\/proof\/(?!.*\.\.)(?:[\w.-]+\/)*loesch-freigabe-[\w.-]+\.md$/.test(quelle)) aus(2, 'Aufruf: gate-loesch.mjs uebernehme tmp/proof/<ordner>/loesch-freigabe-N.md')
   const f = parseFreigabe(readFileSync(quelle, 'utf8'))
   const register = leseRegister()
   const bekannt = new Set(Object.entries(register.skripte).flatMap(([p, bindet]) => [p, ...bindet]))
@@ -59,6 +59,7 @@ if (trocken) {
   process.exit(0)
 }
 
+await import('../dev-guard.mjs') // bricht ab, wenn die Ref nicht die Dev-Ref ist (nicht jedes Registerskript lädt ihn selbst)
 const laufId = randomUUID()
 const start = Date.now()
 console.log(`LÖSCH-GATE: frei, Lauf ${laufId}`)

@@ -233,6 +233,58 @@ describe('u1b M18: verschachtelte Shells', () => {
     for (const c of ['bash schlecht.sh', './schlecht.sh', '. schlecht.sh', 'source schlecht.sh', 'pwsh -File schlecht.ps1', '.\\schlecht.ps1', 'cmd /c schlecht.ps1', 'bash fehlt.sh']) expect(bash(c, 'Bash', dir).exit, c).toBe(2)
     expect(bash('bash gut.sh', 'Bash', dir).exit).toBe(0)
   })
+  it('Skriptdateien mit Optionswerten, Hüllen, Leerzeichen im Pfad und ohne Endung (Abnahme AM1)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guard-skript2-'))
+    mkdirSync(join(dir, 'mit leer'))
+    writeFileSync(join(dir, 'schlecht.ps1'), 'supabase db push --linked\n')
+    writeFileSync(join(dir, 'schlecht.sh'), 'npm run check\n')
+    writeFileSync(join(dir, 'schlecht.bat'), 'npm run check\n')
+    writeFileSync(join(dir, 'schlecht'), 'npm run check\n')
+    writeFileSync(join(dir, 'mit leer', 'x.ps1'), 'npm run check\n')
+    for (const c of [
+      'powershell -NoProfile -ExecutionPolicy Bypass -File schlecht.ps1',
+      'pwsh -NoLogo -File schlecht.ps1',
+      'npx dotenv -e .env.local -- bash schlecht.sh',
+      'FOO=1 bash schlecht.sh',
+      'time ./schlecht.sh',
+      '& "mit leer\\x.ps1"',
+      'cmd /c call schlecht.bat',
+      'bash schlecht',
+    ]) expect(bash(c, 'Bash', dir).exit, c).toBe(2)
+  })
+})
+
+describe('u1b Abnahme AM2/AM3/AM4: weitere Schreibweisen', () => {
+  it.each([
+    'supabase db query --linked (Get-Content tmp/x.sql -Raw)',
+    'supabase db query --linked @tmp/x.sql',
+    'cat x.sql | xargs supabase db query --linked',
+    'supabase db query wort --linked',
+    'supabase db query "select 1" "select 2" --linked',
+  ])('db query ohne wörtliches select wird verweigert: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it.each([
+    'supabase db query "select 1" --linked -o json',
+    'supabase db query --linked -o json "select count(*) from public.x"',
+    'supabase db query "select 1" --linked && git commit -m "update und set erwähnt"',
+    'echo supabase db query',
+  ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    expect(bash(c).exit).toBe(0)
+  })
+  it.each([
+    'node --env-file .env.local scripts/storage-reset.mjs',
+    'node -r dotenv/config scripts/storage-reset.mjs',
+    'node "scripts/storage-reset.mjs"',
+    "node 'scripts/admin-call.mjs'",
+  ])('Registerskript mit Optionswert oder Anführungszeichen: %s', (c) => {
+    expect(bash(c).exit).toBe(2)
+  })
+  it('Pfade werden aufgelöst und ohne Beachtung der Schreibweise verglichen (Windows)', () => {
+    for (const p of ['C:\\p\\TMP\\Proof\\u1b-abnahme.md', 'C:\\p\\Docs\\Freigaben\\x.md', 'C:\\p\\tmp\\.\\proof\\u1\\runs.jsonl', 'C:\\p\\tmp\\proof\\x\\..\\u1\\Loesch-Lauf.jsonl', 'C:\\p\\.GIT\\config']) {
+      expect(datei(p).exit, p).toBe(2)
+    }
+  })
 })
 
 describe('u1b Lösch-Gate im Guard', () => {

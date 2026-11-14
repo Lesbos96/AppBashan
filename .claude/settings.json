@@ -66,7 +66,8 @@
       "Agent(general-purpose)",
       "Agent(claude)",
       "mcp__d7859db5-7e7e-4e6b-a9d5-ae276b32608a",
-      "Edit(./docs/proof/**)"
+      "Edit(./docs/proof/**)",
+      "Edit(./docs/freigaben/**)"
     ],
     "ask": [
       "Bash(npm run db:push:*)",

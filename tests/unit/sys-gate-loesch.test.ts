@@ -56,6 +56,8 @@ describe('Lösch-Gate (Trockenlauf mit Attrappe, nichts wird gestartet)', () => 
     ['uebernehme ohne Pfad', ['uebernehme']],
     ['uebernehme mit Pfad außerhalb von tmp/proof', ['uebernehme', 'docs/x/loesch-freigabe-1.md']],
     ['uebernehme mit ..', ['uebernehme', 'tmp/proof/../x/loesch-freigabe-1.md']],
+    ['uebernehme mit Vorsilbe im Dateinamen (nicht vom Berater geschützt)', ['uebernehme', 'tmp/proof/u1b/vor-loesch-freigabe-2.md']],
+    ['uebernehme mit anderer Endung', ['uebernehme', 'tmp/proof/u1b/loesch-freigabe-1.txt']],
   ])('Aufruffehler (Exit 2): %s', (_n, a) => {
     expect(gate(...a).status).toBe(2)
   })

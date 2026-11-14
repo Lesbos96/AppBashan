@@ -1,14 +1,14 @@
 // Wächter-Hook (PreToolUse): verweigert nur (Exit 2 + Grund auf stderr), erlaubt nie und baut keinen Befehl um.
 // Muster treffen die übliche Schreibweise; sie sind keine Sicherheitsgrenze (Doku). Die zweite Ebene sind run.mjs/runs.jsonl, fertig und der pre-push-Hook.
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const WURZEL = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const SCHREIBEN = /^(tee|out-file|set-content|add-content|new-item|ni|sc|ac|touch)\b/i
 const KOPIEREN = /^(cp|mv|copy|move|copy-item|move-item)\b/i
 // Dateien, die nur ein Skript bzw. der Berater schreiben darf (nur unter tmp/proof).
-const SKRIPT_DATEI = /(^|[\\/])(runs\.jsonl|\d{3}-[^\\/]*\.log|db-antrag-[^\\/]*|db-push-geplant\.json|loesch-lauf\.jsonl|session\.json|agents\.jsonl)$/
+const SKRIPT_DATEI = /(^|[\\/])(runs\.jsonl|\d{3}-[^\\/]*\.log|db-antrag-[^\\/]*|loesch-lauf\.jsonl|session\.json|agents\.jsonl)$/
 const BERATER_DATEI = /(^|[\\/])(db-freigabe-[^\\/]*|loesch-freigabe-[^\\/]*|[^\\/]*-abnahme\.md)$/
 const SQL_SCHREIBEND =
   /\b(insert|update|delete|truncate|drop|alter|create|grant|revoke|call|copy|do|merge|execute|perform|into|set|reset|lock|refresh|vacuum|comment|prepare)\b|\b(admin_\w+|set_config|setval|pg_terminate_backend|pg_cancel_backend|dblink\w*|lo_\w+)\s*\(|\b(cron|net)\./i
@@ -67,10 +67,17 @@ function innentext(k) {
   return null
 }
 
-// Skriptdatei, die eine Shell ausführt (bash x.sh, ./x.sh, . x.sh, source x.sh, pwsh -File x.ps1, .\x.ps1, cmd /c x.bat): Pfad oder null.
-function skriptDatei(seg) {
-  const s = seg.trim().replace(/^&\s*/, '')
-  return /^(?:(?:bash|sh|zsh|dash|ksh|source|\.|cmd|powershell|pwsh)(?:\.exe)?(?:\s+(?:-\S+|\/\S+))*\s+)?["']?([^\s"';|&<>]+\.(?:sh|ps1|bat|cmd))["']?(?=\s|$)/i.exec(s)?.[1] ?? null
+// Wörter eines Befehls, Anführungszeichen als ein Wort (Pfade mit Leerzeichen).
+const woerter = (k) => [...k.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)].map((m) => m[1] ?? m[2] ?? m[3])
+
+// Skriptdatei, die eine Shell ausführt (bash x.sh, ./x.sh, . x.sh, source x.sh, pwsh -File x.ps1, auch mit Optionswerten, .\x.ps1, cmd /c call x.bat): Pfad oder null.
+// k ist der Kern ohne Hüllen (Umgebungsvariablen, dotenv, time, call …). Bei bash, sh, source und `.` zählt auch ein erstes Wort ohne Option und ohne Endung.
+function skriptDatei(k) {
+  const w = woerter(k)
+  const ENDUNG = /\.(sh|ps1|bat|cmd)$/i
+  if (!/^(bash|sh|zsh|dash|ksh|source|\.|cmd|powershell|pwsh)(\.exe)?$/i.test(w[0] ?? '')) return ENDUNG.test(w[0] ?? '') ? w[0] : null
+  const rest = w.slice(1).filter((x) => !/^call$/i.test(x))
+  return rest.find((x) => ENDUNG.test(x)) ?? (/^(bash|sh|zsh|dash|ksh|source|\.)(\.exe)?$/i.test(w[0]) ? rest.find((x) => !/^[-/]/.test(x)) ?? null : null)
 }
 
 let registerCache
@@ -93,8 +100,8 @@ function loeschDirekt(k) {
   if (!interpreter && !npmRun) return null
   const r = ladeRegister()
   if (!r) return 'Das Lösch-Register (scripts/sys/loesch-register.json) oder package.json ist nicht lesbar; Aufruf sicherheitshalber verweigert.'
-  // Nur das Skript zählt, das der Interpreter startet (erstes Wort ohne Optionen), nicht Wörter in den Argumenten.
-  const ziel = norm(k.replace(/^(node|deno|tsx|bun)\s+(?:run\s+)?(?:-\S+\s+)*/, '').split(/\s+/)[0] ?? '')
+  // Nur das Skript zählt, das der Interpreter startet (erstes Wort mit Skript-Endung, Optionen samt Werten und Anführungszeichen übersprungen), nicht Wörter in den Argumenten.
+  const ziel = norm(woerter(k).slice(1).find((x) => /\.(mjs|cjs|js|mts|ts)$/i.test(x)) ?? '')
   if (interpreter && r.skripte.some((p) => ziel.endsWith(p) || (p.endsWith('.mjs') && ziel === p.split('/').pop()))) return 'Skripte, die auf Dev löschen oder Status ändern, nur über `npm run loesch -- <skript.mjs>` (Lösch-Gate mit Fable-Freigabe).'
   if (npmRun && r.aliase.includes(npmRun[1])) return `\`npm run ${npmRun[1]}\` startet ein Lösch-Skript: nur über \`npm run loesch -- <skript.mjs>\` (Lösch-Gate mit Fable-Freigabe).`
   return null
@@ -102,11 +109,6 @@ function loeschDirekt(k) {
 
 export function entscheideBefehl(befehl, tiefe = 0) {
   if (tiefe > 4) return 'Shell-Verschachtelung tiefer als 4: nicht prüfbar.'
-  const maske = maskiere(befehl)
-  // Schreibendes SQL über `db query`: im ganzen Befehl (Mehrfachanweisungen, mehrzeilig, Heredoc), Dateiinhalt (-f) ist unsichtbar.
-  if (new RegExp(`${SUPABASE}db\\s+query\\b`).test(maske)) {
-    if (SQL_SCHREIBEND.test(befehl) || /\s(--file|-f)(\s|=)/.test(maske)) return 'Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.'
-  }
   for (const { roh, kahl, trenner } of segmente(befehl)) {
     const seg = roh.trim()
     if (!seg) continue
@@ -119,9 +121,26 @@ export function entscheideBefehl(befehl, tiefe = 0) {
       return 'Datenbank-Änderungen nur über `npm run db:push` (Gate mit Fable-Freigabe). Direkt verboten.'
     }
     if (/^psql\b/.test(k)) return 'psql ist gesperrt: SQL nur über versionierte Skripte, Migrationen (db:push) oder das Lösch-Gate.'
-    if (/^supabase\b/.test(k) && new RegExp(`^${SUPABASE}db\\s+query\\b`).test(k)) {
-      const ohneEinfache = roh.replace(/'[^']*'/g, "''")
-      if (trenner === '|' || /</.test(kahl) || /\$[\w({]|`/.test(ohneEinfache)) return 'SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.'
+    if (new RegExp(`${SUPABASE}db\\s+query\\b`).test(kk)) {
+      if (!/^(supabase|echo|printf|grep|rg|cat|type|ls|dir|get-content|select-string|git|npm|node)\b/i.test(kk)) return '`db query` nur als eigener Befehl (nicht hinter xargs, einer Hülle o. ä.).'
+      // Schreibendes SQL im Segment (Mehrfachanweisungen in Anführungszeichen bleiben im Segment; Heredoc und `<` verweigert die Regel darunter), Dateiinhalt (-f) ist unsichtbar.
+      if (/^supabase\b/.test(kk)) {
+        if (SQL_SCHREIBEND.test(roh) || /\s(--file|-f)(\s|=)/.test(kahl)) return 'Schreibendes SQL (auch aus Datei) nur über versionierte Skripte oder Migrationen.'
+        const ohneEinfache = roh.replace(/'[^']*'/g, "''")
+        if (trenner === '|' || /</.test(kahl) || /\$[\w({]|`/.test(ohneEinfache)) return 'SQL aus Pipe, Datei-Umleitung oder Ersetzung ($…, Backtick) ist nicht prüfbar: nur ein wörtliches select als Argument.'
+        // Erlaubtform: nach `db query` nur Optionen (mit Wert) und höchstens ein Argument in Anführungszeichen; Klammerausdrücke, @, bloße Wörter werden verweigert.
+        let vorOption = false
+        let zitate = 0
+        for (const t of kk.replace(new RegExp(`^${SUPABASE}db\\s+query\\b`), '').trim().split(/\s+/).filter(Boolean)) {
+          if (t.startsWith('-')) vorOption = !t.includes('=')
+          else if (/^(["']).*\1$/.test(t)) {
+            zitate++
+            vorOption = false
+          } else if (vorOption && /^[\w.:-]+$/.test(t)) vorOption = false
+          else return 'Die Argumente von `db query` sind nicht prüfbar: nur Optionen und ein wörtliches select in Anführungszeichen.'
+        }
+        if (zitate > 1) return 'Die Argumente von `db query` sind nicht prüfbar: genau ein wörtliches select in Anführungszeichen.'
+      }
     }
     if (trenner === '|' && (new RegExp(`^(${SHELL}|iex|invoke-expression)\\b`, 'i').test(k) || /^(node|deno|tsx|python3?|bun|ruby|perl)(\s+-)?\s*$/.test(k))) {
       return 'Ein Befehl per Pipe an eine Shell oder einen Interpreter ist nicht prüfbar.'
@@ -133,7 +152,7 @@ export function entscheideBefehl(befehl, tiefe = 0) {
       const g = entscheideBefehl(innen, tiefe + 1)
       if (g) return g
     }
-    const datei = skriptDatei(seg)
+    const datei = skriptDatei(k)
     if (datei !== null && innen === null) {
       let inhalt
       try {
@@ -175,7 +194,7 @@ export function entscheideBefehl(befehl, tiefe = 0) {
 }
 
 export function entscheideDatei(pfad, agentType, vorhanden = existsSync) {
-  const p = pfad.replace(/\\/g, '/')
+  const p = resolve(pfad).replace(/\\/g, '/').toLowerCase() // aufgelöst und kleingeschrieben: unter Windows ist TMP\.\Proof dieselbe Datei wie tmp/proof
   if (/(^|\/)\.git\//.test(p)) return 'Schreiben in .git ist gesperrt (Hooks und Konfiguration bleiben unangetastet).'
   if (/\/docs\/freigaben\//.test(p)) return 'docs/freigaben schreibt nur `npm run loesch -- uebernehme` (Lösch-Gate), nie ein Schreibwerkzeug.'
   if (/\/tmp\/proof\//.test(p) && SKRIPT_DATEI.test(p)) return 'Läufe, Logs, Anträge und Protokolle schreibt nur ein Skript (npm run t, gate-db, Hooks).'
