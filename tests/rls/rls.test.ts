@@ -461,6 +461,7 @@ describe('Rollen', () => {
       'my_jobs()', // s9i-6b: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen
       'my_request_offers(uuid)',
       'partner_quality()', // S9h-2: nur admin sieht Zeilen (is_admin in der Funktion)
+      'payout_preview(bigint)', // s9p-1: nur Firmenmitglieder mit aal2 (in der Funktion), liefert nur „Du erhältst“, nie die Gebühr
       'private.assignment_access(uuid,uuid):authenticated',
       'private.in_scope_request(uuid,uuid):authenticated',
       'private.in_scope(uuid,service_type,smallint):authenticated',

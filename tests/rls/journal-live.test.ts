@@ -166,11 +166,11 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
     expect(mine(r, J2).map((x) => x.kind)).toContain('change')
   })
 
-  live('Storno mit Pauschale: Stornopauschale 6.900 ct (Gebühr 1.035 = 863 + 172, Auszahlung 5.865), Rest hebt sich auf', async () => {
+  live('Storno mit Pauschale: Stornopauschale 6.900 ct (Gebühr 828 = 690 + 138, Auszahlung 6.072; Staffel v2), Rest hebt sich auf', async () => {
     const rows = mine((await appCall(pa.aal2)).data, J4)
     const fee = rows.filter((x) => x.kind === 'cancellation_fee')
     expect(fee).toHaveLength(1)
-    expect(fee[0]).toMatchObject({ total_cents: 6900, fee_cents: 1035, fee_net_cents: 863, fee_vat_cents: 172, payout_cents: 5865 })
+    expect(fee[0]).toMatchObject({ total_cents: 6900, fee_cents: 828, fee_net_cents: 690, fee_vat_cents: 138, payout_cents: 6072 })
     for (const col of ['total_cents', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents'] as const) expect(sum(rows, col)).toBe(Number(fee[0]![col]))
   })
 

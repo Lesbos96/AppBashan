@@ -219,7 +219,7 @@ describe('Annahme (partner_accept)', () => {
       { name: 'Limit 1', sql: `update public.platform_settings set value = 1 where key = 'partner_open_jobs_max'` },
       { name: 'erste', as: 'service_role', sql: `perform ${acc(U.pa, R1, 'a')}` },
       { name: 'zweite über Limit', as: 'service_role', sql: `perform ${acc(U.pa, R2, 'a')}` },
-      { name: 'Annahme pending', as: 'service_role', sql: `perform public.partner_accept('${U.pend}', gen_random_uuid(), gen_random_uuid(), 1, 0.15, 0.2, 1, 1, 0, 1, 1, 1)` },
+      { name: 'Annahme pending', as: 'service_role', sql: `perform public.partner_accept('${U.pend}', gen_random_uuid(), gen_random_uuid(), 1, 0.2, 1, 1, 0, 1, 1, 1)` },
     ]
     const r = probes(setup, steps)
     err(r['nach Fristende'], 'expired')
