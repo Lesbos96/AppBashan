@@ -27,6 +27,7 @@
     "tests/support/dev-guard-setup.ts": { "grund": "bindet nur den Dev-Guard ein", "sha256": "dca2e87043d5651273664e6abbaafa333ca730e6dedeb435e4d7de8072f2abd1" },
     "tests/support/owner.ts": { "grund": "führt das SQL des Aufräumens aus (Argumentliste ohne Shell, --linked, Fehler werden geworfen); die Löschbedingung steht in sweep.ts und marker.ts (Fable, Lösch-Freigabe 1, M3)", "sha256": "4510b9ec958c045c5ca33c4587198bc6967bbce56e95da8c379b065a3dc89bbd" },
     "tests/support/partner.ts": { "grund": "Test-Fixture: löscht nur Firmen und Nutzer mit selbst erzeugten IDs; die Löschbedingung der Reste liegt in marker.ts und sweep.ts", "sha256": "2556324e61c9c36758e5388b706c18d13c2ff4604ceca02a30ac572058de51f6" },
+    "tests/support/positiv.ts": { "grund": "Test-Fixture (u3): nur SQL-Text und Daten des Positivzeilen-Registers; das Muster trifft die Namen der admin_set_*-Funktionen und Setup-SQL, ausgeführt wird alles in Rollback-Proben (probes), nichts wird gelöscht oder committet", "sha256": "b8baa4d61cb3062153b6489f43b41ee6042c7caebc47685240c60c51806734f3" },
     "tests/support/quote-rls.ts": { "grund": "Test-Fixture: löscht nur Cache- und Rate-Limit-Zeilen mit Lauf-Marker des eigenen Tests", "sha256": "54c9f1ac3532da4d52958ee69b2e50a38712ec5951a3ad4b372fdf9f4dff6636" },
     "tests/support/quote.ts": { "grund": "Test-Fixture: ruft die Edge Function quote auf (POST), löscht nichts", "sha256": "9f619b69f87404e2e92e21f4127df34b3ed2462d68865cdc0637b6a1682bd890" }
   }
