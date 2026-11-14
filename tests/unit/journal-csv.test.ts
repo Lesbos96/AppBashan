@@ -6,7 +6,7 @@ const REQ = '0b8f1c3e-5d2a-4e7b-9a61-3c4d5e6f7a8b'
 const E1 = '11111111-1111-4111-8111-111111111111'
 const E2 = '22222222-2222-4222-8222-222222222222'
 
-// 6.900 ct, Satz 15 %: Gebühr 1.035 (netto 863, USt. 172), Auszahlung 5.865
+// 6.900 ct, Staffel v1 15 %: Gebühr 1.035 (netto 863, USt. 172), Auszahlung 5.865
 const row = (over: Partial<JournalRow> = {}): JournalRow => ({
   entry_id: E1,
   request_id: REQ,
@@ -14,7 +14,7 @@ const row = (over: Partial<JournalRow> = {}): JournalRow => ({
   reverses_entry_id: null,
   created_at: '2026-10-05T08:30:00+00:00',
   total_cents: 6900,
-  fee_rate: 0.15,
+  fee_schedule: 'v1 15 %',
   fee_net_cents: 863,
   fee_vat_cents: 172,
   fee_cents: 1035,
@@ -23,7 +23,7 @@ const row = (over: Partial<JournalRow> = {}): JournalRow => ({
   ...over,
 })
 
-const HEADER = 'Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Satz;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID'
+const HEADER = 'Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Staffel;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID'
 const lines = (rows: JournalRow[]) => journalCsv(rows).split('\r\n')
 const cells = (r: JournalRow) => lines([r])[1]!.split(';')
 
@@ -32,8 +32,8 @@ describe('journalCsv: Format', () => {
     expect(journalCsv([])).toBe('\u{FEFF}' + HEADER + '\r\n')
   })
 
-  it('Buchung: Monat, Wiener Zeit, Auftrag, Art deutsch und technisch, Beträge mit Komma, Satz mit Komma', () => {
-    expect(lines([row()])[1]).toBe(`2026-10;05.10.2026 10:30;${REQ};Buchung (booking);;69,00;0,15;8,63;1,72;10,35;58,65;${E1}`)
+  it('Buchung: Monat, Wiener Zeit, Auftrag, Art deutsch und technisch, Beträge mit Komma, Staffel als Text', () => {
+    expect(lines([row()])[1]).toBe(`2026-10;05.10.2026 10:30;${REQ};Buchung (booking);;69,00;v1 15 %;8,63;1,72;10,35;58,65;${E1}`)
   })
 
   it('jede Zeile endet mit CRLF, jede Journalzeile ergibt genau eine CSV-Zeile (nichts zusammengefasst)', () => {
@@ -48,7 +48,7 @@ describe('journalCsv: Format', () => {
       row({ entry_id: E2, kind: 'cancellation', reverses_entry_id: E1, total_cents: -6900, fee_cents: -1035, fee_net_cents: -863, fee_vat_cents: -172, payout_cents: -5865 }),
     ]
     const l = lines(rows)
-    expect(l[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;0,15;-8,63;-1,72;-10,35;-58,65;${E2}`)
+    expect(l[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;v1 15 %;-8,63;-1,72;-10,35;-58,65;${E2}`)
     // Summe aus den Zellen der erzeugten Datei (Ziffern, ohne Gleitkomma): Betrag Kunde, netto, USt., brutto, Auszahlung
     const cents = (s: string) => (s.startsWith('-') ? -1 : 1) * Number(s.replace('-', '').replace(',', ''))
     const sums = [5, 7, 8, 9, 10].map((i) => l.slice(1, 3).reduce((a, line) => a + cents(line.split(';')[i]!), 0))
@@ -109,17 +109,18 @@ describe('journalCsv: Beträge aus Integer-Cent', () => {
   })
 
   it.each([
-    [0.15, '0,15'],
-    [0, '0'],
-    [1, '1'],
-    ['0.15000', '0,15000'],
-    [0.2, '0,2'],
-  ])('Satz %s → %s', (rate, text) => {
-    expect(cells(row({ fee_rate: rate as number }))[6]).toBe(text)
+    ['v1 15 %', 'v1 15 %'],
+    ['=1+1', "'=1+1"],
+    ['+1', "'+1"],
+    ['-1', "'-1"],
+    ['@x', "'@x"],
+    ['a;b', '"a;b"'],
+  ])('Staffel %j wird zu %j (Text unverändert, Formelschutz, Quoting)', (text, out) => {
+    expect(lines([row({ fee_schedule: text })])[1]).toContain(`;${out};`)
   })
 
-  it.each([['leer', ''], ['null', null], ['1,5', 1.5], ['negativ', -0.1], ['Exponent', 1e-7], ['NaN', Number.NaN], ['Text', 'x']])('Satz %s ist bad_row', (_n, v) => {
-    expect(() => journalCsv([row({ fee_rate: v as never })])).toThrow('bad_row')
+  it.each([['Zahl', 0.15], ['0', 0], ['null', null], ['undefined', undefined]])('Staffel %s ist bad_row', (_n, v) => {
+    expect(() => journalCsv([row({ fee_schedule: v as never })])).toThrow('bad_row')
   })
 
   it('unbekannte Art ist bad_row', () => {
@@ -175,7 +176,6 @@ describe('journalCsv: Kennungen und Zeit sind geprüft, keine Freitexte im Pfad'
     ['Abrechnungsmonat', (v) => row({ billing_month: v })],
     ['Buchungszeit', (v) => row({ created_at: v })],
     ['Betrag', (v) => row({ total_cents: v as never })],
-    ['Satz', (v) => row({ fee_rate: v as never })],
   ]
   it.each(FREE.flatMap(([n, v]) => FIELDS.map(([f, build]) => [`${f}: ${n}`, build(v)] as const)))('Journalpfad lehnt Freitext ab: %s ergibt bad_row', (_n, r) => {
     expect(() => journalCsv([r])).toThrow('bad_row')
@@ -190,7 +190,7 @@ describe('journalCsv: Kennungen und Zeit sind geprüft, keine Freitexte im Pfad'
 describe('commissionsCsv (Admin): Quoting und Formelschutz, auch nach führenden Leerzeichen', () => {
   const base: CommissionRow = {
     entry_id: 'e1', request_id: 'r1', partner_id: 'p1', partner_name: 'x', kind: 'booking', reverses_entry_id: null, created_at: '2026-09-30T22:00:00+00:00', total_cents: 100,
-    fee_rate: 0.15, fee_net_cents: 12, fee_vat_cents: 3, fee_cents: 15, payout_cents: 85, vat_rule: 'standard_20', request_status: 'completed', ended_at: '2026-09-30T23:30:00+00:00', billing_month: '2026-10-01',
+    fee_schedule: 'v1 15 %', fee_net_cents: 12, fee_vat_cents: 3, fee_cents: 15, payout_cents: 85, vat_rule: 'standard_20', request_status: 'completed', ended_at: '2026-09-30T23:30:00+00:00', billing_month: '2026-10-01',
   }
   const name = (v: string) => commissionsCsv([{ ...base, partner_name: v }])
   it('Semikolon, Anführungszeichen, CR und LF: Anführungszeichen, " verdoppelt', () => {
@@ -217,7 +217,7 @@ describe('commissionsCsv (Admin): Quoting und Formelschutz, auch nach führenden
   it('Formel mit Anführungszeichen wird erst entschärft, dann gequotet', () => {
     expect(name('=HYPERLINK("x")')).toContain(`;"'=HYPERLINK(""x"")";`)
   })
-  it('Satz im Admin-Export wird wie im Journal geprüft', () => {
-    expect(() => commissionsCsv([{ ...base, fee_rate: 1.5 }])).toThrow('bad_row')
+  it('Staffel im Admin-Export: Nicht-Text ist bad_row', () => {
+    expect(() => commissionsCsv([{ ...base, fee_schedule: 1.5 as never }])).toThrow('bad_row')
   })
 })

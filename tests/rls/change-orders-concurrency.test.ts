@@ -4,6 +4,7 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepTestResidue } from '../support/sweep.ts'
 
@@ -21,11 +22,8 @@ describe('Nebenläufigkeit des Nachtrags', () => {
   it('zwei Vorschläge = einer; doppelte Annahme = eine Journalzeile; Annahme gegen Rückzug = genau ein Ergebnis', async () => {
     ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
     sweepTestResidue(adm)
-    const f = ownerSql(`select (select value::float8 from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as fr,
-      (select value::float8 from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vr,
-      (select version from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as frv,
-      (select version from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
-    const rates = { feeRate: f.fr, vatRate: f.vr }
+    const f = currentFee()
+    const rates = { tiers: f.tiers, vatRate: f.vr }
     const s0 = splitFee(BOOKED, rates)
     // Bezirk 21: keine committete Abdeckungsfirma, die Anfrage bleibt bei Firma a
     const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline)
@@ -35,7 +33,7 @@ describe('Nebenläufigkeit des Nachtrags', () => {
       update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
       select public.distribute_request('${id}');
       select public.partner_accept('${pa}', (select id from public.job_listings where request_id = '${id}' and partner_id = current_setting('app.p_a')::uuid), (select id from public.price_revisions where request_id = '${id}' and n = 1),
-        ${s0.payoutCents}, ${f.fr}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.frv}, ${f.vrv});
+        ${s0.payoutCents}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.fsv}, ${f.vrv});
       insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
       values ('${id}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now());`
     const photos = (id: string) => `array(select id from public.job_photos where request_id = '${id}' and kind = 'receipt')`
@@ -43,7 +41,7 @@ describe('Nebenläufigkeit des Nachtrags', () => {
     const c80 = splitChange(80000, rates, s0)
     // Die Revisions-ID steht vor dem Rennen fest: als Unterabfrage im Aufruf käme sie leer an (not_found), sobald der andere Aufruf schon angenommen hat
     const decide = (rev: string) =>
-      `public.decide_change('${cust}', '${rev}', true, 80000, ${f.fr}, ${f.vr}, ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv})`
+      `public.decide_change('${cust}', '${rev}', true, 80000, ${f.vr}, ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.fsv}, ${f.vrv})`
 
     ownerSql(`begin; ${insertUsers([cust, pa])} ${firm(pa, 'a', 'active', adm, { districts: 'array[21]::smallint[]' })} ${job(RA)} ${job(RB)} ${job(RC)}
       select ${propose(RB, 80000)}; select ${propose(RC, 80000)}; commit;`)

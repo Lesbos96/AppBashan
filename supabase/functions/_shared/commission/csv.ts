@@ -10,7 +10,7 @@ export type CommissionRow = {
   reverses_entry_id: string | null
   created_at: string
   total_cents: number
-  fee_rate: number
+  fee_schedule: string
   fee_net_cents: number
   fee_vat_cents: number
   fee_cents: number
@@ -22,7 +22,7 @@ export type CommissionRow = {
 }
 
 const HEADER = [
-  'Abrechnungsmonat', 'Auftrag', 'Partner-ID', 'Partner', 'Art', 'Buchung', 'Gegenbuchung zu', 'Gebucht am', 'Gesamtpreis', 'Satz',
+  'Abrechnungsmonat', 'Auftrag', 'Partner-ID', 'Partner', 'Art', 'Buchung', 'Gegenbuchung zu', 'Gebucht am', 'Gesamtpreis', 'Staffel',
   'Provision netto', 'USt.', 'Provision brutto', 'Auszahlung', 'USt.-Regel', 'Auftragsstatus', 'Endzeitpunkt',
 ]
 
@@ -46,11 +46,8 @@ const euro = (cents: unknown): string => {
 // Kennungen im Journal sind UUIDs aus der Datenbank, sonst bad_row
 const uuid = (v: unknown): string => (typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : bad())
 
-// Satz als Dezimalzahl 0 bis 1 mit höchstens fünf Stellen (numeric(6,5)), sonst bad_row
-const rate = (v: unknown): string => {
-  const s = typeof v === 'number' || typeof v === 'string' ? String(v) : ''
-  return /^(0(\.\d{1,5})?|1(\.0{1,5})?)$/.test(s) ? s.replace('.', ',') : bad()
-}
+// Bezeichnung der Staffel-Version (Tabelle fee_schedules, nur per Migration gepflegt): Text, sonst bad_row
+const staffel = (v: unknown): string => (typeof v === 'string' ? text(v) : bad())
 
 // Zeitpunkte in Wiener Ortszeit „TT.MM.JJJJ HH:MM“ (wie der Abrechnungsmonat; Excel liest das als Datum)
 const VIENNA = new Intl.DateTimeFormat('de-AT', { timeZone: 'Europe/Vienna', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
@@ -72,11 +69,11 @@ const text = (v: string | null): string => {
 // keine Kundendaten, keine Freitexte (Art ist ein fester Text, alles andere Zahl, Zeit oder ID).
 export type JournalRow = Pick<
   CommissionRow,
-  'entry_id' | 'request_id' | 'kind' | 'reverses_entry_id' | 'created_at' | 'total_cents' | 'fee_rate' | 'fee_net_cents' | 'fee_vat_cents' | 'fee_cents' | 'payout_cents' | 'billing_month'
+  'entry_id' | 'request_id' | 'kind' | 'reverses_entry_id' | 'created_at' | 'total_cents' | 'fee_schedule' | 'fee_net_cents' | 'fee_vat_cents' | 'fee_cents' | 'payout_cents' | 'billing_month'
 >
 
 const JOURNAL_HEADER = [
-  'Abrechnungsmonat', 'Buchungszeit', 'Auftrag', 'Art', 'Bezug', 'Betrag Kunde', 'Satz', 'Provision netto', 'USt.', 'Provision brutto', 'Auszahlung Firma', 'Journal-ID',
+  'Abrechnungsmonat', 'Buchungszeit', 'Auftrag', 'Art', 'Bezug', 'Betrag Kunde', 'Staffel', 'Provision netto', 'USt.', 'Provision brutto', 'Auszahlung Firma', 'Journal-ID',
 ]
 
 const KIND: Record<string, string> = {
@@ -91,7 +88,7 @@ export function journalCsv(rows: JournalRow[]): string {
   const lines = rows.map((r) => {
     if (!Object.hasOwn(KIND, r.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(r.billing_month)) return bad()
     return [
-      r.billing_month.slice(0, 7), when(r.created_at), uuid(r.request_id), KIND[r.kind]!, r.reverses_entry_id === null ? '' : uuid(r.reverses_entry_id), euro(r.total_cents), rate(r.fee_rate),
+      r.billing_month.slice(0, 7), when(r.created_at), uuid(r.request_id), KIND[r.kind]!, r.reverses_entry_id === null ? '' : uuid(r.reverses_entry_id), euro(r.total_cents), staffel(r.fee_schedule),
       euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents), uuid(r.entry_id),
     ].join(';')
   })
@@ -102,7 +99,7 @@ export function commissionsCsv(rows: CommissionRow[]): string {
   const lines = rows.map((r) =>
     [
       r.billing_month.slice(0, 7), r.request_id, r.partner_id, text(r.partner_name), r.kind, r.entry_id, r.reverses_entry_id ?? '', when(r.created_at),
-      euro(r.total_cents), rate(r.fee_rate), euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents),
+      euro(r.total_cents), staffel(r.fee_schedule), euro(r.fee_net_cents), euro(r.fee_vat_cents), euro(r.fee_cents), euro(r.payout_cents),
       r.vat_rule, r.request_status, when(r.ended_at),
     ].join(';'),
   )

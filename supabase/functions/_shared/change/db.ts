@@ -1,5 +1,6 @@
 // Datenbank-Anbindung von change-propose und change-decide (S9f). Läuft mit dem Secret Key (service_role); die SQL-Funktionen prüfen Akteur,
 // Firma, Status und Satz selbst. `p_actor` und aal stammen aus dem geprüften JWT, nie aus dem Body.
+import type { FeeTier } from '../pricing/index.ts'
 import { getUser, must, type Db } from '../jobs/db.ts'
 import { DbError } from '../jobs/handlers.ts'
 import type { DecideDeps, ProposeDeps } from './handlers.ts'
@@ -48,9 +49,9 @@ export const decideDb = (db: Db): Pick<DecideDeps, 'getUser' | 'basis' | 'decide
     return {
       status: row.status,
       totalCents: Number(row.total_cents),
-      feeRate: Number(row.fee_rate),
+      feeTiers: row.fee_tiers as unknown as FeeTier[],
       feeVatRate: Number(row.fee_vat_rate),
-      feeRateVersion: row.fee_rate_version,
+      feeScheduleVersion: row.fee_schedule_version,
       feeVatRateVersion: row.fee_vat_rate_version,
       priorTotal: Number(row.prior_total),
       priorFee: Number(row.prior_fee),
@@ -66,13 +67,12 @@ export const decideDb = (db: Db): Pick<DecideDeps, 'getUser' | 'basis' | 'decide
         p_revision: c.revisionId,
         p_accept: c.accept,
         p_shown_total: c.shownTotalCents,
-        p_fee_rate: c.basis.feeRate,
         p_fee_vat_rate: c.basis.feeVatRate,
         p_fee: c.split.feeCents,
         p_fee_net: c.split.feeNetCents,
         p_fee_vat: c.split.feeVatCents,
         p_payout: c.split.payoutCents,
-        p_fee_rate_version: c.basis.feeRateVersion,
+        p_fee_schedule_version: c.basis.feeScheduleVersion,
         p_fee_vat_rate_version: c.basis.feeVatRateVersion,
       }),
     )

@@ -7,21 +7,22 @@ import { execFileSync } from 'node:child_process'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Image } from 'imagescript'
 import '../../scripts/dev-guard.mjs'
-import { splitChange, splitFee } from '@pricing'
+import { splitChange, splitFee, type FeeTier } from '@pricing'
 import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
 import { moveInputs } from '../support/quote.ts'
 import { anon, deleteUsers, env, makeUser, type TestUser } from '../support/db.ts'
+import { currentFee } from '../support/fee.ts'
 import { ownerSql } from '../support/owner.ts'
 import { COVER_FIRM, FIRM_MAIL, FIRM_MAIL_RE, firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepReceiptObjects, sweepTestResidue } from '../support/sweep.ts'
 import { tryAal2User, type Aal2User } from '../support/totp.ts'
 
-// Erwartungswerte an EINER Stelle (Provision heute 15 %, USt. 20 %). s9p-1 stellt die Provision auf eine Staffel um und passt nur diese Konstanten an;
-// der Test „Erwartungskonstanten“ rechnet sie mit dem aktuellen Satz aus platform_settings gegen und nennt bei Abweichung die Ursache.
+// Erwartungswerte an EINER Stelle (Provisionsstaffel v2: 12 % bis 500 EUR, 10 % bis 1.000 EUR, 7 % darüber; USt. 20 %; s9p-1).
+// Der Test „Erwartungskonstanten“ rechnet sie mit der aktuellen Staffel aus der Datenbank gegen und nennt bei Abweichung die Ursache.
 type Money = { total: number; fee: number; net: number; vat: number; payout: number }
-const BOOKED: Money = { total: 68961, fee: 10344, net: 8620, vat: 1724, payout: 58617 }
-const CALL_OUT: Money = { total: 6900, fee: 1035, net: 863, vat: 172, payout: 5865 }
-const OFFER: Money = { total: 150000, fee: 22500, net: 18750, vat: 3750, payout: 127500 }
+const BOOKED: Money = { total: 68961, fee: 7896, net: 6580, vat: 1316, payout: 61065 }
+const CALL_OUT: Money = { total: 6900, fee: 828, net: 690, vat: 138, payout: 6072 }
+const OFFER: Money = { total: 150000, fee: 14500, net: 12083, vat: 2417, payout: 135500 }
 const ZERO: Money = { total: 0, fee: 0, net: 0, vat: 0, payout: 0 }
 
 const adm = newId()
@@ -30,7 +31,8 @@ const OURS = [W1, W2A, W2B, W3, W4, W5]
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User
 let cust: TestUser
-let rates = { feeRate: 0, vatRate: 0 }
+let rates = { tiers: [] as FeeTier[], vatRate: 0 }
+let feeVersion = 0
 let monthStart = ''
 let partnerA = ''
 const ctx = { t1: 0, change1: null as null | Money, t3: 0, receipts: [] as string[] }
@@ -82,16 +84,16 @@ beforeAll(async () => {
   ownerSql(`begin; ${insertUsers([adm])} ${grantAdmin(adm)} commit;`)
   sweepTestResidue(adm)
   await sweepReceiptObjects()
-  const f = ownerSql(`select (select value::text from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as fr,
-    (select value::text from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vr,
-    (select version from public.current_price_version) as pv, to_char(now() at time zone 'Europe/Vienna', 'YYYY-MM') as m`)[0] as { fr: string; vr: string; pv: number; m: string }
-  rates = { feeRate: Number(f.fr), vatRate: Number(f.vr) }
+  const f = ownerSql(`select (select version from public.current_price_version) as pv, to_char(now() at time zone 'Europe/Vienna', 'YYYY-MM') as m`)[0] as { pv: number; m: string }
+  const cf = currentFee()
+  rates = { tiers: cf.tiers, vatRate: cf.vr }
+  feeVersion = cf.fsv
   monthStart = f.m
   // Auflage 1: Sätze gegen die Literale prüfen, bevor etwas committet ist
   for (const [total, want] of [[BOOKED.total, BOOKED], [CALL_OUT.total, CALL_OUT], [OFFER.total, OFFER]] as const) {
     const s = splitFee(total, rates)
     const got = { total, fee: s.feeCents, net: s.feeNetCents, vat: s.feeVatCents, payout: s.payoutCents }
-    if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`Erwartungskonstanten passen nicht zum Satz ${f.fr}/${f.vr}: ist ${JSON.stringify(got)}, Konstante ${JSON.stringify(want)} (s9p-1: Konstanten oben anpassen)`)
+    if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`Erwartungskonstanten passen nicht zur Staffel ${JSON.stringify(cf.tiers)}/${cf.vr}: ist ${JSON.stringify(got)}, Konstante ${JSON.stringify(want)} (s9p-1: Konstanten oben anpassen)`)
   }
   const first = await tryAal2User('pt-fl-pa')
   if ('reason' in first) {
@@ -154,7 +156,7 @@ describe('Erwartungskonstanten', () => {
     expect([c.feeCents, c.feeNetCents, c.feeVatCents, c.payoutCents]).toEqual([CALL_OUT.fee, CALL_OUT.net, CALL_OUT.vat, CALL_OUT.payout])
     const o = splitFee(OFFER.total, rates)
     expect([o.feeCents, o.feeNetCents, o.feeVatCents, o.payoutCents]).toEqual([OFFER.fee, OFFER.net, OFFER.vat, OFFER.payout])
-    expect(rates.feeRate).toBe(0.15)
+    expect(rates.tiers).toEqual([{ upToCents: 50000, bp: 1200 }, { upToCents: 100000, bp: 1000 }, { upToCents: null, bp: 700 }])
   })
 })
 
@@ -224,8 +226,8 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
 
   live('Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag', async () => {
     const rev = String(ownerSql(`select id from public.price_revisions where request_id = '${W1}' and status = 'proposed'`)[0]?.id)
-    // unabhängiger Rechner: Postgres, Gebühr = round(T · Satz), netto = round(Gebühr / (1 + USt.))
-    const calc = ownerSql(`select round(${ctx.t1} * ${rates.feeRate}::numeric)::bigint as fee, round(round(${ctx.t1} * ${rates.feeRate}::numeric) / (1 + ${rates.vatRate}::numeric))::bigint as net`)[0]!
+    // unabhängiger Rechner: Postgres (private.fee_cents der Staffelversion), netto = round(Gebühr / (1 + USt.))
+    const calc = ownerSql(`select private.fee_cents(${feeVersion}, ${ctx.t1}) as fee, round(private.fee_cents(${feeVersion}, ${ctx.t1})::numeric / (1 + ${rates.vatRate}::numeric))::bigint as net`)[0]!
     const fee = Number(calc.fee)
     const net = Number(calc.net)
     const want: Money = { total: ctx.t1 - BOOKED.total, fee: fee - BOOKED.fee, net: net - BOOKED.net, vat: fee - net - BOOKED.vat, payout: ctx.t1 - fee - BOOKED.payout }
@@ -378,7 +380,7 @@ describe('W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confir
   })
 })
 
-type Row = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_rate: number; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string; partner_id: string }
+type Row = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_schedule: string; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string; partner_id: string }
 const mine = async (db: Aal2User['aal2']) => ((await (db.rpc('my_commissions') as unknown as Promise<{ data: Row[] | null; error: { code: string; message: string } | null }>)))
 const own = (rows: Row[] | null) => (rows ?? []).filter((r) => (OURS as string[]).includes(r.request_id))
 const total = (rows: Row[], req: string): Money => sum(rows.filter((r) => r.request_id === req).map((r) => ({ total: r.total_cents, fee: r.fee_cents, net: r.fee_net_cents, vat: r.fee_vat_cents, payout: r.payout_cents })))
@@ -432,7 +434,7 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     expect(own(b.data)).toHaveLength(0)
   })
 
-  live('Kunde und Dritte lesen keine Gebühr: commission_entries leer, fee_rate nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder', async () => {
+  live('Kunde und Dritte lesen keine Gebühr: commission_entries leer, Satz und Staffel nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder', async () => {
     const empty = (r: { data: unknown[] | null; error: { code?: string } | null }) => expect(r.error?.code === '42501' || (r.data ?? []).length === 0).toBe(true)
     // Positivkontrolle: dieselbe Abfrage liefert der Firma a mit aal2 Zeilen (sonst bewiese „leer“ nichts)
     expect(((await pa.aal2.from('commission_entries').select('id').in('request_id', OURS)).data ?? []).length).toBeGreaterThan(0)
@@ -440,9 +442,11 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     empty(await pb.aal2.from('commission_entries').select('id').in('request_id', OURS))
     empty(await pa.aal1.from('commission_entries').select('id').in('request_id', OURS))
     empty(await cust.db.from('platform_settings').select('key').eq('key', 'fee_rate'))
+    empty(await cust.db.from('fee_schedules').select('version'))
+    empty(await cust.db.from('fee_schedule_tiers').select('version'))
     const snaps = await cust.db.from('price_revisions').select('snapshot').eq('request_id', W1).eq('source', 'change_order')
     expect(snaps.data ?? []).toHaveLength(1)
-    expect(JSON.stringify(snaps.data)).not.toMatch(/payout|commission|provision|fee_rate|feeCents|fee_net/i)
+    expect(JSON.stringify(snaps.data)).not.toMatch(/payout|commission|provision|fee_rate|fee_tiers|fee_schedule|feeCents|fee_net/i)
   })
 
   live('payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen', async () => {

@@ -1,4 +1,3 @@
-import { splitFee } from '@pricing'
 import { type JobErrorKind, JobError, invoke } from './jobs'
 import { supabase } from './supabase'
 
@@ -107,28 +106,19 @@ export async function loadListings(): Promise<Listing[]> {
   })
 }
 
-// Sätze und Auszahlung -----------------------------------------------------------------------------------------------------
-export type Rates = { feeRate: number; vatRate: number }
-
-/** Geltender Satz laut Datenbank (Ansicht `current_fee_rates`, Wiener Datum, höchste Version); fehlt er, gibt es keine Auszahlung. */
-export async function loadRates(): Promise<Rates> {
-  const { data, error } = await supabase.from('current_fee_rates').select('fee_rate, fee_vat_rate').single()
-  if (error) throw error
-  const f = Number(data?.fee_rate)
-  const v = Number(data?.fee_vat_rate)
-  if (data?.fee_rate == null || data?.fee_vat_rate == null || !Number.isFinite(f) || !Number.isFinite(v)) throw new Error('Gebührensatz fehlt')
-  return { feeRate: f, vatRate: v }
-}
-
-/** Auszahlung in Cent: dieselbe Rechnung wie der Server (`splitFee`); der Server vergleicht sie bei der Annahme. Ungültiger Satz: `null` (keine Auszahlung zeigen). */
-export function payoutCents(totalCents: number, r: Rates): number | null {
+// Auszahlung -----------------------------------------------------------------------------------------------------------------
+/** „Du erhältst“ in Cent laut Server (payout_preview: geltende Staffel, aal2, Firmenmitglied). Fehler oder ungültige Antwort: 
+ull (keine Auszahlung zeigen). */
+export async function payoutPreview(totalCents: number): Promise<number | null> {
   try {
-    return splitFee(totalCents, { feeRate: r.feeRate, vatRate: r.vatRate }).payoutCents
+    const { data, error } = await supabase.rpc('payout_preview', { p_total: totalCents })
+    if (error) return null
+    const v = Number(data)
+    return Number.isSafeInteger(v) && v >= 0 && v <= totalCents ? v : null
   } catch {
     return null
   }
 }
-
 // Anzeige: Umfang (Whitelist), Tag, Zeitfenster ------------------------------------------------------------------------------
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const floor = (n: number) => (n < 0 ? 'Keller' : n === 0 ? 'Erdgeschoss' : `${n}. Stock`)

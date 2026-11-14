@@ -18,10 +18,10 @@ vi.mock('../../src/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) =>
 const REQ = '0b8f1c3e-5d2a-4e7b-9a61-3c4d5e6f7a8b'
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 const row = (n: number, over: Record<string, unknown> = {}) => ({
-  entry_id: id(n), request_id: REQ, kind: 'booking', reverses_entry_id: null, created_at: '2026-10-05T08:30:00+00:00', total_cents: 6900, fee_rate: 0.15,
+  entry_id: id(n), request_id: REQ, kind: 'booking', reverses_entry_id: null, created_at: '2026-10-05T08:30:00+00:00', total_cents: 6900, fee_schedule: 'v1 15 %',
   fee_net_cents: 863, fee_vat_cents: 172, fee_cents: 1035, payout_cents: 5865, billing_month: '2026-10-01', ...over,
 })
-const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_rate, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
+const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_schedule, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
 
 beforeEach(() => {
   calls.rpc = []

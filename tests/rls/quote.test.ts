@@ -289,10 +289,10 @@ describe('Rechte (Verweigerung exakt, Positivkontrolle)', () => {
     expect((await service.rpc('quote_save_booking', bookingArgs())).error?.code).toBe('23503')
   })
 
-  it('Gebührensatz: Kunde und Vermieter sehen nur NULL (Satz nur für Partner-Mitglieder, partner-fee-read.test.ts), anon verweigert', async () => {
-    expect(must(await a.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null, fee_vat_rate: null })
-    expect(must(await landlord.db.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null, fee_vat_rate: null })
-    expect((await anon.from('current_fee_rates').select('*')).error?.code).toBe(DENIED)
+  it('Staffel: Kunde und Vermieter sehen keine Staffel (nur Partner-Mitglieder, fee-schedule.test.ts), anon verweigert', async () => {
+    expect(must(await a.db.from('fee_schedules').select('*'))).toEqual([])
+    expect(must(await landlord.db.from('fee_schedules').select('*'))).toEqual([])
+    expect((await anon.from('fee_schedules').select('*')).error?.code).toBe(DENIED)
   })
 
   it('Kunde schreibt weder Spalten noch Anfragen; Zurückziehen nur über withdraw (Positivkontrolle)', async () => {

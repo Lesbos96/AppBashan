@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
@@ -10,9 +10,8 @@ import {
   loadListings,
   loadMyOffers,
   loadPhotos,
-  loadRates,
   parseEuro,
-  payoutCents,
+  payoutPreview,
   scopeLines,
   sendOffer,
   serviceLabel,
@@ -21,7 +20,6 @@ import {
   withdrawOffer,
   type Listing,
   type MyOffer,
-  type Rates,
 } from '../../lib/partnerJobs'
 import { useLoad } from '../../lib/prices'
 import { Bestaetigen } from '../auftrag/Bestaetigen'
@@ -45,15 +43,13 @@ function Zeile({ label, children }: { label: string; children: ReactNode }) {
 export function Anfragen({ onChange }: { onChange: () => void }) {
   const [listings, reloadListings] = useLoad(loadListings)
   const [offers, reloadOffers] = useLoad(loadMyOffers)
-  const [rates, reloadRates] = useLoad(loadRates)
   const [notice, setNotice] = useState('')
 
-  // Nach jeder Aktion alles neu laden: Anfragen, eigene Angebote und den Satz (er kann zwischen Anzeige und Annahme gewechselt haben)
+  // Nach jeder Aktion alles neu laden: Anfragen und eigene Angebote
   const refresh = (n?: string) => {
     setNotice(n ?? '')
     reloadListings()
     reloadOffers()
-    reloadRates()
     onChange()
   }
 
@@ -61,7 +57,6 @@ export function Anfragen({ onChange }: { onChange: () => void }) {
   if (listings.status === 'error') return <ErrorState text="Die Anfragen konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={reloadListings} />
   const open = listings.data.filter((l) => l.status === 'open')
   const mine = offers.status === 'ready' ? offers.data : []
-  const r = rates.status === 'ready' ? rates.data : null
 
   return (
     <>
@@ -78,7 +73,7 @@ export function Anfragen({ onChange }: { onChange: () => void }) {
         </h2>
         {open.length === 0 && <p className="m-0 text-body text-text-secondary">Gerade gibt es keine offenen Anfragen in deinen Bezirken.</p>}
         {open.map((l) => (
-          <Karte key={l.id} l={l} rates={r} offer={mine.find((o) => o.status === 'sent' && o.revisionId === l.revisionId)} onDone={refresh} />
+          <Karte key={l.id} l={l} offer={mine.find((o) => o.status === 'sent' && o.revisionId === l.revisionId)} onDone={refresh} />
         ))}
       </section>
       {offers.status === 'ready' && offers.data.length > 0 && (
@@ -93,12 +88,26 @@ export function Anfragen({ onChange }: { onChange: () => void }) {
   )
 }
 
-function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; offer?: MyOffer; onDone: (notice?: string) => void }) {
+/** „Du erhältst“ für einen Betrag: rechnet der Server (Staffel), die App zeigt nur. Während der Anfrage und bei Fehlern: keine Zahl. */
+function usePayout(cents: number | null): number | null {
+  const [state, setState] = useState<{ cents: number; value: number | null } | null>(null)
+  useEffect(() => {
+    if (cents === null) return
+    let live = true
+    void payoutPreview(cents).then((value) => live && setState({ cents, value }))
+    return () => {
+      live = false
+    }
+  }, [cents])
+  return cents !== null && state?.cents === cents ? state.value : null
+}
+
+function Karte({ l, offer, onDone }: { l: Listing; offer?: MyOffer; onDone: (notice?: string) => void }) {
   const [sheet, setSheet] = useState<'accept' | 'offer' | null>(null)
   const day = dayLabel(l.preferredDate)
   const window = windowLabel(l.timeWindow)
   const scope = scopeLines(l.service, l.inputs)
-  const payout = rates && l.totalCents !== null ? payoutCents(l.totalCents, rates) : null
+  const payout = usePayout(l.totalCents)
   return (
     <article aria-labelledby={`l-${l.id}`} className={box}>
       <h3 id={`l-${l.id}`} className="m-0 text-headline">
@@ -161,17 +170,18 @@ function Karte({ l, rates, offer, onDone }: { l: Listing; rates: Rates | null; o
           )}
         </Bestaetigen>
       )}
-      {l.totalCents === null && <AngebotSheet l={l} rates={rates} open={sheet === 'offer'} onClose={() => setSheet(null)} onDone={onDone} />}
+      {l.totalCents === null && <AngebotSheet l={l} open={sheet === 'offer'} onClose={() => setSheet(null)} onDone={onDone} />}
     </article>
   )
 }
 
 /** Eingabe in Euro, dann Bestätigung mit dem gezeigten Betrag. Die Prüfung hier spart nur den Umweg, Spanne und Status prüft der Server. */
-function AngebotSheet({ l, rates, open, onClose, onDone }: { l: Listing; rates: Rates | null; open: boolean; onClose: () => void; onDone: (notice?: string) => void }) {
+function AngebotSheet({ l, open, onClose, onDone }: { l: Listing; open: boolean; onClose: () => void; onDone: (notice?: string) => void }) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [cents, setCents] = useState<number | null>(null)
   const hasRange = l.lowCents !== null && l.highCents !== null
+  const payout = usePayout(cents)
   const reset = () => {
     setText('')
     setError('')
@@ -230,7 +240,7 @@ function AngebotSheet({ l, rates, open, onClose, onDone }: { l: Listing; rates: 
         {cents !== null && (
           <>
             <Zeile label="Dein Angebot">{euro(cents)}</Zeile>
-            {rates && payoutCents(cents, rates) !== null && <Zeile label="Du erhältst voraussichtlich">{euro(payoutCents(cents, rates)!)}</Zeile>}
+            {payout !== null && <Zeile label="Du erhältst voraussichtlich">{euro(payout)}</Zeile>}
             <p className="m-0 text-subhead text-text-secondary">Dein Anteil kann sich bis zur Annahme ändern. Verbindlich, bis du das Angebot zurückziehst oder es abläuft.</p>
           </>
         )}

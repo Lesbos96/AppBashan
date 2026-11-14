@@ -19,7 +19,7 @@ import {
 // Tarife aus dem Seed: dieselben Werte wie in price_config, ein Schlüssel-Tippfehler im Modul fällt hier auf.
 const seed = readFileSync(new URL('../../supabase/seed.sql', import.meta.url), 'utf8')
 export const tariffs: Tariffs = Object.fromEntries([...seed.matchAll(/\(1, '([\w.]+)', ([\d.]+),/g)].map((m) => [m[1]!, Number(m[2])]))
-export const rates = { feeRate: 0.15, vatRate: 0.2 }
+export const rates = { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }
 
 // sampleOffers (Prototyp Zeile 26) in Cent, wie im Seed.
 export const offers: Record<string, RentalOffer> = {

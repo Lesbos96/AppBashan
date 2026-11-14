@@ -7,7 +7,7 @@ import { splitFee } from '@pricing'
 
 const REQ = '0b9f6e0e-6d52-4b7e-9d5c-3f0c2f9a1b11'
 const basis = (over: Partial<CancelBasis> = {}): CancelBasis => ({
-  status: 'accepted', totalCents: 68961, feeBaseCents: 34481, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1, ...over,
+  status: 'accepted', totalCents: 68961, feeBaseCents: 34481, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1, ...over,
 })
 
 type Fake = CancelDeps & { calls: CancelCall[]; basisCalls: number; logs: Record<string, unknown>[] }
@@ -38,7 +38,7 @@ describe('handleCancelCustomer', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ status: 'cancelled_by_customer', cancelFeeCents: 34481 })
     expect(d.calls).toHaveLength(1)
-    expect(d.calls[0]?.split).toEqual(splitFee(34481, { feeRate: 0.15, vatRate: 0.2 }))
+    expect(d.calls[0]?.split).toEqual(splitFee(34481, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }))
     expect(d.calls[0]?.requestId).toBe(REQ)
     // N1: Der bestätigte Betrag reist als eigenes Feld mit; die Datenbank bekommt genau diesen Wert als p_fee_base
     expect(d.calls[0]?.shownFeeCents).toBe(34481)

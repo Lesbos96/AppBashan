@@ -5,6 +5,7 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepTestResidue } from '../support/sweep.ts'
 
@@ -36,14 +37,12 @@ describe('Nebenläufigkeit', () => {
       ${pu.map((u, i) => firm(u, `w${i}`, 'active', adm)).join(' ')}
       ${request(R1, cust)} ${request(R2, cust2)} commit;`
     ownerSql(setup)
-    const fee = ownerSql(`select value::float8 as v from public.platform_settings where key = 'fee_rate' order by effective_from desc, version desc limit 1`)[0] as { v: number }
-    const vat = ownerSql(`select value::float8 as v from public.platform_settings where key = 'fee_vat_rate' order by effective_from desc, version desc limit 1`)[0] as { v: number }
-    const vers = ownerSql(`select (select version from public.platform_settings where key = 'fee_rate' order by effective_from desc, version desc limit 1) as a, (select version from public.platform_settings where key = 'fee_vat_rate' order by effective_from desc, version desc limit 1) as b`)[0] as { a: number; b: number }
-    const s = splitFee(68961, { feeRate: fee.v, vatRate: vat.v })
+    const f = currentFee()
+    const s = splitFee(68961, { tiers: f.tiers, vatRate: f.vr })
     const lid = (req: string, i: number) =>
       `(select l.id from public.job_listings l join public.partner_members m on m.partner_id = l.partner_id where l.request_id = '${req}' and m.user_id = '${pu[i]}')`
     const accept = (req: string, i: number) =>
-      `${startAt(9)} set local role service_role; select public.partner_accept('${pu[i]}', ${lid(req, i)}, (select id from public.price_revisions where request_id = '${req}' and n = 1), ${s.payoutCents}, ${fee.v}, ${vat.v}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${vers.a}, ${vers.b});`
+      `${startAt(9)} set local role service_role; select public.partner_accept('${pu[i]}', ${lid(req, i)}, (select id from public.price_revisions where request_id = '${req}' and n = 1), ${s.payoutCents}, ${f.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${f.fsv}, ${f.vrv});`
 
     // Wettlauf 1: 10 Firmen, ein Auftrag. Wettlauf 2: Firma 0 nimmt R2 an, während der Kunde zurückzieht.
     const withdraw = `${startAt(9)} set local role authenticated; select set_config('request.jwt.claims', '{"sub":"${cust2}","role":"authenticated","aal":"aal1"}', true); select public.withdraw('${R2}');`

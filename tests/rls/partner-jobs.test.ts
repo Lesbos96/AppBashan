@@ -66,18 +66,24 @@ describe('Sichtbarkeit vor dem Zuschlag', () => {
     rows(r['Kontakt und Anfrage vorhanden'], 3)
   })
 
-  it('Sätze: Partner lesen fee_rate und fee_vat_rate über current_fee_rates, Kunden nichts; Angebotsgrenze bleibt verborgen', () => {
+  it('Staffel: Partner (aal2) lesen fee_schedules und fee_schedule_tiers, Kunde nichts; platform_settings zeigt dem Partner nur fee_vat_rate', () => {
     const setup = `${BASE('a')}`
     const steps: Step[] = [
-      { name: 'Partner Satz', as: 'authenticated', claims: A2(U.pa), sql: `=(select fee_rate is not null and fee_vat_rate is not null from public.current_fee_rates)` },
-      { name: 'Kunde Satz', as: 'authenticated', claims: A2(U.cust), sql: `=(select coalesce(bool_or(fee_rate is not null or fee_vat_rate is not null), false) from public.current_fee_rates)` },
+      { name: 'Partner Staffel', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) > 0 from public.fee_schedules)` },
+      { name: 'Partner Stufen', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) > 0 from public.fee_schedule_tiers)` },
+      { name: 'Partner USt.-Satz', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) > 0 from public.platform_settings where key = 'fee_vat_rate')` },
+      { name: 'Partner alter Satz', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.platform_settings where key = 'fee_rate')` },
+      { name: 'Kunde Staffel', as: 'authenticated', claims: A2(U.cust), sql: `=(select count(*) from public.fee_schedules)` },
       { name: 'Kunde Einstellungen', as: 'authenticated', claims: A2(U.cust), sql: `=(select count(*) from public.platform_settings)` },
       { name: 'Partner offer_max_cents', as: 'authenticated', claims: A2(U.pa), sql: `=(select count(*) from public.platform_settings where key not in ('fee_rate', 'fee_vat_rate'))` },
       { name: 'Partner Spalte note', as: 'authenticated', claims: A2(U.pa), sql: `perform note from public.platform_settings` },
     ]
     const r = probes(setup, steps)
-    expect(r['Partner Satz']).toBe('= true')
-    expect(r['Kunde Satz']).toBe('= false')
+    expect(r['Partner Staffel']).toBe('= true')
+    expect(r['Partner Stufen']).toBe('= true')
+    expect(r['Partner USt.-Satz']).toBe('= true')
+    none(r['Partner alter Satz'])
+    none(r['Kunde Staffel'])
     none(r['Kunde Einstellungen'])
     none(r['Partner offer_max_cents'])
     err(r['Partner Spalte note'], '42501')

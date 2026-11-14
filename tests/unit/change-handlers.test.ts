@@ -28,7 +28,7 @@ const priceOf = (over: Record<string, unknown>) => {
   return r.totalCents
 }
 const BOOKED = priceOf({})
-const rates = { feeRate: 0.15, vatRate: 0.2 }
+const rates = { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }
 
 const post = (body: unknown, headers: Record<string, string> = { authorization: 'Bearer t' }) =>
   new Request('https://x.test/change', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
@@ -213,7 +213,7 @@ describe('change-propose', () => {
 const NEW_TOTAL = 80000
 const PRIOR = splitFee(BOOKED, rates)
 const DB: DecideBasis = {
-  status: 'proposed', totalCents: NEW_TOTAL, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1,
+  status: 'proposed', totalCents: NEW_TOTAL, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1,
   priorTotal: PRIOR.totalCents, priorFee: PRIOR.feeCents, priorNet: PRIOR.feeNetCents, priorVat: PRIOR.feeVatCents, priorPayout: PRIOR.payoutCents,
 }
 function ddeps(over: Partial<DecideDeps> = {}): DecideDeps & { calls: DecideCall[] } {

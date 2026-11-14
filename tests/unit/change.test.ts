@@ -3,7 +3,7 @@ import { type OfferResult, type PriceResult, ChangeError, changeTotal, splitChan
 
 const price = (cents: number, high = cents): PriceResult => ({ kind: 'price', totalCents: cents, lowCents: cents, highCents: high, lines: [{ key: 'x', cents }] })
 const offer: OfferResult = { kind: 'offer', reasons: ['special_case'] }
-const rates = { feeRate: 0.15, vatRate: 0.2 }
+const rates = { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }
 const code = (f: () => unknown) => {
   try {
     f()
@@ -74,7 +74,7 @@ describe('splitChange (Konzept 9.3)', () => {
   })
 
   it('rechnet mit dem übergebenen (eingefrorenen) Satz, nicht mit einem festen', () => {
-    const old = { feeRate: 0.1, vatRate: 0.2 }
+    const old = { tiers: [{ upToCents: null, bp: 1000 }], vatRate: 0.2 }
     const prior = splitFee(100_000, old)
     const c = splitChange(120_000, old, prior)
     expect(sum(prior, c)).toEqual(splitFee(120_000, old))

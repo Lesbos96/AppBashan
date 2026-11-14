@@ -87,7 +87,7 @@ test('Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die List
 test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden', async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'payout_changed' } }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
-  jobs.rates = { fee_rate: 0.2, fee_vat_rate: 0.2 }
+  jobs.payoutRate = 0.2
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByText('Deine Auszahlung hat sich geändert')).toBeVisible()
   await expect(card(page)).toContainText('551,69 €') // 689,61 − 20 % (137,92)
@@ -98,8 +98,8 @@ test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch 
   expect(jobs.accepts[1]).toMatchObject({ shownPayoutCents: 55169 })
 })
 
-test('ohne Sätze keine Auszahlung und keine Annahme', async ({ page }) => {
-  await openJobs(page, { listings: [fixed()], rates: { fee_rate: null, fee_vat_rate: null } })
+test('ohne Auszahlungsvorschau keine Auszahlung und keine Annahme', async ({ page }) => {
+  await openJobs(page, { listings: [fixed()], payoutFails: true })
   await expect(card(page)).toContainText('689,61 €')
   await expect(card(page)).not.toContainText('586,17')
   await expect(card(page).getByRole('button', { name: 'Annehmen' })).toBeDisabled()
@@ -170,8 +170,8 @@ test('Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download', async ({ pa
   expect(await card(page).locator('a[download], a[href]').count()).toBe(0)
 })
 
-/** Kein einziger Abruf von Anfragen, Angeboten oder Sätzen. */
-const noJobReads = (jobs: { listingReads: number; offerReads: number; rateReads: number }) => expect([jobs.listingReads, jobs.offerReads, jobs.rateReads]).toEqual([0, 0, 0])
+/** Kein einziger Abruf von Anfragen, Angeboten oder Auszahlungsvorschauen. */
+const noJobReads = (jobs: { listingReads: number; offerReads: number; payoutReads: number }) => expect([jobs.listingReads, jobs.offerReads, jobs.payoutReads]).toEqual([0, 0, 0])
 
 // Der positive Anker steht hinter der Schranke (Dokumente) bzw. an ihr; erst danach zählt „kein Abruf“ (Abnahme s9i-6a M3)
 for (const [status, anchor] of [
@@ -203,7 +203,7 @@ test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zu
   await expect(heading(page)).toBeVisible()
   expect(jobs.listingReads).toBeGreaterThanOrEqual(1)
   expect(jobs.offerReads).toBeGreaterThanOrEqual(1)
-  expect(jobs.rateReads).toBeGreaterThanOrEqual(1)
+  expect(jobs.payoutReads).toBeGreaterThanOrEqual(1)
 })
 
 test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)', async ({ page }) => {

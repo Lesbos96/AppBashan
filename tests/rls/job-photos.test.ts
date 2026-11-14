@@ -2,20 +2,13 @@
 // Geprüft: Wartebedingung der Verteilung, Claim und Mark (Lease, Versuche, Stale), Zugriff (Partner, Kunde, admin), Belege, Aufräumen.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P, setStatus } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 function rates() {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, split: (total: number) => splitFee(total, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, split: (total: number) => splitFee(total, { tiers: r.tiers, vatRate: r.vr }) }
 }
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId() }
@@ -205,7 +198,7 @@ describe('Zugriff auf Kopien (job_photo_list)', () => {
     const R = newId()
     const s = rates().split(68961)
     const RT = rates()
-    const accept = `select public.partner_accept('${U.pa}', ${LID(R, 'a')}, ${rev(R)}, ${s.payoutCents}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    const accept = `select public.partner_accept('${U.pa}', ${LID(R, 'a')}, ${rev(R)}, ${s.payoutCents}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
     const [PR, PX] = [`${uid()}.jpg`, `${uid()}.jpg`]
     const setup = `${BASE} ${request(R)} ${photo(R)} ${ready(R)} ${dist(R)}`
     const list = `public.job_photo_list('${U.pa}', 'aal2', ${LID(R, 'a')}, null)`
@@ -480,7 +473,7 @@ describe('Abnahme S9d: Lücken', () => {
     const R = newId()
     const RT = rates()
     const s = RT.split(68961)
-    const accept = `public.partner_accept('${U.pa}', ${LID(R, 'a')}, ${rev(R)}, ${s.payoutCents}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+    const accept = `public.partner_accept('${U.pa}', ${LID(R, 'a')}, ${rev(R)}, ${s.payoutCents}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv})`
     const check = `perform public.photo_receipt_check('${U.pa}', 'aal2', '${R}')`
     const r = probes(`${BASE} ${request(R)} ${dist(R)}`, [
       { name: 'Annahme', as: 'service_role', sql: `perform ${accept}` },

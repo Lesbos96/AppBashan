@@ -2,21 +2,14 @@
 // Beträge rechnet `splitFee` aus @pricing. Der Nebenläufigkeitstest mit committeten Fixtures steht in accept-concurrency.test.ts.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
 type Split = ReturnType<typeof splitFee>
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 function rates() {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, split: (total: number) => splitFee(total, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, split: (total: number) => splitFee(total, { tiers: r.tiers, vatRate: r.vr }) }
 }
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId(), pc: newId(), pend: newId(), ph: newId(), pself: newId() }
@@ -132,7 +125,7 @@ describe('Annahme (partner_accept)', () => {
   const s = RT.split(68961)
   const acc = (user: string, req: string, key: string, o: { rev?: string; shown?: number; split?: Split } = {}) => {
     const sp = o.split ?? s
-    return `public.partner_accept('${user}', ${LID(req, key)}, ${o.rev ?? rev(req)}, ${o.shown ?? sp.payoutCents}, ${RT.fr}, ${RT.vr}, ${sp.feeCents}, ${sp.feeNetCents}, ${sp.feeVatCents}, ${sp.payoutCents}, ${RT.frv}, ${RT.vrv})`
+    return `public.partner_accept('${user}', ${LID(req, key)}, ${o.rev ?? rev(req)}, ${o.shown ?? sp.payoutCents}, ${RT.vr}, ${sp.feeCents}, ${sp.feeNetCents}, ${sp.feeVatCents}, ${sp.payoutCents}, ${RT.fsv}, ${RT.vrv})`
   }
 
   it('Erfolg: Status, Zuordnung, Listings, Journal, Ereignis, Outbox in einer Transaktion; verweigert: zweite Annahme, Revision, Auszahlung, Firmenstatus, fremdes Listing', () => {
@@ -184,7 +177,7 @@ describe('Annahme (partner_accept)', () => {
     const setup = `${BASE('a', 'b')} ${request({ id: R })} ${request({ id: RW, total: null })} ${dist(R)} ${dist(RW)}`
     const basis = (user: string, req: string, key: string) => `public.partner_accept_basis('${user}', ${LID(req, key)})`
     const steps: Step[] = [
-      { name: 'Basis', sql: `=(select (count(*) = 1 and bool_and(revision_id = ${rev(R)}) and min(total_cents) = 68961 and min(fee_rate) = ${RT.fr}::numeric and min(fee_vat_rate) = ${RT.vr}::numeric and min(fee_rate_version) = ${RT.frv} and min(fee_vat_rate_version) = ${RT.vrv})::text from ${basis(U.pa, R, 'a')})` },
+      { name: 'Basis', sql: `=(select (count(*) = 1 and bool_and(revision_id = ${rev(R)}) and min(total_cents) = 68961 and bool_and(fee_tiers = '${JSON.stringify(RT.tiers)}'::jsonb) and min(fee_vat_rate) = ${RT.vr}::numeric and min(fee_schedule_version) = ${RT.fsv} and min(fee_vat_rate_version) = ${RT.vrv})::text from ${basis(U.pa, R, 'a')})` },
       { name: 'fremde Firma', as: 'service_role', sql: `perform ${basis(U.pb, R, 'a')}` },
       { name: 'ohne Festpreis', as: 'service_role', sql: `perform ${basis(U.pa, RW, 'a')}` },
     ]
@@ -314,7 +307,7 @@ describe('Abwicklung (start_job, complete_job, job_contact, my_job_partner)', ()
   const RT = rates()
   const s = RT.split(68961)
   const accept = (req: string) =>
-    `select public.partner_accept('${U.pa}', ${LID(req, 'a')}, ${rev(req)}, ${s.payoutCents}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    `select public.partner_accept('${U.pa}', ${LID(req, 'a')}, ${rev(req)}, ${s.payoutCents}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
   const past = "now() - interval '2 hours'"
 
   it('start und complete: Akteur, Zeitpunkt, Zuordnung; Zuordnung endet mit completed', () => {

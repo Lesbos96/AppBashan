@@ -2,7 +2,7 @@
 // Alle Datenzugriffe kommen über `deps` (Secret-Key-Client in index.ts, Fakes in den Unit-Tests).
 // Die Pauschale (call_out_fee_cents, höchstens der Gesamtpreis) fällt nur mit Belegfotos an; die Datenbank prüft Grund, Nachtrag und Belege.
 // Ohne `preview` ist `shownCallOutCents` Pflicht: der Aufrufer bestätigt nur den vorher gezeigten Betrag, abweichend 409 `amount_changed` ohne Buchung.
-import { type FeeSplit, splitFee } from '../pricing/index.ts'
+import { type FeeSplit, type FeeTier, splitFee } from '../pricing/index.ts'
 import { corsHeaders, json } from '../http.ts'
 import { type AuthUser, DbError, type Log, STATUS, UUID, authed, body, preflight } from '../jobs/handlers.ts'
 
@@ -10,9 +10,9 @@ export type PartnerBasis = {
   status: string
   totalCents: number
   callOutCents: number
-  feeRate: number
+  feeTiers: FeeTier[]
   feeVatRate: number
-  feeRateVersion: number
+  feeScheduleVersion: number
   feeVatRateVersion: number
 }
 export type PartnerCall = { requestId: string; reason: string; photoIds: string[]; basis: PartnerBasis; feeBaseCents: number; split: FeeSplit }
@@ -28,7 +28,7 @@ const REASONS = new Set(['scope_impossible', 'unavailable', 'other'])
 // Satz oder Betrag wechselten zwischen Grundlage und Buchung: einmal neu laden, dann neutral `retry`.
 const RETRY_CODES = new Set(['rate_mismatch', 'amount_mismatch', 'fee_basis_changed', 'booking_missing', 'vat_rule_missing', 'setting_missing'])
 const ZERO: FeeSplit = { totalCents: 0, feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
-const splitOf = (cents: number, b: PartnerBasis): FeeSplit => (cents > 0 ? splitFee(cents, { feeRate: b.feeRate, vatRate: b.feeVatRate }) : ZERO)
+const splitOf = (cents: number, b: PartnerBasis): FeeSplit => (cents > 0 ? splitFee(cents, { tiers: b.feeTiers, vatRate: b.feeVatRate }) : ZERO)
 
 /**
  * Storno des Partners (T13); aal2 Pflicht. Mit `preview: true` kommen Pauschale und Auszahlung der Firma (nichts wird geschrieben, keine Belege, kein Betrag).

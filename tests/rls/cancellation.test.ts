@@ -2,20 +2,13 @@
 // Alles läuft als Rollback-Proben (`probes`), es bleibt nichts zurück. Die Stornogebühr rechnet `splitFee` aus @pricing.
 import { describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, s: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, s: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 const TOTAL = 68961
 const LATE = 34481 // round_half_up(68961 × 50 %)
@@ -44,14 +37,14 @@ function accepted(id: string, termin: string, terms = true, by: 'a' | 'b' = 'a')
     values ('${id}', 1, 'submit', '{}', '${snap}', 1, ${TOTAL}, ${TOTAL}, ${TOTAL});
     update public.service_requests set current_revision = ${rev(id)} where id = '${id}';
     select public.distribute_request('${id}');
-    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 
 /** Aufruf von cancel_by_customer; die Stornogebühr (Basis `base`) rechnet splitFee, `over` überschreibt einzelne Argumente. */
-function cancelCall(actor: string, req: string, base: number, over: { base?: number; rate?: number; feeShift?: number } = {}): string {
-  const s = splitFee(base, { feeRate: RT.fr, vatRate: RT.vr })
+function cancelCall(actor: string, req: string, base: number, over: { base?: number; version?: number; feeShift?: number } = {}): string {
+  const s = splitFee(base, { tiers: RT.tiers, vatRate: RT.vr })
   const fee = s.feeCents + (over.feeShift ?? 0)
-  return `perform public.cancel_by_customer('${actor}', '${req}', ${over.base ?? base}, ${over.rate ?? RT.fr}, ${RT.vr}, ${fee}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+  return `perform public.cancel_by_customer('${actor}', '${req}', ${over.base ?? base}, ${RT.vr}, ${fee}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${over.version ?? RT.fsv}, ${RT.vrv})`
 }
 const basisOf = (actor: string, req: string) => `public.cancel_by_customer_basis('${actor}', '${req}')`
 
@@ -100,7 +93,7 @@ describe('cancel_by_customer (T12)', () => {
       { name: 'Basis ohne Gebühr bei 50 %', as: 'service_role', sql: cancelCall(U.cust, RL, 0) },
       { name: 'Basis aus fremder Stufe', as: 'service_role', sql: cancelCall(U.cust, RL, TOTAL) },
       { name: 'falsche Aufteilung', as: 'service_role', sql: cancelCall(U.cust, RL, LATE, { feeShift: 5 }) },
-      { name: 'falscher Satz', as: 'service_role', sql: cancelCall(U.cust, RL, LATE, { rate: 0.2 }) },
+      { name: 'falsche Version', as: 'service_role', sql: cancelCall(U.cust, RL, LATE, { version: RT.fsv + 1 }) },
       { name: 'fremder Kunde', as: 'service_role', sql: cancelCall(U.cust2, RL, LATE) },
       { name: 'Partner als Akteur', as: 'service_role', sql: cancelCall(U.pa, RL, LATE) },
       { name: 'noch nicht angenommen', as: 'service_role', sql: cancelCall(U.cust, RQ, 0) },
@@ -164,7 +157,7 @@ describe('cancel_by_customer (T12)', () => {
     err(r['Basis ohne Gebühr bei 50 %'], 'amount_mismatch')
     err(r['Basis aus fremder Stufe'], 'amount_mismatch')
     err(r['falsche Aufteilung'], 'amount_mismatch')
-    err(r['falscher Satz'], 'fee_basis_changed')
+    err(r['falsche Version'], 'fee_basis_changed')
     err(r['fremder Kunde'], 'not_found')
     err(r['Partner als Akteur'], 'not_found')
     err(r['noch nicht angenommen'], 'invalid_transition')
@@ -195,7 +188,7 @@ describe('cancel_by_customer (T12)', () => {
     val(r['RL Gebührenzeile'], '1')
     val(r['RL Gebührenzeile Basis'], String(LATE))
     val(r['RL Gebührenzeile ohne Verweis'], 'true')
-    const lateFee = splitFee(LATE, { feeRate: RT.fr, vatRate: RT.vr })
+    const lateFee = splitFee(LATE, { tiers: RT.tiers, vatRate: RT.vr })
     val(r['RL Gebührensumme'], String(lateFee.feeCents))
     val(r['RL Auszahlungssumme'], String(lateFee.payoutCents))
     val(r['RL Firma liest 3 Zeilen'], '3')
@@ -206,7 +199,7 @@ describe('cancel_by_customer (T12)', () => {
     expect(r['Storno RT2']).toBe('ok')
     val(r['RT2 Status'], 'cancelled_by_customer')
     val(r['RT2 Gebührenzeile Basis'], String(TOTAL))
-    val(r['RT2 Gebührensumme'], String(splitFee(TOTAL, { feeRate: RT.fr, vatRate: RT.vr }).feeCents))
+    val(r['RT2 Gebührensumme'], String(splitFee(TOTAL, { tiers: RT.tiers, vatRate: RT.vr }).feeCents))
     expect(r['Storno RW']).toBe('ok')
     val(r['RW keine Gebührenzeile'], '0')
     val(r['RW Gebührensumme'], '0')
@@ -215,7 +208,7 @@ describe('cancel_by_customer (T12)', () => {
 
 // S9h-1 Abnahme (M1, M2): Nachtrag und Storno, offener Nachtrag, Firma in payment_hold, Meldung „nicht stattgefunden“
 describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
-  const s80 = splitChange(80000, { feeRate: RT.fr, vatRate: RT.vr }, splitFee(TOTAL, { feeRate: RT.fr, vatRate: RT.vr }))
+  const s80 = splitChange(80000, { tiers: RT.tiers, vatRate: RT.vr }, splitFee(TOTAL, { tiers: RT.tiers, vatRate: RT.vr }))
   const receipt = (req: string) =>
     `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
        values ('${req}', 'receipt', ${P('a')}, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now());`
@@ -224,7 +217,7 @@ describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
     `select public.propose_change('${U.pa}', 'aal2', '${req}', ${cur(req)}, '{"hours":6}'::jsonb, 80000, array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt'));`
   const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
   const decide = (req: string) =>
-    `select public.decide_change('${U.cust}', ${OPEN(req)}, true, 80000, ${RT.fr}, ${RT.vr}, ${s80.feeCents}, ${s80.feeNetCents}, ${s80.feeVatCents}, ${s80.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    `select public.decide_change('${U.cust}', ${OPEN(req)}, true, 80000, ${RT.vr}, ${s80.feeCents}, ${s80.feeNetCents}, ${s80.feeVatCents}, ${s80.payoutCents}, ${RT.fsv}, ${RT.vrv});`
   const withChange = (req: string, termin: string) => `${accepted(req, termin)} ${receipt(req)} ${propose(req)} ${decide(req)}`
 
   it('angenommener Nachtrag: beide Zeilen gegengebucht (je mit eigener Revision), Gebühr auf den neuen Gesamtpreis; offener Nachtrag endet', () => {
@@ -258,7 +251,7 @@ describe('cancel_by_customer: Nachtrag, Firma-Status, Prüfung', () => {
     val(r['RC Summen'], '0,0,0,0,0')
     expect(r['Storno RC2 Termintag']).toBe('ok')
     val(r['RC2 Gebührenzeile Basis'], '80000')
-    val(r['RC2 Gebührensumme'], String(splitFee(80000, { feeRate: RT.fr, vatRate: RT.vr }).feeCents))
+    val(r['RC2 Gebührensumme'], String(splitFee(80000, { tiers: RT.tiers, vatRate: RT.vr }).feeCents))
     val(r['RO Nachtrag vorher'], 'proposed')
     expect(r['Storno RO']).toBe('ok')
     val(r['RO Nachtrag nachher'], 'expired')

@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { JobError } from '../../src/lib/jobs'
-import { acceptListing, loadListings, loadMyOffers, loadRates, parseEuro, payoutCents, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
+import { acceptListing, loadListings, loadMyOffers, parseEuro, payoutPreview, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
 
 const invoke = vi.fn()
 const rpc = vi.fn()
@@ -41,12 +41,29 @@ describe('parseEuro (Eingabe in Euro, höchstens zwei Nachkommastellen, ganze Ce
   it.each(['', ' ', '0', '0,00', '-5', '-0,50', '1,005', '1.005', '1.234,50', 'abc', '1e3', 'NaN', 'Infinity', '12,', ',5', '10 000', '99999999', '1,2,3', '١٢٣'])('%j ist ungültig', (s) => expect(parseEuro(s)).toBeNull())
 })
 
-describe('payoutCents (Auszahlung wie splitFee, ganze Cent)', () => {
-  const r = { feeRate: 0.15, vatRate: 0.2 }
-  it('Gesamtpreis minus Gebühr', () => expect(payoutCents(68961, r)).toBe(68961 - Math.round(68961 * 0.15)))
-  it('halbe Cent runden nach oben (fee = 4999,95 → 5000)', () => expect(payoutCents(33333, r)).toBe(28333))
-  it('Halbfall: 0,15 × 10 = 1,5 → 2', () => expect(payoutCents(10, r)).toBe(8))
-  it('0 Cent bleibt 0', () => expect(payoutCents(0, r)).toBe(0))
+describe('payoutPreview (Auszahlung aus payout_preview, Fehler und ungültige Antworten → null)', () => {
+  it('liefert den Wert der Datenbank und fragt mit dem Gesamtpreis', async () => {
+    rpc.mockResolvedValue({ data: 1234, error: null })
+    expect(await payoutPreview(5000)).toBe(1234)
+    expect(rpc).toHaveBeenCalledWith('payout_preview', { p_total: 5000 })
+  })
+  it('Fehler ergeben null', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'x' } })
+    expect(await payoutPreview(5000)).toBeNull()
+  })
+  it('Netzfehler (rpc wirft) ergibt null', async () => {
+    rpc.mockRejectedValue(new TypeError('Failed to fetch'))
+    expect(await payoutPreview(5000)).toBeNull()
+  })
+  it.each([
+    ['über dem Gesamtpreis', 6000],
+    ['negativ', -1],
+    ['Nachkommastellen', 1.5],
+    ['Text', 'abc'],
+  ])('ungültige Antwort (%s) ergibt null', async (_n, data) => {
+    rpc.mockResolvedValue({ data, error: null })
+    expect(await payoutPreview(5000)).toBeNull()
+  })
 })
 
 describe('scopeLines (nur Umfang, keine fremden Felder)', () => {
@@ -95,17 +112,6 @@ describe('Listings lesen', () => {
   it('Lesefehler wird geworfen', async () => {
     result = { data: null, error: { message: 'x' } }
     await expect(loadListings()).rejects.toBeTruthy()
-  })
-})
-
-describe('Sätze', () => {
-  it('liest feeRate und vatRate aus der Ansicht', async () => {
-    result = { data: { fee_rate: 0.15, fee_vat_rate: 0.2 }, error: null }
-    expect(await loadRates()).toEqual({ feeRate: 0.15, vatRate: 0.2 })
-  })
-  it('fehlende Sätze werfen (die Auszahlung wird dann nicht gezeigt)', async () => {
-    result = { data: { fee_rate: null, fee_vat_rate: null }, error: null }
-    await expect(loadRates()).rejects.toBeTruthy()
   })
 })
 
@@ -177,10 +183,6 @@ describe('Annahme', () => {
 })
 
 describe('Härtung (Abnahme N1, N2)', () => {
-  it('ungültiger Satz ergibt null statt eines Fehlers', () => {
-    expect(payoutCents(1000, { feeRate: 1.5, vatRate: 0.2 })).toBeNull()
-    expect(payoutCents(1000, { feeRate: 0.123456, vatRate: 0.2 })).toBeNull()
-  })
   it('Schlüssel der Prototypkette sind keine Treffer', async () => {
     expect(scopeLines('transport', { goods: 'constructor', vehicleType: 'toString', crew: 1, vehicles: 1 })).toEqual([])
     expect(scopeLines('clearance', { object: '__proto__', fill: 'hasOwnProperty' })).toEqual([])

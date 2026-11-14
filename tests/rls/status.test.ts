@@ -141,7 +141,7 @@ describe('Status nur über Funktionen', () => {
   })
 
   it('service_role schreibt kein Journal (commission_entries); kein Auftrag hat Zeilen', async () => {
-    const row = { partner_id: reqA, request_id: reqA, revision_id: revA, kind: 'booking', total_cents: 1, fee_rate: 0, fee_vat_rate: 0, fee_cents: 0, fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, vat_rule: 'standard_20', price_version: 1, fee_rate_version: 1, fee_vat_rate_version: 1 } as never
+    const row = { partner_id: reqA, request_id: reqA, revision_id: revA, kind: 'booking', total_cents: 1, fee_vat_rate: 0, fee_cents: 0, fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, vat_rule: 'standard_20', price_version: 1, fee_schedule_version: 1, fee_vat_rate_version: 1 } as never
     expect((await service.from('commission_entries').insert(row)).error?.code).toBe(DENIED)
     expect(must(await service.from('commission_entries').select('id').eq('request_id', reqA))).toEqual([])
   })

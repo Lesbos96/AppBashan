@@ -3,14 +3,14 @@
 // nur per `now() >= termin_at`, kein Kalendertag-Vergleich, daher keine Tagesgrenze zu beachten.
 import { describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
 const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) => `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
-  return { ...r, split: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, split: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 
 const U = { adm: newId(), cust: newId(), pa: newId(), pb: newId(), ph: newId(), ps: newId(), pp: newId(), pr: newId() }
@@ -47,19 +47,19 @@ const rev = (req: string) => `(select id from public.price_revisions where reque
 const LID = (req: string, key: string) => `(select id from public.job_listings where request_id = '${req}' and partner_id = ${P(key)})`
 const s = RT.split
 const LATE = 34481 // Stornobasis 50 % von 68961 (cancellation.test.ts)
-const LATE_SPLIT = splitFee(LATE, { feeRate: RT.fr, vatRate: RT.vr })
+const LATE_SPLIT = splitFee(LATE, { tiers: RT.tiers, vatRate: RT.vr })
 /** Auftrag anlegen, an alle aktiven Firmen verteilen, `key` nimmt an. */
 const accepted = (id: string, key: keyof typeof FIRM, user: string, termin?: string) =>
   `${request(id, termin)} select public.distribute_request('${id}');
-   select public.partner_accept('${user}', ${LID(id, key)}, ${rev(id)}, ${s.payoutCents}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+   select public.partner_accept('${user}', ${LID(id, key)}, ${rev(id)}, ${s.payoutCents}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 /** Angenommen, gestartet, abgeschlossen; die Zuordnung endete vor `ago` (Eigentümer-Update, solange `ended_at` noch leer ist). */
 const ended = (id: string, key: keyof typeof FIRM, user: string, ago: string) =>
   `${accepted(id, key, user)} select private.set_request_status('${id}', 'in_progress', null, 'partner'); select private.set_request_status('${id}', 'completed', null, 'partner');
    update public.assignments set ended_at = now() - interval '${ago}', ended_reason = 'completed' where request_id = '${id}';`
 /** Storno durch den Kunden (T12) mit Stornobasis `base` (Stufe aus den Bedingungen im Snapshot), ausgeführt vom Eigentümer. */
 const cancelled = (id: string, base: number) => {
-  const c = splitFee(base, { feeRate: RT.fr, vatRate: RT.vr })
-  return `select public.cancel_by_customer('${U.cust}', '${id}', ${base}, ${RT.fr}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.frv}, ${RT.vrv});`
+  const c = splitFee(base, { tiers: RT.tiers, vatRate: RT.vr })
+  return `select public.cancel_by_customer('${U.cust}', '${id}', ${base}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 
 const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
@@ -148,7 +148,7 @@ describe('my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster', () => {
 describe('Beträge nach einem Nachtrag', () => {
   it('ein offener oder abgelehnter Nachtrag ändert die Summen nicht, ein angenommener hebt sie auf Gesamtpreis und Gesamtauszahlung', () => {
     const [R, RD] = [newId(), newId()]
-    const rates = { feeRate: RT.fr, vatRate: RT.vr }
+    const rates = { tiers: RT.tiers, vatRate: RT.vr }
     const NEW_TOTAL = 80000
     const c = splitChange(NEW_TOTAL, rates, splitFee(68961, rates))
     const whole = splitFee(NEW_TOTAL, rates)
@@ -158,7 +158,7 @@ describe('Beträge nach einem Nachtrag', () => {
       `perform public.propose_change('${U.pa}', 'aal2', '${id}', (select current_revision from public.service_requests where id = '${id}'), '{"hours":6}'::jsonb, ${NEW_TOTAL}, array(select id from public.job_photos where request_id = '${id}' and kind = 'receipt'))`
     const open = (id: string) => `(select id from public.price_revisions where request_id = '${id}' and source = 'change_order' and status = 'proposed')`
     const decide = (id: string, yes: boolean) =>
-      `perform public.decide_change('${U.cust}', ${open(id)}, ${yes}, ${NEW_TOTAL}, ${RT.fr}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.frv}, ${RT.vrv})`
+      `perform public.decide_change('${U.cust}', ${open(id)}, ${yes}, ${NEW_TOTAL}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.fsv}, ${RT.vrv})`
     const setup = `${BASE('a')} ${accepted(R, 'a', U.pa)} ${accepted(RD, 'a', U.pa)} ${receipt(R)} ${receipt(RD)}`
     const was = `= accepted:false:68961:${s.payoutCents}:false`
     const steps: Step[] = [

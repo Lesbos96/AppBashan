@@ -5,8 +5,8 @@ import { type AcceptDeps, DbError, handleAccept, handleAdminContact, handleOutbo
 
 const L = '11111111-1111-4111-8111-111111111111'
 const R = '22222222-2222-4222-8222-222222222222'
-const BASIS = { revisionId: R, totalCents: 68961, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1 }
-const PAYOUT = splitFee(68961, { feeRate: 0.15, vatRate: 0.2 }).payoutCents
+const BASIS = { revisionId: R, totalCents: 68961, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1 }
+const PAYOUT = splitFee(68961, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }).payoutCents
 
 const req = (body: unknown, headers: Record<string, string> = { authorization: 'Bearer t' }) =>
   new Request('https://x.test/accept', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
@@ -35,7 +35,7 @@ describe('accept', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ assignmentId: 'assign-1' })
     const c = d.calls[0] as { split: ReturnType<typeof splitFee> }
-    expect(c.split).toEqual(splitFee(68961, { feeRate: 0.15, vatRate: 0.2 }))
+    expect(c.split).toEqual(splitFee(68961, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }))
   })
 
   it('ohne JWT 401, ungültiges JWT 401, aal1 403 mfa_required', async () => {

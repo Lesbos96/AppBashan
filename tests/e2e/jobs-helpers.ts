@@ -1,9 +1,9 @@
 import type { Page, Route } from '@playwright/test'
-import { cors, rest } from './backend'
+import { cors, reply, rest } from './backend'
 import { factor, openPartner, type OpenOpts } from './mfa-helpers'
 
 /*
- * Gemockte Partner-Anfragen (s9i-6a): `job_listings`, `partner_offers`, `current_fee_rates`, Functions `accept` und `job-photo`, RPC `send_offer`
+ * Gemockte Partner-Anfragen (s9i-6a): `job_listings`, `partner_offers`, RPC `payout_preview` (s9p-1), Functions `accept` und `job-photo`, RPC `send_offer`
  * und `withdraw_offer`. Der Mock legt absichtlich fremde Schlüssel in `inputs` (Adresse, Telefon): die Oberfläche zeigt nur die Whitelist.
  * Was der Server erzwingt (Sichtbarkeit, Beträge, Wettlauf), belegen tests/rls/*.
  */
@@ -146,7 +146,10 @@ export const range = (over: Partial<ListingRow> = {}): ListingRow =>
 export type JobsState = {
   listings: ListingRow[]
   offers: OfferRow[]
-  rates: { fee_rate: number | null; fee_vat_rate: number | null }
+  /** Satz der Auszahlungsvorschau (`payout_preview`, Standard 15 %); ein Test ändert ihn wie der Server nach einer Staffeländerung */
+  payoutRate: number
+  /** true: `payout_preview` antwortet mit einem Fehler, die App zeigt dann keine Auszahlung */
+  payoutFails: boolean
   accepts: Record<string, unknown>[]
   sends: Record<string, unknown>[]
   withdraws: Record<string, unknown>[]
@@ -198,14 +201,14 @@ export type JobsState = {
   listStatus: number[]
   listingReads: number
   offerReads: number
-  rateReads: number
+  payoutReads: number
 }
 
 const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ status: 204, headers: cors }) : null)
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], rates: { fee_rate: 0.15, fee_vat_rate: 0.2 }, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, rateReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], payoutRate: 0.15, payoutFails: false, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
   // Journal (s9i-7c1): wie PostgREST: Zeilen des Monats, Ausschnitt nach `Range`, Gesamtzahl im Kopf `content-range` (sichtbar für die App über expose-headers)
   await page.route('**/rest/v1/rpc/my_commissions**', (r) => {
     const o = pre(r)
@@ -243,11 +246,14 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     s.urls.push(r.request().url())
     return rest(r, s.offers)
   })
-  await page.route('**/rest/v1/current_fee_rates**', (r) => {
+  // Auszahlungsvorschau: der Server rechnet (Gesamt − Provision, half-up in Cent); sonst gilt der Standard aus backend.ts
+  await page.route('**/rest/v1/rpc/payout_preview**', (r) => {
     const o = pre(r)
     if (o) return o
-    s.rateReads++
-    return rest(r, [s.rates])
+    s.payoutReads++
+    if (s.payoutFails) return r.fulfill({ status: 500, headers: cors, json: { code: 'XX000', message: 'boom', details: null, hint: null } })
+    const total = Number((r.request().postDataJSON() as { p_total: number }).p_total)
+    return reply(r, total - Math.round(total * s.payoutRate))
   })
   await page.route('**/functions/v1/accept', (r) => {
     const o = pre(r)

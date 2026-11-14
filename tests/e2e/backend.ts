@@ -85,10 +85,14 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   // Auftrags-Detail: ohne eigenen Mock gibt es weder offenen Nachtrag noch Angebote.
   await context.route('**/rest/v1/price_revisions**', (r) => rest(r, []))
   await context.route('**/rest/v1/rpc/my_request_offers**', (r) => reply(r, []))
-  // Partner-Anfragen (s9i-6a): ohne eigenen Mock hat die aktive Firma keine Anfragen und keine Angebote; der Satz ist 15 % und 20 % (tests/e2e/jobs-helpers.ts überschreibt)
+  // Partner-Anfragen (s9i-6a): ohne eigenen Mock hat die aktive Firma keine Anfragen und keine Angebote (tests/e2e/jobs-helpers.ts überschreibt)
   await context.route('**/rest/v1/job_listings**', (r) => rest(r, []))
   await context.route('**/rest/v1/partner_offers**', (r) => rest(r, []))
-  await context.route('**/rest/v1/current_fee_rates**', (r) => rest(r, [{ fee_rate: 0.15, fee_vat_rate: 0.2 }]))
+  // Vorschau „Du erhältst“ (s9p-1): der Server rechnet mit Staffel v1 (15 %, half-up in Cent); der Client rechnet nichts selbst
+  await context.route('**/rest/v1/rpc/payout_preview**', (r) => {
+    const total = Number((r.request().postDataJSON() as { p_total: number }).p_total)
+    return reply(r, total - Math.round(total * 0.15))
+  })
   // Aufträge der Firma (s9i-6b): ohne eigenen Mock hat die Firma keine
   await context.route('**/rest/v1/rpc/my_jobs**', (r) => reply(r, []))
   // Preisgrundlage und Nachtrag der Firma (s9i-7a)

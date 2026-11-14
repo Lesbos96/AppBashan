@@ -3,14 +3,13 @@
 // Bestehende Tests des Servers (propose_change, decide_change, Rückzug, Ablauf): change-orders.test.ts, hier nicht wiederholt.
 import { describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) => `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
-  return { ...r, rates: { feeRate: r.fr, vatRate: r.vr }, split: (t: number) => splitFee(t, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, rates: { tiers: r.tiers, vatRate: r.vr }, split: (t: number) => splitFee(t, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 
 const U = { adm: newId(), cust: newId(), pa: newId(), pb: newId(), ph: newId(), ps: newId(), pp: newId(), pr: newId() }
@@ -48,7 +47,7 @@ const accepted = (id: string, key: keyof typeof FIRM, user: string, termin = "no
    update public.service_requests set current_revision = ${rev1(id)} where id = '${id}';
    insert into public.request_contacts (request_id, name, phone, email) values ('${id}', '${SENTINEL.name}', '${SENTINEL.phone}', '${SENTINEL.email}');
    select public.distribute_request('${id}');
-   select public.partner_accept('${user}', ${LID(id, key)}, ${rev1(id)}, ${s0.payoutCents}, ${RT.fr}, ${RT.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${RT.frv}, ${RT.vrv});`
+   select public.partner_accept('${user}', ${LID(id, key)}, ${rev1(id)}, ${s0.payoutCents}, ${RT.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 const receipt = (req: string, key: string, n = 1) =>
   `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
      select '${req}', 'receipt', ${P(key)}, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now() from generate_series(1, ${n});`
@@ -58,7 +57,7 @@ const propose = (req: string, total = 80000, inputs = '{"service":"move","crew":
 const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
 function decide(req: string, accept: boolean, total = 80000): string {
   const c = splitChange(total, RT.rates, RT.split(BOOKED))
-  return `public.decide_change('${U.cust}', ${OPEN(req)}, ${accept}, ${accept ? total : 0}, ${RT.fr}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.frv}, ${RT.vrv})`
+  return `public.decide_change('${U.cust}', ${OPEN(req)}, ${accept}, ${accept ? total : 0}, ${RT.vr}, ${c.feeCents}, ${c.feeNetCents}, ${c.feeVatCents}, ${c.payoutCents}, ${RT.fsv}, ${RT.vrv})`
 }
 
 const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })

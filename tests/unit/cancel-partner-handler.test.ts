@@ -8,7 +8,7 @@ import { splitFee } from '@pricing'
 const REQ = '0b9f6e0e-6d52-4b7e-9d5c-3f0c2f9a1b11'
 const PHOTO = '5d0c1a2e-8f3b-4c4d-9e6f-7a8b9c0d1e2f'
 const basis = (over: Partial<PartnerBasis> = {}): PartnerBasis => ({
-  status: 'accepted', totalCents: 68961, callOutCents: 6900, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1, ...over,
+  status: 'accepted', totalCents: 68961, callOutCents: 6900, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1, ...over,
 })
 
 type Fake = PartnerDeps & { calls: PartnerCall[]; basisCalls: number; aals: string[]; reasons: string[]; logs: Record<string, unknown>[] }
@@ -56,7 +56,7 @@ describe('handleCancelPartner', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ status: 'cancelled_by_partner', callOutCents: 6900 })
     expect(d.calls[0]?.feeBaseCents).toBe(6900)
-    expect(d.calls[0]?.split).toEqual(splitFee(6900, { feeRate: 0.15, vatRate: 0.2 }))
+    expect(d.calls[0]?.split).toEqual(splitFee(6900, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }))
     expect(d.calls[0]?.photoIds).toEqual([PHOTO])
     expect(d.reasons).toEqual(['scope_impossible'])
   })
@@ -65,7 +65,7 @@ describe('handleCancelPartner', () => {
     const d = deps()
     const res = await call(d, { requestId: REQ, reason: 'scope_impossible', preview: true })
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ callOutCents: 6900, payoutCents: splitFee(6900, { feeRate: 0.15, vatRate: 0.2 }).payoutCents })
+    expect(await res.json()).toEqual({ callOutCents: 6900, payoutCents: splitFee(6900, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }).payoutCents })
     expect(d.calls).toEqual([])
     expect(d.basisCalls).toBe(1)
     const none = deps({ basis: async () => basis({ callOutCents: 0 }) })

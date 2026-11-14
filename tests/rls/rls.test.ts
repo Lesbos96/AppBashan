@@ -337,8 +337,8 @@ describe('Gebühren', () => {
   it('admin liest das Journal nur mit aal2 (Anmeldung per Passwort ist aal1: nichts); niemand schreibt es per API', async () => {
     expect(must(await admin.db.from('commission_entries').select('id'))).toEqual([])
     const row = {
-      request_id: requestB, partner_id: provider.id, revision_id: requestB, kind: 'booking', total_cents: 1, fee_rate: 0, fee_vat_rate: 0, fee_cents: 0,
-      fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, vat_rule: 'standard_20', price_version: 1, fee_rate_version: 1, fee_vat_rate_version: 1,
+      request_id: requestB, partner_id: provider.id, revision_id: requestB, kind: 'booking', total_cents: 1, fee_vat_rate: 0, fee_cents: 0,
+      fee_net_cents: 0, fee_vat_cents: 0, payout_cents: 1, vat_rule: 'standard_20', price_version: 1, fee_schedule_version: 1, fee_vat_rate_version: 1,
     } as never
     for (const db of [provider.db, admin.db, a.db]) expect((await db.from('commission_entries').insert(row)).error?.code).toBe('42501')
   })

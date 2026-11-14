@@ -1,7 +1,7 @@
 // Edge-Function-Logik für das Storno durch den Kunden (S9h-1, Konzept 4.5 Art A, T12).
 // Alle Datenzugriffe kommen über `deps` (Secret-Key-Client in index.ts, Fakes in den Unit-Tests).
 // Die Stornogebühr (Betrag, den der Partner dem Kunden berechnen darf) steht in der Antwort; die Plattformgebühr verlässt die Funktion nie.
-import { type FeeSplit, splitFee } from '../pricing/index.ts'
+import { type FeeSplit, type FeeTier, splitFee } from '../pricing/index.ts'
 import { corsHeaders, json } from '../http.ts'
 import { type AuthUser, DbError, type Log, STATUS, UUID, authed, body, preflight } from '../jobs/handlers.ts'
 
@@ -9,9 +9,9 @@ export type CancelBasis = {
   status: string
   totalCents: number
   feeBaseCents: number
-  feeRate: number
+  feeTiers: FeeTier[]
   feeVatRate: number
-  feeRateVersion: number
+  feeScheduleVersion: number
   feeVatRateVersion: number
 }
 /** `shownFeeCents`: der Betrag, den der Kunde gesehen und bestätigt hat; nur er geht als Stornobasis in die Datenbank. */
@@ -53,7 +53,7 @@ export async function handleCancelCustomer(req: Request, deps: CancelDeps): Prom
       // Gebucht wird nur, was der Kunde gesehen hat: wechselt die Stufe, muss er neu bestätigen
       if (basis.feeBaseCents !== shownFeeCents) return json(409, { error: 'cancel_fee_changed', cancelFeeCents: basis.feeBaseCents }, origin)
       const shown = shownFeeCents as number
-      const split = shown > 0 ? splitFee(shown, { feeRate: basis.feeRate, vatRate: basis.feeVatRate }) : ZERO
+      const split = shown > 0 ? splitFee(shown, { tiers: basis.feeTiers, vatRate: basis.feeVatRate }) : ZERO
       try {
         const status = await deps.cancel(a.user.id, { requestId, shownFeeCents: shown, basis, split })
         return json(200, { status, cancelFeeCents: shown }, origin)

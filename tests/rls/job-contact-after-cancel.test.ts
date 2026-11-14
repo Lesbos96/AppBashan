@@ -3,20 +3,13 @@
 // Alles sind Rollback-Proben, es bleibt nichts zurück.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, s: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, s: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 const TOTAL = 68961
 const CALL_OUT = 6900
@@ -41,7 +34,7 @@ function accepted(id: string): string {
     update public.service_requests set current_revision = ${rev(id)} where id = '${id}';
     insert into public.request_contacts (request_id, name, phone, email, stairs_door) values ('${id}', 'Karl Kunde', '+43 1 234', 'karl@movenow.test', '3. Stock');
     select public.distribute_request('${id}');
-    select public.partner_accept('${U.pa}', ${LID(id)}, ${rev(id)}, ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    select public.partner_accept('${U.pa}', ${LID(id)}, ${rev(id)}, ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 const receipt = (req: string) =>
   `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
@@ -51,15 +44,15 @@ const propose = (req: string) =>
 const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
 const declineChange = (req: string) => {
   const s = { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
-  return `${receipt(req)} ${propose(req)} select public.decide_change('${U.cust}', ${OPEN(req)}, false, 80000, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+  return `${receipt(req)} ${propose(req)} select public.decide_change('${U.cust}', ${OPEN(req)}, false, 80000, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 const RECEIPTS = (req: string) => `array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt')`
 function cancelCall(req: string, reason: string, base: number, photos: string | null): string {
-  const s = base > 0 ? splitFee(base, { feeRate: RT.fr, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
-  return `perform public.cancel_by_partner('${U.pa}', 'aal2', '${req}', '${reason}', ${photos ?? 'null'}, ${base}, ${RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+  const s = base > 0 ? splitFee(base, { tiers: RT.tiers, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
+  return `perform public.cancel_by_partner('${U.pa}', 'aal2', '${req}', '${reason}', ${photos ?? 'null'}, ${base}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.fsv}, ${RT.vrv})`
 }
 const negate = (req: string) =>
-  `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_fee', '${REASON}', null, 0, ${RT.fr}, ${RT.vr}, 0, 0, 0, 0, ${RT.frv}, ${RT.vrv})`
+  `perform public.admin_correct('${U.adm}', 'aal2', '${req}', 'negate_fee', '${REASON}', null, 0, ${RT.vr}, 0, 0, 0, 0, ${RT.fsv}, ${RT.vrv})`
 const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
 const err = (v: string | undefined, part: string) => expect(v?.includes(part), `${part}: ${v}`).toBe(true)
 const contact = (req: string) => `=(select name from public.job_contact('${req}'))`

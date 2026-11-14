@@ -73,16 +73,20 @@ describe('Plattformgebühr', () => {
     }
   })
 
-  it('nimmt den Satz als Parameter', () => {
-    expect(splitFee(10000, { feeRate: 0.1, vatRate: 0.2 }).feeCents).toBe(1000)
-    expect(splitFee(10000, { feeRate: 0, vatRate: 0.2 }).feeCents).toBe(0)
+  it('nimmt die Staffel als Parameter', () => {
+    expect(splitFee(10000, { tiers: [{ upToCents: null, bp: 1000 }], vatRate: 0.2 }).feeCents).toBe(1000)
+    expect(splitFee(10000, { tiers: [{ upToCents: null, bp: 0 }], vatRate: 0.2 }).feeCents).toBe(0)
   })
 
-  it('lehnt ungültige Sätze und Beträge ab', () => {
-    expect(() => splitFee(100, { feeRate: 1, vatRate: 0.2 })).toThrow()
-    expect(() => splitFee(100, { feeRate: -0.1, vatRate: 0.2 })).toThrow()
-    expect(() => splitFee(100, { feeRate: 0.123456, vatRate: 0.2 })).toThrow()
-    expect(() => splitFee(100, { feeRate: Number.NaN, vatRate: 0.2 })).toThrow()
+  it('Staffel v2 (12/10/7): Gesamtpreis 0 ergibt Provision 0', () => {
+    expect(splitFee(0, { tiers: [{ upToCents: 50000, bp: 1200 }, { upToCents: 100000, bp: 1000 }, { upToCents: null, bp: 700 }], vatRate: 0.2 }).feeCents).toBe(0)
+  })
+
+  it('lehnt ungültige Staffeln und Beträge ab', () => {
+    expect(() => splitFee(100, { tiers: [{ upToCents: null, bp: 10000 }], vatRate: 0.2 })).toThrow()
+    expect(() => splitFee(100, { tiers: [{ upToCents: null, bp: -1000 }], vatRate: 0.2 })).toThrow()
+    expect(() => splitFee(100, { tiers: [{ upToCents: null, bp: 1234.5 }], vatRate: 0.2 })).toThrow()
+    expect(() => splitFee(100, { tiers: [{ upToCents: null, bp: Number.NaN }], vatRate: 0.2 })).toThrow()
     expect(() => splitFee(100.5, rates)).toThrow()
     expect(() => splitFee(-1, rates)).toThrow()
   })

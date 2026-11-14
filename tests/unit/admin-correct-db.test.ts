@@ -7,7 +7,7 @@ import type { Db } from '../../supabase/functions/_shared/jobs/db.ts'
 
 const REQ = '0b9f6e0e-6d52-4b7e-9d5c-3f0c2f9a1b11'
 const ZERO = { totalCents: 0, feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
-const basis = { status: 'completed', totalCents: 68961, customerFeeBaseCents: 68961, callOutCents: 6900, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1 }
+const basis = { status: 'completed', totalCents: 68961, customerFeeBaseCents: 68961, callOutCents: 6900, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1 }
 const base: Omit<CorrectCall, 'action' | 'cancelReason' | 'basis' | 'feeBaseCents' | 'split'> = { requestId: REQ, reason: 'Prüfung abgeschlossen' }
 
 async function sent(c: CorrectCall): Promise<Record<string, unknown>> {
@@ -30,6 +30,6 @@ describe('adminCorrectDb.correct', () => {
   it('mit Gebühr: Satz und Versionen aus der Grundlage, Grund durchgereicht', async () => {
     const a = await sent({ ...base, action: 'cancel_partner', cancelReason: 'scope_impossible', basis, feeBaseCents: 6900, split: { totalCents: 6900, feeCents: 1035, feeNetCents: 863, feeVatCents: 172, payoutCents: 5865 } })
     expect(Object.keys(a)).toHaveLength(15)
-    expect(a).toMatchObject({ p_cancel_reason: 'scope_impossible', p_fee_base: 6900, p_fee_rate: 0.15, p_fee_vat_rate: 0.2, p_fee: 1035, p_fee_rate_version: 1, p_fee_vat_rate_version: 1 })
+    expect(a).toMatchObject({ p_cancel_reason: 'scope_impossible', p_fee_base: 6900, p_fee_vat_rate: 0.2, p_fee: 1035, p_fee_schedule_version: 1, p_fee_vat_rate_version: 1 })
   })
 })

@@ -2,19 +2,12 @@
 // Nebenläufigkeit (4 parallele Angebote, confirm gegen Annahme): tests/rls/offers-concurrency.test.ts.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
-const r0 = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-  fr: number
-  vr: number
-  frv: number
-  vrv: number
-}
-const split = (total: number) => splitFee(total, { feeRate: r0.fr, vatRate: r0.vr })
+const r0 = currentFee()
+const split = (total: number) => splitFee(total, { tiers: r0.tiers, vatRate: r0.vr })
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId(), pc: newId(), ph: newId(), pend: newId() }
 const USERS = insertUsers(Object.values(U))
@@ -66,7 +59,7 @@ const sendAs = (name: string, user: string, req: string, amount: number, aal: 'a
 const confirm = (user: string, req: string, key: string, o: { shown?: number; amount?: number } = {}) => {
   const amount = o.amount ?? 150000
   const sp = split(amount)
-  return `public.confirm_offer('${user}', ${OFF(req, key)}, ${o.shown ?? amount}, ${r0.fr}, ${r0.vr}, ${sp.feeCents}, ${sp.feeNetCents}, ${sp.feeVatCents}, ${sp.payoutCents}, ${r0.frv}, ${r0.vrv})`
+  return `public.confirm_offer('${user}', ${OFF(req, key)}, ${o.shown ?? amount}, ${r0.vr}, ${sp.feeCents}, ${sp.feeNetCents}, ${sp.feeVatCents}, ${sp.payoutCents}, ${r0.fsv}, ${r0.vrv})`
 }
 const suspendRaw = (key: string) =>
   `select set_config('app.mv_partner_status', ${P(key)}::text || ':active>suspended', true); update public.partners set status = 'suspended', status_reason = 'Sperre für den Test' where id = ${P(key)}; select set_config('app.mv_partner_status', '', true);`
@@ -207,7 +200,7 @@ describe('Bestätigung (confirm_offer)', () => {
       select set_config('request.jwt.claims', '{"sub":"${U.pa}","role":"authenticated","aal":"aal2"}', true); set local role authenticated; select ${SO(U.pa, R, 150000)}; reset role;
       select set_config('request.jwt.claims', '{"sub":"${U.pb}","role":"authenticated","aal":"aal2"}', true); set local role authenticated; select ${SO(U.pb, R, 160000)}; reset role;`
     const steps: Step[] = [
-      named('Basis', { as: 'service_role', sql: `=(select amount_cents || '/' || fee_rate from public.confirm_offer_basis('${U.cust}', ${OFF(R, 'a')}))` }),
+      named('Basis', { as: 'service_role', sql: `=(select amount_cents || '/' || (fee_tiers = '${JSON.stringify(r0.tiers)}'::jsonb) from public.confirm_offer_basis('${U.cust}', ${OFF(R, 'a')}))` }),
       named('Basis fremd', { as: 'service_role', sql: `perform public.confirm_offer_basis('${U.cust2}', ${OFF(R, 'a')})` }),
       named('Partner als Akteur', { as: 'service_role', sql: `perform ${confirm(U.pa, R, 'a')}` }),
       named('anderer Kunde', { as: 'service_role', sql: `perform ${confirm(U.cust2, R, 'a')}` }),
@@ -235,7 +228,7 @@ describe('Bestätigung (confirm_offer)', () => {
       named('überholtes Angebot', { as: 'service_role', sql: `perform ${confirm(U.cust, R, 'b', { amount: 160000 })}` }),
     ]
     const r = probes(setup, steps)
-    expect(r['Basis']).toBe(`= 150000/${r0.fr}`)
+    expect(r['Basis']).toBe(`= 150000/true`)
     err(r['Basis fremd'], 'not_found')
     err(r['Partner als Akteur'], 'not_found')
     err(r['anderer Kunde'], 'not_found')
@@ -306,7 +299,7 @@ describe('Bestätigung (confirm_offer)', () => {
       update public.platform_settings set value = 1 where key = 'partner_open_jobs_max';`
     const lid = `(select id from public.job_listings where request_id = '${R1}' and partner_id = ${P('a')})`
     const steps: Step[] = [
-      named('Annahme', { as: 'service_role', sql: `perform public.partner_accept('${U.pa}', ${lid}, (select current_revision from public.service_requests where id = '${R1}'), ${s.payoutCents}, ${r0.fr}, ${r0.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${r0.frv}, ${r0.vrv})` }),
+      named('Annahme', { as: 'service_role', sql: `perform public.partner_accept('${U.pa}', ${lid}, (select current_revision from public.service_requests where id = '${R1}'), ${s.payoutCents}, ${r0.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${r0.fsv}, ${r0.vrv})` }),
       named('bestätigen', { as: 'service_role', sql: `perform ${confirm(U.cust, R2, 'a')}` }),
       named('Angebot', { sql: `=${ostat(R2, 'a')}` }),
       named('Status', { sql: `=${status(R2)}` }),

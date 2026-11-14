@@ -2,20 +2,13 @@
 // Alles läuft als Rollback-Proben (`probes`), es bleibt nichts zurück. Beträge rechnet `splitFee` aus @pricing.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, s: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, s: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId() }
@@ -37,7 +30,7 @@ function accepted(id: string, termin: string, by: 'a' | 'b' = 'a'): string {
     values ('${id}', 1, 'submit', '{}', '{"kind":"price","totalCents":68961,"lowCents":68961,"highCents":68961,"lines":[]}', 1, 68961, 68961, 68961);
     update public.service_requests set current_revision = ${rev(id)} where id = '${id}';
     select public.distribute_request('${id}');
-    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)}, ${rev(id)}, ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)}, ${rev(id)}, ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 
 const A2 = (sub: string) => ({ sub, aal: 'aal2' as const })
@@ -179,7 +172,7 @@ describe('Abrechnungsmonat (export_commissions, my_commissions)', () => {
   it('Monat (Europe/Vienna) aus erstem Endstatus und Buchungszeitpunkt; ohne Endstatus keine Zeile; Export nur admin über service_role; Partner nur eigene Firma mit aal2', () => {
     const [R1, R2] = [newId(), newId()]
     const book = `select private.commission_book(${P('a')}, '${R1}', ${rev(R1)}, 'correction', (select id from public.commission_entries where request_id = '${R1}' and kind = 'booking'),
-      -68961, ${RT.fr}, ${RT.vr}, ${-RT.s.feeCents}, ${-RT.s.feeNetCents}, ${-RT.s.feeVatCents}, ${-RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+      -68961, ${RT.vr}, ${-RT.s.feeCents}, ${-RT.s.feeNetCents}, ${-RT.s.feeVatCents}, ${-RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
     // Zeitpunkte per Eigentümer-SQL zurückdatiert (nur in dieser Transaktion, die zurückgerollt wird): Ende 30.09. 23:30 UTC = 01.10. 01:30 in Wien
     const setup = `${BASE} ${accepted(R1, ago('2 hours'))} ${accepted(R2, ago('2 hours'))}
       select private.set_request_status('${R1}', 'completed', null, 'system');
@@ -236,7 +229,7 @@ describe('Abrechnungsmonat (export_commissions, my_commissions)', () => {
     val(r['Zeile Oktober'], `booking|68961|${s.feeCents}|${s.feeNetCents}|${s.feeVatCents}|${s.payoutCents}|completed|standard_20|2026-10-01`)
     val(r['Endzeitpunkt'], '2026-09-30 23:30')
     val(r['Zeile November'], 'correction|-68961|true')
-    val(r['Spalten'], 'entry_id,request_id,partner_id,partner_name,kind,reverses_entry_id,created_at,total_cents,fee_rate,fee_net_cents,fee_vat_cents,fee_cents,payout_cents,vat_rule,request_status,ended_at,billing_month')
+    val(r['Spalten'], 'entry_id,request_id,partner_id,partner_name,kind,reverses_entry_id,created_at,total_cents,fee_schedule,fee_net_cents,fee_vat_cents,fee_cents,payout_cents,vat_rule,request_status,ended_at,billing_month')
     expect(r['Audit']).toBe('ok')
     err(r['ohne Monat'], 'month_required')
     err(r['kein admin'], '42501')

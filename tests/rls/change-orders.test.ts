@@ -2,20 +2,13 @@
 // Nebenläufigkeit (zwei parallele Vorschläge, Annahme gegen Ablauf): tests/rls/change-orders-concurrency.test.ts.
 import { describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P, setStatus } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, rates: { feeRate: r.fr, vatRate: r.vr }, split: (t: number) => splitFee(t, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, rates: { tiers: r.tiers, vatRate: r.vr }, split: (t: number) => splitFee(t, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 
 const U = { adm: newId(), cust: newId(), cust2: newId(), pa: newId(), pb: newId() }
@@ -37,7 +30,7 @@ const accepted = (id: string) =>
      values ('${id}', 1, 'submit', '{}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],"terms":{"x":1}}', 1, ${BOOKED}, ${BOOKED}, ${BOOKED});
    update public.service_requests set current_revision = ${rev1(id)} where id = '${id}';
    select public.distribute_request('${id}');
-   select public.partner_accept('${U.pa}', ${LID(id, 'a')}, ${rev1(id)}, ${s0.payoutCents}, ${RT.fr}, ${RT.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${RT.frv}, ${RT.vrv});`
+   select public.partner_accept('${U.pa}', ${LID(id, 'a')}, ${rev1(id)}, ${s0.payoutCents}, ${RT.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 const receipt = (req: string, key: string, n = 1) =>
   `insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
      select '${req}', 'receipt', ${P(key)}, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now() from generate_series(1, ${n});`
@@ -49,12 +42,12 @@ const propose = (req: string, o: PO = {}) =>
 const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
 const ACC = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'accepted' order by n desc limit 1)`
 
-type DO = { user?: string; accept?: boolean | null; shown?: number; total?: number; prior?: number; rate?: number; wrongParts?: boolean; rev?: string }
+type DO = { user?: string; accept?: boolean | null; shown?: number; total?: number; prior?: number; version?: number; wrongParts?: boolean; rev?: string }
 function decide(req: string, o: DO = {}): string {
   const total = o.total ?? 80000
   const c = splitChange(total, RT.rates, RT.split(o.prior ?? BOOKED))
   const [fee, vat, payout] = o.wrongParts ? [c.feeCents + 1, c.feeVatCents + 1, c.payoutCents - 1] : [c.feeCents, c.feeVatCents, c.payoutCents]
-  return `public.decide_change('${o.user ?? U.cust}', ${o.rev ?? OPEN(req)}, ${o.accept === null ? 'null::boolean' : (o.accept ?? true)},${o.shown ?? total}, ${o.rate ?? RT.fr}, ${RT.vr}, ${fee}, ${c.feeNetCents}, ${vat}, ${payout}, ${RT.frv}, ${RT.vrv})`
+  return `public.decide_change('${o.user ?? U.cust}', ${o.rev ?? OPEN(req)}, ${o.accept === null ? 'null::boolean' : (o.accept ?? true)},${o.shown ?? total}, ${RT.vr}, ${fee}, ${c.feeNetCents}, ${vat}, ${payout}, ${o.version ?? RT.fsv}, ${RT.vrv})`
 }
 
 const count = (sql: string) => `(select count(*) from ${sql})`
@@ -217,7 +210,7 @@ describe('Entscheidung des Kunden (decide_change)', () => {
       svc('fremder Kunde', decide(R, { user: U.cust2 })),
       svc('Partner', decide(R, { user: U.pa })),
       svc('Betrag anders', decide(R, { shown: 79999 })),
-      svc('Satz anders', decide(R, { rate: 0.16 })),
+      svc('falsche Version', decide(R, { version: RT.fsv + 1 })),
       svc('Komponenten falsch', decide(R, { wrongParts: true })),
       named('authenticated darf nicht', { as: 'authenticated', claims: A2(U.cust), sql: `perform ${decide(R)}` }),
       named('anon darf nicht', { as: 'anon', sql: `perform ${decide(R)}` }),
@@ -232,7 +225,7 @@ describe('Entscheidung des Kunden (decide_change)', () => {
       named('Journal: Summe Netto', { sql: `=(select sum(fee_net_cents) from public.commission_entries where request_id = '${R}')` }),
       named('Journal: Satz der change-Zeile = Satz der Buchung', {
         sql: `=(select count(*) from public.commission_entries c join public.commission_entries b on b.request_id = c.request_id and b.kind = 'booking'
-          where c.request_id = '${R}' and c.kind = 'change' and (c.fee_rate, c.fee_vat_rate, c.fee_rate_version, c.fee_vat_rate_version, c.vat_rule) = (b.fee_rate, b.fee_vat_rate, b.fee_rate_version, b.fee_vat_rate_version, b.vat_rule))`,
+          where c.request_id = '${R}' and c.kind = 'change' and (c.fee_vat_rate, c.fee_schedule_version, c.fee_vat_rate_version, c.vat_rule) = (b.fee_vat_rate, b.fee_schedule_version, b.fee_vat_rate_version, b.vat_rule))`,
       }),
       named('Doppelklick', { as: 'service_role', sql: `=${decide(R, { rev: ACC(R) })}` }),
       named('nach Doppelklick weiter eine Zeile', { sql: `=${count(`public.commission_entries where request_id = '${R}' and kind = 'change'`)}` }),
@@ -245,7 +238,7 @@ describe('Entscheidung des Kunden (decide_change)', () => {
     err(r['fremder Kunde'], 'not_found')
     err(r['Partner'], 'not_found')
     err(r['Betrag anders'], 'shown_total_mismatch')
-    err(r['Satz anders'], 'fee_basis_changed')
+    err(r['falsche Version'], 'fee_basis_changed')
     err(r['Komponenten falsch'], 'amount_mismatch')
     err(r['authenticated darf nicht'], '42501')
     err(r['anon darf nicht'], '42501')
@@ -393,11 +386,11 @@ describe('Abnahme S9f (0041)', () => {
       named('expire_changes: Angenommenes bleibt', { as: 'service_role', sql: `=public.expire_changes()` }),
       named('keine Ablauf-Mail für den angenommenen', { sql: `=${count(`public.outbox where kind = 'change_expired' and request_id = '${R}'`)}` }),
       named('Satzwechsel', {
-        sql: `alter table public.platform_settings disable trigger user; insert into public.platform_settings (key, version, value, note, effective_from) values ('fee_rate', 99, 0.10, 'Test', ${today}); alter table public.platform_settings enable trigger user`,
+        sql: `insert into public.fee_schedules (version, valid_from, label) values (99, ${today}, 'test'); insert into public.fee_schedule_tiers (version, tier, up_to_cents, rate_bp) values (99, 1, null, 1000);`,
       }),
-      svc('neuer Satz abgelehnt', decide(R2, { rate: 0.1 })),
+      svc('neue Version abgelehnt', decide(R2, { version: 99 })),
       named('Satz der Buchung gilt', { as: 'service_role', sql: `=${decide(R2)}` }),
-      named('change-Zeile trägt den eingefrorenen Satz', { sql: `=(select fee_rate = ${RT.fr} and fee_rate_version = ${RT.frv} from public.commission_entries where request_id = '${R2}' and kind = 'change')` }),
+      named('change-Zeile trägt die eingefrorene Version', { sql: `=(select fee_schedule_version = ${RT.fsv} from public.commission_entries where request_id = '${R2}' and kind = 'change')` }),
       named('suspended', { sql: hold('Sperre nach Zahlungsverzug im Test', 'suspended') }),
       named('System-Rückzug', { as: 'service_role', sql: `=${decide(R4)}` }),
       named('Audit System-Rückzug', { sql: `=${count(`public.audit_log where action = 'withdraw_change' and actor_role = 'system' and detail ->> 'request_id' = '${R4}'`)}` }),
@@ -417,7 +410,7 @@ describe('Abnahme S9f (0041)', () => {
     rows(r['expire_changes: Angenommenes bleibt'], 0)
     rows(r['keine Ablauf-Mail für den angenommenen'], 0)
     ok(r['Satzwechsel'])
-    err(r['neuer Satz abgelehnt'], 'fee_basis_changed')
+    err(r['neue Version abgelehnt'], 'fee_basis_changed')
     expect(r['Satz der Buchung gilt']).toBe('= accepted')
     expect(r['change-Zeile trägt den eingefrorenen Satz']).toBe('= true')
     ok(r['suspended'])

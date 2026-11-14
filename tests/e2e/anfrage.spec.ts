@@ -487,7 +487,7 @@ test('Die App liest nie das Journal oder Einstellungen und keine Antwort enthäl
   await expect(page).toHaveURL(/\/montage\/gesendet$/)
   await page.goto('/auftraege')
   await page.getByText('Noch keine Aufträge').or(page.getByText(/Aktiv ·/)).waitFor()
-  expect(requested.filter((u) => /commission_entries|platform_settings|current_fee_rates/.test(u))).toEqual([])
+  expect(requested.filter((u) => /commission_entries|platform_settings|fee_schedules|payout_preview/.test(u))).toEqual([])
   expect(keys.length).toBeGreaterThan(0)
   // call_out_fee_cents ist die Anfahrtspauschale aus den Bedingungen, keine Plattformgebühr
   expect(keys.filter((k) => k !== 'call_out_fee_cents' && /fee|payout|platform|share|anteil|vat/i.test(k))).toEqual([])

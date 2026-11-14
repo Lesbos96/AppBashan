@@ -1,5 +1,6 @@
 // Datenbank-Anbindung der Functions accept, admin-contact und outbox-send (S9c). Läuft mit dem Secret Key (service_role);
 // die SQL-Funktionen prüfen Akteur, Firma und Status selbst. Fehler der Funktionen kommen als DbError mit dem Code der Exception.
+import type { FeeTier } from '../pricing/index.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
 import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OfferDeps, type OutboxDeps } from './handlers.ts'
@@ -31,9 +32,9 @@ export const acceptDb = (db: Db): Pick<AcceptDeps, 'getUser' | 'basis' | 'accept
     return {
       revisionId: row.revision_id,
       totalCents: Number(row.total_cents),
-      feeRate: Number(row.fee_rate),
+      feeTiers: row.fee_tiers as unknown as FeeTier[],
       feeVatRate: Number(row.fee_vat_rate),
-      feeRateVersion: row.fee_rate_version,
+      feeScheduleVersion: row.fee_schedule_version,
       feeVatRateVersion: row.fee_vat_rate_version,
     }
   },
@@ -44,13 +45,12 @@ export const acceptDb = (db: Db): Pick<AcceptDeps, 'getUser' | 'basis' | 'accept
         p_listing: c.listingId,
         p_revision: c.revisionId,
         p_shown_payout: c.shownPayoutCents,
-        p_fee_rate: c.basis.feeRate,
         p_fee_vat_rate: c.basis.feeVatRate,
         p_fee: c.split.feeCents,
         p_fee_net: c.split.feeNetCents,
         p_fee_vat: c.split.feeVatCents,
         p_payout: c.split.payoutCents,
-        p_fee_rate_version: c.basis.feeRateVersion,
+        p_fee_schedule_version: c.basis.feeScheduleVersion,
         p_fee_vat_rate_version: c.basis.feeVatRateVersion,
       }),
     )
@@ -64,9 +64,9 @@ export const offerDb = (db: Db): Pick<OfferDeps, 'getUser' | 'basis' | 'confirm'
     if (!row) throw new DbError('not_found')
     return {
       amountCents: Number(row.amount_cents),
-      feeRate: Number(row.fee_rate),
+      feeTiers: row.fee_tiers as unknown as FeeTier[],
       feeVatRate: Number(row.fee_vat_rate),
-      feeRateVersion: row.fee_rate_version,
+      feeScheduleVersion: row.fee_schedule_version,
       feeVatRateVersion: row.fee_vat_rate_version,
     }
   },
@@ -76,13 +76,12 @@ export const offerDb = (db: Db): Pick<OfferDeps, 'getUser' | 'basis' | 'confirm'
         p_actor: userId,
         p_offer: offerId,
         p_shown_amount: b.amountCents,
-        p_fee_rate: b.feeRate,
         p_fee_vat_rate: b.feeVatRate,
         p_fee: split.feeCents,
         p_fee_net: split.feeNetCents,
         p_fee_vat: split.feeVatCents,
         p_payout: split.payoutCents,
-        p_fee_rate_version: b.feeRateVersion,
+        p_fee_schedule_version: b.feeScheduleVersion,
         p_fee_vat_rate_version: b.feeVatRateVersion,
       }),
     )

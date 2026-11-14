@@ -135,7 +135,7 @@ describe('Gebührenaufteilung', () => {
   it('Gebühr + Partneranteil = Gesamtpreis (b), netto + USt. = Gebühr (c), alles ganze Cent ≥ 0 (d)', () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 1_000_000_000 }), fc.integer({ min: 0, max: 9999 }), fc.integer({ min: 0, max: 9999 }), (total, feeBp, vatBp) => {
-        const s = splitFee(total, { feeRate: feeBp / 10000, vatRate: vatBp / 10000 })
+        const s = splitFee(total, { tiers: [{ upToCents: null, bp: feeBp }], vatRate: vatBp / 10000 })
         expect(s.feeCents + s.payoutCents).toBe(total)
         expect(s.feeNetCents + s.feeVatCents).toBe(s.feeCents)
         for (const n of Object.values(s)) expect(sane(n)).toBe(true)

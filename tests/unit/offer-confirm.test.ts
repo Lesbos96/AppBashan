@@ -4,7 +4,7 @@ import { splitFee } from '@pricing'
 import { DbError, handleConfirmOffer, type OfferDeps } from '../../supabase/functions/_shared/jobs/handlers.ts'
 
 const O = '11111111-1111-4111-8111-111111111111'
-const BASIS = { amountCents: 150000, feeRate: 0.15, feeVatRate: 0.2, feeRateVersion: 1, feeVatRateVersion: 1 }
+const BASIS = { amountCents: 150000, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1 }
 
 const req = (body: unknown, headers: Record<string, string> = { authorization: 'Bearer t' }) =>
   new Request('https://x.test/offer-confirm', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
@@ -33,7 +33,7 @@ describe('offer-confirm', () => {
     expect(res.status).toBe(200)
     const text = JSON.stringify(await res.json())
     expect(text).toBe('{"status":"confirmed"}')
-    expect(d.calls[0]).toEqual(splitFee(150000, { feeRate: 0.15, vatRate: 0.2 }))
+    expect(d.calls[0]).toEqual(splitFee(150000, { tiers: [{ upToCents: null, bp: 1500 }], vatRate: 0.2 }))
   })
 
   it('ohne oder mit ungültigem JWT 401; falsche Eingabe 400; abweichender Betrag 409 ohne Aufruf', async () => {

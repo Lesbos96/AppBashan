@@ -97,8 +97,7 @@ export type Database = {
           created_at: string
           fee_cents: number
           fee_net_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
           fee_vat_cents: number
           fee_vat_rate: number
           fee_vat_rate_version: number
@@ -118,8 +117,7 @@ export type Database = {
           created_at?: string
           fee_cents: number
           fee_net_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
           fee_vat_cents: number
           fee_vat_rate: number
           fee_vat_rate_version: number
@@ -139,8 +137,7 @@ export type Database = {
           created_at?: string
           fee_cents?: number
           fee_net_cents?: number
-          fee_rate?: number
-          fee_rate_version?: number
+          fee_schedule_version?: number
           fee_vat_cents?: number
           fee_vat_rate?: number
           fee_vat_rate_version?: number
@@ -157,6 +154,13 @@ export type Database = {
           vat_rule?: Database["public"]["Enums"]["partner_vat_rule"]
         }
         Relationships: [
+          {
+            foreignKeyName: "commission_entries_fee_schedule_version_fkey"
+            columns: ["fee_schedule_version"]
+            isOneToOne: false
+            referencedRelation: "fee_schedules"
+            referencedColumns: ["version"]
+          },
           {
             foreignKeyName: "commission_entries_partner_id_fkey"
             columns: ["partner_id"]
@@ -200,6 +204,53 @@ export type Database = {
             referencedColumns: ["id", "request_id"]
           },
         ]
+      }
+      fee_schedule_tiers: {
+        Row: {
+          rate_bp: number
+          tier: number
+          up_to_cents: number | null
+          version: number
+        }
+        Insert: {
+          rate_bp: number
+          tier: number
+          up_to_cents?: number | null
+          version: number
+        }
+        Update: {
+          rate_bp?: number
+          tier?: number
+          up_to_cents?: number | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_schedule_tiers_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "fee_schedules"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      fee_schedules: {
+        Row: {
+          label: string
+          valid_from: string
+          version: number
+        }
+        Insert: {
+          label: string
+          valid_from: string
+          version: number
+        }
+        Update: {
+          label?: string
+          valid_from?: string
+          version?: number
+        }
+        Relationships: []
       }
       geo_boundaries: {
         Row: {
@@ -566,6 +617,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           end_reason: string | null
+          fee_schedule_version: number
           id: string
           partner_id: string
           request_id: string
@@ -578,6 +630,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           end_reason?: string | null
+          fee_schedule_version: number
           id?: string
           partner_id: string
           request_id: string
@@ -590,6 +643,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           end_reason?: string | null
+          fee_schedule_version?: number
           id?: string
           partner_id?: string
           request_id?: string
@@ -603,6 +657,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "price_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_offers_fee_schedule_version_fkey"
+            columns: ["fee_schedule_version"]
+            isOneToOne: false
+            referencedRelation: "fee_schedules"
+            referencedColumns: ["version"]
           },
           {
             foreignKeyName: "partner_offers_partner_id_fkey"
@@ -1406,17 +1467,6 @@ export type Database = {
       }
     }
     Views: {
-      current_fee_rates: {
-        Row: {
-          fee_rate: number | null
-          fee_rate_from: string | null
-          fee_rate_version: number | null
-          fee_vat_rate: number | null
-          fee_vat_rate_from: string | null
-          fee_vat_rate_version: number | null
-        }
-        Relationships: []
-      }
       current_price_version: {
         Row: {
           effective_on: string | null
@@ -1454,8 +1504,7 @@ export type Database = {
           p_fee: number
           p_fee_base: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1470,8 +1519,8 @@ export type Database = {
         Returns: {
           call_out_cents: number
           customer_fee_base_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
           request_status: string
@@ -1582,8 +1631,7 @@ export type Database = {
           p_fee: number
           p_fee_base: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1596,8 +1644,8 @@ export type Database = {
         Args: { p_actor: string; p_request: string }
         Returns: {
           fee_base_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
           request_status: string
@@ -1612,8 +1660,7 @@ export type Database = {
           p_fee: number
           p_fee_base: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1633,8 +1680,8 @@ export type Database = {
         }
         Returns: {
           call_out_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
           request_status: string
@@ -1649,8 +1696,7 @@ export type Database = {
           p_actor: string
           p_fee: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1664,8 +1710,8 @@ export type Database = {
         Args: { p_actor: string; p_offer: string }
         Returns: {
           amount_cents: number
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
         }[]
@@ -1676,8 +1722,7 @@ export type Database = {
           p_actor: string
           p_fee: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1690,8 +1735,8 @@ export type Database = {
       decide_change_basis: {
         Args: { p_actor: string; p_revision: string }
         Returns: {
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
           prior_fee: number
@@ -1834,8 +1879,7 @@ export type Database = {
           p_actor: string
           p_fee: number
           p_fee_net: number
-          p_fee_rate: number
-          p_fee_rate_version: number
+          p_fee_schedule_version: number
           p_fee_vat: number
           p_fee_vat_rate: number
           p_fee_vat_rate_version: number
@@ -1849,8 +1893,8 @@ export type Database = {
       partner_accept_basis: {
         Args: { p_actor: string; p_listing: string }
         Returns: {
-          fee_rate: number
-          fee_rate_version: number
+          fee_schedule_version: number
+          fee_tiers: Json
           fee_vat_rate: number
           fee_vat_rate_version: number
           revision_id: string
@@ -1866,6 +1910,7 @@ export type Database = {
           partner_id: string
         }[]
       }
+      payout_preview: { Args: { p_total: number }; Returns: number }
       photo_claim: {
         Args: { p_limit: number }
         Returns: {
@@ -2143,7 +2188,7 @@ export type Database = {
         reverses_entry_id: string | null
         created_at: string | null
         total_cents: number | null
-        fee_rate: number | null
+        fee_schedule: string | null
         fee_net_cents: number | null
         fee_vat_cents: number | null
         fee_cents: number | null

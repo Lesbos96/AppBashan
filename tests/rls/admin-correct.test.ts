@@ -2,20 +2,13 @@
 // Art A: p_actor und p_aal stammen aus dem geprüften Token der Edge Function; die Gebühr rechnet splitFee aus @pricing.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, s: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, s: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 const TOTAL = 68961
 const CALL_OUT = 6900
@@ -50,17 +43,17 @@ function accepted(id: string, state: 'accepted' | 'in_progress' | 'completed', r
     values ('${id}', 1, 'submit', '{}', '${snap}', 1, ${TOTAL}, ${TOTAL}, ${TOTAL});
     update public.service_requests set current_revision = ${rev(id)} where id = '${id}';
     select public.distribute_request('${id}');
-    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});
+    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});
     ${end}
     ${reported ? `update public.service_requests set not_done_reported_at = now() where id = '${id}';` : ''}`
 }
 
-type Over = { rate?: number; reason?: string }
+type Over = { version?: number; reason?: string }
 /** Aufruf von admin_correct; die Gebühr (Basis `base`) rechnet splitFee. */
 function call(actor: string, aal: string, req: string, action: string, cancelReason: string | null, base: number, over: Over = {}): string {
-  const s = base > 0 ? splitFee(base, { feeRate: RT.fr, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
+  const s = base > 0 ? splitFee(base, { tiers: RT.tiers, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
   const cr = cancelReason === null ? 'null' : `'${cancelReason}'`
-  return `perform public.admin_correct('${actor}', '${aal}', '${req}', '${action}', '${over.reason ?? REASON}', ${cr}, ${base}, ${over.rate ?? RT.fr}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+  return `perform public.admin_correct('${actor}', '${aal}', '${req}', '${action}', '${over.reason ?? REASON}', ${cr}, ${base}, ${RT.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${over.version ?? RT.fsv}, ${RT.vrv})`
 }
 const basisOf = (actor: string, aal: string, req: string) => `public.admin_correct_basis('${actor}', '${aal}', '${req}')`
 
@@ -147,7 +140,7 @@ describe('admin_correct (T14) und reported_jobs', () => {
       { name: 'dismiss R4 (ohne Meldung)', as: 'service_role', sql: call(U.adm, 'aal2', R4, 'dismiss_report', null, 0) },
       // Storno für den Kunden mit Gebühr (R2, in_progress)
       { name: 'R2 falsche Basis', as: 'service_role', sql: call(U.adm, 'aal2', R2, 'cancel_customer', null, 100) },
-      { name: 'R2 falscher Satz', as: 'service_role', sql: call(U.adm, 'aal2', R2, 'cancel_customer', null, TOTAL, { rate: 0.2 }) },
+      { name: 'R2 falsche Version', as: 'service_role', sql: call(U.adm, 'aal2', R2, 'cancel_customer', null, TOTAL, { version: RT.fsv + 1 }) },
       { name: 'R2 cancel_customer', as: 'service_role', sql: call(U.adm, 'aal2', R2, 'cancel_customer', null, TOTAL) },
       { name: 'R2 Status', sql: `=${status(R2)}` },
       { name: 'R2 Zeilen', sql: `=${journal(R2)} || ':' || ${journal(R2, `kind = 'cancellation'`)} || ':' || ${journal(R2, `kind = 'cancellation_fee'`)}` },
@@ -231,7 +224,7 @@ describe('admin_correct (T14) und reported_jobs', () => {
     err(r['dismiss R4 (ohne Meldung)'], 'invalid_transition')
 
     err(r['R2 falsche Basis'], 'amount_mismatch')
-    err(r['R2 falscher Satz'], 'fee_basis_changed')
+    err(r['R2 falsche Version'], 'fee_basis_changed')
     expect(r['R2 cancel_customer']).toBe('ok')
     val(r['R2 Status'], 'cancelled_by_customer')
     val(r['R2 Zeilen'], '3:1:1')

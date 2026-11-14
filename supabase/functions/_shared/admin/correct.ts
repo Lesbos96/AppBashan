@@ -1,7 +1,7 @@
 // Edge-Function-Logik für admin-correct (S9h-3, Konzept 4.4 T14, 4.5 Art A): Statuskorrektur und Pauschale negieren durch admin (aal2).
 // Alle Datenzugriffe kommen über `deps` (Secret-Key-Client in index.ts, Fakes in den Unit-Tests). Die Datenbank prüft die Rolle admin,
 // Status, Basis und Satz; die Aufteilung einer Gebührenzeile (nur bei einem Storno mit `charge`) rechnet splitFee mit dem Satz der Buchung.
-import { type FeeSplit, splitFee } from '../pricing/index.ts'
+import { type FeeSplit, type FeeTier, splitFee } from '../pricing/index.ts'
 import { corsHeaders, json } from '../http.ts'
 import { type AuthUser, DbError, type Log, STATUS, UUID, authed, body, preflight } from '../jobs/handlers.ts'
 
@@ -10,9 +10,9 @@ export type CorrectBasis = {
   totalCents: number
   customerFeeBaseCents: number
   callOutCents: number
-  feeRate: number
+  feeTiers: FeeTier[]
   feeVatRate: number
-  feeRateVersion: number
+  feeScheduleVersion: number
   feeVatRateVersion: number
 }
 export type CorrectCall = {
@@ -72,7 +72,7 @@ export async function handleAdminCorrect(req: Request, deps: CorrectDeps): Promi
       const feeBaseCents = basis ? (action === 'cancel_customer' ? basis.customerFeeBaseCents : basis.callOutCents) : 0
       if (preview) return json(200, { preview: true, feeBaseCents }, origin)
       if (charge && feeBaseCents !== shownFeeCents) throw new DbError('amount_changed')
-      const split = basis && feeBaseCents > 0 ? splitFee(feeBaseCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate }) : ZERO
+      const split = basis && feeBaseCents > 0 ? splitFee(feeBaseCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate }) : ZERO
       try {
         const status = await deps.correct(a.user.id, a.user.aal, { requestId, action, reason: text, cancelReason: cancelReason as string | null, feeBaseCents, split, basis })
         return json(200, { status, feeBaseCents }, origin)

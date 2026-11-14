@@ -1,11 +1,12 @@
-// Gebührensatz lesen (S9b-3, Migration 0027, N-10): Mitglieder jeder Partnerfirma (jeder Status, aal2) lesen fee_rate und fee_vat_rate,
-// sonst niemand außer admin (aal2). Rollback-Proben mit aal als Claim; echte Token in partner-mfa.test.ts.
+// Gebührensatz lesen (Migration 0027, N-10, s9p-1 Migration 0062): Mitglieder jeder Partnerfirma (jeder Status, aal2) lesen nur fee_vat_rate
+// aus platform_settings; der alte Satz fee_rate ist für sie unsichtbar, sonst niemand außer admin (aal2). Die Staffel steht in fee_schedules
+// (tests/rls/fee-schedule.test.ts). Rollback-Proben mit aal als Claim; echte Token in partner-mfa.test.ts.
 import { describe, expect, it } from 'vitest'
 import { probes, type Step } from '../support/owner.ts'
 import { firm, grantAdmin, insertUsers, newId, STATUSES } from '../support/partner.ts'
 
 const NO_TABLE = '42501: permission denied for table platform_settings'
-const FEE = "key in ('fee_rate', 'fee_vat_rate')"
+const FEE = "key = 'fee_vat_rate'"
 const N = (where: string) => `=(select count(*) from public.platform_settings where ${where})`
 const auth = (sub: string, aal: 'aal1' | 'aal2' = 'aal2') => ({ as: 'authenticated', claims: { sub, aal } }) as const
 
@@ -31,7 +32,6 @@ describe('Gebührensatz lesen', () => {
       { name: 'künftige Zeile Mitglied aal1', sql: FUTURE, ...auth(U.active, 'aal1') },
       { name: 'künftige Zeile Kunde', sql: FUTURE, ...auth(U.cust) },
       { name: 'künftige Zeile rental_provider', sql: FUTURE, ...auth(U.rp) },
-      { name: 'View zeigt den heute geltenden Satz', sql: '?(select fee_rate <> 0.16 from public.current_fee_rates)', ...auth(U.active) },
       { name: 'Mitglied: andere Schlüssel', sql: N(`not (${FEE})`), ...auth(U.active) },
       { name: 'Kunde ohne Firma aal2', sql: N(FEE), ...auth(U.cust) },
       { name: 'rental_provider aal2', sql: N(FEE), ...auth(U.rp) },
@@ -46,22 +46,18 @@ describe('Gebührensatz lesen', () => {
       { name: 'admin aal2 liest alles', sql: N('true'), ...auth(U.adm) },
       { name: 'owner_all', sql: N('true') },
       { name: 'admin aal1', sql: N('true'), ...auth(U.adm, 'aal1') },
-      { name: 'View Mitglied aal2', sql: '?(select fee_rate is not null and fee_vat_rate is not null from public.current_fee_rates)', ...auth(U.pending) },
-      { name: 'View Mitglied aal1', sql: '?(select fee_rate is null and fee_vat_rate is null from public.current_fee_rates)', ...auth(U.pending, 'aal1') },
-      { name: 'View Kunde', sql: '?(select fee_rate is null and fee_vat_rate is null from public.current_fee_rates)', ...auth(U.cust) },
-      { name: 'View rental_provider', sql: '?(select fee_rate is null and fee_vat_rate is null from public.current_fee_rates)', ...auth(U.rp) },
     ]
     const r = probes(setup, steps)
     const fee = r['owner_fee']
-    expect(Number(fee?.slice(2))).toBeGreaterThanOrEqual(2)
+    expect(Number(fee?.slice(2))).toBeGreaterThanOrEqual(1)
     expect(Number(r['owner_other']?.slice(2))).toBeGreaterThan(0)
     for (const s of STATUSES) {
       expect(r[`${s} aal2`], `${s} aal2`).toBe(fee)
       expect(r[`${s} aal1`], `${s} aal1`).toBe('= 0')
     }
-    for (const s of STATUSES) expect(r[`künftige Zeile ${s} aal2`], `künftige Zeile ${s}`).toBe('= 1')
+    // fee_rate (Historie) liest kein Mitglied, auch nicht die künftige Zeile
+    for (const s of STATUSES) expect(r[`künftige Zeile ${s} aal2`], `künftige Zeile ${s}`).toBe('= 0')
     for (const k of ['künftige Zeile Mitglied aal1', 'künftige Zeile Kunde', 'künftige Zeile rental_provider']) expect(r[k], k).toBe('= 0')
-    expect(r['View zeigt den heute geltenden Satz']).toBe('ok')
     expect(r['Mitglied: andere Schlüssel']).toBe('= 0')
     expect(r['Kunde ohne Firma aal2']).toBe('= 0')
     expect(r['rental_provider aal2']).toBe('= 0')
@@ -69,6 +65,5 @@ describe('Gebührensatz lesen', () => {
     expect(r['Gegenfall: Spaltenliste']).toBe('ok')
     expect(r['admin aal2 liest alles']).toBe(r['owner_all'])
     expect(r['admin aal1']).toBe('= 0')
-    for (const k of ['View Mitglied aal2', 'View Mitglied aal1', 'View Kunde', 'View rental_provider']) expect(r[k], k).toBe('ok')
   }, 180_000)
 })

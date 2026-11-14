@@ -2,20 +2,13 @@
 // Alles läuft als Rollback-Proben (`probes`), es bleibt nichts zurück. Die Pauschale rechnet `splitFee` aus @pricing.
 import { describe, expect, it } from 'vitest'
 import { splitChange, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
-const TODAY = "(now() at time zone 'Europe/Vienna')::date"
-const cur = (key: string, col: string) =>
-  `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
 const RT = (() => {
-  const r = ownerSql(`select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`)[0] as {
-    fr: number
-    vr: number
-    frv: number
-    vrv: number
-  }
-  return { ...r, s: splitFee(68961, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, s: splitFee(68961, { tiers: r.tiers, vatRate: r.vr }) }
 })()
 const TOTAL = 68961
 const CALL_OUT = 6900
@@ -43,7 +36,7 @@ function accepted(id: string, termin: string, by: 'a' | 'b' = 'a'): string {
     values ('${id}', 1, 'submit', '{}', '${snap}', 1, ${TOTAL}, ${TOTAL}, ${TOTAL});
     update public.service_requests set current_revision = ${rev(id)} where id = '${id}';
     select public.distribute_request('${id}');
-    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv});`
+    select public.partner_accept('${by === 'a' ? U.pa : U.pb}', ${LID(id, by)},${rev(id)}, ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 }
 const contact = (req: string) =>
   `insert into public.request_contacts (request_id, name, phone, email) values ('${req}', 'Test Kunde', '+43 660 1234567', 'kunde@movenow.test');`
@@ -59,17 +52,17 @@ const curRev = (req: string) => `(select current_revision from public.service_re
 const propose = (req: string, by = U.pa) =>
   `select public.propose_change('${by}', 'aal2', '${req}', ${curRev(req)}, '{"hours":6}'::jsonb, 80000, array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt'));`
 const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
-const s80 = splitChange(80000, { feeRate: RT.fr, vatRate: RT.vr }, splitFee(TOTAL, { feeRate: RT.fr, vatRate: RT.vr }))
+const s80 = splitChange(80000, { tiers: RT.tiers, vatRate: RT.vr }, splitFee(TOTAL, { tiers: RT.tiers, vatRate: RT.vr }))
 const decide = (req: string, accept: boolean) =>
-  `select public.decide_change('${U.cust}', ${OPEN(req)}, ${accept}, 80000, ${RT.fr}, ${RT.vr}, ${s80.feeCents}, ${s80.feeNetCents}, ${s80.feeVatCents}, ${s80.payoutCents}, ${RT.frv}, ${RT.vrv});`
+  `select public.decide_change('${U.cust}', ${OPEN(req)}, ${accept}, 80000, ${RT.vr}, ${s80.feeCents}, ${s80.feeNetCents}, ${s80.feeVatCents}, ${s80.payoutCents}, ${RT.fsv}, ${RT.vrv});`
 
-type Over = { base?: number; rate?: number; feeShift?: number; photos?: string }
+type Over = { base?: number; version?: number; feeShift?: number; photos?: string }
 /** Aufruf von cancel_by_partner; die Pauschale (Basis `base`) rechnet splitFee. `photos` ist ein SQL-Ausdruck (Standard: keine Belege). */
 function cancelCall(actor: string, aal: string, req: string, reason: string | null, base: number, over: Over = {}): string {
-  const s = base > 0 ? splitFee(base, { feeRate: RT.fr, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
+  const s = base > 0 ? splitFee(base, { tiers: RT.tiers, vatRate: RT.vr }) : { feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: 0 }
   const fee = s.feeCents + (over.feeShift ?? 0)
   const rsn = reason === null ? 'null' : `'${reason}'`
-  return `perform public.cancel_by_partner('${actor}', '${aal}', '${req}', ${rsn}, ${over.photos ?? 'null'}, ${over.base ?? base}, ${over.rate ?? RT.fr}, ${RT.vr}, ${fee}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${RT.frv}, ${RT.vrv})`
+  return `perform public.cancel_by_partner('${actor}', '${aal}', '${req}', ${rsn}, ${over.photos ?? 'null'}, ${over.base ?? base}, ${RT.vr}, ${fee}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${over.version ?? RT.fsv}, ${RT.vrv})`
 }
 const RECEIPTS = (req: string) => `array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt')`
 const basisOf = (actor: string, aal: string, req: string, reason: string | null = 'other') =>
@@ -101,7 +94,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       { name: 'Kunde als Akteur', as: 'service_role', sql: cancelCall(U.cust, 'aal2', R1, 'other', 0) },
       { name: 'Basis ohne Beleg', as: 'service_role', sql: cancelCall(U.pa, 'aal2', R1, 'other', 100) },
       { name: 'Beleg bei anderem Grund', as: 'service_role', sql: cancelCall(U.pa, 'aal2', R4, 'unavailable', CALL_OUT, { photos: RECEIPTS(R4) }) },
-      { name: 'falscher Satz', as: 'service_role', sql: cancelCall(U.pa, 'aal2', R1, 'other', 0, { rate: 0.2 }) },
+      { name: 'falsche Version', as: 'service_role', sql: cancelCall(U.pa, 'aal2', R1, 'other', 0, { version: RT.fsv + 1 }) },
       { name: 'authenticated', as: 'authenticated', claims: A2(U.pa), sql: cancelCall(U.pa, 'aal2', R1, 'other', 0) },
       { name: 'anon', as: 'anon', sql: cancelCall(U.pa, 'aal2', R1, 'other', 0) },
       { name: 'direktes UPDATE des Status', as: 'authenticated', claims: A2(U.pa), sql: `update public.service_requests set status = 'cancelled_by_partner' where id = '${R1}'` },
@@ -152,7 +145,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
       { name: 'R6 Status', sql: `=${status(R6)}` },
       // R7: Termin in 30 Stunden (ohne Waiver wären 50 % fällig); Folgeanfrage, Annahme durch b, dann kostenloses Kundenstorno (cancel_fee_waived)
       { name: 'Storno R7', as: 'service_role', sql: cancelCall(U.pa, 'aal2', R7, 'other', 0) },
-      { name: 'R7 Folge angenommen', as: 'service_role', sql: `perform public.partner_accept('${U.pb}', (select id from public.job_listings where request_id = ${follow(R7)} and partner_id = ${P('b')}), (select id from public.price_revisions where request_id = ${follow(R7)} and n = 1), ${RT.s.payoutCents}, ${RT.fr}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.frv}, ${RT.vrv})` },
+      { name: 'R7 Folge angenommen', as: 'service_role', sql: `perform public.partner_accept('${U.pb}', (select id from public.job_listings where request_id = ${follow(R7)} and partner_id = ${P('b')}), (select id from public.price_revisions where request_id = ${follow(R7)} and n = 1), ${RT.s.payoutCents}, ${RT.vr}, ${RT.s.feeCents}, ${RT.s.feeNetCents}, ${RT.s.feeVatCents}, ${RT.s.payoutCents}, ${RT.fsv}, ${RT.vrv})` },
       { name: 'R7 Kundenstorno frei', as: 'service_role', sql: `=(select fee_base_cents from public.cancel_by_customer_basis('${U.cust}', ${follow(R7)}))` },
       // Qualitätszähler: Firma a hat R1, R2, R3, R4, R7 storniert, Firma b nur R5 und R6
       { name: 'Zähler admin', as: 'authenticated', claims: A2(U.adm), sql: `=(select concat_ws(':', cancels, needs_review) from public.partner_quality() where partner_id = ${P('a')})` },
@@ -173,7 +166,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
     err(r['Kunde als Akteur'], 'not_found')
     err(r['Basis ohne Beleg'], 'amount_mismatch')
     err(r['Beleg bei anderem Grund'], 'call_out_not_allowed')
-    err(r['falscher Satz'], 'fee_basis_changed')
+    err(r['falsche Version'], 'fee_basis_changed')
     err(r['authenticated'], '42501')
     err(r['anon'], '42501')
     err(r['direktes UPDATE des Status'], '42501')
@@ -289,7 +282,7 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
     expect(r['Storno S1 mit Pauschale']).toBe('ok')
     val(r['S1 Status'], 'cancelled_by_partner')
     val(r['S1 Pauschale'], `${CALL_OUT}:t:t`)
-    const fee = splitFee(CALL_OUT, { feeRate: RT.fr, vatRate: RT.vr })
+    const fee = splitFee(CALL_OUT, { tiers: RT.tiers, vatRate: RT.vr })
     val(r['S1 Gebührensumme'], String(fee.feeCents))
     val(r['S1 Auszahlungssumme'], String(fee.payoutCents))
     val(r['S1 Zeilen'], '3')

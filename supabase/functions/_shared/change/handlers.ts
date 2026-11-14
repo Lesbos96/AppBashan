@@ -4,6 +4,7 @@
 import {
   ChangeError,
   type FeeSplit,
+  type FeeTier,
   InputError,
   type OfferResult,
   type PriceResult,
@@ -138,9 +139,9 @@ export async function handleProposeChange(req: Request, deps: ProposeDeps): Prom
 export type DecideBasis = {
   status: string
   totalCents: number
-  feeRate: number
+  feeTiers: FeeTier[]
   feeVatRate: number
-  feeRateVersion: number
+  feeScheduleVersion: number
   feeVatRateVersion: number
   priorTotal: number
   priorFee: number
@@ -186,7 +187,7 @@ export async function handleDecideChange(req: Request, deps: DecideDeps): Promis
       if (basis.status !== 'proposed') throw new DbError(basis.status === 'expired' ? 'change_not_valid' : 'invalid_transition')
       if (accept && basis.totalCents !== shownTotalCents) throw new DbError('amount_changed')
       const prior: FeeSplit = { totalCents: basis.priorTotal, feeCents: basis.priorFee, feeNetCents: basis.priorNet, feeVatCents: basis.priorVat, payoutCents: basis.priorPayout }
-      const split = accept ? splitChange(basis.totalCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate }, prior) : ZERO
+      const split = accept ? splitChange(basis.totalCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate }, prior) : ZERO
       try {
         const result = await deps.decide(a.user.id, { revisionId, accept, shownTotalCents: accept ? (shownTotalCents as number) : 0, basis, split })
         if (result === 'partner_not_active') return json(409, { error: 'partner_not_active' }, origin)

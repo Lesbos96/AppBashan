@@ -4,6 +4,7 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
 import { ownerSql, ownerSqlAsync } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepTestResidue } from '../support/sweep.ts'
 
@@ -35,15 +36,12 @@ describe('Nebenläufigkeit der Festangebote', () => {
     ownerSql(`begin; ${insertUsers([cust, ...pu])} ${pu.map((u, i) => firm(u, `w${i}`, 'active', adm)).join(' ')}
       ${request(RA)} ${request(RB)} ${request(RC)}
       ${sendOffer(pu[0]!, RB, 150000)} ${sendOffer(pu[1]!, RB, 160000)} ${sendOffer(pu[4]!, RC, 170000)} commit;`)
-    const f = ownerSql(`select (select value::float8 from public.platform_settings where key = 'fee_rate' order by effective_from desc, version desc limit 1) as fr,
-      (select value::float8 from public.platform_settings where key = 'fee_vat_rate' order by effective_from desc, version desc limit 1) as vr,
-      (select version from public.platform_settings where key = 'fee_rate' order by effective_from desc, version desc limit 1) as frv,
-      (select version from public.platform_settings where key = 'fee_vat_rate' order by effective_from desc, version desc limit 1) as vrv`)[0] as { fr: number; vr: number; frv: number; vrv: number }
+    const f = currentFee()
     const offerOf = (req: string, i: number) =>
       `(select o.id from public.partner_offers o join public.partner_members m on m.partner_id = o.partner_id where o.request_id = '${req}' and m.user_id = '${pu[i]}')`
     const confirm = (req: string, i: number, amount: number) => {
-      const s = splitFee(amount, { feeRate: f.fr, vatRate: f.vr })
-      return `${startAt(9)} set local role service_role; select public.confirm_offer('${cust}', ${offerOf(req, i)}, ${amount}, ${f.fr}, ${f.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${f.frv}, ${f.vrv});`
+      const s = splitFee(amount, { tiers: f.tiers, vatRate: f.vr })
+      return `${startAt(9)} set local role service_role; select public.confirm_offer('${cust}', ${offerOf(req, i)}, ${amount}, ${f.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${f.fsv}, ${f.vrv});`
     }
     const suspend = `${startAt(9)} set local role service_role; select public.admin_set_partner_status('${adm}', (select partner_id from public.partner_members where user_id = '${pu[4]}'), 'suspended', 'Wettlauf Sperre gegen Bestätigung');`
 

@@ -2,9 +2,10 @@
 // Partner: echte aal2-Sitzungen (tests/support/totp.ts). Kunde: Wegwerfkonto (aal1). Fixtures sind committet, weil die Functions eigene Verbindungen nutzen;
 // Rest nach dem Lauf: Journal ist unlöschbar, Kunde, Aufträge und beteiligte Firmen bleiben (Firmen gesperrt, tests/support/sweep.ts, OPEN_ISSUES S9c-7).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { splitChange, splitFee } from '@pricing'
+import { splitChange, splitFee, type FeeTier } from '@pricing'
 import { moveInputs } from '../support/quote.ts'
 import { deleteUsers, env, makeUser, service, type TestUser } from '../support/db.ts'
+import { currentFee } from '../support/fee.ts'
 import { ownerSql } from '../support/owner.ts'
 import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepTestResidue } from '../support/sweep.ts'
@@ -13,7 +14,7 @@ import { tryAal2User, type Aal2User } from '../support/totp.ts'
 const adm = newId()
 const BOOKED = 68961
 const [J1, J2, J3, J4] = [newId(), newId(), newId(), newId()]
-let rates = { feeRate: 0, vatRate: 0 }
+let rates: { tiers: FeeTier[]; vatRate: number } = { tiers: [], vatRate: 0 }
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User, pp: Aal2User, pr: Aal2User, ps: Aal2User
 let cust: TestUser, cust2: TestUser
@@ -63,12 +64,9 @@ beforeAll(async () => {
   ;[pb, pp, pr, ps] = rest as [Aal2User, Aal2User, Aal2User, Aal2User]
   cust = await makeUser('pt-fn-c')
   cust2 = await makeUser('pt-fn-c2')
-  const f = ownerSql(`select (select value::float8 from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as fr,
-    (select value::float8 from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vr,
-    (select version from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as frv,
-    (select version from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vrv,
-    (select version from public.current_price_version) as pv`)[0] as { fr: number; vr: number; frv: number; vrv: number; pv: number }
-  rates = { feeRate: f.fr, vatRate: f.vr }
+  const f = currentFee()
+  const pv = Number(ownerSql('select (select version from public.current_price_version) as pv')[0]?.pv)
+  rates = { tiers: f.tiers, vatRate: f.vr }
   const s0 = splitFee(BOOKED, rates)
   const c80 = splitChange(80000, rates, s0)
   const terms = '"terms":{"cancel_free_hours":48,"cancel_late_percent":50,"cancel_full_percent":100,"cancel_full_days_before":0,"call_out_fee_cents":6900,"termsHash":"x"}'
@@ -76,11 +74,11 @@ beforeAll(async () => {
   const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
     values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, now() + interval '14 days', now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
     insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
-    values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${f.pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
+    values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
     select public.distribute_request('${id}');
     select public.partner_accept('${pa.id}', (select id from public.job_listings where request_id = '${id}' and partner_id = current_setting('app.p_a')::uuid), (select id from public.price_revisions where request_id = '${id}' and n = 1),
-      ${s0.payoutCents}, ${f.fr}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.frv}, ${f.vrv});`
+      ${s0.payoutCents}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.fsv}, ${f.vrv});`
   const D21 = { districts: 'array[21]::smallint[]' }
   ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${firm(pp.id, 'p', 'pending', adm, D21)} ${firm(pr.id, 'r', 'rejected', adm, D21)}
     ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J3)} ${job(J4)}
@@ -89,8 +87,8 @@ beforeAll(async () => {
            ('${J4}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('c', 64), now());
     select public.propose_change('${pa.id}', 'aal2', '${J4}', (select current_revision from public.service_requests where id = '${J4}'), '{"hours":6}'::jsonb, 80000,
       array(select id from public.job_photos where request_id = '${J4}' and kind = 'receipt'));
-    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${J4}' and status = 'proposed'), false, 80000, ${f.fr}, ${f.vr},
-      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv}); commit;`)
+    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${J4}' and status = 'proposed'), false, 80000, ${f.vr},
+      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.fsv}, ${f.vrv}); commit;`)
 }, 600_000)
 
 // Testfirmen werden an ihrer Kontaktadresse gefunden (FIRM_MAIL, tests/support/sweep.ts), die Reihenfolge Firmen vor Nutzern ist daher nicht mehr nötig, bleibt aber so

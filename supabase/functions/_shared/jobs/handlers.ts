@@ -1,6 +1,6 @@
 // Edge-Function-Logik für Annahme (`accept`, Art A), Support-Kontakt (`admin-contact`) und Mailversand (`outbox-send`), S9c.
 // Alle Datenzugriffe kommen über `deps` (Secret-Key-Client in index.ts, Fakes in den Unit-Tests). Das JWT prüft getUser; aal steht darin.
-import { splitFee } from '../pricing/index.ts'
+import { type FeeTier, splitFee } from '../pricing/index.ts'
 import { corsHeaders, json, readLimited } from '../http.ts'
 
 /** Fehler der Datenbank-Funktionen: `code` ist die Meldung der Exception (z. B. `already_taken`). */
@@ -71,7 +71,7 @@ export const preflight = (req: Request, origin: Record<string, string>) =>
   req.method === 'OPTIONS' ? new Response(null, { status: 204, headers: origin }) : req.method !== 'POST' ? json(405, { error: 'method_not_allowed' }, origin) : null
 
 // accept -------------------------------------------------------------------------------------------------------------------
-export type AcceptBasis = { revisionId: string; totalCents: number; feeRate: number; feeVatRate: number; feeRateVersion: number; feeVatRateVersion: number }
+export type AcceptBasis = { revisionId: string; totalCents: number; feeTiers: FeeTier[]; feeVatRate: number; feeScheduleVersion: number; feeVatRateVersion: number }
 export type AcceptCall = { listingId: string; revisionId: string; shownPayoutCents: number; basis: AcceptBasis; split: ReturnType<typeof splitFee> }
 export type AcceptDeps = {
   allowedOrigins: readonly string[]
@@ -97,7 +97,7 @@ export async function handleAccept(req: Request, deps: AcceptDeps): Promise<Resp
     for (let attempt = 0; attempt < 2; attempt++) {
       const basis = await deps.basis(a.user.id, listingId)
       if (basis.revisionId !== revisionId) throw new DbError('revision_changed')
-      const split = splitFee(basis.totalCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate })
+      const split = splitFee(basis.totalCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate })
       if (split.payoutCents !== shownPayoutCents) throw new DbError('payout_changed')
       try {
         const assignmentId = await deps.accept(a.user.id, { listingId, revisionId, shownPayoutCents: shownPayoutCents as number, basis, split })
@@ -123,7 +123,7 @@ export async function handleAccept(req: Request, deps: AcceptDeps): Promise<Resp
 }
 
 // offer-confirm --------------------------------------------------------------------------------------------------------------
-export type OfferBasis = { amountCents: number; feeRate: number; feeVatRate: number; feeRateVersion: number; feeVatRateVersion: number }
+export type OfferBasis = { amountCents: number; feeTiers: FeeTier[]; feeVatRate: number; feeScheduleVersion: number; feeVatRateVersion: number }
 export type OfferDeps = {
   allowedOrigins: readonly string[]
   getUser(jwt: string): Promise<AuthUser | null>
@@ -150,7 +150,7 @@ export async function handleConfirmOffer(req: Request, deps: OfferDeps): Promise
     for (let attempt = 0; attempt < 2; attempt++) {
       const basis = await deps.basis(a.user.id, offerId)
       if (basis.amountCents !== shownAmountCents) throw new DbError('amount_changed')
-      const split = splitFee(basis.amountCents, { feeRate: basis.feeRate, vatRate: basis.feeVatRate })
+      const split = splitFee(basis.amountCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate })
       try {
         const result = await deps.confirm(a.user.id, offerId, basis, split)
         if (result === 'partner_not_active') return json(409, { error: 'partner_not_active' }, origin)

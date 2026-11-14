@@ -9,6 +9,7 @@ import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
 import { moveInputs } from '../support/quote.ts'
 import { anon, deleteUsers, env, makeUser, service, type TestUser } from '../support/db.ts'
 import { ownerSql } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId } from '../support/partner.ts'
 import { sweepTestResidue } from '../support/sweep.ts'
 import { tryAal2User, type Aal2User } from '../support/totp.ts'
@@ -23,8 +24,8 @@ let cust: TestUser
 let month = ''
 let partnerA = ''
 
-const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_rate, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
-type R = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_rate: number; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string }
+const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_schedule, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
+type R = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_schedule: string; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string }
 
 async function fn(name: string, jwt: string, body: unknown) {
   const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/${name}`, {
@@ -68,14 +69,10 @@ beforeAll(async () => {
   }
   ;[pb, pp, pr, ps] = rest as [Aal2User, Aal2User, Aal2User, Aal2User]
   cust = await makeUser('pt-jn-c')
-  const f = ownerSql(`select (select value::float8 from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as fr,
-    (select value::float8 from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vr,
-    (select version from public.platform_settings where key = 'fee_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as frv,
-    (select version from public.platform_settings where key = 'fee_vat_rate' and effective_from <= (now() at time zone 'Europe/Vienna')::date order by effective_from desc, version desc limit 1) as vrv,
-    (select version from public.current_price_version) as pv,
-    to_char(now() at time zone 'Europe/Vienna', 'YYYY-MM') as m`)[0] as { fr: number; vr: number; frv: number; vrv: number; pv: number; m: string }
-  month = f.m
-  const rates = { feeRate: f.fr, vatRate: f.vr }
+  const f = currentFee()
+  const pm = ownerSql(`select (select version from public.current_price_version) as pv, to_char(now() at time zone 'Europe/Vienna', 'YYYY-MM') as m`)[0] as { pv: number; m: string }
+  month = pm.m
+  const rates = { tiers: f.tiers, vatRate: f.vr }
   const s0 = splitFee(BOOKED, rates)
   const c80 = splitChange(80000, rates, s0)
   const terms = '"terms":{"cancel_free_hours":48,"cancel_late_percent":50,"cancel_full_percent":100,"cancel_full_days_before":0,"call_out_fee_cents":6900,"termsHash":"x"}'
@@ -83,18 +80,18 @@ beforeAll(async () => {
   const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
     values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, now() + interval '14 days', now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
     insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
-    values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${f.pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
+    values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${pm.pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
     select public.distribute_request('${id}');
     select public.partner_accept('${pa.id}', (select id from public.job_listings where request_id = '${id}' and partner_id = current_setting('app.p_a')::uuid), (select id from public.price_revisions where request_id = '${id}' and n = 1),
-      ${s0.payoutCents}, ${f.fr}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.frv}, ${f.vrv});`
+      ${s0.payoutCents}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.fsv}, ${f.vrv});`
   const change = (id: string, accept: boolean, sha: string) => `
     insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
     values ('${id}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('${sha}', 64), now());
     select public.propose_change('${pa.id}', 'aal2', '${id}', (select current_revision from public.service_requests where id = '${id}'), '{"hours":6}'::jsonb, 80000,
       array(select id from public.job_photos where request_id = '${id}' and kind = 'receipt'));
-    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${id}' and status = 'proposed'), ${accept}, 80000, ${f.fr}, ${f.vr},
-      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.frv}, ${f.vrv});`
+    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${id}' and status = 'proposed'), ${accept}, 80000, ${f.vr},
+      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.fsv}, ${f.vrv});`
   const D21 = { districts: 'array[21]::smallint[]' }
   ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${firm(pp.id, 'p', 'pending', adm, D21)} ${firm(pr.id, 'r', 'rejected', adm, D21)}
     ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J4)} ${change(J2, true, 'd')} ${change(J4, false, 'c')} commit;`)
@@ -151,7 +148,7 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
   live('Typ commission_row: genau die bekannten Spalten, keine Kundendaten (eine neue Spalte bricht den Test und braucht Prüfung)', async () => {
     const cols = ownerSql(`select attname from pg_attribute where attrelid = 'public.commission_row'::regclass and attnum > 0 and not attisdropped order by attnum`).map((r) => r.attname)
     expect(cols).toEqual([
-      'entry_id', 'request_id', 'partner_id', 'partner_name', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents',
+      'entry_id', 'request_id', 'partner_id', 'partner_name', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_schedule', 'fee_net_cents', 'fee_vat_cents', 'fee_cents',
       'payout_cents', 'vat_rule', 'request_status', 'ended_at', 'billing_month',
     ])
     expect(cols.join(' ')).not.toMatch(/customer|kunde|address|adresse|phone|telefon|mail|contact|kontakt|note|text/)

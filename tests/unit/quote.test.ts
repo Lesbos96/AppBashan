@@ -138,7 +138,7 @@ describe('Pflichtkriterium: Strecke und Preis rechnet nur der Server', () => {
       snapshot: { totalCents: 100 },
       status: 'confirmed',
       fee: { feeCents: 1 },
-      feeRate: 0.01,
+      tiers: [{ upToCents: null, bp: 100 }],
       customerId: 'user-b',
       customer_id: 'user-b',
     }

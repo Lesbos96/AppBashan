@@ -11,7 +11,7 @@ export const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
 export const journalName = (month: string) => `movenow-journal-${month}.csv`
 
 // Nur diese Spalten werden gelesen (Datensparsamkeit: kein Status, kein Firmenname, keine Firmen-ID)
-const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_rate, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
+const COLUMNS = 'entry_id, request_id, kind, reverses_entry_id, created_at, total_cents, fee_schedule, fee_net_cents, fee_vat_cents, fee_cents, payout_cents, billing_month'
 const PAGE = 1000 // max_rows von PostgREST
 
 // Datenbankmeldungen von `my_commissions` und PostgREST-Codes → Fehlerart. Leerer Code = die Anfrage kam nie an (Netz).

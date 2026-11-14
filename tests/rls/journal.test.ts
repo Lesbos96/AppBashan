@@ -1,8 +1,9 @@
 // Provisionsjournal commission_entries (S9b-4, Migration 0028). Journalzeilen sind unlöschbar (append_only, ON DELETE RESTRICT):
 // jede Prüfung läuft als Rollback-Probe, es bleibt nichts zurück. Beträge rechnet `splitFee` aus @pricing, nie der Test selbst.
 import { describe, expect, it } from 'vitest'
-import { negateSplit, splitFee } from '@pricing'
-import { ownerSql, probes, type Step } from '../support/owner.ts'
+import { type FeeTier, negateSplit, splitFee } from '@pricing'
+import { probes, type Step } from '../support/owner.ts'
+import { currentFee } from '../support/fee.ts'
 import { firm, grantAdmin, insertUsers, newId, P } from '../support/partner.ts'
 
 type Split = ReturnType<typeof splitFee>
@@ -14,21 +15,16 @@ type Book = {
   rev?: string // SQL-Ausdruck der Revision, sonst Revision 1
   of?: string | null // Schlüssel der gegengebuchten Zeile (app.e_<of>)
   s: Split
-  fr?: number | null // undefined = aktueller Satz, null = leer (die Funktion nimmt ihn aus der booking-Zeile)
   vr?: number | null
-  frv?: number | null
+  fsv?: number | null // undefined = aktuelle Version, null = leer (die Funktion nimmt sie aus der booking-Zeile)
   vrv?: number | null
   save?: string
 }
 
 const TODAY = "(now() at time zone 'Europe/Vienna')::date"
 function rates() {
-  const cur = (key: string, col: string) =>
-    `(select ${col} from public.platform_settings where key = '${key}' and effective_from <= ${TODAY} order by effective_from desc, version desc limit 1)`
-  const r = ownerSql(
-    `select ${cur('fee_rate', 'value::float8')} as fr, ${cur('fee_vat_rate', 'value::float8')} as vr, ${cur('fee_rate', 'version')} as frv, ${cur('fee_vat_rate', 'version')} as vrv`,
-  )[0] as { fr: number; vr: number; frv: number; vrv: number }
-  return { ...r, split: (total: number) => splitFee(total, { feeRate: r.fr, vatRate: r.vr }) }
+  const r = currentFee()
+  return { ...r, split: (total: number) => splitFee(total, { tiers: r.tiers, vatRate: r.vr }) }
 }
 type Rates = ReturnType<typeof rates>
 
@@ -72,7 +68,7 @@ const changeOrder = (id: string, total: number, source = 'change_order') => {
 function journal(RT: Rates) {
   const num = (v: number | null | undefined, d: number) => (v === undefined ? String(d) : v === null ? 'null' : String(v))
   const call = (b: Book) =>
-    `private.commission_book(${P(b.p)}, '${b.req}', ${b.rev ?? rev1(b.req)}, '${b.kind ?? 'booking'}', ${b.of ? `current_setting('app.e_${b.of}')::uuid` : 'null'}, ${b.s.totalCents}, ${num(b.fr, RT.fr)}, ${num(b.vr, RT.vr)}, ${b.s.feeCents}, ${b.s.feeNetCents}, ${b.s.feeVatCents}, ${b.s.payoutCents}, ${num(b.frv, RT.frv)}, ${num(b.vrv, RT.vrv)})`
+    `private.commission_book(${P(b.p)}, '${b.req}', ${b.rev ?? rev1(b.req)}, '${b.kind ?? 'booking'}', ${b.of ? `current_setting('app.e_${b.of}')::uuid` : 'null'}, ${b.s.totalCents}, ${num(b.vr, RT.vr)}, ${b.s.feeCents}, ${b.s.feeNetCents}, ${b.s.feeVatCents}, ${b.s.payoutCents}, ${num(b.fsv, RT.fsv)}, ${num(b.vrv, RT.vrv)})`
   const put = (b: Book) => `set_config('app.e_${b.save ?? 'tmp'}', ${call(b)}::text, true)`
   return {
     /** Schritt (plpgsql) */
@@ -88,8 +84,8 @@ const P0001 = (v: string | undefined, msg: string) => expect(v).toBe(`P0001: ${m
 const check = (v: string | undefined, code: string, part: string) => expect(v?.startsWith(`${code}: `) && v.includes(part), `${part}: ${v}`).toBe(true)
 const direct = (RT: Rates, s: Split, o: Record<string, string> = {}) => {
   const v = { p: P('a'), req: '', rev: '', kind: "'booking'", of: 'null', t: s.totalCents, fee: s.feeCents, net: s.feeNetCents, vat: s.feeVatCents, pay: s.payoutCents, rule: "'standard_20'", ...o }
-  return `insert into public.commission_entries (partner_id, request_id, revision_id, kind, reverses_entry_id, total_cents, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, fee_rate, fee_vat_rate, vat_rule, price_version, fee_rate_version, fee_vat_rate_version)
-    values (${v.p}, '${v.req}', ${v.rev}, ${v.kind}, ${v.of}, ${v.t}, ${v.fee}, ${v.net}, ${v.vat}, ${v.pay}, ${RT.fr}, ${RT.vr}, ${v.rule}, 1, ${RT.frv}, ${RT.vrv})`
+  return `insert into public.commission_entries (partner_id, request_id, revision_id, kind, reverses_entry_id, total_cents, fee_cents, fee_net_cents, fee_vat_cents, payout_cents, fee_vat_rate, vat_rule, price_version, fee_schedule_version, fee_vat_rate_version)
+    values (${v.p}, '${v.req}', ${v.rev}, ${v.kind}, ${v.of}, ${v.t}, ${v.fee}, ${v.net}, ${v.vat}, ${v.pay}, ${RT.vr}, ${v.rule}, 1, ${RT.fsv}, ${RT.vrv})`
 }
 
 function deleteFirm(key: string): string {
@@ -112,11 +108,10 @@ describe('Provisionsjournal', () => {
       { name: 'Betrag ≠ Revisionsbetrag', sql: J.step({ p: 'a', req: R.r1, s: RT.split(68962) }) },
       { name: 'Revision eines anderen Auftrags', sql: J.step({ p: 'a', req: R.r1, rev: rev1(R.r2), s }) },
       { name: 'Spanne ohne Gesamtpreis', sql: J.step({ p: 'a', req: R.rr, s }) },
-      { name: 'Satz falsch', sql: J.step({ p: 'a', req: R.r1, s, fr: 0.16 }) },
       { name: 'USt.-Satz falsch', sql: J.step({ p: 'a', req: R.r1, s, vr: 0.19 }) },
-      { name: 'Version falsch', sql: J.step({ p: 'a', req: R.r1, s, frv: RT.frv + 1 }) },
+      { name: 'Version falsch', sql: J.step({ p: 'a', req: R.r1, s, fsv: RT.fsv + 1 }) },
       { name: 'USt.-Version falsch', sql: J.step({ p: 'a', req: R.r1, s, vrv: RT.vrv + 1 }) },
-      { name: 'Satz leer', sql: J.step({ p: 'a', req: R.r1, s, fr: null }) },
+      { name: 'Version leer', sql: J.step({ p: 'a', req: R.r1, s, fsv: null }) },
       { name: 'Gebührenteile ≠ Gebühr', sql: J.step({ p: 'a', req: R.r1, s: { ...s, feeVatCents: s.feeVatCents + 1 } }) },
       { name: 'Auszahlung ≠ Gesamtpreis − Gebühr', sql: J.step({ p: 'a', req: R.r1, s: { ...s, payoutCents: s.payoutCents + 1 } }) },
       { name: 'Gebühr 1 Cent daneben', sql: J.step({ p: 'a', req: R.r1, s: { ...s, feeCents: s.feeCents + 1, feeNetCents: s.feeNetCents + 1, payoutCents: s.payoutCents - 1 } }) },
@@ -126,7 +121,7 @@ describe('Provisionsjournal', () => {
       { name: 'Positivkontrolle direkt', sql: direct(RT, s, { req: R.r3, rev: rev1(R.r3) }) },
       { name: 'zweite Zeile je Auftrag direkt', sql: direct(RT, s, { req: R.r3, rev: rev1(R.r3) }) },
       { name: 'Positivkontrolle booking', sql: J.step({ p: 'a', req: R.r1, s, save: 'b1' }) },
-      { name: 'Zeile gelesen', sql: `=(select total_cents || '/' || fee_cents || '/' || payout_cents || '/' || vat_rule || '/' || fee_rate_version from public.commission_entries where id = current_setting('app.e_b1')::uuid)` },
+      { name: 'Zeile gelesen', sql: `=(select total_cents || '/' || fee_cents || '/' || payout_cents || '/' || vat_rule || '/' || fee_schedule_version from public.commission_entries where id = current_setting('app.e_b1')::uuid)` },
       { name: 'zweite booking', sql: J.step({ p: 'a', req: R.r1, s }) },
       { name: 'UPDATE (Eigentümer)', sql: "update public.commission_entries set total_cents = total_cents + 1 where id = current_setting('app.e_b1')::uuid" },
       { name: 'DELETE (Eigentümer)', sql: "delete from public.commission_entries where id = current_setting('app.e_b1')::uuid" },
@@ -147,7 +142,7 @@ describe('Provisionsjournal', () => {
     P0001(r['Firma pending'], 'partner_not_active')
     P0001(r['Firma payment_hold'], 'partner_not_active')
     for (const k of ['Betrag ≠ Revisionsbetrag', 'Revision eines anderen Auftrags', 'Spanne ohne Gesamtpreis']) P0001(r[k], 'amount_mismatch')
-    for (const k of ['Satz falsch', 'USt.-Satz falsch', 'Version falsch', 'USt.-Version falsch', 'Satz leer']) P0001(r[k], 'rate_mismatch')
+    for (const k of ['USt.-Satz falsch', 'Version falsch', 'USt.-Version falsch', 'Version leer']) P0001(r[k], 'rate_mismatch')
     for (const k of ['Gebühr 1 Cent daneben', 'Netto und USt. vertauscht', 'Gebühr 0']) P0001(r[k], 'amount_mismatch')
     check(r['Gebührenteile ≠ Gebühr'], '23514', '"fee_parts"')
     check(r['Auszahlung ≠ Gesamtpreis − Gebühr'], '23514', '"payout_rest"')
@@ -155,7 +150,7 @@ describe('Provisionsjournal', () => {
     expect(r['Positivkontrolle direkt']).toBe('ok')
     check(r['zweite Zeile je Auftrag direkt'], '23505', '"commission_one_booking"')
     expect(r['Positivkontrolle booking']).toBe('ok')
-    expect(r['Zeile gelesen']).toBe(`= ${s.totalCents}/${s.feeCents}/${s.payoutCents}/standard_20/${RT.frv}`)
+    expect(r['Zeile gelesen']).toBe(`= ${s.totalCents}/${s.feeCents}/${s.payoutCents}/standard_20/${RT.fsv}`)
     check(r['zweite booking'], '23505', '"commission_one_booking"')
     for (const k of ['UPDATE (Eigentümer)', 'DELETE (Eigentümer)', 'TRUNCATE (Eigentümer)']) P0001(r[k], 'append_only')
     for (const k of ['UPDATE (service_role)', 'DELETE (service_role)', 'TRUNCATE (service_role)', 'INSERT (service_role)']) check(r[k], '42501', 'permission denied')
@@ -180,15 +175,15 @@ describe('Provisionsjournal', () => {
       { name: 'andere Firma', sql: J.step({ p: 'b', req: R.r1, kind: 'cancellation', of: 'b1', s: s0 }) },
       { name: 'Firma pending', sql: J.step({ p: 'pend', req: R.r1, kind: 'cancellation', of: 'b1', s: s0 }) },
       { name: 'anderer Auftrag', sql: J.step({ p: 'a', req: R.r2, kind: 'cancellation', of: 'b1', s: s0 }) },
-      { name: 'anderer Satz', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation', of: 'b1', s: s0, fr: 0.16 }) },
-      { name: 'andere Version', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation', of: 'b1', s: s0, frv: RT.frv + 1 }) },
+      { name: 'anderer USt.-Satz', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation', of: 'b1', s: s0, vr: 0.16 }) },
+      { name: 'andere Version', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation', of: 'b1', s: s0, fsv: RT.fsv + 1 }) },
       { name: 'Stornogebühr bei lebender booking', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation_fee', s: fee }) },
       { name: 'Positivkontrolle cancellation', sql: J.step({ p: 'a', req: R.r1, kind: 'cancellation', of: 'b1', s: s0, save: 'c1' }) },
       { name: 'Summe über Buchung und Gegenbuchung', sql: `=(select sum(total_cents) + sum(fee_cents) + sum(fee_net_cents) + sum(fee_vat_cents) + sum(payout_cents) from public.commission_entries where request_id = '${R.r1}')` },
       { name: 'zweite Gegenbuchung', sql: J.step({ p: 'a', req: R.r1, kind: 'correction', of: 'b1', s: s0 }) },
       { name: 'Gegenbuchung einer Gegenbuchung', sql: J.step({ p: 'a', req: R.r1, kind: 'correction', of: 'c1', s }) },
-      { name: 'correction der Stornogebühr (leere Sätze aus der booking-Zeile)', sql: J.step({ p: 'a', req: R.r2, kind: 'correction', of: 'f2', s: neg(fee), fr: null, vr: null, frv: null, vrv: null, save: 'k2' }) },
-      { name: 'Sätze der correction', sql: `=(select fee_rate::float8 || '/' || fee_rate_version from public.commission_entries where id = current_setting('app.e_k2')::uuid)` },
+      { name: 'correction der Stornogebühr (leere Sätze aus der booking-Zeile)', sql: J.step({ p: 'a', req: R.r2, kind: 'correction', of: 'f2', s: neg(fee), vr: null, fsv: null, vrv: null, save: 'k2' }) },
+      { name: 'Satz der correction', sql: `=(select fee_schedule_version from public.commission_entries where id = current_setting('app.e_k2')::uuid)` },
       { name: 'booking mit Gegenbuchungsverweis', sql: direct(RT, s, { req: R.r3, rev: rev1(R.r3), of: "current_setting('app.e_b1')::uuid" }) },
       { name: 'negativer Betrag bei booking ohne Prüfung durch den Trigger', sql: `alter table public.commission_entries disable trigger guard_commission_insert; ${direct(RT, { totalCents: -1, feeCents: 0, feeNetCents: 0, feeVatCents: 0, payoutCents: -1 }, { req: R.r3, rev: rev1(R.r3) })}` },
     ]
@@ -203,13 +198,13 @@ describe('Provisionsjournal', () => {
     for (const k of ['nicht negiert', 'um 1 Cent falsch', 'Auszahlung um 1 Cent falsch', 'anderer Auftrag', 'Gegenbuchung einer Gegenbuchung']) P0001(r[k], 'amount_mismatch')
     P0001(r['andere Firma'], 'partner_mismatch')
     P0001(r['Firma pending'], 'partner_not_active')
-    P0001(r['anderer Satz'], 'rate_mismatch')
+    P0001(r['anderer USt.-Satz'], 'rate_mismatch')
     P0001(r['andere Version'], 'rate_mismatch')
     expect(r['Positivkontrolle cancellation']).toBe('ok')
     expect(r['Summe über Buchung und Gegenbuchung']).toBe('= 0')
     check(r['zweite Gegenbuchung'], '23505', '"commission_one_reversal"')
     expect(r['correction der Stornogebühr (leere Sätze aus der booking-Zeile)']).toBe('ok')
-    expect(r['Sätze der correction']).toBe(`= ${RT.fr}/${RT.frv}`)
+    expect(r['Satz der correction']).toBe(`= ${RT.fsv}`)
     P0001(r['Stornogebühr bei lebender booking'], 'amount_mismatch')
     check(r['booking mit Gegenbuchungsverweis'], '23514', '"reverses_shape"')
     check(r['negativer Betrag bei booking ohne Prüfung durch den Trigger'], '23514', '"non_negative_kinds"')
@@ -221,7 +216,7 @@ describe('Provisionsjournal', () => {
     const s = RT.split(68961)
     const R = { r3: newId(), r4: newId(), r5: newId(), r6: newId(), rn: newId() }
     const diff = RT.split(80000 - 68961)
-    const same = { fr: null, vr: null, frv: null, vrv: null } as const // leere Sätze: nur Gegenbuchungen dürfen sie weglassen
+    const same = { vr: null, fsv: null, vrv: null } as const // leere Sätze: nur Gegenbuchungen dürfen sie weglassen
     const steps: Step[] = [
       { name: 'change mit leerem Satz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, ...same }) },
       { name: 'Stornogebühr mit leerem Satz', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000), ...same }) },
@@ -232,9 +227,9 @@ describe('Provisionsjournal', () => {
       { name: 'Revision 1 statt der aktuellen', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev1(R.r3), s: diff }) },
       { name: 'andere Firma', sql: J.step({ p: 'b', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff }) },
       { name: 'Firma pending', sql: J.step({ p: 'pend', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff }) },
-      { name: 'anderer Satz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, fr: 0.16 }) },
+      { name: 'anderer USt.-Satz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, vr: 0.16 }) },
       { name: 'Positivkontrolle change', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff, save: 'ch3' }) },
-      { name: 'Satz der change-Zeile', sql: `=(select fee_rate::float8 || '/' || fee_rate_version || '/' || vat_rule from public.commission_entries where id = current_setting('app.e_ch3')::uuid)` },
+      { name: 'Satz der change-Zeile', sql: `=(select fee_schedule_version || '/' || vat_rule from public.commission_entries where id = current_setting('app.e_ch3')::uuid)` },
       { name: 'zweite change ohne neue Differenz', sql: J.step({ p: 'a', req: R.r3, kind: 'change', rev: rev2(R.r3), s: diff }) },
       { name: 'Gegenbuchung der change', sql: J.step({ p: 'a', req: R.r3, kind: 'correction', rev: rev2(R.r3), of: 'ch3', s: neg(diff) }) },
       { name: 'negative Differenz', sql: J.step({ p: 'a', req: R.r4, kind: 'change', rev: rev2(R.r4), s: neg(RT.split(8961)) }) },
@@ -245,7 +240,7 @@ describe('Provisionsjournal', () => {
       { name: 'Stornogebühr negativ', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: neg(RT.split(1)) }) },
       { name: 'Stornogebühr andere Firma', sql: J.step({ p: 'b', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) }) },
       { name: 'Stornogebühr Firma pending', sql: J.step({ p: 'pend', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) }) },
-      { name: 'Stornogebühr anderer Satz', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000), fr: 0.16 }) },
+      { name: 'Stornogebühr anderer USt.-Satz', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000), vr: 0.16 }) },
       { name: 'Stornogebühr genau Gesamtpreis (nach Storno der booking)', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s, save: 'f5' }) },
       { name: 'zweite Stornogebühr', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) }) },
       { name: 'Gegenbuchung der ersten, dann neue Stornogebühr', sql: `${J.step({ p: 'a', req: R.r5, kind: 'correction', of: 'f5', s: neg(s), ...same })}; ${J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) })}` },
@@ -267,11 +262,11 @@ describe('Provisionsjournal', () => {
     P0001(r['Stornogebühr andere Firma'], 'partner_mismatch')
     P0001(r['Firma pending'], 'partner_not_active')
     P0001(r['Stornogebühr Firma pending'], 'partner_not_active')
-    P0001(r['anderer Satz'], 'rate_mismatch')
-    P0001(r['Stornogebühr anderer Satz'], 'rate_mismatch')
+    P0001(r['anderer USt.-Satz'], 'rate_mismatch')
+    P0001(r['Stornogebühr anderer USt.-Satz'], 'rate_mismatch')
     for (const k of ['change ohne booking', 'cancellation_fee ohne booking', 'change nach Storno der booking']) P0001(r[k], 'booking_missing')
     expect(r['Positivkontrolle change']).toBe('ok')
-    expect(r['Satz der change-Zeile']).toBe(`= ${RT.fr}/${RT.frv}/standard_20`)
+    expect(r['Satz der change-Zeile']).toBe(`= ${RT.fsv}/standard_20`)
     expect(r['Gegenbuchung der change']).toBe('ok')
     expect(r['Stornogebühr genau Gesamtpreis (nach Storno der booking)']).toBe('ok')
     expect(r['Stornogebühr Firma payment_hold']).toBe('ok')
@@ -309,35 +304,30 @@ describe('Provisionsjournal', () => {
     expect(r['Summe aller Zeilen des Auftrags']).toBe(`= ${s.totalCents}`)
   }, 240_000)
 
-  it('Sätze: höchste Version bei gleichem Datum, künftige Zeilen zählen nicht; current_fee_rates nennt die Versionen', () => {
+  it('Sätze: höchste Version bei gleichem Datum, künftige Versionen zählen nicht; private.current_fee() nennt Stufen und Version', () => {
     const RT = rates()
     const J = journal(RT)
     const R = { r1: newId() }
-    const ins = (version: number, value: number, from: string) => `insert into public.platform_settings (key, version, value, effective_from) values ('fee_rate', ${version}, ${value}, ${from});`
-    const sAt = (rate: number) => splitFee(68961, { feeRate: rate, vatRate: RT.vr })
-    const seen = "(select coalesce(fee_rate_version::text, '<null>') || '/' || coalesce(fee_vat_rate_version::text, '<null>') || '/' || coalesce(fee_rate::float8::text, '<null>') from public.current_fee_rates)"
+    const tiers = (bp: number): FeeTier[] => [{ upToCents: null, bp }]
+    const sAt = (bp: number) => splitFee(68961, { tiers: tiers(bp), vatRate: RT.vr })
+    const sch = (version: number, bp: number, from: string) =>
+      `insert into public.fee_schedules (version, valid_from, label) values (${version}, ${from}, 'test ${version}'); insert into public.fee_schedule_tiers (version, tier, up_to_cents, rate_bp) values (${version}, 1, null, ${bp});`
     const steps: Step[] = [
-      { name: 'Ist-Versionen in der View', sql: "=(select fee_rate_version || '/' || fee_vat_rate_version from public.current_fee_rates)" },
+      { name: 'aktuelle Version', sql: '=(select private.current_fee_schedule())' },
+      { name: 'Stufen der aktuellen Version', sql: `=(select fee_tiers = '[{"upToCents": null, "bp": 1700}]'::jsonb and fee_schedule_version = 99 from private.current_fee())` },
       { name: 'älterer Satz', sql: J.step({ p: 'a', req: R.r1, s: RT.split(68961) }) },
-      { name: 'niedrigere Version bei Gleichstand', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.16), fr: 0.16, frv: 98 }) },
-      { name: 'künftige Zeile', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.3), fr: 0.3, frv: 100 }) },
-      { name: 'richtige Version', sql: J.step({ p: 'a', req: R.r1, s: sAt(0.17), fr: 0.17, frv: 99 }) },
-      // S4-N3: Satz und Versionen sieht nur ein Partner-Mitglied mit aal2; Kunden und aal1 bekommen überall NULL
-      { name: 'Versionen für Kunden', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.cust, aal: 'aal2' } },
-      { name: 'Versionen für Mitglied aal1', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.pa, aal: 'aal1' } },
-      { name: 'Versionen für Mitglied aal2', sql: `=${seen}`, as: 'authenticated', claims: { sub: U.pa, aal: 'aal2' } },
+      { name: 'niedrigere Version bei Gleichstand', sql: J.step({ p: 'a', req: R.r1, s: sAt(1600), fsv: 98 }) },
+      { name: 'künftige Version', sql: J.step({ p: 'a', req: R.r1, s: sAt(3000), fsv: 100 }) },
+      { name: 'richtige Version', sql: J.step({ p: 'a', req: R.r1, s: sAt(1700), fsv: 99 }) },
     ]
     const r = probes(
-      `${BASE('a')} ${request(R.r1)} alter table public.platform_settings disable trigger guard_platform_setting;
-       ${ins(98, 0.16, TODAY)} ${ins(99, 0.17, TODAY)} ${ins(100, 0.3, `${TODAY} + 400`)}`,
+      `${BASE('a')} ${request(R.r1)} ${sch(98, 1600, TODAY)} ${sch(99, 1700, TODAY)} ${sch(97, 3000, `${TODAY} + 400`)} ${sch(100, 3000, `${TODAY} + 400`)}`,
       steps,
     )
-    expect(r['Ist-Versionen in der View']).toBe(`= 99/${RT.vrv}`)
-    for (const k of ['älterer Satz', 'niedrigere Version bei Gleichstand', 'künftige Zeile']) P0001(r[k], 'rate_mismatch')
+    expect(r['aktuelle Version']).toBe('= 99')
+    expect(r['Stufen der aktuellen Version']).toBe('= true')
+    for (const k of ['älterer Satz', 'niedrigere Version bei Gleichstand', 'künftige Version']) P0001(r[k], 'rate_mismatch')
     expect(r['richtige Version']).toBe('ok')
-    expect(r['Versionen für Kunden']).toBe('= <null>/<null>/<null>')
-    expect(r['Versionen für Mitglied aal1']).toBe('= <null>/<null>/<null>')
-    expect(r['Versionen für Mitglied aal2']).toBe(`= 99/${RT.vrv}/0.17`)
   }, 240_000)
 
   it('Lesen: eigene Firma mit aal2 (jeder Status) und admin mit aal2; sonst nichts; kein Schreibrecht; commission_book ohne Aufruf', () => {

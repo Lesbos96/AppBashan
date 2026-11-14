@@ -14,7 +14,7 @@ const real = (errors: string[]) => errors.filter((e) => !e.startsWith('Failed to
 const REQ = '0b8f1c3e-5d2a-4e7b-9a61-3c4d5e6f7a8b'
 const E1 = '11111111-1111-4111-8111-111111111111'
 const E2 = '22222222-2222-4222-8222-222222222222'
-const base = { request_id: REQ, created_at: '2026-10-05T08:30:00+00:00', fee_rate: 0.15, billing_month: '2026-10-01', reverses_entry_id: null }
+const base = { request_id: REQ, created_at: '2026-10-05T08:30:00+00:00', fee_schedule: 'v1 15 %', billing_month: '2026-10-01', reverses_entry_id: null }
 const COMMISSIONS = [
   { ...base, entry_id: E1, kind: 'booking', total_cents: 6900, fee_net_cents: 863, fee_vat_cents: 172, fee_cents: 1035, payout_cents: 5865 },
   { ...base, entry_id: E2, kind: 'cancellation', reverses_entry_id: E1, total_cents: -6900, fee_net_cents: -863, fee_vat_cents: -172, fee_cents: -1035, payout_cents: -5865 },
@@ -56,9 +56,9 @@ test('Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf
   const bytes = await text(d)
   expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
   const lines = bytes.toString('utf8').slice(1).split('\r\n')
-  expect(lines[0]).toBe('Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Satz;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID')
-  expect(lines[1]).toBe(`2026-10;05.10.2026 10:30;${REQ};Buchung (booking);;69,00;0,15;8,63;1,72;10,35;58,65;${E1}`)
-  expect(lines[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;0,15;-8,63;-1,72;-10,35;-58,65;${E2}`)
+  expect(lines[0]).toBe('Abrechnungsmonat;Buchungszeit;Auftrag;Art;Bezug;Betrag Kunde;Staffel;Provision netto;USt.;Provision brutto;Auszahlung Firma;Journal-ID')
+  expect(lines[1]).toBe(`2026-10;05.10.2026 10:30;${REQ};Buchung (booking);;69,00;v1 15 %;8,63;1,72;10,35;58,65;${E1}`)
+  expect(lines[2]).toBe(`2026-10;05.10.2026 10:30;${REQ};Storno-Gegenbuchung (cancellation);${E1};-69,00;v1 15 %;-8,63;-1,72;-10,35;-58,65;${E2}`)
   expect(lines).toHaveLength(4)
   expect(jobs.journalCalls).toHaveLength(1)
   expect(jobs.journalCalls[0]).toMatchObject({ month: '2026-10-01' })
@@ -66,7 +66,7 @@ test('Download: Dateiname, BOM, Kopfzeile, Zeilen mit Cent-Beträgen, ein Aufruf
   const q = new URL(jobs.journalCalls[0]!.url).searchParams
   expect([q.get('offset'), q.get('limit'), q.get('order')]).toEqual(['0', '1000', 'created_at.asc,entry_id.asc'])
   const sel = q.get('select')
-  expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_rate', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
+  expect(sel?.split(',').map((c) => c.trim())).toEqual(['entry_id', 'request_id', 'kind', 'reverses_entry_id', 'created_at', 'total_cents', 'fee_schedule', 'fee_net_cents', 'fee_vat_cents', 'fee_cents', 'payout_cents', 'billing_month'])
   expect(bytes.toString('utf8')).not.toMatch(/partner_name|Testfirma/)
   expect(real(errors)).toEqual([])
 })

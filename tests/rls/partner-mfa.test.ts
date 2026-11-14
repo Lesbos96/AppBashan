@@ -34,23 +34,30 @@ describe.skipIf(reason !== null)('aal2 mit echten Token', () => {
     expect(jwtAal(partner.jwt2)).toBe('aal2')
   })
 
-  it('Partner-Mitglied: Satz nur mit aal2, Firmendaten schon mit aal1; Kunde mit aal2 ohne Firma liest keinen Satz', async () => {
+  it('Partner-Mitglied: Staffel und USt.-Satz nur mit aal2, Firmendaten schon mit aal1; Kunde mit aal2 ohne Firma liest nichts', async () => {
     const id = must(await partner.aal1.rpc('register_partner', reg)) as unknown as string
     firms.push(id)
     expect(must(await partner.aal1.from('partners').select('id')).map((r) => r.id)).toEqual([id])
+    // platform_settings: nur fee_vat_rate; der alte Satz fee_rate bleibt als Historie unsichtbar
     expect(must(await partner.aal1.from('platform_settings').select('key').in('key', ['fee_rate', 'fee_vat_rate']))).toEqual([])
     const keys = must(await partner.aal2.from('platform_settings').select('key').in('key', ['fee_rate', 'fee_vat_rate'])).map((r) => r.key)
-    expect(keys).toEqual(expect.arrayContaining(['fee_rate', 'fee_vat_rate']))
+    expect(new Set(keys)).toEqual(new Set(['fee_vat_rate']))
     expect(must(await partner.aal2.from('platform_settings').select('key').eq('key', 'fee_notice_days'))).toEqual([])
-    const want = ownerSql('select fee_rate::float8 as r, fee_vat_rate::float8 as v from public.current_fee_rates')[0]
-    expect(must(await partner.aal2.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: want?.r, fee_vat_rate: want?.v })
-    expect(want?.r).toBeGreaterThan(0)
-    expect(must(await partner.aal1.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null })
+    // Staffel: aal2 ja, aal1 nein
+    expect(must(await partner.aal2.from('fee_schedules').select('version')).length).toBeGreaterThan(0)
+    expect(must(await partner.aal1.from('fee_schedules').select('version'))).toEqual([])
+    // Vorschau „Du erhältst“ nur mit aal2
+    const pay = await partner.aal2.rpc('payout_preview', { p_total: 100000 } as never)
+    expect(pay.error).toBeNull()
+    expect(Number(pay.data)).toBeGreaterThan(0)
+    expect(Number(pay.data)).toBeLessThanOrEqual(100000)
+    expect((await partner.aal1.rpc('payout_preview', { p_total: 100000 } as never)).error?.message).toBe('mfa_required')
     // Kunde mit echtem aal2 ohne Firma
     const cust = await tryAal2User('mfa-cust')
     if ('reason' in cust) throw new Error(cust.reason)
     expect(must(await cust.user.aal2.from('platform_settings').select('key'))).toEqual([])
-    expect(must(await cust.user.aal2.from('current_fee_rates').select('*').single())).toMatchObject({ fee_rate: null })
+    expect(must(await cust.user.aal2.from('fee_schedules').select('version'))).toEqual([])
+    expect((await cust.user.aal2.rpc('payout_preview', { p_total: 100000 } as never)).error?.message).toBe('not_found')
   }, 60_000)
 
   it('Admin: aal1 sieht keine Firmen, aal2 schon', async () => {

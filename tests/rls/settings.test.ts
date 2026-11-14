@@ -199,7 +199,6 @@ describe('Gebührensätze und Einstellungen', () => {
       svc('set_customer', `perform public.admin_set_setting('${cust.id}', 'offers_open_max', 4, ${today})`),
       svc('set_delete_future_ok', `perform public.admin_set_setting('${adm.id}', 'fee_rate', null, ${today} + 30)`),
       svc('set_delete_current', `perform public.admin_set_setting('${adm.id}', 'fee_rate', null, date '2026-10-28')`),
-      { name: 'rates_view_ok', sql: `?(select fee_rate = 0.15 and fee_vat_rate = 0.2 and fee_rate_from = date '2026-10-28' from public.current_fee_rates)` },
     ])
     expect(got.rate_range).toMatch(/^23514: .*platform_settings_rates/)
     expect(got.window_fraction).toMatch(/^23514: .*platform_settings_window_start/)
@@ -233,7 +232,6 @@ describe('Gebührensätze und Einstellungen', () => {
       set_customer: '42501: not_admin',
       set_delete_future_ok: 'ok',
       set_delete_current: 'P0001: not_found',
-      rates_view_ok: 'ok',
     })
   })
 

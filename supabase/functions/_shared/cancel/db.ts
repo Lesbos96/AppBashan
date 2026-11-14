@@ -1,5 +1,6 @@
 // Datenbank-Anbindung von cancel-customer (S9h-1). Läuft mit dem Secret Key (service_role); die SQL-Funktionen prüfen Kunde, Status, Stufe und
 // Satz selbst. `p_actor` stammt aus dem geprüften JWT, nie aus dem Body.
+import type { FeeTier } from '../pricing/index.ts'
 import { getUser, must, type Db } from '../jobs/db.ts'
 import { DbError } from '../jobs/handlers.ts'
 import type { CancelDeps } from './handlers.ts'
@@ -14,9 +15,9 @@ export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' |
       status: row.request_status,
       totalCents: Number(row.total_cents),
       callOutCents: Number(row.call_out_cents),
-      feeRate: Number(row.fee_rate),
+      feeTiers: row.fee_tiers as unknown as FeeTier[],
       feeVatRate: Number(row.fee_vat_rate),
-      feeRateVersion: row.fee_rate_version,
+      feeScheduleVersion: row.fee_schedule_version,
       feeVatRateVersion: row.fee_vat_rate_version,
     }
   },
@@ -29,13 +30,12 @@ export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' |
         p_reason: c.reason,
         p_photos: c.photoIds,
         p_fee_base: c.feeBaseCents,
-        p_fee_rate: c.basis.feeRate,
         p_fee_vat_rate: c.basis.feeVatRate,
         p_fee: c.split.feeCents,
         p_fee_net: c.split.feeNetCents,
         p_fee_vat: c.split.feeVatCents,
         p_payout: c.split.payoutCents,
-        p_fee_rate_version: c.basis.feeRateVersion,
+        p_fee_schedule_version: c.basis.feeScheduleVersion,
         p_fee_vat_rate_version: c.basis.feeVatRateVersion,
       }),
     )
@@ -51,9 +51,9 @@ export const cancelDb = (db: Db): Pick<CancelDeps, 'getUser' | 'basis' | 'cancel
       status: row.request_status,
       totalCents: Number(row.total_cents),
       feeBaseCents: Number(row.fee_base_cents),
-      feeRate: Number(row.fee_rate),
+      feeTiers: row.fee_tiers as unknown as FeeTier[],
       feeVatRate: Number(row.fee_vat_rate),
-      feeRateVersion: row.fee_rate_version,
+      feeScheduleVersion: row.fee_schedule_version,
       feeVatRateVersion: row.fee_vat_rate_version,
     }
   },
@@ -63,13 +63,12 @@ export const cancelDb = (db: Db): Pick<CancelDeps, 'getUser' | 'basis' | 'cancel
         p_actor: userId,
         p_request: c.requestId,
         p_fee_base: c.shownFeeCents,
-        p_fee_rate: c.basis.feeRate,
         p_fee_vat_rate: c.basis.feeVatRate,
         p_fee: c.split.feeCents,
         p_fee_net: c.split.feeNetCents,
         p_fee_vat: c.split.feeVatCents,
         p_payout: c.split.payoutCents,
-        p_fee_rate_version: c.basis.feeRateVersion,
+        p_fee_schedule_version: c.basis.feeScheduleVersion,
         p_fee_vat_rate_version: c.basis.feeVatRateVersion,
       }),
     )
