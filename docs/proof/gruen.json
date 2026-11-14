@@ -1,17 +1,20 @@
 {
   "check": {
-    "abdruck": "b12da95a7bc657e92846849954213b5f715001191b9358aba20ffbb58caf63b0",
-    "hash": "c9ec7c8140c41abaa8beec0e9d8c5faaf40ea518",
-    "schritt": "u1b"
+    "abdruck": "515a0656c2cc6cd0e552a4ad986f5e5009119ff17a21ce25fd977efb1337f5d5",
+    "hash": "bf8db50fed2069874ebcb4440111a93fa1c50f62",
+    "schritt": "u2b",
+    "zeit": "2026-11-14T21:20:26.716Z"
   },
   "rls": {
-    "abdruck": "18699d404f39f61b2fe605e2dbcd3997d09b6ad81a4c553e1ed569546afcf9d4",
-    "hash": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a",
-    "schritt": "u1b"
+    "abdruck": "6858af7320fc39ba4dec8b18cceb2219718bb148cd1a65463ddd395c99824b34",
+    "hash": "bf8db50fed2069874ebcb4440111a93fa1c50f62",
+    "schritt": "u2b",
+    "zeit": "2026-11-14T21:51:55.066Z"
   },
   "e2e": {
     "abdruck": "8fa781f897f21e7cc7dc189726c1d184c6aba7e8630963c1158836d3df5e1765",
     "hash": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a",
-    "schritt": "u1b"
+    "schritt": "u1b",
+    "zeit": "2026-11-14T11:12:15.738Z"
   }
 }

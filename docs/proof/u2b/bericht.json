@@ -1,0 +1,74 @@
+{
+  "schritt": "u2b",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 302
+  },
+  "sitzung": "30b49d4a-edb1-4cae-aa43-d60ba82a87fa",
+  "berater": {
+    "advisor": 2,
+    "advisor-report": 12,
+    "mech-editor": 2
+  },
+  "hash": "cda9063377785cea6eeb4b0c12f6e2008bd94916",
+  "stand": "515a0656c2cc6cd0e552a4ad986f5e5009119ff17a21ce25fd977efb1337f5d5",
+  "mainVorher": "63596b45a3cb385d7014d96690cb453b28c5736f",
+  "commits": 2,
+  "geaendert": {
+    ".claude": 4,
+    "docs": 5,
+    "scripts": 9,
+    "tests/unit": 4
+  },
+  "laeufe": {
+    "check": {
+      "nr": 8,
+      "exit": 0,
+      "tests": "1758 passed (1758)",
+      "sek": 48.8,
+      "hash": "bf8db50fed2069874ebcb4440111a93fa1c50f62",
+      "schritt": "u2b",
+      "log": "docs\\proof\\u2b\\008-check.log"
+    },
+    "rls": {
+      "nr": 9,
+      "exit": 0,
+      "tests": "360 passed (360)",
+      "sek": 1094.8,
+      "hash": "bf8db50fed2069874ebcb4440111a93fa1c50f62",
+      "schritt": "u2b",
+      "log": "docs\\proof\\u2b\\009-rls.log"
+    },
+    "e2e": {
+      "nr": 32,
+      "exit": 0,
+      "tests": "734 passed (18.2m)",
+      "sek": 1091.5,
+      "hash": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a",
+      "schritt": "u1b",
+      "log": "docs\\proof\\u2b\\032-e2e.log",
+      "uebernommen": "364ea2123d7cb3d39c0fb8983c4c9f8302c10b7a"
+    }
+  },
+  "versuche": {
+    "gesamt": 10,
+    "rot": 3
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs\\proof\\u2b\\u2b-abnahme.md",
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\u2b\\u2b-abnahme.md",
+    "docs\\proof\\u2b\\loesch-lauf.jsonl",
+    "docs\\proof\\u2b\\u2b-abnahme-runde1.md",
+    "docs\\proof\\u2b\\u2b-abnahme-runde2.md",
+    "docs\\proof\\u2b\\u2b-plan.md"
+  ]
+}
