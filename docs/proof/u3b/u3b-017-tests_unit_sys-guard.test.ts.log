@@ -1,0 +1,83 @@
+Commit: 84bea13227999a6d240cd6fa89c95a7055a90747
+Arbeitsbaum sauber: nein
+Befehl: npm test -- tests/unit/sys-guard.test.ts
+Start: 2026-11-15T08:19:42.152Z
+---
+
+> movenow@0.1.0 test
+> vitest run --project unit tests/unit/sys-guard.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/sys-guard.test.ts (400 tests | 14 failed) 26243ms
+   ❯ Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b (150)
+     × verweigert: $o=git push --no-verify 63ms
+     × verweigert: $null=git -c core.hooksPath=x push 57ms
+     × verweigert: @git push --no-verify 54ms
+     × verweigert: &{git push --no-verify} 53ms
+     × verweigert: $env:GIT_CONFIG_COUNT = 1; $env:GIT_CONFIG_KEY_0 = 'core.hooksPath'; $env:GIT_CONFIG_VALUE_0 = 'x'; git push 60ms
+     × verweigert: Set-Item env:GIT_CONFIG_COUNT 1; git push 61ms
+     × verweigert: git config core.hooksPath } 60ms
+     × verweigert: git config core.hooksPath <(true) 60ms
+     × verweigert: git config core.hooksPath >(true) 60ms
+     × verweigert: git push \
+--no-verify 56ms
+     × verweigert: git push `
+--no-verify 56ms
+     × verweigert: git push ^
+--no-verify 55ms
+     × verweigert: git -c \
+core.hooksPath=x push 60ms
+     × verweigert: npm run \
+check 58ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: $o=git push --no-verify
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: $null=git -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: @git push --no-verify
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: &{git push --no-verify}
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: $env:GIT_CONFIG_COUNT = 1; $env:GIT_CONFIG_KEY_0 = 'core.hooksPath'; $env:GIT_CONFIG_VALUE_0 = 'x'; git push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: Set-Item env:GIT_CONFIG_COUNT 1; git push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooksPath }
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooksPath <(true)
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooksPath >(true)
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push \
+--no-verify
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push `
+--no-verify
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push ^
+--no-verify
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git -c \
+core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: npm run \
+check
+AssertionError: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ tests/unit/sys-guard.test.ts:556:26
+    554|     'npm run \\\ncheck',
+    555|   ])('verweigert: %s', (c) => {
+    556|     expect(bash(c).exit).toBe(2)
+       |                          ^
+    557|   })
+    558|   it.each([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  14 failed | 386 passed (400)
+   Start at  09:19:42
+   Duration  26.43s (tests 100%)
+
+
+---
+Dauer: 27.2 s
+EXIT=1

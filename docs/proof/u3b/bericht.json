@@ -1,0 +1,79 @@
+{
+  "schritt": "u3b",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 316
+  },
+  "sitzung": "6aa71944-0aff-414e-b81b-0e7a5d29b367",
+  "berater": {
+    "advisor-report": 2
+  },
+  "hash": "58f325f935a4b4f9d07cfbb9e1ead30288b85855",
+  "stand": "554169daf83921630fd5a2b97294a03c11613f9c6480bb4065cc47d8cd1bed6b",
+  "mainVorher": "6b6a6b7331d5145ccc0da5a4282c9e626aee5319",
+  "commits": 3,
+  "geaendert": {
+    ".claude": 4,
+    "docs": 4,
+    "andere": 1,
+    "scripts": 9,
+    "tests/unit": 5
+  },
+  "laeufe": {
+    "check": {
+      "nr": 25,
+      "exit": 0,
+      "tests": "1853 passed (1853)",
+      "sek": 48.3,
+      "hash": "58f325f935a4b4f9d07cfbb9e1ead30288b85855",
+      "schritt": "u3b",
+      "log": "docs\\proof\\u3b\\025-check.log"
+    },
+    "rls": {
+      "nr": 27,
+      "exit": 0,
+      "tests": "366 passed (366)",
+      "sek": 910.7,
+      "hash": "58f325f935a4b4f9d07cfbb9e1ead30288b85855",
+      "schritt": "u3b",
+      "log": "docs\\proof\\u3b\\027-rls.log"
+    },
+    "e2e": {
+      "nr": 26,
+      "exit": 0,
+      "tests": "734 passed (17.4m)",
+      "sek": 1045,
+      "hash": "58f325f935a4b4f9d07cfbb9e1ead30288b85855",
+      "schritt": "u3b",
+      "log": "docs\\proof\\u3b\\026-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 27,
+    "rot": 9
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs\\proof\\u3b\\u3b-abnahme.md",
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\u3b\\u3b-abnahme.md",
+    "docs\\proof\\u3b\\loesch-lauf.jsonl",
+    "docs\\proof\\u3b\\u3b-abnahme-runde1.md",
+    "docs\\proof\\u3b\\u3b-plan.md",
+    "docs\\proof\\u3b\\u3b-001-tests_unit_sys-guard.test.ts.log",
+    "docs\\proof\\u3b\\u3b-002-tests_unit_sys-session.test.ts.log",
+    "docs\\proof\\u3b\\u3b-003-tests_unit_sys-gate-db.test.ts.log",
+    "docs\\proof\\u3b\\u3b-004-tests_unit_sys-fertig.test.ts.log",
+    "docs\\proof\\u3b\\u3b-013-tests_unit_sys-fertig.test.ts.log",
+    "docs\\proof\\u3b\\u3b-015-tests_unit_sys-fertig.test.ts.log",
+    "docs\\proof\\u3b\\u3b-017-tests_unit_sys-guard.test.ts.log",
+    "docs\\proof\\u3b\\u3b-018-tests_unit_sys-gate-db.test.ts.log"
+  ]
+}

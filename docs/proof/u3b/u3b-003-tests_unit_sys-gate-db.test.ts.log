@@ -1,0 +1,115 @@
+Commit: 6b6a6b7331d5145ccc0da5a4282c9e626aee5319
+Arbeitsbaum sauber: nein
+Befehl: npm test -- tests/unit/sys-gate-db.test.ts
+Start: 2026-11-15T07:52:56.902Z
+---
+
+> movenow@0.1.0 test
+> vitest run --project unit tests/unit/sys-gate-db.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/sys-gate-db.test.ts (31 tests | 6 failed) 1290ms
+   ❯ AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push (6)
+     × startMarke bündelt Version, Pfad und SHA-256 der freigegebenen Migrationen 3ms
+     × unmarkierteStarts: nur Startmarken-Einträge, die keine Marke mit gleichem Pfad und SHA-256 haben 0ms
+     × nach einem gelungenen Push ohne Marke schreibt `nachtrag` die Marke, ein zweiter Lauf nichts mehr 2ms
+     × Migration noch nicht angewendet (remote leer): keine Marke 1ms
+     × Datei nach der Startmarke geändert: keine Marke, Exit 1 1ms
+     × ohne Startmarke: nichts zu tun, nie eine Marke aus dem Nichts 63ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > startMarke bündelt Version, Pfad und SHA-256 der freigegebenen Migrationen
+TypeError: startMarke is not a function
+ ❯ tests/unit/sys-gate-db.test.ts:119:15
+    117|   const B = 'b'.repeat(64)
+    118|   it('startMarke bündelt Version, Pfad und SHA-256 der freigegebenen M…
+    119|     const z = startMarke([m('1', A)], '2026-11-15T10:00:00.000Z')
+       |               ^
+    120|     expect(z).toEqual({ ziel: 'db-push-start', start: '2026-11-15T10:0…
+    121|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > unmarkierteStarts: nur Startmarken-Einträge, die keine Marke mit gleichem Pfad und SHA-256 haben
+TypeError: startMarke is not a function
+ ❯ tests/unit/sys-gate-db.test.ts:124:7
+    122|   it('unmarkierteStarts: nur Startmarken-Einträge, die keine Marke mit…
+    123|     const zeilen = [
+    124|       startMarke([m('1', A), m('2', B)], 't1'),
+       |       ^
+    125|       { ziel: 'db-push', start: 't2', migrationen: [{ pfad: 'supabase/…
+    126|       { ziel: 'check', nr: 3 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > nach einem gelungenen Push ohne Marke schreibt `nachtrag` die Marke, ein zweiter Lauf nichts mehr
+TypeError: startMarke is not a function
+ ❯ mitStart tests/unit/sys-gate-db.test.ts:138:62
+    136|   const mitStart = (sha256: string) => {
+    137|     const a = aufbau()
+    138|     writeFileSync(join(a.frei, 'runs.jsonl'), JSON.stringify(startMark…
+       |                                                              ^
+    139|     return a
+    140|   }
+ ❯ tests/unit/sys-gate-db.test.ts:143:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > Migration noch nicht angewendet (remote leer): keine Marke
+TypeError: startMarke is not a function
+ ❯ mitStart tests/unit/sys-gate-db.test.ts:138:62
+    136|   const mitStart = (sha256: string) => {
+    137|     const a = aufbau()
+    138|     writeFileSync(join(a.frei, 'runs.jsonl'), JSON.stringify(startMark…
+       |                                                              ^
+    139|     return a
+    140|   }
+ ❯ tests/unit/sys-gate-db.test.ts:152:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > Datei nach der Startmarke geändert: keine Marke, Exit 1
+TypeError: startMarke is not a function
+ ❯ mitStart tests/unit/sys-gate-db.test.ts:138:62
+    136|   const mitStart = (sha256: string) => {
+    137|     const a = aufbau()
+    138|     writeFileSync(join(a.frei, 'runs.jsonl'), JSON.stringify(startMark…
+       |                                                              ^
+    139|     return a
+    140|   }
+ ❯ tests/unit/sys-gate-db.test.ts:157:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  |unit| tests/unit/sys-gate-db.test.ts > AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push > ohne Startmarke: nichts zu tun, nie eine Marke aus dem Nichts
+AssertionError: expected 2 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ tests/unit/sys-gate-db.test.ts:166:22
+    164|     const a = aufbau()
+    165|     const r = nachtrag(a, '20261201100000')
+    166|     expect(r.status).toBe(0)
+       |                      ^
+    167|     expect(r.stdout).toMatch(/keine Startmarke ohne Marke/)
+    168|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 25 passed (31)
+   Start at  08:52:57
+   Duration  1.52s (tests 95%, transform 3%, import 1%)
+
+
+---
+Dauer: 2.4 s
+EXIT=1

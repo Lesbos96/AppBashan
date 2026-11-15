@@ -1,0 +1,60 @@
+Commit: 6b6a6b7331d5145ccc0da5a4282c9e626aee5319
+Arbeitsbaum sauber: nein
+Befehl: npm test -- tests/unit/sys-session.test.ts
+Start: 2026-11-15T07:52:54.023Z
+---
+
+> movenow@0.1.0 test
+> vitest run --project unit tests/unit/sys-session.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/sys-session.test.ts (13 tests | 2 failed) 1039ms
+   ❯ Berater je Schritt (agents.jsonl) (2)
+     × zählt nur SubagentStart des aktuellen Schritts; ältere Zeilen ohne Schritt und andere Schritte zählen nicht 3ms
+     × der Hook stempelt jede Zeile mit dem Branch des Projektordners (ohne Git: null) 101ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/sys-session.test.ts > Berater je Schritt (agents.jsonl) > zählt nur SubagentStart des aktuellen Schritts; ältere Zeilen ohne Schritt und andere Schritte zählen nicht
+TypeError: beraterDesSchritts is not a function
+ ❯ tests/unit/sys-session.test.ts:53:12
+     51|       z('SubagentStart', 'Explore', null),
+     52|     ]
+     53|     expect(beraterDesSchritts(zeilen, 'u3b')).toEqual({ advisor: 1, 'a…
+       |            ^
+     54|     expect(beraterDesSchritts(zeilen, 'u3')).toEqual({ advisor: 1 })
+     55|     expect(beraterDesSchritts([], 'u3b')).toEqual({})
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| tests/unit/sys-session.test.ts > Berater je Schritt (agents.jsonl) > der Hook stempelt jede Zeile mit dem Branch des Projektordners (ohne Git: null)
+AssertionError: expected undefined to be 'probe-schritt' // Object.is equality
+
+- Expected:
+"probe-schritt"
+
++ Received:
+undefined
+
+ ❯ tests/unit/sys-session.test.ts:69:91
+     67|         env: { ...process.env, CLAUDE_PROJECT_DIR: projekt, PROOF_ROOT…
+     68|       })
+     69|       expect(JSON.parse(readFileSync(join(root, 'agents.jsonl'), 'utf8…
+       |                                                                                           ^
+     70|     }
+     71|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  08:52:54
+   Duration  1.21s (tests 95%, transform 3%, import 1%, worker 1%)
+
+
+---
+Dauer: 2.1 s
+EXIT=1

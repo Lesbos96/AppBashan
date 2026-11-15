@@ -1,0 +1,101 @@
+Commit: 6b6a6b7331d5145ccc0da5a4282c9e626aee5319
+Arbeitsbaum sauber: nein
+Befehl: npm test -- tests/unit/sys-guard.test.ts
+Start: 2026-11-15T07:52:27.199Z
+---
+
+> movenow@0.1.0 test
+> vitest run --project unit tests/unit/sys-guard.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/sys-guard.test.ts (363 tests | 19 failed) 24892ms
+   ❯ Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b (113)
+     × verweigert: git config core.hooksPath ">x" 67ms
+     × verweigert: git -C ">d" -c core.hooksPath=x push 57ms
+     × verweigert: git config core.hooksPath get 57ms
+     × verweigert: git push "--no-verify" 63ms
+     × verweigert: git push --no-verif 62ms
+     × verweigert: git push --no-veri 59ms
+     × verweigert: "git" -c core.hooksPath=x push 57ms
+     × verweigert: "C:\Program Files\Git\cmd\git.exe" -c core.hooksPath=x push 56ms
+     × verweigert: git -c user.name=A\ B -c core.hooksPath=x push 61ms
+     × verweigert: git 2> e -c core.hooksPath=x push 56ms
+     × verweigert: git config core.hooks\Path x 57ms
+     × verweigert: git config core.hooks$P x 58ms
+     × verweigert: GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=x git push 56ms
+     × verweigert: GIT_CONFIG_PARAMETERS="'core.hookspath=x'" git push 56ms
+     × Gegenprobe, kein Falschalarm: git config --show-scope --get core.hooksPath 61ms
+     × Gegenprobe, kein Falschalarm: git config -z --get core.hooksPath 62ms
+     × Gegenprobe, kein Falschalarm: git config user.name edit 59ms
+     × Gegenprobe, kein Falschalarm: git config core.hooksPath 2> /dev/null 58ms
+     × Gegenprobe, kein Falschalarm: git config --get core.hooksPath > /dev/null 66ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooksPath ">x"
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git -C ">d" -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooksPath get
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push "--no-verify"
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push --no-verif
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git push --no-veri
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: "git" -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: "C:\Program Files\Git\cmd\git.exe" -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git -c user.name=A\ B -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git 2> e -c core.hooksPath=x push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooks\Path x
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: git config core.hooks$P x
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=x git push
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > verweigert: GIT_CONFIG_PARAMETERS="'core.hookspath=x'" git push
+AssertionError: expected +0 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ tests/unit/sys-guard.test.ts:526:26
+    524|     'GIT_CONFIG_PARAMETERS="\'core.hookspath=x\'" git push',
+    525|   ])('verweigert: %s', (c) => {
+    526|     expect(bash(c).exit).toBe(2)
+       |                          ^
+    527|   })
+    528|   it.each([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > Gegenprobe, kein Falschalarm: git config --show-scope --get core.hooksPath
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > Gegenprobe, kein Falschalarm: git config -z --get core.hooksPath
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > Gegenprobe, kein Falschalarm: git config user.name edit
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > Gegenprobe, kein Falschalarm: git config core.hooksPath 2> /dev/null
+ FAIL  |unit| tests/unit/sys-guard.test.ts > Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b > Gegenprobe, kein Falschalarm: git config --get core.hooksPath > /dev/null
+AssertionError: expected 2 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ tests/unit/sys-guard.test.ts:578:26
+    576|     'git push origin HEAD:main',
+    577|   ])('Gegenprobe, kein Falschalarm: %s', (c) => {
+    578|     expect(bash(c).exit).toBe(0)
+       |                          ^
+    579|   })
+    580|   it('N3: dreifach geschachtelte Ersetzung in einem Block einer Skript…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  19 failed | 344 passed (363)
+   Start at  08:52:28
+   Duration  25.10s (tests 100%)
+
+
+---
+Dauer: 26 s
+EXIT=1

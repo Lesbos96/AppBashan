@@ -1,0 +1,41 @@
+Commit: 6b6a6b7331d5145ccc0da5a4282c9e626aee5319
+Arbeitsbaum sauber: nein
+Befehl: npm test -- tests/unit/sys-fertig.test.ts
+Start: 2026-11-15T08:06:09.356Z
+---
+
+> movenow@0.1.0 test
+> vitest run --project unit tests/unit/sys-fertig.test.ts
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ❯ |unit| tests/unit/sys-fertig.test.ts (37 tests | 1 failed) 76ms
+   ❯ Merge-Gate: pruefeFertig (37)
+     ❯ R3 (16)
+       × stageNachweise legt die genannten, von .gitignore ausgenommenen Logs in den Index, sonst nichts (kein git add -f von Hand) 66ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/sys-fertig.test.ts > Merge-Gate: pruefeFertig > R3 > stageNachweise legt die genannten, von .gitignore ausgenommenen Logs in den Index, sonst nichts (kein git add -f von Hand)
+TypeError: stageNachweise is not a function
+ ❯ tests/unit/sys-fertig.test.ts:210:7
+    208|       writeFileSync(join(dir, 'docs/proof/u3b/bericht.md'), 'x\n')
+    209|       expect(git('ls-files').stdout.trim()).toBe('') // nichts im Index
+    210|       stageNachweise(['docs/proof/u3b/001-check.log', 'docs/proof/u3b/…
+       |       ^
+    211|       expect(git('ls-files').stdout.trim().split('\n')).toEqual(['docs…
+    212|       expect(() => stageNachweise(['docs/proof/u3b/fehlt.log'], dir)).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 36 passed (37)
+   Start at  09:06:10
+   Duration  293ms (tests 49%, transform 31%, import 17%, worker 3%)
+
+
+---
+Dauer: 1.2 s
+EXIT=1
