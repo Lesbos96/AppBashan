@@ -459,6 +459,7 @@ describe('Rollen', () => {
       'my_job_changes()', // s9i-7a: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen, keine Personendaten und keine Gebühr
       'my_job_partner(uuid)',
       'my_jobs()', // s9i-6b: aal2 und Firma active/payment_hold in der Funktion, nur eigene Zuordnungen
+      'my_report_info(uuid)', // s9k-1: nur der Kunde der Anfrage (auth.uid() in der Funktion), nur „Meldung möglich“ und die Frist, nie die Gebühr
       'my_request_offers(uuid)',
       'partner_quality()', // S9h-2: nur admin sieht Zeilen (is_admin in der Funktion)
       'payout_preview(bigint)', // s9p-1: nur Firmenmitglieder mit aal2 (in der Funktion), liefert nur „Du erhältst“, nie die Gebühr
