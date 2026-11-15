@@ -537,6 +537,21 @@ describe('Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b', () =
     'xargs git -c core.hooksPath=x push',
     'git config user.name edit', // bekannter Falschalarm, bleibt gesperrt (fail closed)
     'git -C x config core.hooksPath', // ebenso: Leseform nur ohne globale Optionen
+    // Abnahme u3b: M1 bis M4
+    '$o=git push --no-verify',
+    '$null=git -c core.hooksPath=x push',
+    '@git push --no-verify',
+    '&{git push --no-verify}',
+    "$env:GIT_CONFIG_COUNT = 1; $env:GIT_CONFIG_KEY_0 = 'core.hooksPath'; $env:GIT_CONFIG_VALUE_0 = 'x'; git push",
+    'Set-Item env:GIT_CONFIG_COUNT 1; git push',
+    'git config core.hooksPath }',
+    'git config core.hooksPath <(true)',
+    'git config core.hooksPath >(true)',
+    'git push \\\n--no-verify',
+    'git push `\n--no-verify',
+    'git push ^\n--no-verify',
+    'git -c \\\ncore.hooksPath=x push',
+    'npm run \\\ncheck',
   ])('verweigert: %s', (c) => {
     expect(bash(c).exit).toBe(2)
   })
@@ -594,6 +609,10 @@ describe('Wächter-Hook guard.mjs: AM10 (Zuweisung, Bedingung), N19, N20b', () =
     'git log --oneline -3',
     'git commit -m "docs: --no-verify und config core.hooksPath x sind gesperrt"',
     'git push origin HEAD:main',
+    'git log \\\n  --oneline',
+    'cd C:\\x\\\nnpm run build',
+    '$o = git rev-parse HEAD',
+    'git config --get core.hooksPath',
   ])('Gegenprobe, kein Falschalarm: %s', (c) => {
     expect(bash(c).exit).toBe(0)
   })

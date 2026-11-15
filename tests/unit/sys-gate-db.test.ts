@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -128,6 +128,22 @@ describe('AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungene
     expect(unmarkierteStarts(zeilen)).toEqual([{ ...m('2', B), start: 't1' }])
     expect(unmarkierteStarts([startMarke([m('1', A)], 't1'), { ziel: 'db-push', start: 't2', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: B }] }])).toEqual([{ ...m('1', A), start: 't1' }]) // Marke mit anderem SHA deckt nicht ab
     expect(unmarkierteStarts([])).toEqual([])
+  })
+  it('M5: eine überholte Startmarke blockiert nicht (Push 1 mit SHA A scheitert, Datei korrigiert, Push 2 markiert B)', () => {
+    const zeilen = [startMarke([m('1', A)], 't1'), startMarke([m('1', B)], 't2'), { ziel: 'db-push', start: 't3', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: B }] }]
+    expect(unmarkierteStarts(zeilen)).toEqual([])
+    expect(unmarkierteStarts(zeilen.slice(0, 2))).toEqual([{ ...m('1', B), start: 't2' }]) // ohne Marke bleibt die jüngste offen, nicht die erste
+  })
+  it('H1: die Attrappe schreibt nie in einen Ordner unter tmp/proof (aufgelöst, ohne Groß/Klein)', () => {
+    const a = aufbau(text())
+    for (const frei of ['tmp/proof/_attrappe-test', 'TMP\\Proof\\_attrappe-test', './tmp/../tmp/proof/_attrappe-test', 'tmp/proof']) {
+      for (const modus of ['antrag', 'nachtrag', 'push']) {
+        const r = spawnSync(process.execPath, ['scripts/sys/gate-db.mjs', modus, '--trocken', '--liste', join(a.dir, 'liste.json'), '--dir', a.mig, '--freigaben', frei], { encoding: 'utf8' })
+        expect(r.status, `${modus} ${frei}`).toBe(2)
+        expect(r.stderr).toMatch(/nicht unter tmp\/proof/)
+      }
+    }
+    expect(existsSync('tmp/proof/_attrappe-test')).toBe(false)
   })
   it('nachtragMarken: nur mit positivem Beleg (Version steht mit remote in der Liste) und unverändertem SHA-256', () => {
     const liste = (remote: string) => ({ migrations: [{ local: '1', remote }] })

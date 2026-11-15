@@ -48,7 +48,9 @@ describe('Register gegen database.types.ts', () => {
 
   it('kein Registertext beendet die Rollback-Probe (`probes` klebt die Texte in begin; … rollback;)', () => {
     const t = text('../support/positiv.ts')
-    expect(t).not.toMatch(/\brollback\s*(;|to\b|and\b)|\bsavepoint\b|\bend\s+transaction\b/i)
+    expect(t).not.toMatch(/\b(rollback|abort)\s*(work\s*|transaction\s*)?(;|to\b|and\b)|\bsavepoint\b|\bend\s+(work|transaction)\b|\bprepare\s+transaction\b|\bcommit\b/i)
+    // Gegenprobe: die Formen, die das Muster fangen soll
+    for (const s of ['rollback;', 'rollback work;', 'rollback transaction;', 'abort;', 'rollback to x', 'savepoint a', 'end work', 'prepare transaction \'x\'']) expect(s, s).toMatch(/\b(rollback|abort)\s*(work\s*|transaction\s*)?(;|to\b|and\b)|\bsavepoint\b|\bend\s+(work|transaction)\b|\bprepare\s+transaction\b/i)
   })
 
   it('Geldspalten sind ganzzahlig: jede Spalte *_cents und prior_*, dazu die Wertfunktionen payout_preview und my_cancel_info nur int4 oder int8', () => {

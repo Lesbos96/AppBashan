@@ -72,9 +72,10 @@ export const startMarke = (offen, start = new Date().toISOString()) => ({ ziel: 
 // zeilen: geparste Zeilen von runs.jsonl. Migrationen aus Startmarken, für die es keine Marke `db-push` mit gleichem Pfad und SHA-256 gibt.
 export function unmarkierteStarts(zeilen) {
   const markiert = new Set(zeilen.filter((z) => z.ziel === 'db-push').flatMap((z) => (z.migrationen ?? []).map((m) => `${m.pfad}\0${m.sha256}`)))
-  const offen = new Map()
-  for (const z of zeilen.filter((x) => x.ziel === 'db-push-start')) for (const m of z.migrationen ?? []) if (!markiert.has(`${m.pfad}\0${m.sha256}`)) offen.set(`${m.pfad}\0${m.sha256}`, { ...m, start: z.start })
-  return [...offen.values()]
+  // Je Pfad zählt nur die jüngste Startmarke (Reihenfolge der Datei): eine überholte (Push scheiterte, Datei korrigiert, zweiter Push markiert) soll den Nachtrag nicht dauerhaft blockieren.
+  const jüngste = new Map()
+  for (const z of zeilen.filter((x) => x.ziel === 'db-push-start')) for (const m of z.migrationen ?? []) jüngste.set(m.pfad, { ...m, start: z.start })
+  return [...jüngste.values()].filter((m) => !markiert.has(`${m.pfad}\0${m.sha256}`))
 }
 
 // Nachtrag: Marke nur mit positivem Beleg (die Version steht in der Liste mit `remote`) und unverändertem SHA-256. Noch nicht angewendete Migrationen bleiben stumm offen;

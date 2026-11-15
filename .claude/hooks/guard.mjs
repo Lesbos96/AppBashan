@@ -238,7 +238,8 @@ const HOOKSPATH = 'core.hooksPath setzen ist gesperrt; `npm run prepare` setzt e
 // Umgebung vor irgendeinem git im ganzen Befehl (`export GIT_CONFIG_COUNT=1; git push`, `$env:GIT_CONFIG_COUNT=1; git push`, `env "GIT_CONFIG_COUNT=1" git push`); `GLOBAL` und `SYSTEM` entfallen,
 // weil das lokal gesetzte `.githooks` gewinnt. Mit `=`, damit ein Commit-Text, der den Namen nur nennt, nicht trifft.
 function gitUmgebung(befehl) {
-  if (!/\bGIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+|PARAMETERS)=/i.test(befehl)) return null
+  // `NAME=`, `NAME =` (PowerShell `$env:NAME = 1`) und `env:NAME` (`Set-Item env:NAME 1`).
+  if (!/\bGIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+|PARAMETERS)\s*=|\benv:GIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+|PARAMETERS)\b/i.test(befehl)) return null
   return [...befehl.matchAll(GIT_WORT)].some((m) => istGit(m[0])) ? `${HOOKS_AN} (GIT_CONFIG_* vor git ist gesperrt).` : null
 }
 
@@ -247,12 +248,14 @@ function gitUmgebung(befehl) {
 // `git config user.name edit`, `git grep core.hooksPath`, `git -C x config core.hooksPath`. Bekannte Grenzen: Variablen als Schlüssel oder Flag (`"$K"`), Aliase, `include.path`, Schreiben nach `.git/config`, `GIT_DIR`.
 function gitGrund(seg, k, kahl) {
   const { roh, w } = gitWoerter(seg)
-  if (!roh.some(istGit)) return null
+  if (!roh.some(istGit) && !/^git\b/.test(k)) return null // auch wenn git an einer Hülle klebt (`$o=git push`, `@git push`, `&{git push}`): der Kern kennt es
   if (/--no-verify\b/.test(kahl) || w.some((x) => x.split('=')[0].length >= 9 && '--no-verify'.startsWith(x.split('=')[0]))) return `${HOOKS_AN} (\`--no-verify\`, auch abgekürzt oder in Anführungszeichen, ist gesperrt).`
   // Leseform nur als ganzes Segment: `git config [Leseflags] [get] core.hooksPath` ohne globale Optionen (Umleitungen sind schon entfernt); alles andere mit dem Schlüssel setzt, löscht oder ist nicht prüfbar.
   const wk = gitWoerter(k).w
   const ohneFlags = wk.slice(2).filter((x) => !/^(--(local|global|system|worktree|show-origin|show-scope|get|get-all|null)|-z)$/i.test(x))
-  const lesen = istGit(wk[0] ?? '') && wk[1]?.toLowerCase() === 'config' && ((ohneFlags.length === 1 && /^core\.hookspath$/i.test(ohneFlags[0])) || (ohneFlags.length === 2 && ohneFlags[0].toLowerCase() === 'get' && /^core\.hookspath$/i.test(ohneFlags[1])))
+  // Kein Lesen, wenn der Kern etwas abgeschnitten hat (`}` oder `)` als Wert) oder ein Wert eine Prozess-Ersetzung ist (`<(true)`, `>(true)`).
+  const kernGekuerzt = /[)}]\s*$/.test(seg.trim()) || roh.some((x) => /^[<>]\(/.test(x))
+  const lesen = !kernGekuerzt && istGit(wk[0] ?? '') && wk[1]?.toLowerCase() === 'config' && ((ohneFlags.length === 1 && /^core\.hookspath$/i.test(ohneFlags[0])) || (ohneFlags.length === 2 && ohneFlags[0].toLowerCase() === 'get' && /^core\.hookspath$/i.test(ohneFlags[1])))
   if (!lesen && w.some((x) => /(?:^|=)core\.hookspath/i.test(x))) return `${HOOKS_AN} (\`${HOOKSPATH}\`).`
   if (w.some((x) => x.toLowerCase() === 'config')) {
     if (w.some((x) => /^(?:-e|--edit|--remove-section|--rename-section|edit|remove-section|rename-section)$/i.test(x))) return `${HOOKS_AN} (\`git config edit\`, \`remove-section\` und \`rename-section\` sind gesperrt).`
@@ -265,6 +268,12 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
   if (tiefe > 4) return 'Shell-Verschachtelung tiefer als 4: nicht prüfbar.'
   const befehl = ohneHeredoc(roherBefehl)
   if (!stueck) {
+    // Zeilenfortsetzung (`\`, Backtick, `^` am Zeilenende) teilt einen Befehl in zwei Segmente: zusätzlich die zusammengezogene Lesart prüfen (die Zeilen einzeln bleiben geprüft).
+    const gezogen = befehl.replace(/[\\`^][ \t]*\r?\n/g, ' ')
+    if (gezogen !== befehl) {
+      const g = entscheideBefehl(gezogen, tiefe, stueck)
+      if (g) return g
+    }
     const env = gitUmgebung(befehl)
     if (env) return env
     for (const { roh } of segmente(befehl)) {

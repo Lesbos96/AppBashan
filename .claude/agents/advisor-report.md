@@ -20,7 +20,7 @@ Prüfe
 Bericht (Markdown)
 - Erste Zeile exakt: `Modell: <deine Modell-ID>`
 - Kopf mit Datum und geprüftem Umfang
-- Bei Abnahmen und Freigaben: je geprüfter Datei eine Zeile `SHA256: <hash> <pfad>` (das Gate vergleicht sie mit dem Endstand); bei Abnahmen den Hash aus dem Auftrag, bei DB- und Lösch-Freigaben den Hash aus dem Antrag abschreiben; DB- und Lösch-Freigaben brauchen zusätzlich genau eine Zeile `Urteil: frei` oder `Urteil: gesperrt`
+- Bei Abnahmen und Freigaben: je geprüfter Datei eine Zeile `SHA256: <hash> <pfad>` (das Gate vergleicht sie mit dem Endstand); bei Abnahmen und Lösch-Freigaben den Hash aus dem Auftrag, bei DB-Freigaben den Hash aus dem Antrag abschreiben; DB- und Lösch-Freigaben brauchen zusätzlich genau eine Zeile `Urteil: frei` oder `Urteil: gesperrt`
 - Findings nach Schwere (hoch, mittel, niedrig), je `Datei:Zeile – Problem – Fix`
 - Beantwortung der Prüffragen aus dem Auftrag
 - Stichprobenliste (Datei:Zeile, Ergebnis)

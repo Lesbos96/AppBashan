@@ -28,7 +28,7 @@ function kopiere(quelle, zielName) {
 const lesen = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null)
 const session = lesen(join(PROOF_ROOT, 'session.json'))
 const { modell, modelle, quelle: modellQuelle } = modellDerSitzung(session, process.cwd())
-const agents = existsSync(join(PROOF_ROOT, 'agents.jsonl')) ? readFileSync(join(PROOF_ROOT, 'agents.jsonl'), 'utf8').split('\n').filter(Boolean).map((z) => JSON.parse(z)) : []
+const agents = existsSync(join(PROOF_ROOT, 'agents.jsonl')) ? readFileSync(join(PROOF_ROOT, 'agents.jsonl'), 'utf8').split('\n').filter(Boolean).flatMap((z) => { try { return [JSON.parse(z)] } catch { return [] } }) : [] // eine beschädigte Zeile zählt nicht, bricht den Bericht aber nicht ab
 const berater = beraterDesSchritts(agents, schritt) // nur die Aufrufe dieses Schritts (der Hook stempelt jede Zeile mit dem Branch)
 
 const laeufe = {}

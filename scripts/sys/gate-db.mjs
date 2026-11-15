@@ -3,10 +3,11 @@
 // startet danach selbst `supabase db push`, liest die Liste neu (bis zu dreimal) und schreibt je tatsächlich angewendeter Migration die Marke `db-push` { pfad, sha256 } in runs.jsonl
 // (auch nach einem teilweisen Push). Weicht der Inhalt einer Datei nach dem Push vom freigegebenen SHA-256 ab, gibt es für sie keine Marke.
 // `nachtrag` (AM5): holt fehlende Marken aus den Startmarken nach, wenn der Push gelang, die Marken aber nicht geschrieben wurden (gleiche Prüfung: Liste, SHA-256).
-// `--trocken --liste <json> --dir <ordner> --freigaben <ordner>`: Attrappe ohne Datenbank, nur die Prüfung. Diese Optionen gibt es nur mit --trocken.
+// `--trocken --liste <json> --dir <ordner> --freigaben <ordner>`: Attrappe ohne Datenbank, nur die Prüfung (`antrag` und `nachtrag` schreiben in den Ordner `--freigaben`,
+// der nie unter tmp/proof liegen darf: Exit 2). Diese Optionen gibt es nur mit --trocken.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { marken, nachtragMarken, offeneMigrationen, parseFreigabe, pruefePush, startMarke, unmarkierteStarts } from './gate-db-lib.mjs'
 import { PROOF_ROOT, schrittName, sha256Datei } from './lib.mjs'
 
@@ -24,6 +25,14 @@ if (ungueltig) {
   process.exit(2)
 }
 
+// Die Attrappe schreibt (antrag, nachtrag) nur in einen Ordner außerhalb des echten Nachweisordners: sonst entstünde aus einer handgeschriebenen Liste eine echte Marke `db-push`,
+// die `fertig` aus tmp/proof liest. Vergleich aufgelöst und ohne Groß/Klein wie im Guard.
+const klein = (p) => resolve(p).replace(/\\/g, '/').toLowerCase()
+if (trocken && opt('--freigaben') && (klein(opt('--freigaben')) + '/').startsWith(klein(PROOF_ROOT) + '/')) {
+  console.error('Aufruf: --freigaben der Attrappe darf nicht unter tmp/proof liegen (dort liest fertig die echten Marken).')
+  process.exit(2)
+}
+
 function fehler(text) {
   console.error(`GATE-DB BLOCKIERT:\n- ${text}`)
   process.exit(1)
@@ -31,7 +40,7 @@ function fehler(text) {
 
 const SUPABASE = 'node_modules/supabase/dist/supabase.js'
 function liesListe() {
-  const aus = execFileSync(process.execPath, [SUPABASE, 'migration', 'list', '--linked', '--output-format', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+  const aus = execFileSync(process.execPath, [SUPABASE, 'migration', 'list', '--linked', '--output-format', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 120_000 })
   return JSON.parse(aus.slice(Math.max(0, aus.search(/[{[]/)))) // ein eventueller Vorspann vor der Klammer wird abgeschnitten
 }
 
@@ -105,6 +114,7 @@ for (let versuch = 1; versuch <= 3 && !m; versuch++) {
     m = marken(offen, offeneMigrationen(liesListe(), 'supabase/migrations'), sha256Datei)
   } catch (e) {
     letzterFehler = e.message.split('\n')[0]
+    if (versuch < 3) await new Promise((r) => setTimeout(r, 3000))
   }
 }
 if (!m) fehler(`Liste nach dem Push nicht lesbar (${letzterFehler}), keine Marke. Danach \`npm run db:nachtrag\` (holt die Marken aus der Startmarke nach).`)
