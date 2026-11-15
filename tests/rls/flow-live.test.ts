@@ -27,8 +27,8 @@ const OFFER: Money = { total: 150000, fee: 14500, net: 12083, vat: 2417, payout:
 const ZERO: Money = { total: 0, fee: 0, net: 0, vat: 0, payout: 0 }
 
 const adm = newId()
-const [W1, W2A, W2B, W3, W4, W5] = [newId(), newId(), newId(), newId(), newId(), newId()]
-const OURS = [W1, W2A, W2B, W3, W4, W5]
+const [W1, W2A, W2B, W3, W4, W5, W6, W7] = [newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()]
+const OURS = [W1, W2A, W2B, W3, W4, W5, W6, W7]
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User
 let cust: TestUser
@@ -126,7 +126,7 @@ beforeAll(async () => {
   const past = "now() - interval '2 hours'"
   const future = "now() + interval '14 days'"
   const D21 = { districts: 'array[21]::smallint[]' }
-  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} ${job(W4, future)} ${ranged(W5)} commit;`)
+  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} ${job(W4, future)} ${ranged(W5)} ${job(W6, past)} ${job(W7, past)} commit;`)
   partnerA = partnerOf(pa.id)
 }, 600_000)
 
@@ -383,9 +383,51 @@ describe('W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confir
 
 type Row = { entry_id: string; request_id: string; kind: string; reverses_entry_id: string | null; created_at: string; total_cents: number; fee_schedule: string; fee_net_cents: number; fee_vat_cents: number; fee_cents: number; payout_cents: number; billing_month: string; partner_id: string }
 const mine = async (db: Aal2User['aal2']) => ((await (db.rpc('my_commissions') as unknown as Promise<{ data: Row[] | null; error: { code: string; message: string } | null }>)))
-const own = (rows: Row[] | null) => (rows ?? []).filter((r) => (OURS as string[]).includes(r.request_id))
+// Journal-Summen nur für W1 bis W5; W6 und W7 (s9k-1, Meldung) haben eigene Zeilen und gehören nicht in die Erwartung
+const own = (rows: Row[] | null) => (rows ?? []).filter((r) => ([W1, W2A, W2B, W3, W4, W5] as string[]).includes(r.request_id))
 const total = (rows: Row[], req: string): Money => sum(rows.filter((r) => r.request_id === req).map((r) => ({ total: r.total_cents, fee: r.fee_cents, net: r.fee_net_cents, vat: r.fee_vat_cents, payout: r.payout_cents })))
 const cents = (s: string) => { const m = /^(-?)(\d+),(\d{2})$/.exec(s); if (!m) throw new Error(`Betrag ${s}`); return (m[1] ? -1 : 1) * (Number(m[2]) * 100 + Number(m[3])) }
+
+describe('W6 Meldung „nicht stattgefunden“ während des Auftrags (Z1 → Z2), W7 nach dem Abschluss der Firma (Z3 → Z4); s9k-1', () => {
+  const accept = async (req: string) => expect((await fn('accept', pa.jwt2, { listingId: listingOf(req, partnerA), revisionId: rev1(req), shownPayoutCents: BOOKED.payout })).status).toBe(200)
+  const jobOf = async (req: string) => (await pa.aal2.rpc('my_jobs')).data?.find((j) => j.request_id === req)
+  const info = async (req: string) => (await cust.db.rpc('my_report_info', { p_request: req })).data?.[0]
+
+  live('W6: Frage offen (Server), Kunde meldet, die Firma ist gesperrt (Abschluss, Nachtrag) und sieht nur „in Prüfung“', async () => {
+    await accept(W6)
+    expect((await pa.aal2.rpc('start_job', { p_request: W6 })).error).toBeNull()
+    expect(await info(W6)).toMatchObject({ can_report: true })
+    expect((await info(W6))?.report_until).toBeTruthy()
+    expect((await pa.aal2.rpc('report_not_done', { p_request: W6 })).error).not.toBeNull() // Firma ist nicht der Kunde
+    expect((await cust.db.rpc('report_not_done', { p_request: W6 })).error).toBeNull()
+    const s = step('W6', '1 accept, start_job, report_not_done (Kunde)', W6)
+    expect(s.status).toBe('in_progress')
+    expect(await info(W6)).toMatchObject({ can_report: false, report_until: null })
+    expect((await pa.aal2.rpc('complete_job', { p_request: W6 })).error?.message).toBe('under_review')
+    expect(await fn('change-propose', pa.jwt2, { requestId: W6, changes: { hours: 6 }, preview: true })).toEqual({ status: 409, body: { error: 'under_review' } })
+    expect(await jobOf(W6)).toMatchObject({ under_review: true, status: 'in_progress', can_start: false })
+    expect(snap(W6)).toEqual(s)
+    expect((await cust.db.rpc('complete_job', { p_request: W6 })).error?.message).toBe('invalid_transition')
+  })
+
+  live('W7: Firma schließt ab, der Kunde kann noch melden (Server-Signal), danach in Prüfung', async () => {
+    await accept(W7)
+    expect((await pa.aal2.rpc('start_job', { p_request: W7 })).error).toBeNull()
+    expect((await pa.aal2.rpc('complete_job', { p_request: W7 })).error).toBeNull()
+    expect(step('W7', '1 accept, start_job, complete_job (Firma)', W7).status).toBe('completed')
+    expect(await info(W7)).toMatchObject({ can_report: true })
+    expect(await jobOf(W7)).toMatchObject({ under_review: false })
+    expect((await cust.db.rpc('report_not_done', { p_request: W7 })).error).toBeNull()
+    expect(step('W7', '2 report_not_done (Kunde, nach completed)', W7).status).toBe('completed')
+    expect(await info(W7)).toMatchObject({ can_report: false })
+    expect(await jobOf(W7)).toMatchObject({ under_review: true, status: 'completed' })
+  })
+
+  live('my_report_info: fremde Konten und Firma bekommen not_found', async () => {
+    expect((await pa.aal2.rpc('my_report_info', { p_request: W7 })).error?.message).toBe('not_found')
+    expect((await pb.aal2.rpc('my_report_info', { p_request: W7 })).error?.message).toBe('not_found')
+  })
+})
 
 describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold', () => {
   live('Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (W1 = T, W2A 0, W2B 0, W3 Pauschale 6.900, W4 0, W5 noch keine Zeile)', async () => {
