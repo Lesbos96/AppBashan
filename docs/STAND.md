@@ -17,7 +17,7 @@ Kein Selbstläufer: Beks entscheidet zuerst über `docs/BEKS.md` (Nr. 1 und 2 au
 1. Kleiner R3-Schritt N15 (zwölf `'us'`-Funktionen inkl. `my_report_info`: EXECUTE für `service_role` entziehen, vorher Aufrufer in den Edge Functions prüfen) zusammen mit s9k1-1 (Löschen gegen Meldung sperren).
 2. Beschlossene Folgearbeiten aus den Antworten (Pauschale erst ab `termin_at`, Kontaktsperre nach jedem Storno ohne Pauschale: Migrationen, R3; zwei Sätze in `geld.md`).
 3. N-12 Doppelanfrage (GOLIVE 23, R2) · Belege-Migration S9i7-12 (R3) · Mailversand (GOLIVE 35, 36) · Härtung mit Turnstile · Produktivprojekt · Hosting · Rechtstexte · Abnahme. Reihenfolge: `docs/SYSTEM_VORSCHLAG.md` Abschnitt 3 i.
-Nach der Probe dürfen die `ask`-Regeln für commit, merge, rm, dotenv entfallen (Beks bestätigt); für `git push` fragt `docs/BEKS.md` Nr. 2.
+Nach der Probe dürfen laut Arbeitssystem die `ask`-Regeln für commit, merge, rm, dotenv entfallen (die Änderung an `.claude/settings.json` ist ein eigener R3-Schritt, nicht Teil von s9k-1); für `git push` fragt `docs/BEKS.md` Nr. 2.
 
 ## Wartet auf Beks
 - `docs/BEKS.md`: 3 Fragen (7-Tage-Grenze auch für `check` und `e2e`? `ask`-Regel für `git push` behalten? Wer prüft `reported_jobs`, bis wann?).
