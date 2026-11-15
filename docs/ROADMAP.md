@@ -100,7 +100,7 @@ Keine Screens. Die App bekommt nur die Module, die S8b anbindet.
 - [x] (Anmeldung und `/anmelden` S8b-1, Absenden über `quote` S8b-2, 2026-10-31) Anmelden wie in `16` („Mit E-Mail-Link anmelden") und `/anmelden` (Magic-Link-Rückkehr, Code-Eingabe) über das Auth-Modul aus S8a; Absenden über `quote`
 - [x] (S8b-3, 2026-11-01) Foto-Uploads zu Anfragen: Server-Pfad und atomares Limit, nur JPEG im Bucket, Aufräum-Job, Upload-Zustände auf der Bestätigung
 - [ ] Aufträge-Liste wie `13` (Anfragen und Mietanfragen, Aktiv/Erledigt), Detail mit Timeline und Tarifstand wie `14`
-- [ ] „Anfrage zurückziehen" wie `14` läuft über die Funktion `withdraw` (S9a). „Anfrage bearbeiten" entfällt.
+- [x] (s9k-1, 2026-11-15) „Anfrage zurückziehen" wie `14` läuft über die Funktion `withdraw` (S9a). „Anfrage bearbeiten" entfällt.
 
 ## S9a bis S9i · Partner, verbindliche Buchung, Provisions-Journal
 Schritte, Umfang, Migrationen und Tests: `docs/S9_KONZEPT.md`, Abschnitt 13. Jeder Schritt ist eine Session.

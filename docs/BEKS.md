@@ -18,6 +18,13 @@ Die 15 Fragen vom 2026-11-14 sind beantwortet (ENTSCHEIDUNGEN Nr. 148 bis 162); 
 - Aufwand: keiner (Einstellung in `.claude/settings.json`, R3)
 - Quelle: Abnahme u3b, Rat von Fable; OFFEN u3b-1
 
+### 3. Wer beendet eine Kundenmeldung „nicht stattgefunden“, und bis wann?
+- Worum es geht: Meldet der Kunde „nicht stattgefunden“ (ab `termin_at`, auch nach dem Abschluss der Firma bis 7 Tage nach dem Termin), ist der Auftrag in Prüfung (s9k-1). Die Firma kann dann nicht starten, abschließen, absagen oder einen Nachtrag stellen; der Kunde kann nicht stornieren und keinen Nachtrag annehmen; das Löschen seines Kontos wartet (`under_review`). Das Ende kommt nur von admin (`admin_correct`, Liste `reported_jobs`, nur per Skript `npm run admin:call`). Es gibt keine Oberfläche und keine Benachrichtigung bei einer Meldung.
+- Empfehlung: Vor dem Öffnen von `booking_open` legst du fest, wer `reported_jobs` wie oft ansieht (zum Beispiel du, täglich, Entscheidung innerhalb von zwei Werktagen) und trägst es in GOLIVE ein. Die Admin-Oberfläche bleibt unter „Später“.
+- Bei „anderer Weg“ (zum Beispiel Frist, nach der die Meldung von selbst gilt oder verfällt): eigene Entscheidung, sie ändert T14 und T15 in `docs/S9_KONZEPT.md` und wäre ein eigener R3-Schritt.
+- Aufwand: bei der Empfehlung keiner (Betrieb), sonst mittel (R3)
+- Quelle: Planprüfung und Abnahme s9k-1; OFFEN s9k1-1, s9k1-2
+
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
 - Zwei Bestätigungen stehen nur in `docs/OFFEN.md`: Obergrenze für Nachträge je Auftrag und Stunde (S9i7-4) und eine einzige USt.-Regel für alle Firmen bis Phase 2 (S9b0-B).
