@@ -1,17 +1,18 @@
 # MoveNow · Stand
 
-Stand 2026-11-15, nach Schritt u3b (System-Nacharbeiten). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-15, nach Schritt u3-1 (outbox_dispatch, Register-Nachzug). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9p-1 (Provisionsstaffel) gebaut und auf `main`: Kunde (Anfrage, Angebote, Nachtrag, Storno, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung).
-- Arbeitssystem: u1, u1b, u2, u2b, u3 und u3b sind erledigt. u3: Positivzeilen-Register `tests/support/positiv.ts` (77 Funktionen mit Positivzeile, 2 in der Ausnahmeliste; eine neue Funktion ohne Eintrag macht `check` rot), `mockRpc<'name'>` bindet e2e-Mocks an `Returns`.
+- Arbeitssystem: u1, u1b, u2, u2b, u3, u3b und u3-1 sind erledigt. u3: Positivzeilen-Register `tests/support/positiv.ts` (78 Funktionen mit Positivzeile, 1 in der Ausnahmeliste; eine neue Funktion ohne Eintrag macht `check` rot), `mockRpc<'name'>` bindet e2e-Mocks an `Returns`.
 - u3b: Guard-git-Block positionsunabhängig neu (M5, M6, M7, N11; Falschalarme `user.name edit`, `git grep core.hooksPath` bleiben, OFFEN u3b-1); der Bericht zählt Berater nur für den eigenen Schritt (der Hook stempelt `agents.jsonl` mit dem Branch); AM5: `db-push-start` vor dem CLI-Start, dreimal Neulesen, `npm run db:nachtrag`; `npm run bericht` legt die genannten Nachweise (auch Logs) selbst in den Index (`stageNachweise`); Rot-Beweis der `fertig`-Tests nachgeholt; `tests/rls/positiv.test.ts` mit SHA unter `ausgenommen` im Lösch-Register (positiv.ts bleibt dort, Urteil Fable); S9i3-7 geschlossen.
 - Beks hat die 15 Fragen vom 2026-11-14 beantwortet (`docs/ENTSCHEIDUNGEN.md` Nr. 148 bis 162); Folgearbeiten stehen in `docs/OFFEN.md`, gebaut ist davon nichts.
-- Datenbank Dev: 62 Migrationen, lokal = remote bis `20261114100000` (0062). Nächste Migration 0063.
+- u3-1: Migration 0063 entzieht `service_role` EXECUTE an `outbox_dispatch` (nur der Cron als Eigentümer; Ursache des 42501: kein USAGE auf `private`, `vault`, `net`). Register: `outbox_dispatch` als Positivzeile (`als: 'owner'`), `Ausnahme` nur noch `keine_fixture` mit `ausfuehren`; Setup `betrieb` ohne ungefiltertes `update public.outbox`; Typregeln N4, N12, M1; Cron-Beleg in `outbox.test.ts`. Neue Pins in `loesch-register.json`. Rest von u3-4 steht in OFFEN (N7, N13, N15, N18, N21).
+- Datenbank Dev: 63 Migrationen, lokal = remote bis `20261115092753` (0063). Nächste Migration 0064.
 - Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung und GOLIVE 34 erledigt sind.
 
 ## Nächster Schritt
-**u3-1 + u3-4** (Migration 0063 und Register-Nachzug, R3, Sonnet 5.5, Effort hoch): EXECUTE für `service_role` an `outbox_dispatch` (und die elf `'us'`-Funktionen, N15) entziehen, Ausnahme streichen, Funde N1, N3 bis N8, N11 bis N13 aus `docs/OFFEN.md` u3-4. Jede Änderung an `tests/support/positiv.ts` macht `check` rot, bis ihr Hash in `scripts/sys/loesch-register.json` nachgeführt ist (Gate-Datei, braucht Fable-Abnahme); das Gleiche gilt für `tests/rls/positiv.test.ts`. N18: `payout_preview` und `my_cancel_info` zusätzlich in `NieAusnahme`/Pflichtliste des Unit-Tests; N19: ein roter Lauf für den Geldtest (`total_cents: 'numeric'` setzen). Gelang ein Push ohne Marken: `npm run db:nachtrag`.
+**Probe s9k-1** (siehe „Danach“ 1) oder vorher ein kleiner R3-Schritt für N15 (elf `'us'`-Funktionen: EXECUTE für `service_role` entziehen, vorher die Aufrufer in den Edge Functions prüfen). Jede Änderung an `tests/support/positiv.ts` oder `tests/rls/positiv.test.ts` macht `check` rot, bis ihr Hash in `scripts/sys/loesch-register.json` nachgeführt ist (Gate-Datei, braucht Fable-Abnahme). Gelang ein Push ohne Marken: `npm run db:nachtrag`.
 
 ## Danach
 1. Probe: ein R3-Schritt mit dem neuen System (Vorschlag: **s9k-1**, Meldung „nicht stattgefunden“ als ein Zustandsablauf, GOLIVE 34). Zeit und Rückfragen notieren, mit s9i-7c2 vergleichen. Danach dürfen die `ask`-Regeln für commit, merge, rm, dotenv entfallen; für `git push` fragt `docs/BEKS.md` Nr. 2.

@@ -1,7 +1,7 @@
 // Outbox (S9c-11 K1, K2, K4; Migration 0036). Rollback-Proben: Claim und Mark (disjunkte Mengen, Lease, fünfter Versuch), Aufräumen im Cron,
 // feste Fehlercodes. Alle bestehenden offenen Zeilen werden im Setup auf `sent` gesetzt, damit Reste anderer Läufe nichts verfälschen (Rollback).
 import { describe, expect, it } from 'vitest'
-import { probes, type Step } from '../support/owner.ts'
+import { ownerSql, probes, type Step } from '../support/owner.ts'
 
 const ISOLATE = `update public.outbox set status = 'sent' where status in ('pending', 'sending');`
 // Die ID jeder Zeile steht danach in app.o36_<key>: service_role darf `outbox` nicht lesen, die Schritte rufen nur Funktionen.
@@ -60,6 +60,19 @@ describe('outbox_claim und outbox_mark', () => {
     expect(r['dispatch']).toBe('ok')
     expect(r['e']).toBe('= failed:5:lease_expired')
     expect(r['f (Lease läuft noch)']).toBe('= sending:5:')
+  })
+
+  it('outbox_dispatch ist nur für den Eigentümer (Cron): service_role bekommt permission denied for function', () => {
+    const r = probes('', [svc('dispatch als service_role', 'perform public.outbox_dispatch()')])
+    err(r['dispatch als service_role'], 'permission denied for function outbox_dispatch')
+  })
+
+  it('Cron-Weg: der Job läuft als Eigentümer der Funktion und war zuletzt erfolgreich (nur lesen)', () => {
+    const [j] = ownerSql(`select (j.username = pg_get_userbyid(p.proowner))::text as als_eigentuemer,
+      (select d.status || ':' || (d.start_time > now() - interval '5 minutes') from cron.job_run_details d where d.jobid = j.jobid and d.status in ('succeeded', 'failed') order by d.start_time desc limit 1) as letzter_lauf
+      from cron.job j, pg_proc p where j.jobname = 'outbox-dispatch' and p.oid = 'public.outbox_dispatch()'::regprocedure`)
+    expect(j?.als_eigentuemer).toBe('true')
+    expect(j?.letzter_lauf).toBe('succeeded:true') // der jüngste beendete Lauf, höchstens 5 Minuten alt
   })
 
   it('K4: feste Fehlercodes (CHECK), unbekannter Text wird zu smtp_error, mark wirkt nur auf sending', () => {

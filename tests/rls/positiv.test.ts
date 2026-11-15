@@ -20,7 +20,7 @@ const C: Ctx = {
 type Flach = {
   als: 'authenticated' | 'anon' | 'service_role' | 'owner'; user?: string; aal?: 'aal1' | 'aal2'
   welt: Welt; ausfuehren: string
-  aufruf: (c: Ctx) => string; vorher?: (c: Ctx) => string; davor?: (c: Ctx) => string; gegen?: { user: string; aal: 'aal1' | 'aal2' }
+  aufruf: (c: Ctx) => string; vorher?: (c: Ctx) => string; gegen?: { user: string; aal: 'aal1' | 'aal2' }[]
   ergebnis: 'void' | 'zeilen' | 'wert'; spalten?: Record<string, string>; typ?: string
 }
 const EINTRAEGE = Object.entries(REGISTER) as unknown as [string, Flach][]
@@ -30,23 +30,22 @@ const TYPNAME = `case when t.typtype = 'e' then 'enum' else t.typname end`
 /** Schritte eines Eintrags und die Prüfung seiner Ergebnisse; `i` macht Temp-Tabelle und Einstellung eindeutig. */
 function schritte(fn: string, e: Flach, i: number): { steps: Step[]; fehler: (r: Record<string, string>) => string[] } {
   const call = e.aufruf(C)
-  const davor = e.davor ? `${e.davor(C)};` : ''
   const claims = e.als === 'authenticated' ? { sub: e.user!, aal: e.aal! } : undefined
   const steps: Step[] = []
   if (e.vorher) steps.push({ name: `${fn}|vorher`, sql: e.vorher(C).replace(/;?\s*$/, '') })
-  if (e.ergebnis === 'void') steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `${davor} perform ${call}` })
+  if (e.ergebnis === 'void') steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `perform ${call}` })
   if (e.ergebnis === 'wert') {
-    steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `${davor} perform set_config('app.pos_${i}', (select ${TYPNAME} from pg_type t where t.oid = (select pg_typeof(s.v)::oid from (select ${call} as v offset 0) s)), true)` })
+    steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `perform set_config('app.pos_${i}', (select ${TYPNAME} from pg_type t where t.oid = (select pg_typeof(s.v)::oid from (select ${call} as v offset 0) s)), true)` })
     steps.push({ name: `${fn}|2`, sql: `=current_setting('app.pos_${i}')` })
   }
   if (e.ergebnis === 'zeilen') {
-    steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `${davor} create temp table pos_${i} as select * from ${call}` })
+    steps.push({ name: `${fn}|1`, as: e.als, claims, sql: `create temp table pos_${i} as select * from ${call}` })
     steps.push({
       name: `${fn}|2`,
       sql: `=(select (select count(*) from pg_temp.pos_${i})::text || '|' || string_agg(a.attname || ':' || ${TYPNAME}, ',' order by a.attnum) from pg_attribute a join pg_type t on t.oid = a.atttypid where a.attrelid = 'pg_temp.pos_${i}'::regclass and a.attnum > 0 and not a.attisdropped)`,
     })
   }
-  if (e.gegen) steps.push({ name: `${fn}|gegen`, as: 'authenticated', claims: { sub: e.gegen.user, aal: e.gegen.aal }, sql: `=(select count(*) from ${call})` })
+  e.gegen?.forEach((g, k) => steps.push({ name: `${fn}|gegen${k}`, as: 'authenticated', claims: { sub: g.user, aal: g.aal }, sql: `=(select count(*) from ${call})` }))
 
   const fehler = (r: Record<string, string>): string[] => {
     const out: string[] = []
@@ -61,16 +60,14 @@ function schritte(fn: string, e: Flach, i: number): { steps: Step[]; fehler: (r:
       else {
         if (Number(m[1]) < 1) out.push(`${fn}: keine Zeile (Akteur ${e.als}, gültiger Zustand)`)
         const ist = Object.fromEntries(m[2]!.split(',').map((p) => p.split(':') as [string, string]))
-        const einzeln = Object.keys(ist).length === 1 && Object.keys(ist)[0] === fn // `setof text`: Spaltenname ist der Funktionsname
         const soll = e.spalten!
-        const gleich = einzeln ? Object.values(ist)[0] === Object.values(soll)[0] && Object.keys(soll).length === 1 : JSON.stringify(Object.entries(ist).sort()) === JSON.stringify(Object.entries(soll).sort())
-        if (!gleich) out.push(`${fn}: Spalten ist ${JSON.stringify(ist)}, soll ${JSON.stringify(soll)}`)
+        if (JSON.stringify(Object.entries(ist).sort()) !== JSON.stringify(Object.entries(soll).sort())) out.push(`${fn}: Spalten ist ${JSON.stringify(ist)}, soll ${JSON.stringify(soll)}`)
       }
     }
-    if (e.gegen) {
-      const g = r[`${fn}|gegen`] ?? ''
-      if (/^= [1-9]/.test(g)) out.push(`${fn}: Konto ohne Firma und Auftrag bekommt Zeilen (${g})`)
-    }
+    e.gegen?.forEach((_, k) => {
+      const g = r[`${fn}|gegen${k}`] ?? ''
+      if (/^= [1-9]/.test(g)) out.push(`${fn}: fremdes Konto ${k} bekommt Zeilen (${g})`)
+    })
     return out
   }
   return { steps, fehler }
@@ -100,6 +97,10 @@ describe('Positivzeilen-Register', () => {
     for (const r of rows) ist.set(String(r.n), [...(ist.get(String(r.n)) ?? []), String(r.x)])
     const soll = new Set([...Object.keys(REGISTER), ...Object.keys(AUSNAHMEN)])
     const fehler: string[] = []
+    for (const [fn, a] of Object.entries(AUSNAHMEN) as [string, { ausfuehren: string }][]) {
+      const x = ist.get(fn)
+      if (x && (x.length !== 1 || x[0] !== a.ausfuehren)) fehler.push(`${fn}: EXECUTE für „${x.join('/')}“, Ausnahme sagt „${a.ausfuehren}“`)
+    }
     for (const n of ist.keys()) if (!soll.has(n)) fehler.push(`${n}: Funktion in der Datenbank ohne Eintrag`)
     for (const n of soll) if (!ist.has(n)) fehler.push(`${n}: Eintrag ohne Funktion in der Datenbank`)
     for (const [fn, e] of EINTRAEGE) {

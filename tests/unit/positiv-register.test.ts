@@ -32,11 +32,8 @@ describe('Register gegen database.types.ts', () => {
     expect(funktionsnamen('    Functions: {\n' + namen.slice(1).map((n) => `      ${n}: { Args: never }\n`).join('') + '    Enums: {')).not.toContain(namen[0])
   })
 
-  it('Ausnahmen haben einen Grund; bekannte Fehler nennen den OFFEN-Eintrag', () => {
-    for (const [name, a] of Object.entries(AUSNAHMEN) as [string, { art: string; grund: string; offen?: string }][]) {
-      expect(a.grund.length, `${name}: Grund`).toBeGreaterThan(20)
-      if (a.art === 'bekannter_fehler') expect(a.offen, `${name}: OFFEN-Verweis`).toMatch(/^OFFEN [\w-]+$/)
-    }
+  it('Ausnahmen haben einen Grund', () => {
+    for (const [name, a] of Object.entries(AUSNAHMEN) as [string, { grund: string }][]) expect(a.grund.length, `${name}: Grund`).toBeGreaterThan(20)
   })
 
   it('Register und Test halten die Regeln der Planprüfung: keine Commits, kein db.ts, keine Auth-Nutzer, keine Abdeckungsfirma', () => {
@@ -64,10 +61,15 @@ describe('Register gegen database.types.ts', () => {
     expect(alle.filter(([, e]) => Object.keys(e.spalten ?? {}).some(geld)).length, 'es gibt Geldspalten im Register').toBeGreaterThan(10)
   })
 
-  it('Funktionen mit p_actor laufen nur als service_role (Typ erzwingt es, hier der Laufzeitblick)', () => {
+  it('Funktionen mit p_actor laufen nur als service_role, mit p_customer oder p_user als service_role oder Eigentümer (Typ erzwingt es, hier der Laufzeitblick)', () => {
     const typen = text('../../supabase/functions/_shared/database.types.ts')
-    const mitActor = [...typen.matchAll(/^ {6}([a-z_0-9]+): \{\n {8}Args: \{[^}]*\bp_actor: /gm)].map((m) => m[1]!)
+    const mit = (p: string) => [...typen.matchAll(new RegExp(`^ {6}([a-z_0-9]+): \\{\\s*Args: \\{[^}]*\\b(?:${p}): `, 'gm'))].map((m) => m[1]!)
+    const als = (n: string) => (REGISTER as Record<string, { als: string }>)[n]?.als
+    const mitActor = mit('p_actor')
     expect(mitActor.length).toBeGreaterThan(10)
-    for (const n of mitActor) expect((REGISTER as Record<string, { als: string }>)[n]?.als, n).toBe('service_role')
+    for (const n of mitActor) expect(als(n), n).toBe('service_role')
+    const mitKunde = mit('p_customer|p_user').filter((n) => n in REGISTER) // Ausnahmen haben keinen Akteur
+    expect(mitKunde.length).toBeGreaterThan(2)
+    for (const n of mitKunde) expect(['service_role', 'owner'], n).toContain(als(n))
   })
 })

@@ -32,11 +32,11 @@ export type Exec = '' | 's' | 'u' | 'us' | 'a' | 'aus'
 
 type Akteur = { als: 'authenticated'; user: string; aal: 'aal1' | 'aal2' } | { als: 'anon' } | { als: 'service_role' } | { als: 'owner' }
 type NurService = { als: 'service_role' }
-type WerFuer<N extends Name> = [Fns[N]['Args']] extends [never] ? Akteur : 'p_actor' extends keyof Fns[N]['Args'] ? NurService : Akteur
+type WerFuer<N extends Name> = [Fns[N]['Args']] extends [never] ? Akteur : 'p_actor' extends keyof Fns[N]['Args'] ? NurService : keyof Fns[N]['Args'] & ('p_customer' | 'p_user') extends never ? Akteur : NurService | { als: 'owner' }
 type Ergebnis<N extends Name> = [Ret<N>] extends [undefined]
   ? { ergebnis: 'void' }
   : Ret<N> extends readonly unknown[]
-    ? { ergebnis: 'zeilen'; spalten: { [C in keyof RowOf<N>]-?: PgFor<NonNullable<RowOf<N>[C]>> } }
+    ? { ergebnis: 'zeilen'; spalten: { [C in keyof RowOf<N>]-?: C extends `${string}_cents` | 'prior_fee' | 'prior_net' | 'prior_payout' | 'prior_total' | 'prior_vat' ? 'int4' | 'int8' : PgFor<NonNullable<RowOf<N>[C]>> } }
     : { ergebnis: 'wert'; typ: PgFor<NonNullable<Ret<N>>> }
 
 export type Eintrag<N extends Name> = WerFuer<N> &
@@ -47,13 +47,12 @@ export type Eintrag<N extends Name> = WerFuer<N> &
     aufruf: (c: Ctx) => string
     /** SQL als Eigentümer unmittelbar davor (Zustand herstellen). */
     vorher?: (c: Ctx) => string
-    /** plpgsql-Anweisungen als erlaubter Akteur unmittelbar davor. */
-    davor?: (c: Ctx) => string
-    /** Konto ohne Firma und ohne Auftrag ruft dasselbe auf: Ergebnis 0 Zeilen oder ein Fehler, nie eine Zeile (Spalten mit Beträgen, Listen, Kontakte). */
-    gegen?: { user: string; aal: 'aal1' | 'aal2' }
+    /** Fremde Konten rufen dasselbe auf: Ergebnis 0 Zeilen oder ein Fehler, nie eine Zeile (Spalten mit Beträgen, Listen, Kontakte). */
+    gegen?: { user: string; aal: 'aal1' | 'aal2' }[]
   }
 
-export type Ausnahme = { art: 'keine_fixture'; grund: string } | { art: 'bekannter_fehler'; grund: string; offen: string }
+/** Funktion ohne Fixture: `ausfuehren` steht wie im Register, der Katalogtest prüft es auch hier. */
+export type Ausnahme = { ausfuehren: Exec; grund: string }
 
 /** Beträge einer Gebühr in Cent (so liefert `splitFee`). */
 export type Split = { feeCents: number; feeNetCents: number; feeVatCents: number; payoutCents: number }
@@ -157,7 +156,6 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
     select public.admin_create_price_version('${U.adm}', 9995, date '2999-01-01', 'probe');
     select public.admin_set_price_config('${U.adm}', 9995, 'k', 1, 'cent', 'k');`,
   betrieb: (c) => `${BASE}
-    update public.outbox set status = 'sent' where status in ('pending', 'sending');
     ${outboxRow('a')}
     ${req(R.f1, 'fixed')} ${photo(R.f1)} ${readyPhotos(R.f1)} ${dist(R.f1)} ${accept(c, R.f1)}
     ${req(R.f2, 'fixed')} ${photo(R.f2)} ${photo(R.f2)} ${dist(R.f2)}
@@ -168,26 +166,27 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
 // ---------- Register ----------
 
 /** Nie Ausnahme (Auflage 5 der Planprüfung u3): Geld-, Zuschlags-, Rechte- und Kontaktwege. */
-type NieAusnahme =
-  | 'partner_accept' | 'partner_accept_basis' | 'confirm_offer' | 'confirm_offer_basis' | 'decide_change' | 'decide_change_basis' | 'propose_change' | 'propose_change_basis'
-  | 'cancel_by_customer' | 'cancel_by_customer_basis' | 'cancel_by_partner' | 'cancel_by_partner_basis' | 'admin_correct' | 'admin_correct_basis' | 'send_offer'
-  | 'payout_preview' | 'my_commissions' | 'export_commissions' | 'my_jobs' | 'my_job_changes' | 'my_request_offers' | 'quote_save_request' | 'start_job' | 'complete_job'
-  | 'job_contact' | 'register_partner' | 'admin_approve_partner' | 'admin_set_partner_status' | 'admin_grant_role'
+export const NIE_AUSNAHME = [
+  'partner_accept', 'partner_accept_basis', 'confirm_offer', 'confirm_offer_basis', 'decide_change', 'decide_change_basis', 'propose_change', 'propose_change_basis',
+  'cancel_by_customer', 'cancel_by_customer_basis', 'cancel_by_partner', 'cancel_by_partner_basis', 'admin_correct', 'admin_correct_basis', 'send_offer',
+  'payout_preview', 'my_cancel_info', 'my_commissions', 'export_commissions', 'my_jobs', 'my_job_changes', 'my_request_offers', 'quote_save_request', 'start_job', 'complete_job',
+  'job_contact', 'register_partner', 'admin_approve_partner', 'admin_set_partner_status', 'admin_grant_role',
+] as const satisfies readonly Name[] // ein Tippfehler oder eine entfernte Funktion ist ein Typfehler (check)
+type NieAusnahme = (typeof NIE_AUSNAHME)[number]
 
 export const AUSNAHMEN = {
-  outbox_dispatch: {
-    art: 'bekannter_fehler',
-    grund: 'service_role hat EXECUTE, der Aufruf scheitert aber mit 42501 (kein Recht auf Schema private; die Funktion ist security invoker). Der Cron läuft als Eigentümer und ist davon nicht betroffen; fail closed, kein Schaden.',
-    offen: 'OFFEN u3-1',
+  quote_save_booking: {
+    ausfuehren: 's',
+    grund: 'Miete gehört zu Phase 2 (docs/ROADMAP.md); es gibt kein Angebot der Vermieter und keine Fixture. Erreichbar nur über `quote` (service_role), endet ohne Zeilen am Fremdschlüssel.',
   },
-  quote_save_booking: { art: 'keine_fixture', grund: 'Miete gehört zu Phase 2 (docs/ROADMAP.md); es gibt kein Angebot der Vermieter und keine Fixture, die Funktion ist für Kunden nicht erreichbar.' },
 } as const satisfies Partial<Record<Exclude<Name, NieAusnahme>, Ausnahme>>
 
 const fee = (c: Ctx, s: Split) => `${c.vr}, ${s.feeCents}, ${s.feeNetCents}, ${s.feeVatCents}, ${s.payoutCents}, ${c.fsv}, ${c.vrv}`
 const cust = { als: 'authenticated', user: U.cust, aal: 'aal1' } as const
 const partnerA = { als: 'authenticated', user: U.pa, aal: 'aal2' } as const
 const admin2 = { als: 'authenticated', user: U.adm, aal: 'aal2' } as const
-const fremd = { user: U.cust2, aal: 'aal2' } as const
+const fremd: { user: string; aal: 'aal1' | 'aal2' }[] = [{ user: U.cust2, aal: 'aal2' }] // Konto ohne Firma und ohne Auftrag
+const fremdeFirma = { user: U.pb, aal: 'aal2' } as const // aktive Partner-Firma ohne Bezug zum Auftrag
 
 export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N> } = {
   // ----- Welt angebot: Anfragen mit Listings, Angebote, Bestätigung -----
@@ -210,6 +209,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   withdraw_offer: { als: 'authenticated', user: U.pb, aal: 'aal2', welt: 'angebot', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.withdraw_offer(${LS('o_o3_b')})` },
   decline_listing: { als: 'authenticated', user: U.pc, aal: 'aal2', welt: 'angebot', ausfuehren: 'us', ergebnis: 'void', aufruf: () => `public.decline_listing(${LS('l_o4_c')})` },
   withdraw: { ...cust, welt: 'angebot', ausfuehren: 'us', ergebnis: 'wert', typ: 'enum', aufruf: () => `public.withdraw('${R.o6}')` },
+  // Gegenzeilen zu payout_preview und my_cancel_info (Gebühr nur für Partner lesbar): fee-schedule.test.ts:71, 112 und cancellation-partner-preview.test.ts:186.
   payout_preview: { ...partnerA, welt: 'angebot', ausfuehren: 'u', ergebnis: 'wert', typ: 'int8', aufruf: () => 'public.payout_preview(150000)' },
   distribute_request: { als: 'service_role', welt: 'angebot', ausfuehren: 's', ergebnis: 'wert', typ: 'int4', aufruf: () => `public.distribute_request('${R.o5}')` },
 
@@ -237,7 +237,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: () => `public.my_job_partner('${R.j1}')`,
   },
   job_contact: {
-    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: [...fremd, fremdeFirma],
     spalten: { email: 'text', from_address: 'text', name: 'text', phone: 'text', preferred_date: 'date', stairs_door: 'text', time_window: 'text', to_address: 'text' },
     aufruf: () => `public.job_contact('${R.j1}')`,
   },
@@ -440,7 +440,10 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     spalten: { id: 'int8', kind: 'text', partner_email: 'text', recipient_id: 'uuid', recipient_kind: 'text', request_id: 'uuid' },
     aufruf: () => 'public.outbox_claim(5)',
   },
+  // void: mit fünf oder mehr fremden offenen Zeilen auf Dev bleibt 'a' ungeclaimt und mark ist ein Leeraufruf; die Wirkung belegt outbox.test.ts.
   outbox_mark: { als: 'service_role', welt: 'betrieb', ausfuehren: 's', ergebnis: 'void', aufruf: () => `public.outbox_mark(current_setting('app.o36_a')::bigint, true, null)` },
+  // Nur der Cron (Eigentümer) ruft sie auf (0063); service_role hat kein EXECUTE und kein Recht auf private, vault, net.
+  outbox_dispatch: { als: 'owner', welt: 'betrieb', ausfuehren: '', ergebnis: 'void', aufruf: () => 'public.outbox_dispatch()' },
   route_cleanup: { als: 'service_role', welt: 'betrieb', ausfuehren: 's', ergebnis: 'void', aufruf: () => 'public.route_cleanup()' },
   complete_due: { als: 'service_role', welt: 'betrieb', ausfuehren: 's', ergebnis: 'wert', typ: 'int4', aufruf: () => 'public.complete_due()' },
   expire_changes: { als: 'service_role', welt: 'betrieb', ausfuehren: 's', ergebnis: 'wert', typ: 'int4', aufruf: () => 'public.expire_changes()' },
