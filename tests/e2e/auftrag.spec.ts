@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { price } from './anfrage-helpers'
 import { mockAuth, signInWithCode } from './auth-helpers'
-import { cors, expect, reply, test } from './backend'
+import { cors, expect, mockRpc, reply, test } from './backend'
 import { collectErrors } from './console'
 
 /*
@@ -28,6 +28,8 @@ type State = { status: string; calls: { body: Record<string, unknown> }[]; answe
 
 /** Anfragen: Liste und Detail antworten mit dem Status aus `state`; `cancel-customer` mit den vorbereiteten Antworten, nacheinander. */
 async function mock(page: Page, state: State) {
+  // Termin 2026-12-15 liegt in der Zukunft: der Server lässt noch keine Meldung zu
+  await mockRpc(page, 'my_report_info', () => [{ can_report: false, report_until: null }])
   await page.route('**/rest/v1/service_requests**', (r) => {
     state.urls?.push(r.request().url())
     const single = (r.request().headers()['accept'] ?? '').includes('vnd.pgrst.object')

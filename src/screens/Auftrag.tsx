@@ -16,9 +16,10 @@ import { Absage } from './auftrag/Absage'
 import { Angebote } from './auftrag/Angebote'
 import { Nachtrag } from './auftrag/Nachtrag'
 import { Termin } from './auftrag/Termin'
+import { Zurueckziehen } from './auftrag/Zurueckziehen'
 import { dayText } from './anfrage/format'
 
-const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, cancel_fee_waived, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
+const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, not_done_resolved_at, cancel_fee_waived, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const windows: Record<string, string> = { morning: '8 bis 11 Uhr', midday: '11 bis 14 Uhr', afternoon: '14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
 
@@ -104,9 +105,10 @@ function Detail({ userId, id }: { userId: string; id: string }) {
 
       {r.status === 'cancelled_by_partner' && <Absage id={r.id} userId={userId} />}
       {r.status === 'offered' && <Angebote id={r.id} onDone={done} />}
-      {live && <Nachtrag id={r.id} onDone={done} />}
-      {live && started && !r.not_done_reported_at && <Termin id={r.id} onDone={done} />}
-      {live && r.not_done_reported_at && (
+      {(r.status === 'requested' || r.status === 'awaiting_offer' || r.status === 'offered') && <Zurueckziehen id={r.id} onDone={done} />}
+      {live && !r.not_done_reported_at && <Nachtrag id={r.id} onDone={done} />}
+      {(live || r.status === 'completed') && !r.not_done_reported_at && <Termin id={r.id} completed={r.status === 'completed'} onDone={done} />}
+      {(live || r.status === 'completed') && r.not_done_reported_at && !r.not_done_resolved_at && (
         <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
           Du hast gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
         </p>

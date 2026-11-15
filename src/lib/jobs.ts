@@ -65,7 +65,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   bad_input: 'Prüfe deine Angaben. Mit diesen Werten geht es nicht.',
   receipt_limit: 'Zu diesem Auftrag gibt es schon die höchste Zahl an Belegfotos (8).',
   bad_photo: 'Dieses Foto lässt sich nicht verwenden. Nimm ein anderes JPEG, PNG oder WebP.',
-  under_review: 'Für diesen Auftrag läuft eine Prüfung. Absagen geht gerade nicht.',
+  under_review: 'Für diesen Auftrag läuft eine Prüfung. Das geht gerade nicht.',
   late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Vor Ort anders als gebucht“ möglich.',
   no_call_out: 'Für diese Absage gibt es keine Pauschale mehr.',
   receipt_missing: 'Für die Pauschale brauchst du mindestens ein gültiges Belegfoto zu diesem Auftrag.',
@@ -84,12 +84,13 @@ const CODES: Record<string, JobErrorKind> = {
   offer_unavailable: 'gone',
   too_early: 'too_early',
   report_window_closed: 'window_closed',
+  under_review: 'under_review',
   retry: 'retry',
   unauthorized: 'unauthorized',
 }
 
 /** Wie lange ein Fehler die Anzeige veraltet: danach lädt der Auftrag neu. */
-export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'taken' || k === 'payout' || k === 'have_offer'
+export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'under_review' || k === 'taken' || k === 'payout' || k === 'have_offer'
 export const retryable = (k: JobErrorKind) => k === 'offline' || k === 'retry' || k === 'unavailable'
 
 export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' && Object.hasOwn(codes, code) ? codes[code] : undefined) ?? 'unavailable'
@@ -106,7 +107,7 @@ export async function invoke(name: string, body: Record<string, unknown>, codes:
   throw new JobError('unavailable')
 }
 
-async function rpc(fn: 'complete_job' | 'report_not_done', requestId: string): Promise<void> {
+async function rpc(fn: 'complete_job' | 'report_not_done' | 'withdraw', requestId: string): Promise<void> {
   try {
     const { error } = await supabase.rpc(fn, { p_request: requestId })
     if (!error) return
@@ -178,8 +179,23 @@ export async function decideChange(revisionId: string, accept: boolean, shownTot
 export const completeJob = (requestId: string) => rpc('complete_job', requestId)
 export const reportNotDone = (requestId: string) => rpc('report_not_done', requestId)
 
-/** Nur die Anzeige; die Datenbank entscheidet mit der eigenen Uhr. */
+/** Nur die Anzeige der Storno-Stufe; die Datenbank entscheidet mit der eigenen Uhr. */
 export const terminStarted = (terminAt: string | null, now = Date.now()) => {
   const t = terminAt ? Date.parse(terminAt) : NaN
   return !Number.isNaN(t) && now >= t
 }
+
+export type ReportInfo = { canReport: boolean; reportUntil: Date | null }
+
+/** Serversignal zur Frage nach dem Termin (`my_report_info`): Meldung möglich und bis wann. Unlesbar: Fehler, nie ein Rückfall auf die Geräteuhr. */
+export async function loadReportInfo(requestId: string): Promise<ReportInfo> {
+  const { data, error } = await supabase.rpc('my_report_info', { p_request: requestId })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : undefined
+  if (!row || typeof row.can_report !== 'boolean') throw new Error('Meldefrist unlesbar')
+  const until = row.report_until ? new Date(row.report_until) : null
+  return { canReport: row.can_report, reportUntil: until && !Number.isNaN(until.getTime()) ? until : null }
+}
+
+/** Anfrage zurückziehen (nur bis zur Zusage); der Server prüft Eigentümer und Status. */
+export const withdrawRequest = (requestId: string) => rpc('withdraw', requestId)

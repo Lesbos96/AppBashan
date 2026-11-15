@@ -57,8 +57,8 @@ export function KontoLoeschen({ open, email, onClose, onDone }: { open: boolean;
             danach automatisch.
           </p>
           <p className="m-0 text-body">
-            Beendete Aufträge bleiben ohne Namen, Kontakt und Adressen erhalten. Offene Aufträge und Anfragen müssen vorher beendet sein: Bestätigte Aufträge kannst du im Auftrag stornieren,
-            Anfragen ohne Zusage laufen von selbst ab. Nach dem Termin beantwortest du im Auftrag, ob er stattgefunden hat.
+            Beendete Aufträge bleiben ohne Namen, Kontakt und Adressen erhalten. Offene Aufträge und Anfragen müssen vorher beendet sein: Anfragen ohne Zusage kannst du im Auftrag zurückziehen,
+            bestätigte Aufträge stornieren. Nach dem Termin beantwortest du im Auftrag, ob er stattgefunden hat.
           </p>
           <p className="m-0 text-body font-semibold">Das lässt sich nicht rückgängig machen.</p>
           <label className="flex min-h-11 items-center gap-3 rounded-grouped-list bg-surface p-4 shadow-card">
@@ -68,7 +68,7 @@ export function KontoLoeschen({ open, email, onClose, onDone }: { open: boolean;
           {error && (
             <div role="alert" className="flex flex-col gap-1">
               <p className="m-0 text-body">{accountErrorText[error.kind]}</p>
-              {error.kind === 'open_requests' && (
+              {(error.kind === 'open_requests' || error.kind === 'under_review') && (
                 <Link to="/auftraege" className="press flex h-11 items-center text-body font-semibold text-accent">
                   Zu den Aufträgen
                 </Link>

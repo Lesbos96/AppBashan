@@ -82,6 +82,16 @@ test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener 
   expect(jobs.starts).toEqual([])
 })
 
+for (const status of ['accepted', 'in_progress'] as const) {
+  test(`Kunde hat „nicht stattgefunden“ gemeldet (${status}): nur der Hinweis, kein Start, Abschluss, Absage, Nachtrag (S9i6b-3)`, async ({ page }) => {
+    await open(page, { myJobs: [job({ status, can_start: false, under_review: true })] })
+    await expect(card(page).getByRole('status').filter({ hasText: 'Der Kunde hat gemeldet, dass der Auftrag nicht stattgefunden hat' })).toBeVisible()
+    await expect(card(page).getByRole('button', { name: /Auftrag (starten|abschließen|absagen)/ })).toHaveCount(0)
+    await expect(card(page).getByRole('button', { name: /Nachtrag/ })).toHaveCount(0)
+    await noFee(page)
+  })
+}
+
 test('Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Status wechselt, der Auftrag wandert nach „Beendet“', async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })] })

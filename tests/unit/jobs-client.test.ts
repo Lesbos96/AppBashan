@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { snapshotStorno } from '../../src/lib/cancel'
-import { JobError, completeJob, confirmOffer, decideChange, jobErrorText, loadChange, loadOffers, loadReceipts, reportNotDone, terminStarted } from '../../src/lib/jobs'
+import { JobError, completeJob, confirmOffer, decideChange, jobErrorText, loadChange, loadOffers, loadReceipts, loadReportInfo, reportNotDone, stale, terminStarted, withdrawRequest } from '../../src/lib/jobs'
 
 const invoke = vi.fn()
 const rpc = vi.fn()
@@ -153,10 +153,37 @@ describe('Termin', () => {
     ['not_found', 'closed'],
     ['too_early', 'too_early'],
     ['report_window_closed', 'window_closed'],
+    ['under_review', 'under_review'],
     ['irgendwas', 'unavailable'],
   ])('Datenbankfehler %s wird %s', async (message, kind) => {
     rpc.mockResolvedValue({ error: { message } })
     await expect(reportNotDone(ID)).rejects.toMatchObject({ kind })
+  })
+
+  it('withdraw sendet nur die Anfrage; ein geschlossener Auftrag ist veraltet', async () => {
+    rpc.mockResolvedValue({ error: null })
+    await withdrawRequest(ID)
+    expect(rpc).toHaveBeenLastCalledWith('withdraw', { p_request: ID })
+    rpc.mockResolvedValue({ error: { message: 'invalid_transition' } })
+    await expect(withdrawRequest(ID)).rejects.toMatchObject({ kind: 'closed' })
+  })
+
+  it('under_review ist veraltet (die Anzeige lädt neu)', () => {
+    expect(stale('under_review')).toBe(true)
+  })
+
+  it('loadReportInfo: Server-Signal und Frist; unlesbar ist ein Fehler, nie ein Rückfall', async () => {
+    rpc.mockResolvedValue({ data: [{ can_report: true, report_until: '2026-12-09T07:00:00+00:00' }], error: null })
+    await expect(loadReportInfo(ID)).resolves.toEqual({ canReport: true, reportUntil: new Date('2026-12-09T07:00:00Z') })
+    expect(rpc).toHaveBeenLastCalledWith('my_report_info', { p_request: ID })
+    rpc.mockResolvedValue({ data: [{ can_report: false, report_until: null }], error: null })
+    await expect(loadReportInfo(ID)).resolves.toEqual({ canReport: false, reportUntil: null })
+    rpc.mockResolvedValue({ data: [{ can_report: 'ja', report_until: null }], error: null })
+    await expect(loadReportInfo(ID)).rejects.toThrow()
+    rpc.mockResolvedValue({ data: [], error: null })
+    await expect(loadReportInfo(ID)).rejects.toThrow()
+    rpc.mockResolvedValue({ data: null, error: { message: 'x' } })
+    await expect(loadReportInfo(ID)).rejects.toEqual({ message: 'x' })
   })
 
   it('geworfener Netzfehler ist offline', async () => {

@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 
-export type AccountErrorKind = 'open_requests' | 'role_not_allowed' | 'unauthorized' | 'offline' | 'unavailable'
+export type AccountErrorKind = 'open_requests' | 'under_review' | 'role_not_allowed' | 'unauthorized' | 'offline' | 'unavailable'
 
 export class AccountError extends Error {
   constructor(readonly kind: AccountErrorKind) {
@@ -10,7 +10,8 @@ export class AccountError extends Error {
 }
 
 export const accountErrorText: Record<AccountErrorKind, string> = {
-  open_requests: 'Du hast noch offene Aufträge oder Anfragen. Bestätigte Aufträge kannst du im Auftrag stornieren, Anfragen ohne Zusage laufen von selbst ab. Nach dem Termin beantwortest du im Auftrag, ob er stattgefunden hat. Danach kannst du dein Konto löschen.',
+  open_requests: 'Du hast noch offene Aufträge oder Anfragen. Anfragen ohne Zusage kannst du im Auftrag zurückziehen, bestätigte Aufträge stornieren. Nach dem Termin beantwortest du im Auftrag, ob er stattgefunden hat. Danach kannst du dein Konto löschen.',
+  under_review: 'Du hast gemeldet, dass ein Auftrag nicht stattgefunden hat. Wir prüfen ihn noch. Danach kannst du dein Konto löschen.',
   role_not_allowed: 'Partner-Konten lassen sich nicht in der App löschen. Die Kontaktdaten findest du im Impressum.',
   unauthorized: 'Deine Anmeldung gilt nicht mehr. Hast du dein Konto gerade gelöscht, ist es gelöscht. Sonst melde dich neu an.',
   offline: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut.',
@@ -20,6 +21,7 @@ export const accountErrorText: Record<AccountErrorKind, string> = {
 // Fehlercode des Servers samt erwartetem Status; alles andere ist generisch.
 const CODES = new Map<string, [number, AccountErrorKind]>([
   ['open_requests', [409, 'open_requests']],
+  ['under_review', [409, 'under_review']],
   ['role_not_allowed', [403, 'role_not_allowed']],
   ['unauthorized', [401, 'unauthorized']],
 ])

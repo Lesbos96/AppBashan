@@ -51,6 +51,7 @@ export type JobRow = {
   total_cents: number | null
   payout_cents: number | null
   can_start: boolean
+  under_review: boolean
 }
 export const A1 = '6b5e7f80-1c2d-4e3f-a01b-0c9d8e7f6a5b'
 export const A2 = '7c6f8091-2d3e-4f40-b12c-1d0e9f8a7b6c'
@@ -74,6 +75,7 @@ export const job = (over: Partial<JobRow> = {}): JobRow => ({
   total_cents: 68961,
   payout_cents: 58617,
   can_start: false,
+  under_review: false,
   ...over,
 })
 /** Antwort von `job_contact`: erfundene Platzhalterdaten */

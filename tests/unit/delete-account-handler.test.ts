@@ -69,7 +69,7 @@ describe('handleDeleteAccount', () => {
   })
 
   it('Sperrgründe der Datenbank: offene Anfrage 409, Rolle 403, unbekannt 404', async () => {
-    for (const [code, status] of [['open_requests', 409], ['role_not_allowed', 403], ['not_found', 404]] as const) {
+    for (const [code, status] of [['open_requests', 409], ['under_review', 409], ['role_not_allowed', 403], ['not_found', 404]] as const) {
       const d = deps({ remove: async () => { throw new DbError(code) } })
       const res = await call(d)
       expect(res.status).toBe(status)

@@ -2,6 +2,7 @@
 // Läuft mit dem Secret Key (service_role), daher filtert jede Abfrage ausdrücklich nach Eigentümer bzw. Freigabe.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
+import { rejectToken } from '../auth.ts'
 import { routeDb } from '../route/db.ts'
 import type { QuoteDeps, QuoteResponse, SaveBooking, SaveRequest } from './handler.ts'
 import type { Candidate } from '../route/facts.ts'
@@ -26,7 +27,7 @@ export function quoteDb(db: Db): DbDeps {
     route: { cache, geoFacts },
     async getUserId(jwt) {
       const { data, error } = await db.auth.getUser(jwt)
-      return error ? null : (data.user?.id ?? null)
+      return error ? rejectToken(error) : (data.user?.id ?? null)
     },
     async currentVersion() {
       const { version } = must(await db.from('current_price_version').select('version').single())

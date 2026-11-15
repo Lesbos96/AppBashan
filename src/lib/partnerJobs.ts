@@ -240,6 +240,8 @@ export type Job = {
   payoutCents: number | null
   /** Entscheidung der Datenbankuhr (Status accepted, Termin erreicht); die Geräteuhr entscheidet nichts */
   canStart: boolean
+  /** Der Kunde hat „nicht stattgefunden“ gemeldet, die Prüfung läuft (nur diese Tatsache, kein Zeitpunkt, kein Text): Start, Abschluss, Nachtrag und Absage sind gesperrt */
+  underReview: boolean
 }
 const district = (v: unknown): number | null => (int(v) && v >= 1 && v <= 23 ? v : null)
 const cents = (v: unknown): number | null => (int(v) && v >= 0 ? v : null)
@@ -251,7 +253,7 @@ export async function loadJobs(): Promise<Job[]> {
   return (Array.isArray(data) ? data : []).flatMap((r): Job[] => {
     const termin = when(r.termin_at)
     const ended = r.ended_at === null ? false : when(r.ended_at) !== null
-    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean' || (r.ended_at !== null && !ended)) return []
+    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean' || typeof r.under_review !== 'boolean' || (r.ended_at !== null && !ended)) return []
     return [
       {
         id: r.assignment_id,
@@ -267,6 +269,7 @@ export async function loadJobs(): Promise<Job[]> {
         totalCents: cents(r.total_cents),
         payoutCents: cents(r.payout_cents),
         canStart: r.can_start,
+        underReview: r.under_review,
       },
     ]
   })
@@ -275,6 +278,7 @@ export async function loadJobs(): Promise<Job[]> {
 // Fehlercodes von start_job, complete_job, job_contact (direkte RPCs: die Meldung der Datenbank ist der Code)
 const JOB_CODES: Record<string, JobErrorKind> = {
   too_early: 'too_early',
+  under_review: 'under_review',
   invalid_transition: 'closed',
   not_found: 'closed',
   not_assigned: 'gone',

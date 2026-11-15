@@ -190,6 +190,7 @@ test('„Doch nicht“ sendet nichts und bleibt angemeldet', async ({ page }) =>
 
 for (const [status, error, text] of [
   [409, 'open_requests', 'Du hast noch offene Aufträge'],
+  [409, 'under_review', 'Wir prüfen ihn noch'],
   [403, 'role_not_allowed', 'Partner-Konten lassen sich nicht in der App löschen'],
   [500, 'internal', 'Das hat nicht geklappt'],
   [200, 'kein deleted', 'Das hat nicht geklappt'],

@@ -223,6 +223,7 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
+  { name: 'auftraege-in-pruefung', open: ACTIVE, jobs: { myJobs: [job({ status: 'in_progress', under_review: true })], changes: [change()] }, wait: heading('Angenommen') },
   { name: 'auftraege-payment-hold', open: { ...ACTIVE, status: 'payment_hold' }, jobs: { myJobs: [job({ can_start: true })] }, wait: heading('Angenommen') },
   { name: 'auftraege-ladefehler', open: ACTIVE, jobs: { jobStatus: [500, 500] }, wait: (page) => expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible() },
   // Nachtrag (s9i-7a): Platzhalterdaten aus tests/e2e/jobs-helpers.ts

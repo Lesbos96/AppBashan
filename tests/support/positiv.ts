@@ -227,9 +227,14 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
     spalten: {
       accepted_at: 'timestamptz', assignment_id: 'uuid', can_start: 'bool', district: 'int2', ended_at: 'timestamptz', ended_reason: 'enum', listing_id: 'uuid', payout_cents: 'int8',
-      preferred_date: 'date', request_id: 'uuid', service: 'enum', status: 'enum', termin_at: 'timestamptz', time_window: 'text', to_district: 'int2', total_cents: 'int8',
+      preferred_date: 'date', request_id: 'uuid', service: 'enum', status: 'enum', termin_at: 'timestamptz', time_window: 'text', to_district: 'int2', total_cents: 'int8', under_review: 'bool',
     },
     aufruf: () => 'public.my_jobs()',
+  },
+  my_report_info: {
+    ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    spalten: { can_report: 'bool', report_until: 'timestamptz' },
+    aufruf: () => `public.my_report_info('${R.j3}')`,
   },
   my_job_partner: {
     ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,

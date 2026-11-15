@@ -3,6 +3,7 @@
 import type { FeeTier } from '../pricing/index.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types.ts'
+import { rejectToken } from '../auth.ts'
 import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OfferDeps, type OutboxDeps } from './handlers.ts'
 
 export type Db = SupabaseClient<Database>
@@ -15,7 +16,8 @@ export const must = <T>(r: { data: T; error: { message: string } | null }): NonN
 /** Prüft das JWT bei Supabase Auth und liest aal aus der geprüften Nutzlast. */
 export async function getUser(db: Db, jwt: string): Promise<AuthUser | null> {
   const { data, error } = await db.auth.getUser(jwt)
-  if (error || !data.user) return null
+  if (error) return rejectToken(error)
+  if (!data.user) return null
   try {
     const payload = JSON.parse(atob((jwt.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: string }
     return { id: data.user.id, aal: String(payload.aal ?? '') }

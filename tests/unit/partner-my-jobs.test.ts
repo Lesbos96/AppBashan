@@ -24,6 +24,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   total_cents: 68961,
   payout_cents: 58617,
   can_start: false,
+  under_review: false,
   ...over,
 })
 
@@ -36,8 +37,13 @@ describe('loadJobs', () => {
     rpc.mockResolvedValue({ data: [row()], error: null })
     const [j] = await loadJobs()
     expect(rpc).toHaveBeenCalledWith('my_jobs')
-    expect(j).toMatchObject({ id: A, requestId: R, status: 'accepted', ended: false, district: 3, toDistrict: 10, service: 'move', preferredDate: '2026-12-02', timeWindow: 'morning', totalCents: 68961, payoutCents: 58617, canStart: false })
+    expect(j).toMatchObject({ id: A, requestId: R, status: 'accepted', ended: false, district: 3, toDistrict: 10, service: 'move', preferredDate: '2026-12-02', timeWindow: 'morning', totalCents: 68961, payoutCents: 58617, canStart: false, underReview: false })
     expect(j!.terminAt.toISOString()).toBe('2026-12-02T07:00:00.000Z')
+  })
+
+  it('Prüfung nach der Kundenmeldung: underReview ist wahr', async () => {
+    rpc.mockResolvedValue({ data: [row({ under_review: true })], error: null })
+    expect((await loadJobs())[0]).toMatchObject({ underReview: true })
   })
 
   it('beendete Zuordnung: ended ist wahr', async () => {
@@ -53,6 +59,7 @@ describe('loadJobs', () => {
     ['kein Termin', { termin_at: null }],
     ['Termin kein Datum', { termin_at: 'morgen' }],
     ['can_start kein boolean', { can_start: 'true' }],
+    ['under_review kein boolean', { under_review: 'true' }],
     ['Ende kein Datum', { ended_at: 'gestern' }],
   ])('%s: Zeile entfällt', async (_n, over) => {
     rpc.mockResolvedValue({ data: [row(over), row()], error: null })

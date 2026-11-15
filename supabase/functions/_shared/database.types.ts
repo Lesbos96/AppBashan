@@ -1846,6 +1846,14 @@ export type Database = {
           time_window: string
           to_district: number
           total_cents: number
+          under_review: boolean
+        }[]
+      }
+      my_report_info: {
+        Args: { p_request: string }
+        Returns: {
+          can_report: boolean
+          report_until: string
         }[]
       }
       my_request_offers: {

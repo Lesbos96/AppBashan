@@ -26,6 +26,7 @@ describe('deleteAccount (s9i-4)', () => {
 
   it.each([
     [409, 'open_requests', 'open_requests'],
+    [409, 'under_review', 'under_review'],
     [403, 'role_not_allowed', 'role_not_allowed'],
     [401, 'unauthorized', 'unauthorized'],
     [400, 'invalid_input', 'unavailable'],

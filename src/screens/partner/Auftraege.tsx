@@ -239,7 +239,12 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       {places && <p className="m-0 text-body">{places}</p>}
       {(day || window) && <p className="m-0 text-body">{[day, window].filter(Boolean).join(', ')}</p>}
       <Betraege j={j} />
-      {j.status === 'accepted' && !j.ended && (
+      {j.underReview && (
+        <p role="status" className="m-0 text-body">
+          Der Kunde hat gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
+        </p>
+      )}
+      {j.status === 'accepted' && !j.ended && !j.underReview && (
         <>
           <Button disabled={!j.canStart} onClick={() => setSheet('start')}>
             Auftrag starten
@@ -247,16 +252,16 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
           {!j.canStart && <p className="m-0 text-footnote text-text-secondary">Du kannst den Auftrag ab {nb(viennaTime(j.terminAt))}{NBSP}Uhr{NBSP}starten.</p>}
         </>
       )}
-      {j.status === 'in_progress' && !j.ended && <Button onClick={() => setSheet('finish')}>Auftrag abschließen</Button>}
-      {change && !j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <NachtragBlock c={change} onOpen={() => setSheet('change')} onWithdraw={() => setSheet('withdraw')} />}
-      {(j.status === 'accepted' || j.status === 'in_progress') && !j.ended && (
+      {j.status === 'in_progress' && !j.ended && !j.underReview && <Button onClick={() => setSheet('finish')}>Auftrag abschließen</Button>}
+      {change && !j.ended && !j.underReview && (j.status === 'accepted' || j.status === 'in_progress') && <NachtragBlock c={change} onOpen={() => setSheet('change')} onWithdraw={() => setSheet('withdraw')} />}
+      {(j.status === 'accepted' || j.status === 'in_progress') && !j.ended && !j.underReview && (
         <Button variant="plain" onClick={() => setSheet('cancel')}>
           Auftrag absagen
         </Button>
       )}
       {!locked && <Kontakt j={j} />}
       {j.ended && <p className="m-0 text-footnote text-text-secondary">{locked ? 'Kontakt und Adresse sind gesperrt, weil keine Pauschale anfällt.' : 'Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.'}</p>}
-      {!j.ended && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} onDone={onDone} />}
+      {!j.ended && !j.underReview && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} onDone={onDone} />}
 
       <Bestaetigen open={sheet === 'start'} onClose={() => setSheet(null)} title="Auftrag starten" label="Auftrag starten" action={() => startJob(j.requestId)} onDone={onDone}>
         <p className="m-0 text-subhead text-text-secondary">Der Auftrag läuft danach. Abschließen kannst du ihn, wenn alles erledigt ist.</p>
