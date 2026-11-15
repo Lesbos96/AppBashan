@@ -54,7 +54,7 @@ Nur Offenes. Erledigtes wird gelöscht; die Historie steht in Git und in `docs/a
 - **S9i5b-1** · `aal2`-Sitzung ohne Zeitgrenze · siehe GOLIVE 31 · Archiv: „s9i-5a“
 
 ### Betrieb
-- **S9c-3** · Mailversand ist nicht eingerichtet: Function-Secrets `OUTBOX_SECRET`, `SMTP_URL`, `MAIL_FROM`, `APP_URL` und Vault-Secrets `outbox_url`, `outbox_secret` fehlen, `public.outbox` bleibt auf `pending` (ergänzt GOLIVE 9 und 14) · Beks · Archiv: „S9c“
+- **S9c-3** · Mailversand ist nicht eingerichtet: Function-Secrets `OUTBOX_SECRET`, `SMTP_URL`, `MAIL_FROM`, `APP_URL` und Vault-Secrets `outbox_url`, `outbox_secret` fehlen, `public.outbox` bleibt auf `pending` (ergänzt GOLIVE 9 und 14); dazu gehört die Mail an den Betreiber bei einer neuen Kundenmeldung „nicht stattgefunden“ (Nr. 175; bis dahin prüft der Betreiber `reported_jobs` per Admin-Skript binnen 3 Werktagen) · Beks · Archiv: „S9c“
 - **S9d-5, S9i7b2-2** · Nach `npm run setup:photo-publish` Probelauf der Fotopipeline auf Dev mit echten Fotos (auch progressiv, 2000 px), CPU-Zeit in den Function-Logs gegen 2 s prüfen; nur wenn kein Testlauf läuft (`CLAIM_ALL`) · Beks, vor Livegang · Archiv: „S9d“, „s9i-5a“
 - **S9d-2 (Betrieb), S9g-4** · Runbook-Abfragen: `job_photos` mit `attempts_exhausted` in der letzten Stunde muss 0 sein (ein Ausfall bleibt im Cron grün); Aufträge in `accepted`/`in_progress` ohne Meldung nach `termin_at + completion_days` (T15 hinterlässt nur `WARNING`) · Archiv: „S9d“, „S9g“
 - **S9h3-1** · Ein admin-Storno (T14) löst keine Weitervermittlung und keine Mail aus; Beks informiert den Kunden manuell, Mail-Arten und Texte für T14 folgen mit der Mailfreigabe (S9c-3) · S9i/Beks · Archiv: „S9h-3“
@@ -125,7 +125,6 @@ Nur Offenes. Erledigtes wird gelöscht; die Historie steht in Git und in `docs/a
 ## Nach dem Start
 ### Arbeitssystem
 - **u1-8 (Rest: N26, N27, N28)** · Niedrig, bewusst nicht in u2b: N26 Marken liegen nur im unversionierten `tmp/proof`, Verlust des Ordners blockiert einen Schritt mit Migration dauerhaft (Rettungsweg in `docs/BEKS_EINRICHTUNG.md`, gehört zu u1b-6/AM5); N27 `ask`-Regeln für die PowerShell-Kurzformen `rm`, `del`, `ri` (unklar, ob Claude Code Aliase auflöst); N28 Tests für `schrittAusBericht` und `sammle` mit temporärem Git-Repo. N19 bis N25 und N29 sind in u2b behoben (N21 bis auf den Rest oben), N29 schon vorher (Matcher `mcp__.*`, Deny-Regel, `MCP_DB`) · Archiv: „Arbeitssystem u1“
-- **u2b-2** · Die 7-Tage-Grenze für Übernahmen gilt nur für `rls` bei R3; `check` und `e2e` hängen allein am Fingerabdruck (Frage 1 in `docs/BEKS.md`) · Beks
 - **u1-3** · Ein allgemeines `npm run abnahme:antrag -- <dateien>` fehlt; Hashes für Abnahmen außerhalb von Migrationen kommen von Hand aus `sha256sum` · Archiv: „Arbeitssystem u1“
 - **u1-4** · `bericht.md` enthält weder `supabase migration list` noch die fünf Zeilen „Bewertung“ · Archiv: „Arbeitssystem u1“
 - **u1-5** · Stufenberechnung grob: alle Pfade unter `supabase/` zählen als R3; Herabstufen durch Beks ist nicht implementiert (Regeltabelle in `scripts/sys/stufe.mjs`) · Archiv: „Arbeitssystem u1“

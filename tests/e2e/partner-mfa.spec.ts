@@ -34,7 +34,7 @@ async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 }
 
-test('320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, keine Überbreite (S9i5-3)', async ({ page }) => {
+test('320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, keine Überbreite (S9i5-3)', { tag: '@breit' }, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await open(page, { noFirm: true })
   await expect(page.getByRole('heading', { name: 'Firma registrieren' })).toBeVisible()
@@ -49,7 +49,7 @@ test('320 px: Bezirksraster mit fünf Spalten, jedes Feld mindestens 44 px, kein
   await noOverflow(page)
 })
 
-test.describe('Einrichtung', () => {
+test.describe('Einrichtung', { tag: '@breit' }, () => {
   test('ohne Faktor: Karte „In Prüfung“ und Einrichtung; vor dem Klick entsteht kein Faktor; keine Dokumente', async ({ page }) => {
     const errors = collectErrors(page)
     const { mfa } = await open(page)
@@ -153,7 +153,7 @@ test.describe('Einrichtung', () => {
   })
 })
 
-test.describe('Anmeldung mit Faktor', () => {
+test.describe('Anmeldung mit Faktor', { tag: '@breit' }, () => {
   test('aal1 mit verifiziertem Faktor: Code-Abfrage statt Einrichtung; falscher Code, dann richtiger Code führt zu den Dokumenten', async ({ page }) => {
     const errors = collectErrors(page)
     const f = factor('v1', 'verified')
@@ -220,7 +220,7 @@ test.describe('Anmeldung mit Faktor', () => {
   })
 })
 
-test.describe('Zugang je Firmenstatus', () => {
+test.describe('Zugang je Firmenstatus', { tag: '@breit' }, () => {
   for (const status of ['rejected', 'suspended'] as const) {
     test(`${status} mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente`, async ({ page }) => {
       const f = factor('v1', 'verified')
@@ -257,7 +257,7 @@ test.describe('Zugang je Firmenstatus', () => {
   })
 })
 
-test.describe('Dokumente', () => {
+test.describe('Dokumente', { tag: '@breit' }, () => {
   const ready = (o: Opts = {}) => ({ factors: [factor('v1', 'verified')], aal: 'aal2' as const, ...o })
   const row = (id: string, kind: string, day = '01'): DocRow => ({ id, partner_id: 'p-1', kind, uploaded_at: `2026-11-${day}T10:00:00Z` })
   const pick = async (page: Page, kind: string, file: { name: string; mimeType: string; buffer: Buffer }) => {

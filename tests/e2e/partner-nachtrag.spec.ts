@@ -40,7 +40,7 @@ async function checkHours(page: Page, hours = '5') {
   await dialog(page).getByRole('button', { name: 'Betrag prüfen' }).click()
 }
 
-test('Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag', async ({ page }) => {
+test('Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden; gesendet wird genau der gezeigte Betrag', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page)
   await expect(card(page)).toContainText('Umzug, Bezirk 3')
@@ -77,7 +77,7 @@ test('Hauptweg: Werte ändern, Betrag vom Server ansehen, Beleg wählen, senden;
   expect(real(errors)).toEqual([])
 })
 
-test('Doppelklick auf Senden: ein Foto, ein Nachtrag', async ({ page }) => {
+test('Doppelklick auf Senden: ein Foto, ein Nachtrag', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await checkHours(page)
   await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
@@ -87,7 +87,7 @@ test('Doppelklick auf Senden: ein Foto, ein Nachtrag', async ({ page }) => {
   expect(sends(jobs)).toHaveLength(1)
 })
 
-test('Tastatur: Hauptweg nur mit Tastatur', async ({ page }) => {
+test('Tastatur: Hauptweg nur mit Tastatur', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await propose(page).focus()
   await page.keyboard.press('Enter')
@@ -105,7 +105,7 @@ test('Tastatur: Hauptweg nur mit Tastatur', async ({ page }) => {
   await expect(card(page).getByRole('button', { name: 'Nachtrag zurückziehen' })).toBeVisible()
 })
 
-test('Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet', async ({ page }) => {
+test('Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, keine Grundlage, beendet', { tag: '@breit' }, async ({ page }) => {
   await open(page, {
     myJobs: [job(), job({ assignment_id: A2, request_id: RQ2 }), job({ assignment_id: A3, request_id: RQ3, service: 'clearance' }), job({ assignment_id: A4, request_id: RQ4 })],
     changes: [
@@ -118,7 +118,7 @@ test('Kein Nachtrag möglich: Festangebot, offener Nachtrag, Entrümpelung, kein
   await expect(page.getByRole('button', { name: 'Nachtrag vorschlagen' }), 'Festangebot, offener Nachtrag, Entrümpelung, ohne Grundlage').toHaveCount(0)
 })
 
-test('Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft)', async ({ page }) => {
+test('Läuft und beendet: Knopf nur bei laufenden Aufträgen (angenommen, läuft)', { tag: '@breit' }, async ({ page }) => {
   await open(page, {
     myJobs: [job({ status: 'in_progress' }), job({ assignment_id: A2, request_id: RQ2, status: 'completed', ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' })],
     changes: [change(), change({ request_id: RQ2 })],
@@ -134,14 +134,14 @@ const STATES: [NonNullable<ChangeRow['change_status']>, string][] = [
   ['withdrawn', 'Du hast deinen Nachtrag zurückgezogen.'],
 ]
 for (const [status, text] of STATES) {
-  test(`Zustand des letzten Nachtrags „${status}“: eigener Text, danach darf ein neuer folgen`, async ({ page }) => {
+  test(`Zustand des letzten Nachtrags „${status}“: eigener Text, danach darf ein neuer folgen`, { tag: '@breit' }, async ({ page }) => {
     await open(page, { changes: [proposed(status)] })
     await expect(card(page)).toContainText(text)
     await expect(propose(page)).toBeVisible()
   })
 }
 
-test('Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen', async ({ page }) => {
+test('Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätigen; das Foto wird nicht zweimal hochgeladen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, {
     previewAnswers: [
       { status: 200, json: { totalCents: 81000, baseCents: 68961 } },
@@ -166,7 +166,7 @@ test('Betrag ändert sich: 409 → neuer Betrag aus der Vorschau, neu bestätige
   expect(sends(jobs)[1]?.photoIds).toEqual(sends(jobs)[0]?.photoIds)
 })
 
-test('Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text', async ({ page }) => {
+test('Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag möglich, Netz; jeder mit eigenem Text', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, {
     previewAnswers: [
       { status: 409, json: { error: 'change_not_increasing' } },
@@ -185,7 +185,7 @@ test('Fehler der Vorschau: nicht erhöhend, ungültige Werte, kein Nachtrag mög
   expect(sends(jobs)).toEqual([])
 })
 
-test('Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt', async ({ page }) => {
+test('Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze werden vor dem Aufruf abgelehnt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await propose(page).click()
   await dialog(page).getByRole('button', { name: 'Betrag prüfen' }).click()
@@ -203,7 +203,7 @@ test('Eingaben: ohne Änderung, ungültige Zahl und Wert außerhalb der Grenze w
   expect(jobs.proposals).toEqual([])
 })
 
-test('Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen', async ({ page }) => {
+test('Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Foto lässt sich entfernen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { changes: [proposed('declined')] })
   await checkHours(page)
   await expect(dialog(page)).toContainText('1 Foto schon hochgeladen')
@@ -217,7 +217,7 @@ test('Belege: vorhandene werden wiederverwendet (kein Upload), ein gewähltes Fo
   expect(sends(jobs)[0]?.photoIds).toEqual([RC1])
 })
 
-test('Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu)', async ({ page }) => {
+test('Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu)', { tag: '@breit' }, async ({ page }) => {
   const seven = Array.from({ length: 7 }, (_, i) => `d4e5f6a7-b8c9-4d0e-9f1a-${String(i).padStart(12, '0')}`)
   await open(page, { changes: [proposed('declined', { receipt_ids: seven })] })
   await checkHours(page)
@@ -227,7 +227,7 @@ test('Belege: Höchstzahl 8 je Auftrag (sieben vorhandene, nur eines kommt dazu)
   await expect(dialog(page)).toContainText('Höchstzahl erreicht')
 })
 
-test('Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag', async ({ page }) => {
+test('Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene Fotos bleiben, kein zweiter Nachtrag', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, {
     receiptAnswers: [{ status: 422, json: { error: 'not_jpeg' } }],
     proposeAnswers: [{ status: 409, json: { error: 'receipt_limit' } }],
@@ -249,7 +249,7 @@ test('Foto abgelehnt und Fehler beim Anlegen: eigene Texte, bereits hochgeladene
 /** Rückkehr in den Tab: die Aufträge laden im Hintergrund neu */
 const refocus = (page: Page) => page.evaluate(() => window.dispatchEvent(new Event('focus')))
 
-test('Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1)', async ({ page }) => {
+test('Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie doppelt in der Liste (Abnahme M1)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { proposeAnswers: [{ status: 500, json: { error: 'internal' } }] })
   await checkHours(page)
   await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
@@ -266,7 +266,7 @@ test('Neuladen im Hintergrund nach einem Upload: dieselbe Beleg-ID steht nie dop
   expect(sends(jobs)[1]?.photoIds).toHaveLength(1)
 })
 
-test('Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2)', async ({ page }) => {
+test('Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vorhanden zählt (Abnahme M2)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { proposeAnswers: [{ status: 500, json: { error: 'internal' } }] })
   await checkHours(page)
   await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
@@ -284,7 +284,7 @@ test('Schließen nach einem Upload ohne Senden lädt neu, damit das Foto als vor
   await expect(dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ })).toBeEnabled()
 })
 
-test('Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6)', async ({ page }) => {
+test('Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und Betrag (Abnahme N6)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await checkHours(page)
   await expect(dialog(page)).toContainText('810,00 €')
@@ -296,7 +296,7 @@ test('Ausfall der Abfrage im Hintergrund: ein offenes Sheet behält Zustand und 
   await expect(dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ })).toBeVisible()
 })
 
-test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter', async ({ page }) => {
+test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu und zeigt den vorhandenen Nachtrag, kein zweiter', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { proposeAnswers: [{ status: 409, json: { error: 'change_open' } }] })
   await checkHours(page)
   await dialog(page).getByLabel('Belegfoto hinzufügen').setInputFiles(photo)
@@ -309,7 +309,7 @@ test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu 
   expect(sends(jobs)).toHaveLength(1)
 })
 
-test('Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen', async ({ page }) => {
+test('Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zurückgezogen“ und ein neuer darf folgen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { changes: [proposed('proposed')] })
   await card(page).getByRole('button', { name: 'Nachtrag zurückziehen' }).click()
   expect(jobs.withdrawnChanges, 'erst die Bestätigung sendet').toEqual([])
@@ -320,7 +320,7 @@ test('Zurückziehen: Bestätigung, ein Aufruf mit der Nachtrag-ID, danach „zur
   await expect(propose(page)).toBeVisible()
 })
 
-test('Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt', async ({ page }) => {
+test('Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zurückziehen-Sheet, Nachtrag-Sheet wächst beim zweiten Schritt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { changes: [proposed('proposed')] })
   await card(page).getByRole('button', { name: 'Nachtrag zurückziehen' }).click()
   const measure = () => measureSheet(page)
@@ -333,7 +333,7 @@ test('Sheet-Höhe folgt dem Inhalt (S9i6b-1): kein Leerraum unter dem kurzen Zur
   expect(jobs.withdrawnChanges).toEqual([])
 })
 
-test('Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum', async ({ page }) => {
+test('Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   const measure = () => measureSheet(page)
   await propose(page).click()
@@ -347,7 +347,7 @@ test('Nachtrag-Sheet wächst mit dem Inhalt: zweiter Schritt ohne Leerraum', asy
   expect(second.sheet, JSON.stringify({ first, second })).toBeLessThanOrEqual(second.content + 116)
 })
 
-test('Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen', async ({ page }) => {
+test('Bei 320 px: Betragszeilen und Sheet vollständig sichtbar (S9i6b-1), kein waagerechtes Scrollen', { tag: '@breit' }, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await open(page)
   // Karte: Betrag steht in einer Zeile und im Fenster

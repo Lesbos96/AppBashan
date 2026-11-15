@@ -30,7 +30,7 @@ async function startCheck(page: Page, reason?: keyof typeof REASON) {
   await dialog(page).getByRole('button', { name: 'Folgen prüfen' }).click()
 }
 
-test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt', async ({ page }) => {
+test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach gesperrt', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page)
   await expect(card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' })).toBeVisible()
@@ -51,7 +51,7 @@ test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach ge
   expect(real(errors)).toEqual([])
 })
 
-test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale', async ({ page }) => {
+test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page)
   await startCheck(page)
@@ -82,7 +82,7 @@ test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein B
   expect(real(errors)).toEqual([])
 })
 
-test('Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau', async ({ page }) => {
+test('Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Belege; Grundwechsel verwirft die Vorschau', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await startCheck(page)
   const d = dialog(page)
@@ -100,7 +100,7 @@ test('Weg „Ohne Pauschale“ bei möglicher Pauschale: gesendet wird 0 ohne Be
   expect(jobs.receipts).toEqual([])
 })
 
-test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet', async ({ page }) => {
+test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisch erneut gesendet', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await startCheck(page)
   const d = dialog(page)
@@ -126,7 +126,7 @@ test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisc
   expect(jobs.receipts, 'der Beleg wird nicht noch einmal hochgeladen').toHaveLength(1)
 })
 
-test('409 retry: neue Vorschau, kein erneutes Senden', async ({ page }) => {
+test('409 retry: neue Vorschau, kein erneutes Senden', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { cancelAnswers: [{ status: 409, json: { error: 'retry' } }] })
   await startCheck(page, 'unavailable')
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
@@ -136,7 +136,7 @@ test('409 retry: neue Vorschau, kein erneutes Senden', async ({ page }) => {
   expect(sends(jobs)).toHaveLength(1)
 })
 
-test('Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen', async ({ page }) => {
+test('Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu geladen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await page.route('**/functions/v1/cancel-partner', (r) => (r.request().postDataJSON().preview === true ? r.fallback() : r.abort('failed')))
   await startCheck(page, 'unavailable')
@@ -149,7 +149,7 @@ test('Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu gela
   expect(jobs.cancels.filter((c) => c.preview !== true), 'nie erneut gesendet').toHaveLength(0)
 })
 
-test('Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt', async ({ page }) => {
+test('Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await startCheck(page, 'unavailable')
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).dblclick()
@@ -157,7 +157,7 @@ test('Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe
   expect(sends(jobs)).toHaveLength(1)
 })
 
-test('not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen', async ({ page }) => {
+test('not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt, Aufträge werden neu geladen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { cancelAnswers: [{ status: 404, json: { error: 'not_found' } }] })
   await startCheck(page, 'unavailable')
   const reads = jobs.jobReads
@@ -167,14 +167,14 @@ test('not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt,
   await expect.poll(() => jobs.jobReads).toBeGreaterThan(reads)
 })
 
-test('Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“', async ({ page }) => {
+test('Grund-Auswahl: vor dem Termin drei Gründe, ab Beginn des Termins nur „vor Ort anders als gebucht“', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).click()
   await expect(dialog(page).getByRole('radio')).toHaveCount(3)
   await expect(reasonRadio(dialog(page), 'scope_impossible'), 'Standard').toBeChecked()
 })
 
-test('Grund-Auswahl ab Termin', async ({ page }) => {
+test('Grund-Auswahl ab Termin', { tag: '@breit' }, async ({ page }) => {
   await open(page, { myJobs: [job({ can_start: true })] })
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).click()
   await expect(dialog(page).getByRole('radio')).toHaveCount(1)
@@ -182,14 +182,14 @@ test('Grund-Auswahl ab Termin', async ({ page }) => {
   await expect(dialog(page)).toContainText('Der Termin hat begonnen')
 })
 
-test('too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis', async ({ page }) => {
+test('too_late_for_reason vom Server: zurück zur Auswahl mit Hinweis', { tag: '@breit' }, async ({ page }) => {
   await open(page, { cancelPreviewAnswers: [{ status: 409, json: { error: 'too_late_for_reason' } }] })
   await startCheck(page, 'unavailable')
   await expect(dialog(page)).toContainText('Der Termin hat schon begonnen')
   await expect(reasonRadio(dialog(page), 'scope_impossible')).toBeChecked()
 })
 
-test('Netzfehler in der Vorschau darf wiederholt werden; gesendet wird dabei nichts', async ({ page }) => {
+test('Netzfehler in der Vorschau darf wiederholt werden; gesendet wird dabei nichts', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   let failed = false
   await page.route('**/functions/v1/cancel-partner', (r) => {
@@ -206,7 +206,7 @@ test('Netzfehler in der Vorschau darf wiederholt werden; gesendet wird dabei nic
   expect(sends(jobs)).toEqual([])
 })
 
-test('too_late_for_reason beim Senden: zurück zur Auswahl, kein erneutes Senden', async ({ page }) => {
+test('too_late_for_reason beim Senden: zurück zur Auswahl, kein erneutes Senden', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { cancelAnswers: [{ status: 409, json: { error: 'too_late_for_reason' } }] })
   await startCheck(page, 'unavailable')
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
@@ -217,7 +217,7 @@ test('too_late_for_reason beim Senden: zurück zur Auswahl, kein erneutes Senden
   expect(sends(jobs)).toHaveLength(1)
 })
 
-test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über', async ({ page }) => {
+test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft über', { tag: '@breit' }, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await open(page)
   await startCheck(page)
@@ -240,7 +240,7 @@ test('320 px: Betrag, beide Wege und die Knöpfe sind erreichbar, nichts läuft 
   expect(money).toBe('nowrap')
 })
 
-test('Tastatur: Hauptweg ohne Maus', async ({ page }) => {
+test('Tastatur: Hauptweg ohne Maus', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
   await card(page).getByRole('button', { name: 'Auftrag absagen' }).focus()
   await page.keyboard.press('Enter')

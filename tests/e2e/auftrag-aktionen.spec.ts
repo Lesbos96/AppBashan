@@ -122,7 +122,7 @@ async function open(page: Page, done = false) {
 const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|15 ?%|MoveNow-Gebühr/)
 const body = (s: State, name: string) => s.calls.filter((c) => c.name === name).map((c) => c.body)
 
-test.describe('Angebote', () => {
+test.describe('Angebote', { tag: '@breit' }, () => {
   const offered = () => state({ status: 'offered', offers: [offer(), offer({ offer_id: REV, company_name: 'Zweite Firma', amount_cents: 72000 }), offer({ offer_id: OTHER_PHOTO, status: 'confirmed' })], after: { 'offer-confirm': { status: 'accepted', offers: [] } } })
 
   test('Liste zeigt Firma, Betrag in einer Zeile und Frist; Annahme per Tastatur sendet genau den Betrag', async ({ page }) => {
@@ -198,7 +198,7 @@ test.describe('Angebote', () => {
   })
 })
 
-test.describe('Nachtrag', () => {
+test.describe('Nachtrag', { tag: '@breit' }, () => {
   const withChange = (over: Partial<State> = {}) => state({ change: change(), after: { 'change-decide': { change: null } }, ...over })
 
   test('zeigt Mehraufwand, neuen Gesamtpreis und nur die Belege dieses Nachtrags; Zustimmen sendet genau den Gesamtpreis', async ({ page }) => {
@@ -279,7 +279,7 @@ test.describe('Nachtrag', () => {
   })
 })
 
-test.describe('Anfrage zurückziehen', () => {
+test.describe('Anfrage zurückziehen', { tag: '@breit' }, () => {
   const withdrawn = (over: Partial<State> = {}) => state({ status: 'awaiting_offer', after: { withdraw: { status: 'withdrawn' } }, ...over })
 
   test('Bestätigung per Tastatur, ein Aufruf mit der Anfrage, danach Endzustand ohne Knopf', async ({ page }) => {
@@ -320,7 +320,7 @@ test.describe('Anfrage zurückziehen', () => {
   })
 })
 
-test.describe('Frage nach dem Termin', () => {
+test.describe('Frage nach dem Termin', { tag: '@breit' }, () => {
   const started = (over: Partial<State> = {}) => state({ termin: PAST, after: { complete_job: { status: 'completed', confirmed: true }, report_not_done: { reported: '2026-01-02T08:00:00Z' } }, ...over })
 
   test('vor Terminbeginn gibt es keine Frage, aber den Storno-Knopf mit Stufen in Worten', async ({ page }) => {
@@ -498,7 +498,7 @@ test.describe('Frage nach dem Termin', () => {
 })
 
 for (const width of [390, 430, 1280]) {
-  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch`, async ({ page }) => {
+  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Knöpfe mindestens 44 px hoch`, { tag: '@breit' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await mock(page, state({ termin: PAST, change: change() }))
     await open(page)
@@ -510,7 +510,7 @@ for (const width of [390, 430, 1280]) {
     }
   })
 
-  test(`Angebote bei ${width} px: lange Firmennamen laufen nicht über, Beträge in einer Zeile`, async ({ page }) => {
+  test(`Angebote bei ${width} px: lange Firmennamen laufen nicht über, Beträge in einer Zeile`, { tag: '@breit' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await mock(page, state({ status: 'offered', offers: [offer({ company_name: 'Sehr langer Firmenname Transport Umzug und Logistik Gesellschaft m.b.H. Wien' })] }))
     await open(page)

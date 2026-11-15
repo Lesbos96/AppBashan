@@ -1,7 +1,7 @@
 import { expect, test } from './backend'
 import { collectErrors } from './console'
 
-test('Komponenten per Tastatur bedienbar', async ({ page }) => {
+test('Komponenten per Tastatur bedienbar', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await page.goto('/dev/fundament')
 
@@ -29,7 +29,7 @@ test('Komponenten per Tastatur bedienbar', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('Touch-Ziele, Beträge und Tab-Bar', async ({ page }) => {
+test('Touch-Ziele, Beträge und Tab-Bar', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/dev/fundament')
 
   for (const el of [

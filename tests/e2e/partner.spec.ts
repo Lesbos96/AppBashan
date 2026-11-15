@@ -93,7 +93,7 @@ async function fill(page: Page, o: { uid?: string | null; smallBusiness?: boolea
   await page.keyboard.press('Space')
 }
 
-test('nicht angemeldet: /partner führt zur Anmeldung und danach zurück', async ({ page }) => {
+test('nicht angemeldet: /partner führt zur Anmeldung und danach zurück', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await mockAuth(page)
   await mock(page)
@@ -106,7 +106,7 @@ test('nicht angemeldet: /partner führt zur Anmeldung und danach zurück', async
   expect(errors).toEqual([])
 })
 
-test('Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf Endgültigkeit', async ({ page }) => {
+test('Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf Endgültigkeit', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const state = await mock(page)
   await open(page)
@@ -124,7 +124,7 @@ test('Konto ohne Firma: Registrierformular mit Entwurfshinweis und Hinweis auf E
   expect(errors).toEqual([])
 })
 
-test('Pflichtfelder: leeres Absenden zeigt je Feld einen Text, sendet nichts und setzt den Fokus auf das erste Feld', async ({ page }) => {
+test('Pflichtfelder: leeres Absenden zeigt je Feld einen Text, sendet nichts und setzt den Fokus auf das erste Feld', { tag: '@breit' }, async ({ page }) => {
   const state = await mock(page)
   await open(page)
   await submit(page).click()
@@ -148,7 +148,7 @@ test('Pflichtfelder: leeres Absenden zeigt je Feld einen Text, sendet nichts und
   expect(state.bodies).toEqual([])
 })
 
-test('Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „In Prüfung“', async ({ page }) => {
+test('Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „In Prüfung“', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const state = await mock(page)
   await open(page)
@@ -165,7 +165,7 @@ test('Registrieren per Tastatur: genau die zwölf Schlüssel, danach Status „I
   expect(errors).toEqual([])
 })
 
-test('Kleinunternehmer ohne UID: p_uid null, p_small_business true', async ({ page }) => {
+test('Kleinunternehmer ohne UID: p_uid null, p_small_business true', { tag: '@breit' }, async ({ page }) => {
   const state = await mock(page)
   await open(page)
   await fill(page, { smallBusiness: true, uid: null })
@@ -174,7 +174,7 @@ test('Kleinunternehmer ohne UID: p_uid null, p_small_business true', async ({ pa
   expect(state.bodies).toEqual([{ ...BODY, p_uid: null, p_small_business: true }])
 })
 
-test('Doppelklick sendet genau einen Aufruf', async ({ page }) => {
+test('Doppelklick sendet genau einen Aufruf', { tag: '@breit' }, async ({ page }) => {
   const state = await mock(page, { answers: [{ json: PENDING.id, firmAfter: PENDING, delay: 800 }] })
   await open(page)
   await fill(page)
@@ -183,7 +183,7 @@ test('Doppelklick sendet genau einen Aufruf', async ({ page }) => {
   expect(state.bodies).toHaveLength(1)
 })
 
-test('already_member (zweites Gerät, Firma existiert schon): lädt den Status neu, kein Fehler', async ({ page }) => {
+test('already_member (zweites Gerät, Firma existiert schon): lädt den Status neu, kein Fehler', { tag: '@breit' }, async ({ page }) => {
   const state = await mock(page, { answers: [{ ...pgError(400, 'P0001', 'already_member'), firmAfter: { ...PENDING, status: 'rejected', status_reason: 'Unterlagen unvollständig' } }] })
   await open(page)
   await expect(field(page, 'Firmenname')).toBeVisible()
@@ -204,7 +204,7 @@ for (const [name, answer, text] of [
   ['Unique 23505', pgError(409, '23505', 'duplicate key'), 'Prüfe die Angaben'],
   ['500', pgError(500, 'XX000', 'boom'), 'Das hat nicht geklappt'],
 ] as const) {
-  test(`Serverfehler ${name}: Text im Formular, Angaben bleiben, zweiter Versuch möglich`, async ({ page }) => {
+  test(`Serverfehler ${name}: Text im Formular, Angaben bleiben, zweiter Versuch möglich`, { tag: '@breit' }, async ({ page }) => {
     const errors = collectErrors(page)
     const state = await mock(page, { answers: [answer] })
     await open(page)
@@ -221,7 +221,7 @@ for (const [name, answer, text] of [
   })
 }
 
-test('Netzfehler: Hinweis „Keine Verbindung“, zweiter Versuch klappt', async ({ page }) => {
+test('Netzfehler: Hinweis „Keine Verbindung“, zweiter Versuch klappt', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const state = await mock(page, { answers: [{ abort: true }] })
   await open(page)
@@ -242,7 +242,7 @@ for (const [status, label, reason, text] of [
   ['rejected', 'Abgelehnt', 'Unterlagen unvollständig', 'Deine Registrierung wurde abgelehnt'],
   ['rejected', 'Abgelehnt', null, 'Deine Registrierung wurde abgelehnt'],
 ] as const) {
-  test(`Status ${status}${reason ? ' mit Begründung' : ''}: ${label}`, async ({ page }) => {
+  test(`Status ${status}${reason ? ' mit Begründung' : ''}: ${label}`, { tag: '@breit' }, async ({ page }) => {
     const errors = collectErrors(page)
     await mock(page, { firm: { id: 'p-9', name: 'Möbel Müller KG', status, status_reason: reason } })
     await open(page)
@@ -258,7 +258,7 @@ for (const [status, label, reason, text] of [
   })
 }
 
-test('Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Registrierformular', async ({ page }) => {
+test('Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Registrierformular', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   // Der Lesefehler gilt bis zum Klick, nicht für eine feste Zahl Aufrufe (der Entwicklungs-Build startet Effekte doppelt)
   const state = await mock(page, { firm: PENDING, failLoads: 1000 })
@@ -271,7 +271,7 @@ test('Lesefehler beim Laden: Fehlerzustand mit „Erneut versuchen“, kein Regi
   expect(errors.filter((e) => !/status of 500/.test(e))).toEqual([])
 })
 
-test('Profil: Zeile „Als Partner arbeiten“ führt zu /partner', async ({ page }) => {
+test('Profil: Zeile „Als Partner arbeiten“ führt zu /partner', { tag: '@breit' }, async ({ page }) => {
   await mock(page)
   await open(page, '/profil')
   await page.getByRole('link', { name: /Als Partner arbeiten/ }).click()
@@ -280,7 +280,7 @@ test('Profil: Zeile „Als Partner arbeiten“ führt zu /partner', async ({ pag
 })
 
 for (const width of [390, 430, 1280]) {
-  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px`, async ({ page }) => {
+  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Felder, Bezirke und Knopf mindestens 44 px`, { tag: '@breit' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await mock(page)
     await open(page)

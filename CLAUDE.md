@@ -12,7 +12,7 @@ Umfang dieser Phase: genau das Briefing in `docs/DESIGN_BRIEF.md`. Was unter „
 - Modell der Hauptsession: Sonnet 5.5 (Effort hoch bei R3, sonst mittel). Ein anderes Modell nur auf mein Wort; läufst du mit einem anderen, sag es im ersten Satz.
 - Fragen an mich stehen in `docs/BEKS.md`, nicht verstreut. Ändert ein Schritt eine frühere Entscheidung von mir, braucht er mein wörtliches Ja im Prompt, sonst hältst du an.
 - Gates (`scripts/sys/**`, `.claude/**`, `.githooks/**`, `package.json`, diese Datei) nie abschwächen. Blockiert eines zu Unrecht: anhalten, berichten. Rettungswege: `docs/BEKS_EINRICHTUNG.md`.
-- Übergang: Die `ask`-Regeln für commit, merge, push, rm und dotenv bleiben bis nach dem Probe-Schritt.
+- Die `ask`-Regeln für `git commit` und `git merge` entfielen nach dem Probe-Schritt (u4); push, rm und dotenv bleiben auf `ask` (ENTSCHEIDUNGEN Nr. 174).
 
 ## Quellen und Rangfolge
 - **Optik:** `docs/reference/design/` (Screens, HTML-Quelltext, `tokens.json`, `README.md`). Verbindlich.

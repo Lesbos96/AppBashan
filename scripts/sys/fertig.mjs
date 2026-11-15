@@ -167,7 +167,7 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
     loeschFreigaben: freigabenAusGit('HEAD'),
     freigabenGeaendert: geaendert('MD', 'docs/freigaben'),
     stufe: stufeAus(pfade),
-    sauber: sauber(),
+    sauber: sauber(ohneBericht), // nur `npm run bericht` (ohneBericht) darf seine eigenen Nachweise im Index haben
     runs,
     dbPushes,
     abdruck: Object.fromEntries(SUITEN.map((s) => [s, fingerabdruck(s)])),

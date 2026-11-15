@@ -61,7 +61,7 @@ async function open(page: Page) {
 const CONFIRM = /^(Kostenlos|Für .+) stornieren$/
 const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|15 ?%|MoveNow-Gebühr/)
 
-test('Detail: Status, Verlauf, Termin, Adressen und Preis', async ({ page }) => {
+test('Detail: Status, Verlauf, Termin, Adressen und Preis', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await mock(page, { status: 'accepted', calls: [], answers: [] })
   await open(page)
@@ -80,7 +80,7 @@ test('Detail: Status, Verlauf, Termin, Adressen und Preis', async ({ page }) => 
   expect(errors).toEqual([])
 })
 
-test('Storno kostenlos: Vorschau, Bestätigung per Tastatur, Detail zeigt danach den Endzustand', async ({ page }) => {
+test('Storno kostenlos: Vorschau, Bestätigung per Tastatur, Detail zeigt danach den Endzustand', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const state: State = { status: 'accepted', calls: [], answers: [{ json: { cancelFeeCents: 0 } }, { json: { status: 'cancelled_by_customer', cancelFeeCents: 0 } }] }
   await mock(page, state)
@@ -100,7 +100,7 @@ test('Storno kostenlos: Vorschau, Bestätigung per Tastatur, Detail zeigt danach
   expect(errors).toEqual([])
 })
 
-test('Storno mit Kosten: der Betrag der Vorschau wird gezeigt und genau so gesendet', async ({ page }) => {
+test('Storno mit Kosten: der Betrag der Vorschau wird gezeigt und genau so gesendet', { tag: '@breit' }, async ({ page }) => {
   const state: State = { status: 'accepted', calls: [], answers: [{ json: { cancelFeeCents: 34481 } }, { json: { status: 'cancelled_by_customer', cancelFeeCents: 34481 } }] }
   await mock(page, state)
   await open(page)
@@ -115,7 +115,7 @@ test('Storno mit Kosten: der Betrag der Vorschau wird gezeigt und genau so gesen
   expect(state.calls[1]!.body).toEqual({ requestId: ID, shownFeeCents: 34481 })
 })
 
-test('Stufe wechselt zwischen Vorschau und Bestätigung: neuer Betrag, nichts wird still gebucht', async ({ page }) => {
+test('Stufe wechselt zwischen Vorschau und Bestätigung: neuer Betrag, nichts wird still gebucht', { tag: '@breit' }, async ({ page }) => {
   const state: State = {
     status: 'accepted',
     calls: [],
@@ -134,7 +134,7 @@ test('Stufe wechselt zwischen Vorschau und Bestätigung: neuer Betrag, nichts wi
   expect(state.calls.map((c) => c.body.shownFeeCents)).toEqual([undefined, 0, 34481])
 })
 
-test('zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt', async ({ page }) => {
+test('zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt', { tag: '@breit' }, async ({ page }) => {
   const state: State = { status: 'accepted', calls: [], answers: [{ status: 409, json: { error: 'too_late_use_report_not_done' } }] }
   await mock(page, state)
   await open(page)
@@ -144,7 +144,7 @@ test('zu spät: Hinweis auf „Nicht stattgefunden“, Auftrag bleibt', async ({
   expect(state.status).toBe('accepted')
 })
 
-test('Netzfehler bei der Vorschau: Fehlertext, erneut versuchen möglich', async ({ page }) => {
+test('Netzfehler bei der Vorschau: Fehlertext, erneut versuchen möglich', { tag: '@breit' }, async ({ page }) => {
   await mock(page, { status: 'accepted', calls: [], answers: [{ status: 500, json: { error: 'internal' } }, { json: { cancelFeeCents: 0 } }] })
   await open(page)
   await page.getByRole('button', { name: 'Stornieren' }).click()
@@ -154,7 +154,7 @@ test('Netzfehler bei der Vorschau: Fehlertext, erneut versuchen möglich', async
   await expect(sheet.getByText('Kostenlos', { exact: true })).toBeVisible()
 })
 
-test('Storno nur bei „Bestätigt“: andere Status haben keinen Knopf', async ({ page }) => {
+test('Storno nur bei „Bestätigt“: andere Status haben keinen Knopf', { tag: '@breit' }, async ({ page }) => {
   await mock(page, { status: 'requested', calls: [], answers: [] })
   await open(page)
   await expect(page.getByRole('list', { name: 'Verlauf' }).getByRole('listitem').first()).toHaveAttribute('aria-current', 'step')
@@ -162,7 +162,7 @@ test('Storno nur bei „Bestätigt“: andere Status haben keinen Knopf', async 
 })
 
 for (const width of [390, 430, 1280]) {
-  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch`, async ({ page }) => {
+  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Storno-Knopf mindestens 44 px hoch`, { tag: '@breit' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await mock(page, { status: 'accepted', calls: [], answers: [] })
     await open(page)
@@ -171,7 +171,7 @@ for (const width of [390, 430, 1280]) {
   })
 }
 
-test('Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste', async ({ page }) => {
+test('Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste', { tag: '@breit' }, async ({ page }) => {
   const state: State = { status: 'accepted', calls: [], answers: [], urls: [] }
   await mock(page, state)
   await open(page)
@@ -182,7 +182,7 @@ test('Abfrage des Details: eigene Nutzer-ID und feste Spaltenliste', async ({ pa
   expect(detail.replace('cancel_fee_waived', '')).not.toMatch(/fee|commission|inputs/i) // einzige erlaubte Spalte mit „fee“: das Storno-Flag
 })
 
-test('Beschriftung nennt den Betrag und wechselt mit ihm', async ({ page }) => {
+test('Beschriftung nennt den Betrag und wechselt mit ihm', { tag: '@breit' }, async ({ page }) => {
   const state: State = { status: 'accepted', calls: [], answers: [{ json: { cancelFeeCents: 0 } }, { status: 409, json: { error: 'cancel_fee_changed', cancelFeeCents: 34481 } }] }
   await mock(page, state)
   await open(page)
@@ -194,7 +194,7 @@ test('Beschriftung nennt den Betrag und wechselt mit ihm', async ({ page }) => {
   await expect(sheet.getByRole('alert')).toContainText('Die Stornokosten haben sich geändert')
 })
 
-test('Während die Buchung läuft, schließt nichts das Sheet', async ({ page }) => {
+test('Während die Buchung läuft, schließt nichts das Sheet', { tag: '@breit' }, async ({ page }) => {
   const state: State = { status: 'accepted', calls: [], answers: [{ json: { cancelFeeCents: 0 } }, { delay: 1500, json: { status: 'cancelled_by_customer', cancelFeeCents: 0 } }] }
   await mock(page, state)
   await open(page)
@@ -208,7 +208,7 @@ test('Während die Buchung läuft, schließt nichts das Sheet', async ({ page })
   await expect(page.getByText('Du hast den Auftrag storniert.')).toBeVisible()
 })
 
-test('Antwort verloren, Server hat gebucht: zweiter Versuch gleicht das Detail an', async ({ page }) => {
+test('Antwort verloren, Server hat gebucht: zweiter Versuch gleicht das Detail an', { tag: '@breit' }, async ({ page }) => {
   const state: State = {
     status: 'accepted',
     calls: [],

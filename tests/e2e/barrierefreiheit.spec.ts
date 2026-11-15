@@ -39,7 +39,7 @@ async function tabTo(page: Page, name: RegExp) {
   })
 }
 
-test.describe('Fokusrahmen (1.4.11, 2.4.7)', () => {
+test.describe('Fokusrahmen (1.4.11, 2.4.7)', { tag: '@breit' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   })
@@ -104,7 +104,7 @@ async function settled(page: Page) {
   await page.waitForFunction(() => getComputedStyle(document.querySelector('main')!.parentElement!).transform === 'none')
 }
 
-test.describe('Fokus nicht verdeckt (2.4.11)', () => {
+test.describe('Fokus nicht verdeckt (2.4.11)', { tag: '@breit' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   })
@@ -136,7 +136,7 @@ test.describe('Fokus nicht verdeckt (2.4.11)', () => {
   })
 })
 
-test.describe('Fokus in Freitextfeldern sichtbar (2.4.7)', () => {
+test.describe('Fokus in Freitextfeldern sichtbar (2.4.7)', { tag: '@breit' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   })
@@ -167,7 +167,7 @@ test.describe('Fokus in Freitextfeldern sichtbar (2.4.7)', () => {
   })
 })
 
-test.describe('Seitentitel (2.4.2)', () => {
+test.describe('Seitentitel (2.4.2)', { tag: '@breit' }, () => {
   test('jede Seite hat einen eigenen Titel, auch nach dem Wechsel', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     for (const [path, title] of [
@@ -190,7 +190,7 @@ test.describe('Seitentitel (2.4.2)', () => {
   })
 })
 
-test.describe('Fokus nach Seitenwechsel (2.4.3, 4.1.3)', () => {
+test.describe('Fokus nach Seitenwechsel (2.4.3, 4.1.3)', { tag: '@breit' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   })
@@ -225,7 +225,7 @@ test.describe('Fokus nach Seitenwechsel (2.4.3, 4.1.3)', () => {
   })
 })
 
-test.describe('Anmeldung: Fokus beim Schrittwechsel (2.4.3)', () => {
+test.describe('Anmeldung: Fokus beim Schrittwechsel (2.4.3)', { tag: '@breit' }, () => {
   test('nach „Code senden" im Codefeld, nach „Andere Adresse" wieder im E-Mail-Feld', async ({ page }) => {
     await mockAuth(page)
     await page.goto('/anmelden')
@@ -243,7 +243,7 @@ test.describe('Anmeldung: Fokus beim Schrittwechsel (2.4.3)', () => {
   })
 })
 
-test.describe('Wartezeit nach 429 (4.1.3)', () => {
+test.describe('Wartezeit nach 429 (4.1.3)', { tag: '@breit' }, () => {
   test('die Live-Region enthält nur die Meldung, der Zähler läuft daneben', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await anonymousPrices(page)
@@ -267,7 +267,7 @@ test.describe('Wartezeit nach 429 (4.1.3)', () => {
   })
 })
 
-test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', () => {
+test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', { tag: '@breit' }, () => {
   test('Montage: Statusmeldung trägt den neuen Endbetrag', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await page.goto('/montage')
@@ -284,7 +284,7 @@ test.describe('Geänderter Richtpreis wird angesagt (4.1.3)', () => {
   })
 })
 
-test.describe('Sichtbarer Text im Namen (2.5.3)', () => {
+test.describe('Sichtbarer Text im Namen (2.5.3)', { tag: '@breit' }, () => {
   test('Fotoknöpfe: Name beginnt mit „Kamera" bzw. „Galerie"', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await page.goto('/transport')
@@ -296,7 +296,7 @@ test.describe('Sichtbarer Text im Namen (2.5.3)', () => {
   })
 })
 
-test.describe('Foto-Zähler wird angesagt (4.1.3)', () => {
+test.describe('Foto-Zähler wird angesagt (4.1.3)', { tag: '@breit' }, () => {
   test('Überschrift und Zähler bilden eine höfliche Live-Region, ohne zweites Element „Fotos"', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await page.goto('/transport')
@@ -309,7 +309,7 @@ test.describe('Foto-Zähler wird angesagt (4.1.3)', () => {
   })
 })
 
-test.describe('Überschriften ohne Sprung (1.3.1)', () => {
+test.describe('Überschriften ohne Sprung (1.3.1)', { tag: '@breit' }, () => {
   /** Ebenen der sichtbaren Überschriften in Dokumentreihenfolge. */
   const levels = (page: Page) => page.locator('main h1, main h2, main h3, main h4').evaluateAll((hs) => hs.filter((h) => (h as HTMLElement).offsetParent !== null).map((h) => Number(h.tagName[1])))
 
@@ -326,7 +326,7 @@ test.describe('Überschriften ohne Sprung (1.3.1)', () => {
   })
 })
 
-test.describe('Fehlerseite (1.3.1, 2.4.6)', () => {
+test.describe('Fehlerseite (1.3.1, 2.4.6)', { tag: '@breit' }, () => {
   test('hat genau eine h1 mit dem Fehler', async ({ page }) => {
     await page.goto('/gibt-es-nicht')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Seite nicht gefunden')
@@ -334,7 +334,7 @@ test.describe('Fehlerseite (1.3.1, 2.4.6)', () => {
   })
 })
 
-test.describe('Textkontrast der Adressmarker (1.4.3)', () => {
+test.describe('Textkontrast der Adressmarker (1.4.3)', { tag: '@breit' }, () => {
   for (const scheme of ['light', 'dark'] as const) {
     test(`Marker „A" und „B" mindestens 4,5:1 (${scheme})`, async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
@@ -353,7 +353,7 @@ test.describe('Textkontrast der Adressmarker (1.4.3)', () => {
   }
 })
 
-test.describe('Textabstände (1.4.12)', () => {
+test.describe('Textabstände (1.4.12)', { tag: '@breit' }, () => {
   const spacing = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }'
   /** Elemente in der Preisleiste, deren Text abgeschnitten ist (overflow ≠ visible und Inhalt größer als die Box). */
   const clipped = (page: Page) =>
@@ -386,7 +386,7 @@ test.describe('Textabstände (1.4.12)', () => {
   })
 })
 
-test.describe('Onboarding: neue Seite wird angesagt (4.1.3)', () => {
+test.describe('Onboarding: neue Seite wird angesagt (4.1.3)', { tag: '@breit' }, () => {
   test('Titel und Text stehen in einer höflichen Live-Region, der Fokus bleibt auf „Weiter"', async ({ page }) => {
     await page.goto('/willkommen')
     const region = page.locator('[aria-live="polite"]', { has: page.getByRole('heading', { level: 1 }) })
@@ -397,7 +397,7 @@ test.describe('Onboarding: neue Seite wird angesagt (4.1.3)', () => {
   })
 })
 
-test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', () => {
+test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', { tag: '@breit' }, () => {
   test('setzt der Nutzer den Fokus vor dem Nachladen der Überschrift woandershin, bleibt er dort', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     // Tarife verzögert: die Entrümpelung zeigt ihre Überschrift erst nach dem Laden
@@ -426,7 +426,7 @@ test.describe('Fokus nach Seitenwechsel: kein Wegziehen (2.4.3)', () => {
   })
 })
 
-test.describe('Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2)', () => {
+test.describe('Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2)', { tag: '@breit' }, () => {
   test('Pflichtfelder sind markiert; ungültige Eingabe zeigt nach dem Verlassen einen verknüpften Hinweis', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await anonymousPrices(page)
@@ -453,7 +453,7 @@ test.describe('Kontaktfelder: Pflicht und Fehlerhinweis (3.3.1, 3.3.2)', () => {
   })
 })
 
-test.describe('Eingabezweck (1.3.5)', () => {
+test.describe('Eingabezweck (1.3.5)', { tag: '@breit' }, () => {
   test('Kontaktfelder der Zusammenfassung tragen autocomplete', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     await anonymousPrices(page)
@@ -463,7 +463,7 @@ test.describe('Eingabezweck (1.3.5)', () => {
   })
 })
 
-test.describe('Fortschritt mit Wertetext (4.1.2)', () => {
+test.describe('Fortschritt mit Wertetext (4.1.2)', { tag: '@breit' }, () => {
   test('Entrümpelung und Onboarding nennen Schritt bzw. Seite statt Prozent', async ({ page }) => {
     await page.goto('/willkommen')
     await expect(page.getByRole('progressbar', { name: 'Seite' })).toHaveAttribute('aria-valuetext', 'Seite 1 von 3')

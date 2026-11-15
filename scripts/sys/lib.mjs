@@ -17,9 +17,13 @@ export const schrittName = () => git('branch', '--show-current').replace(/[\\/]/
 
 // Sauber: keine Änderung an verfolgten Dateien und keine unverfolgten Dateien außerhalb von docs/.
 // Unverfolgte Dateien unter docs/ beeinflussen keine Suite und zählen nicht.
-export function sauber() {
+// `nachweiseImIndex` (nur run.mjs und bericht.mjs): zusätzlich zählt nicht, was `npm run bericht` in den Index legt, ohne Änderung im Arbeitsbaum:
+// neue Nachweise unter docs/proof/ (`A  `) und die drei Dateien, die er neu schreibt (`M  `: docs/proof/gruen.json, <schritt>/bericht.json und .md).
+// Kein Fingerabdruck liest docs/proof/. `fertig` und `start-schritt` verlangen weiter einen leeren Index, ebenso jede ungestagete Änderung (` M`, `AM`, `MM`).
+export function sauber(nachweiseImIndex = false) {
   const zeilen = git('status', '--porcelain').split('\n').filter(Boolean)
-  return zeilen.every((z) => z.startsWith('?? docs/'))
+  const berichtZeile = /^(A {2}docs\/proof\/|M {2}docs\/proof\/(gruen\.json|[\w.-]+\/bericht\.(json|md))$)/
+  return zeilen.every((z) => z.startsWith('?? docs/') || (nachweiseImIndex && berichtZeile.test(z)))
 }
 
 // Der pre-push-Hook ist nur wirksam, wenn Git ihn findet (`npm run prepare` setzt es, läuft sonst nur bei `npm install`).

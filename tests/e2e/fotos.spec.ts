@@ -12,7 +12,7 @@ const rejected = (code: string) => ({ status: 422, json: { error: code } })
 const accepted = () => ({ json: answer(price(117500), { id: REQUEST }) })
 const ids = (body: Record<string, unknown>) => body.photoIds as string[]
 
-test('Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber', async ({ page }) => {
+test('Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg, Typ JPEG, kein Standort in den Bytes, photoIds im Aufruf, Konsole sauber', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await mockPhotos(page)
   // JPEG mit APP1/Exif-Segment (GPS-Platzhalter) im Browser erzeugen; die App kodiert es vor dem Upload neu.
@@ -55,7 +55,7 @@ test('Fotos gehen vor dem Absenden ins Staging: Pfad {user}/{clientRef}/{id}.jpg
   expect(errors.filter((e) => !failed.test(e))).toEqual([])
 })
 
-test('Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen', async ({ page }) => {
+test('Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die Fotos sind zu sehen', { tag: '@breit' }, async ({ page }) => {
   await mockPhotos(page)
   await prepareSummary(page)
   await expect(page.getByRole('heading', { name: 'Fotos' })).toBeVisible()
@@ -63,7 +63,7 @@ test('Hinweis vor dem Senden: Fotos lassen sich danach nicht mehr ändern; die F
   await expect(page.getByText('Nach dem Senden lassen sich die Fotos nicht mehr ändern.')).toBeVisible()
 })
 
-test('Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging', async ({ page }) => {
+test('Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Fotos im Staging', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockPhotos(page)
   await prepareSummary(page)
   const checkbox = page.getByRole('checkbox')
@@ -78,7 +78,7 @@ test('Hauptflow per Tastatur: Einwilligung mit Leertaste, Senden mit Enter, Foto
   expect(calls.uploads).toHaveLength(2)
 })
 
-test('Fortschritt: x von 2 hochgeladen, dann gesendet', async ({ page }) => {
+test('Fortschritt: x von 2 hochgeladen, dann gesendet', { tag: '@breit' }, async ({ page }) => {
   await mockPhotos(page, { upload: () => ({ delay: 800 }) })
   await sendWithPhotos(page, { sent: false })
   await expect(status(page)).toHaveText('0 von 2 hochgeladen')
@@ -86,7 +86,7 @@ test('Fortschritt: x von 2 hochgeladen, dann gesendet', async ({ page }) => {
   await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
 })
 
-test('Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet', async ({ page }) => {
+test('Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut senden holt nach und sendet', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockPhotos(page, { upload: (n) => (n === 1 ? storageError(500, 'Internal', 'boom') : {}) })
   const quoteCalls = await sendWithPhotos(page, { sent: false })
   await expect(page.getByRole('alert').filter({ hasText: 'Die Fotos konnten nicht hochgeladen werden.' })).toBeVisible()
@@ -99,7 +99,7 @@ test('Fehler beim Hochladen: Meldung, `quote` wird nicht aufgerufen, Erneut send
   expect(ids(quoteCalls[0]!.body)).toHaveLength(2)
 })
 
-test('Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild', async ({ page }) => {
+test('Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadratische Vorschau, Senden-Knopf ≥ 44 px, Karte im Bild', { tag: '@breit' }, async ({ page }) => {
   await mockPhotos(page, { upload: () => storageError(500, 'Internal', 'boom') })
   await sendWithPhotos(page, { sent: false })
   const alert = page.getByRole('alert').filter({ hasText: 'Die Fotos konnten nicht hochgeladen werden.' })
@@ -117,7 +117,7 @@ test('Maße der Zusammenfassung mit Fotos und Fehlerkarte: kein Überlauf, quadr
   expect((await sendButton(page).boundingBox())!.height).toBeGreaterThanOrEqual(44)
 })
 
-test.describe('Fehlertexte beim Hochladen', () => {
+test.describe('Fehlertexte beim Hochladen', { tag: '@breit' }, () => {
   for (const [name, reply, text] of [
     ['offline', { abort: true } as const, 'Keine Verbindung.'],
     ['403 (Kontingent oder Policy)', storageError(403, 'Unauthorized', 'new row violates row-level security policy'), 'Die Fotos lassen sich gerade nicht hochladen.'],
@@ -133,7 +133,7 @@ test.describe('Fehlertexte beim Hochladen', () => {
   }
 })
 
-test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt', () => {
+test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Dateien werden entfernt', { tag: '@breit' }, () => {
   for (const [code, text] of [
     ['photo_missing', 'Ein Foto ist nicht angekommen.'],
     ['photo_expired', 'Die Fotos lagen zu lange bereit.'],
@@ -156,7 +156,7 @@ test.describe('422 der Fotos: neuer Name beim erneuten Senden, alte Staging-Date
   }
 })
 
-test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt', async ({ page }) => {
+test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeigte Fotos, alte Staging-Dateien entfernt', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockPhotos(page)
   const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
   await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
@@ -182,14 +182,14 @@ test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeig
   expect(calls.removedFiles).toEqual([[`u-1/${first.clientRef}/${id1}.jpg`, `u-1/${first.clientRef}/${id2}.jpg`]])
 })
 
-test('422 too_many_photos: eigener Text, Weg zurück zu den Angaben', async ({ page }) => {
+test('422 too_many_photos: eigener Text, Weg zurück zu den Angaben', { tag: '@breit' }, async ({ page }) => {
   await mockPhotos(page)
   await sendWithPhotos(page, { reply: () => rejected('too_many_photos'), sent: false })
   await expect(page.getByRole('alert').filter({ hasText: 'Mehr als 8 Fotos gehen nicht.' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Angaben ändern' })).toBeVisible()
 })
 
-test('Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt', async ({ page }) => {
+test('Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/transport')
   const input = page.locator('input[type=file][multiple]')
   await input.setInputFiles({ name: 'IMG_1.heic', mimeType: 'image/heic', buffer: Buffer.from('x') })
@@ -199,7 +199,7 @@ test('Falsche Dateitypen: HEIC mit eigener Meldung, GIF und Text abgelehnt', asy
   await expect(page.getByText('0 von 8')).toBeVisible()
 })
 
-test('Große Fotos werden auf 2000 px an der langen Kante verkleinert', async ({ page }) => {
+test('Große Fotos werden auf 2000 px an der langen Kante verkleinert', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/transport')
   const big = await page.evaluate(async () => {
     const c = document.createElement('canvas')

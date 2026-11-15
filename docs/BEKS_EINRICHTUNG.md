@@ -68,7 +68,6 @@ Nicht über Claude, sondern selbst im Terminal im Repo:
 
 ## 8. Später (kein Teil von u1)
 - `/usage` notieren (Ausgangswert für die Fable-Grenze unter 50 %).
-- Nach dem ersten echten Schritt mit dem neuen System (Probe) und u2 können die bisherigen `ask`-Regeln für `git commit`, `git merge`, `git push`, `rm` und `npx dotenv` in `.claude/settings.json` entfallen (Vorschlag a7). Bis dahin bleiben sie.
-- Die `ask`-Regeln dürfen erst nach dem ersten echten Schritt mit dem neuen System entfallen (M17 und M18 sind seit u1b behoben). Neu in u1b: `npm run loesch` steht in der `ask`-Liste.
+- Stand nach u4: Die `ask`-Regeln für `git commit` und `git merge` sind entfallen (Vorschlag a7, Probe bestanden). `git push`, `rm`, `npx dotenv` und `npm run loesch` bleiben auf `ask` (ENTSCHEIDUNGEN Nr. 174).
 - Lösch-Gate (u1b): Skripte, die auf Dev löschen oder Status ändern (Register `scripts/sys/loesch-register.json`), starten für Claude nur über `npm run loesch -- <skript.mjs>`, mit Fable-Freigabe (Pfad + SHA-256) aus `docs/freigaben/`. `npm run admin:call`, `setup:photo-cleanup`, `setup:photo-publish` sind für Claude gesperrt; im eigenen Terminal laufen sie unverändert. Freigabe erteilen: `advisor-report` schreibt `tmp/proof/<schritt>/loesch-freigabe-N.md`, dann `npm run loesch -- uebernehme <datei>` (kopiert nach `docs/freigaben/`), dann committen.
 - Offen für dich: Schritt 1 (trim-output) und Schritt 2 (`CLAUDE_CODE_DISABLE_ADVISOR_TOOL`) sind laut Prüfung in u1b nicht wirksam (`docs/proof/u1b/u1b-ausgangslage.log`).

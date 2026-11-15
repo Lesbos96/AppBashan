@@ -17,7 +17,7 @@ const angenommen = (page: Page) => page.getByRole('heading', { name: 'Angenommen
 const beendet = (page: Page) => page.getByRole('heading', { name: 'Beendet', level: 2 })
 const open = (page: Page, init: Partial<JobsState> = {}, o = {}) => openJobs(page, init, o)
 
-test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebühr, keine Kontaktdaten, keine Auftrags-ID im DOM', async ({ page }) => {
+test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebühr, keine Kontaktdaten, keine Auftrags-ID im DOM', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await open(page, { myJobs: [job()] })
   await expect(angenommen(page)).toBeVisible()
@@ -37,7 +37,7 @@ test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebü
   expect(real(errors)).toEqual([])
 })
 
-test('Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DOM, nachher im Sheet, nach dem Schließen wieder weg; jeder Abruf zählt', async ({ page }) => {
+test('Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DOM, nachher im Sheet, nach dem Schließen wieder weg; jeder Abruf zählt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job()] })
   await expect(angenommen(page)).toBeVisible()
   expect(jobs.contacts).toEqual([])
@@ -58,7 +58,7 @@ test('Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DO
   expect(jobs.contacts, 'zweites Antippen = zweiter Abruf').toEqual([RQ1, RQ1])
 })
 
-test('Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein Fehler lässt sich wiederholen', async ({ page }) => {
+test('Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein Fehler lässt sich wiederholen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job()], contactAnswers: [pgErr('not_assigned'), { status: 500, json: { code: 'XX000', message: 'boom', details: null, hint: null } }] })
   const button = () => card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' })
   await button().click()
@@ -73,7 +73,7 @@ test('Kontakt: Zugriffsfenster vorbei und Serverfehler haben eigene Texte, ein F
   await expect(page.locator('body')).not.toContainText(/not_assigned|P0001|boom/)
 })
 
-test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener Zeit, kein Aufruf', async ({ page }) => {
+test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener Zeit, kein Aufruf', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: false })] })
   const b = card(page).getByRole('button', { name: 'Auftrag starten' })
   await expect(b).toBeDisabled()
@@ -83,7 +83,7 @@ test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener 
 })
 
 for (const status of ['accepted', 'in_progress'] as const) {
-  test(`Kunde hat „nicht stattgefunden“ gemeldet (${status}): nur der Hinweis, kein Start, Abschluss, Absage, Nachtrag (S9i6b-3)`, async ({ page }) => {
+  test(`Kunde hat „nicht stattgefunden“ gemeldet (${status}): nur der Hinweis, kein Start, Abschluss, Absage, Nachtrag (S9i6b-3)`, { tag: '@breit' }, async ({ page }) => {
     await open(page, { myJobs: [job({ status, can_start: false, under_review: true })] })
     await expect(card(page).getByRole('status').filter({ hasText: 'Der Kunde hat gemeldet, dass der Auftrag nicht stattgefunden hat' })).toBeVisible()
     await expect(card(page).getByRole('button', { name: /Auftrag (starten|abschließen|absagen)/ })).toHaveCount(0)
@@ -92,7 +92,7 @@ for (const status of ['accepted', 'in_progress'] as const) {
   })
 }
 
-test('Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Status wechselt, der Auftrag wandert nach „Beendet“', async ({ page }) => {
+test('Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Status wechselt, der Auftrag wandert nach „Beendet“', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })] })
   await card(page).getByRole('button', { name: 'Auftrag starten' }).click()
@@ -114,7 +114,7 @@ test('Start und Abschluss: Bestätigung, gesendet wird nur die Auftrags-ID, Stat
   expect(real(errors)).toEqual([])
 })
 
-test('Doppelklick auf die Bestätigung sendet nur einen Aufruf', async ({ page }) => {
+test('Doppelklick auf die Bestätigung sendet nur einen Aufruf', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })] })
   await card(page).getByRole('button', { name: 'Auftrag starten' }).click()
   await dialog(page).getByRole('button', { name: 'Auftrag starten' }).dblclick()
@@ -122,7 +122,7 @@ test('Doppelklick auf die Bestätigung sendet nur einen Aufruf', async ({ page }
   expect(jobs.starts).toHaveLength(1)
 })
 
-test('Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, nie Servercodes', async ({ page }) => {
+test('Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, nie Servercodes', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })], startAnswers: [pgErr('too_early'), pgErr('mfa_required', 401), pgErr('invalid_transition')] })
   const start = () => card(page).getByRole('button', { name: 'Auftrag starten' })
   const confirm = () => dialog(page).getByRole('button', { name: 'Auftrag starten' })
@@ -150,7 +150,7 @@ test('Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, 
   await expect(page.locator('body')).not.toContainText(/too_early|invalid_transition|not_assigned|mfa_required|P0001/)
 })
 
-test('Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftung „Preis für den Kunden“', async ({ page }) => {
+test('Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftung „Preis für den Kunden“', { tag: '@breit' }, async ({ page }) => {
   await open(page, {
     myJobs: [
       job({ status: 'cancelled_by_customer', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_customer', total_cents: 0, payout_cents: 0 }),
@@ -174,13 +174,13 @@ test('Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftu
   await noFee(page)
 })
 
-test('Beträge nicht lesbar: der Auftrag bleibt sichtbar, es erscheint kein Betrag (nie 0 €)', async ({ page }) => {
+test('Beträge nicht lesbar: der Auftrag bleibt sichtbar, es erscheint kein Betrag (nie 0 €)', { tag: '@breit' }, async ({ page }) => {
   await open(page, { myJobs: [job({ total_cents: null, payout_cents: null })] })
   await expect(card(page)).toContainText('Umzug, Bezirk 3')
   await expect(card(page)).not.toContainText(/€|Du erhältst|Preis für den Kunden/)
 })
 
-test('pausierte Firma (payment_hold) sieht ihre angenommenen Aufträge, aber keine offenen Anfragen; pending ruft nichts ab', async ({ page }) => {
+test('pausierte Firma (payment_hold) sieht ihre angenommenen Aufträge, aber keine offenen Anfragen; pending ruft nichts ab', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })] }, { status: 'payment_hold' })
   await expect(angenommen(page)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Offene Anfragen' })).toHaveCount(0)
@@ -188,7 +188,7 @@ test('pausierte Firma (payment_hold) sieht ihre angenommenen Aufträge, aber kei
   await expect(card(page).getByRole('button', { name: 'Auftrag starten' })).toBeEnabled()
 })
 
-test('pending: weder Aufträge noch Anfragen werden abgerufen', async ({ page }) => {
+test('pending: weder Aufträge noch Anfragen werden abgerufen', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job()] }, { status: 'pending' })
   await expect(page.getByRole('heading', { name: 'Dokumente' })).toBeVisible()
   expect(jobs.jobReads).toBe(0)
@@ -196,7 +196,7 @@ test('pending: weder Aufträge noch Anfragen werden abgerufen', async ({ page })
   await expect(page.getByRole('article')).toHaveCount(0)
 })
 
-test('Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund lässt die Anzeige stehen', async ({ page }) => {
+test('Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund lässt die Anzeige stehen', { tag: '@breit' }, async ({ page }) => {
   // zwei Fehler: React StrictMode (Entwicklungsbuild) ruft beim Start zweimal ab, der erste Abruf gilt nicht mehr
   const { jobs } = await open(page, { myJobs: [job()], jobStatus: [500, 500] })
   await expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toBeVisible()
@@ -210,7 +210,7 @@ test('Ladefehler mit erneutem Versuch; ein Fehler beim Neuladen im Hintergrund l
   await expect(page.getByText('Die Aufträge konnten nicht geladen werden')).toHaveCount(0)
 })
 
-test('Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwindet die Liste (Abnahme N6)', async ({ page }) => {
+test('Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwindet die Liste (Abnahme N6)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job()] })
   await expect(card(page)).toContainText('Umzug, Bezirk 3')
   jobs.jobStatus.push(403)
@@ -219,7 +219,7 @@ test('Verweigert der Server beim Neuladen (Firma inzwischen gesperrt), verschwin
   await expect(page.getByRole('button', { name: 'Auftrag starten' })).toHaveCount(0)
 })
 
-test('Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird „Auftrag starten“ frei (Entscheidung der Serveruhr, nicht der Geräteuhr)', async ({ page }) => {
+test('Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird „Auftrag starten“ frei (Entscheidung der Serveruhr, nicht der Geräteuhr)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: false })] })
   await expect(card(page).getByRole('button', { name: 'Auftrag starten' })).toBeDisabled()
   jobs.myJobs = [job({ can_start: true })]
@@ -228,7 +228,7 @@ test('Rückkehr in den Tab lädt neu: ist der Termin inzwischen erreicht, wird �
   await expect(card(page)).not.toContainText('starten.')
 })
 
-test('Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erscheint unter „Angenommen“ mit den Beträgen des Servers', async ({ page }) => {
+test('Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erscheint unter „Angenommen“ mit den Beträgen des Servers', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { listings: [fixed()] })
   await page.getByRole('button', { name: 'Annehmen' }).click()
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
@@ -238,7 +238,7 @@ test('Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erschei
   expect(jobs.accepts).toHaveLength(1)
 })
 
-test('Tastatur: Start, Abschluss und Kontakt ohne Maus; Escape schließt das Sheet ohne Aufruf', async ({ page }) => {
+test('Tastatur: Start, Abschluss und Kontakt ohne Maus; Escape schließt das Sheet ohne Aufruf', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page, { myJobs: [job({ can_start: true })] })
   await card(page).getByRole('button', { name: 'Auftrag starten' }).focus()
   await page.keyboard.press('Enter')
@@ -267,7 +267,7 @@ test('Tastatur: Start, Abschluss und Kontakt ohne Maus; Escape schließt das She
   expect(jobs.completes).toEqual([RQ1])
 })
 
-test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)', async ({ page }) => {
+test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)', { tag: '@breit' }, async ({ page }) => {
   await open(page, { myJobs: [job({ can_start: true }), job({ assignment_id: A2, request_id: RQ2, status: 'in_progress' })] })
   await expect(angenommen(page)).toBeVisible()
   for (const w of [320, 390, 1280]) {
@@ -285,7 +285,7 @@ test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreit
   }
 })
 
-test('320 × 640 px: im Kontakt-Sheet ist „Schließen“ erreichbar', async ({ page }) => {
+test('320 × 640 px: im Kontakt-Sheet ist „Schließen“ erreichbar', { tag: '@breit' }, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await open(page, { myJobs: [job()] })
   await card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }).click()

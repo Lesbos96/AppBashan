@@ -11,8 +11,8 @@ const schemes = ['light', 'dark'] as const
 export default defineConfig({
   testDir: 'tests',
   outputDir: 'tmp/playwright',
-  // ponytail: 2 Worker, weil acht parallele Chromium-Starts hier das 30-s-Setup reißen; in CI anheben
-  workers: 2,
+  // ponytail: 3 Worker (u4, gemessen gegen 2); acht parallele Chromium-Starts rissen hier das 30-s-Setup. Bei Timeouts im Setup zurück auf 2.
+  workers: 3,
   // Der Umzug-Test klickt über 30 Mal und braucht 17–29 s; 30 s Standard lassen unter Last keinen Puffer
   timeout: 60_000,
   reporter: [['list'], ['json', { outputFile: 'tmp/reports/playwright.json' }]],
@@ -48,6 +48,8 @@ export default defineConfig({
     {
       name: 'e2e-desktop',
       testMatch: 'e2e/**/*.spec.ts',
+      // Nur Specs mit Layoutbezug (Tag @breit, gesetzt im Describe der Spec); der Rest läuft allein im Handy-Projekt.
+      grep: /@breit/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 },
     },
     ...sizes.flatMap(([width, height]) =>

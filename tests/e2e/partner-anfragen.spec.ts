@@ -16,7 +16,7 @@ const heading = (page: Page) => page.getByRole('heading', { name: 'Offene Anfrag
 const card = (page: Page, n = 0) => page.getByRole('article').nth(n)
 const dialog = (page: Page) => page.getByRole('dialog')
 
-test('Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse im DOM, auch nicht versteckt', async ({ page }) => {
+test('Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse im DOM, auch nicht versteckt', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await expect(heading(page)).toBeVisible()
@@ -39,7 +39,7 @@ test('Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse 
   expect(real(errors)).toEqual([])
 })
 
-test('leere Liste und Ladefehler mit erneutem Versuch', async ({ page }) => {
+test('leere Liste und Ladefehler mit erneutem Versuch', { tag: '@breit' }, async ({ page }) => {
   // supabase-js wiederholt GET-Abrufe bei 5xx mehrfach (rund 7 s); alle Versuche scheitern lassen
   const { jobs } = await openJobs(page, { listings: [], listStatus: [500, 500, 500, 500, 500, 500] })
   await expect(page.getByText('Die Anfragen konnten nicht geladen werden')).toBeVisible({ timeout: 30_000 })
@@ -49,7 +49,7 @@ test('leere Liste und Ladefehler mit erneutem Versuch', async ({ page }) => {
   expect(jobs.listingReads).toBeGreaterThanOrEqual(2)
 })
 
-test('Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gezeigte Auszahlung, danach steht die Anfrage unter „Angenommen“', async ({ page }) => {
+test('Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gezeigte Auszahlung, danach steht die Anfrage unter „Angenommen“', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
@@ -63,7 +63,7 @@ test('Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gez
   expect(real(errors)).toEqual([])
 })
 
-test('Doppelklick sendet nur einen Aufruf', async ({ page }) => {
+test('Doppelklick sendet nur einen Aufruf', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).dblclick()
@@ -71,7 +71,7 @@ test('Doppelklick sendet nur einen Aufruf', async ({ page }) => {
   expect(jobs.accepts).toHaveLength(1)
 })
 
-test('Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die Liste lädt neu und die Anfrage ist weg', async ({ page }) => {
+test('Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die Liste lädt neu und die Anfrage ist weg', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
@@ -84,7 +84,7 @@ test('Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die List
   await expect(page.locator('body')).not.toContainText(/already_taken|409/)
 })
 
-test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden', async ({ page }) => {
+test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'payout_changed' } }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   jobs.payoutRate = 0.2
@@ -98,14 +98,14 @@ test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch 
   expect(jobs.accepts[1]).toMatchObject({ shownPayoutCents: 55169 })
 })
 
-test('ohne Auszahlungsvorschau keine Auszahlung und keine Annahme', async ({ page }) => {
+test('ohne Auszahlungsvorschau keine Auszahlung und keine Annahme', { tag: '@breit' }, async ({ page }) => {
   await openJobs(page, { listings: [fixed()], payoutFails: true })
   await expect(card(page)).toContainText('689,61 €')
   await expect(card(page)).not.toContainText('586,17')
   await expect(card(page).getByRole('button', { name: 'Annehmen' })).toBeDisabled()
 })
 
-test('Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht es unter „Meine Angebote“', async ({ page }) => {
+test('Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht es unter „Meine Angebote“', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await openJobs(page, { listings: [range()] })
   await expect(card(page)).toContainText('500,00 €')
@@ -132,7 +132,7 @@ test('Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht e
   expect(real(errors)).toEqual([])
 })
 
-test.describe('Serverantworten beim Angebot', () => {
+test.describe('Serverantworten beim Angebot', { tag: '@breit' }, () => {
   for (const [code, text] of [
     ['offer_exists', 'Du hast für diese Anfrage schon ein Angebot'],
     ['offer_limit', 'schon so viele Angebote'],
@@ -151,7 +151,7 @@ test.describe('Serverantworten beim Angebot', () => {
   }
 })
 
-test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', async ({ page }) => {
+test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [range()], offers: [{ id: O1, base_revision_id: range().revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' }] })
   await expect(card(page)).toContainText('Angebot gesendet')
   await expect(card(page).getByRole('button', { name: 'Angebot abgeben' })).toHaveCount(0)
@@ -161,7 +161,7 @@ test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', as
   expect(jobs.withdraws).toEqual([{ p_offer: O1 }])
 })
 
-test('Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download', async ({ page }) => {
+test('Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   expect(jobs.photoCalls).toEqual([])
   await card(page).getByRole('button', { name: 'Fotos ansehen' }).click()
@@ -180,7 +180,7 @@ for (const [status, anchor] of [
   ['suspended', 'Transporte Huber GmbH'],
   ['rejected', 'Transporte Huber GmbH'],
 ] as const) {
-  test(`Status ${status}: keine Anfragen und kein Abruf der Liste`, async ({ page }) => {
+  test(`Status ${status}: keine Anfragen und kein Abruf der Liste`, { tag: '@breit' }, async ({ page }) => {
     const { jobs } = await openJobs(page, { listings: [fixed()] }, { status, aal: 'aal2', factors: [factor('f-1', 'verified')] })
     await expect(page.getByRole('heading', { name: anchor, level: 2 })).toBeVisible()
     await page.waitForLoadState('networkidle')
@@ -190,7 +190,7 @@ for (const [status, anchor] of [
   })
 }
 
-test('aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste', async ({ page }) => {
+test('aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] }, { aal: 'aal1', factors: [factor('f-1', 'verified')] })
   await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
   await page.waitForLoadState('networkidle')
@@ -198,7 +198,7 @@ test('aal1: erst die Abfrage des zweiten Faktors, kein Abruf der Liste', async (
   await expect(heading(page)).toHaveCount(0)
 })
 
-test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)', async ({ page }) => {
+test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zustandstests)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await expect(heading(page)).toBeVisible()
   expect(jobs.listingReads).toBeGreaterThanOrEqual(1)
@@ -206,7 +206,7 @@ test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zu
   expect(jobs.payoutReads).toBeGreaterThanOrEqual(1)
 })
 
-test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)', async ({ page }) => {
+test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   // die erste Annahme hat serverseitig gegriffen, nur die Antwort ging verloren: das Listing der Firma steht auf accepted
@@ -218,7 +218,7 @@ test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Ve
   expect(jobs.accepts).toHaveLength(1)
 })
 
-test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)', async ({ page }) => {
+test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)', { tag: '@breit' }, async ({ page }) => {
   // Das Listing behält seine Momentaufnahme (689,61 €); die Journalzeile nennt 700,00 € und 595,00 €
   await openJobs(page, { listings: [fixed({ status: 'accepted' })], myJobs: [job({ total_cents: 70000, payout_cents: 59500 })] })
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
@@ -229,7 +229,7 @@ test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge
   await expect(page.getByRole('button', { name: 'Annehmen' })).toHaveCount(0)
 })
 
-test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', async ({ page }) => {
+test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await card(page).getByRole('button', { name: 'Annehmen' }).focus()
   await page.keyboard.press('Enter')
@@ -246,7 +246,7 @@ test('Tastatur: Annahme ohne Maus, Fokus im Sheet, Escape schließt', async ({ p
   expect(jobs.accepts).toHaveLength(1)
 })
 
-test('320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erreichbar (Bildsicht s9i-6a, mittel 4)', async ({ page }) => {
+test('320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erreichbar (Bildsicht s9i-6a, mittel 4)', { tag: '@breit' }, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await openJobs(page, { listings: [range()] })
   await card(page).getByRole('button', { name: 'Angebot abgeben' }).click()
@@ -262,7 +262,7 @@ test('320 × 640 px: im Bestätigungs-Sheet des Angebots sind beide Knöpfe erre
   }
 })
 
-test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)', async ({ page }) => {
+test('Maße: Knöpfe mindestens 44 px, Beträge brechen nie um, keine Überbreite (320, 390, 1280 px)', { tag: '@breit' }, async ({ page }) => {
   await openJobs(page, { listings: [fixed(), range({ id: L2 })] })
   for (const w of [320, 390, 1280]) {
     await page.setViewportSize({ width: w, height: 800 })

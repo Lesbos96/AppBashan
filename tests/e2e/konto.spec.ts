@@ -45,7 +45,7 @@ async function openSheet(page: Page) {
   await expect(sheet(page)).toBeVisible()
 }
 
-test('abgemeldet: keine Zeile „Konto löschen“, der Pfad öffnet kein Sheet', async ({ page }) => {
+test('abgemeldet: keine Zeile „Konto löschen“, der Pfad öffnet kein Sheet', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   await page.goto('/profil')
@@ -57,7 +57,7 @@ test('abgemeldet: keine Zeile „Konto löschen“, der Pfad öffnet kein Sheet'
   expect(errors).toEqual([])
 })
 
-test('Löschen per Tastatur: erst nach dem Häkchen, sendet genau { confirm: true }, meldet ab', async ({ page }) => {
+test('Löschen per Tastatur: erst nach dem Häkchen, sendet genau { confirm: true }, meldet ab', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await open(page)
   const state = await mock(page, [{ json: { deleted: true } }])
@@ -92,7 +92,7 @@ test('Löschen per Tastatur: erst nach dem Häkchen, sendet genau { confirm: tru
   expect(errors).toEqual([])
 })
 
-test('Fotos eines Entwurfs sind nach dem Löschen nicht mehr im Speicher', async ({ page }) => {
+test('Fotos eines Entwurfs sind nach dem Löschen nicht mehr im Speicher', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   await mock(page, [{ json: { deleted: true } }])
   const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
@@ -113,7 +113,7 @@ test('Fotos eines Entwurfs sind nach dem Löschen nicht mehr im Speicher', async
   await expect(page.getByRole('img', { name: 'Foto 1' })).toHaveCount(0)
 })
 
-test('Schließen über Zurück: beim nächsten Öffnen kein Häkchen, Knopf gesperrt, nichts gesendet', async ({ page }) => {
+test('Schließen über Zurück: beim nächsten Öffnen kein Häkchen, Knopf gesperrt, nichts gesendet', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   const state = await mock(page, [{ status: 500, json: { error: 'internal' } }])
   await openSheet(page)
@@ -129,7 +129,7 @@ test('Schließen über Zurück: beim nächsten Öffnen kein Häkchen, Knopf gesp
   expect(state.bodies).toHaveLength(1)
 })
 
-test('409 open_requests: Weg zu den Aufträgen', async ({ page }) => {
+test('409 open_requests: Weg zu den Aufträgen', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   await mock(page, [{ status: 409, json: { error: 'open_requests' } }])
   await openSheet(page)
@@ -141,7 +141,7 @@ test('409 open_requests: Weg zu den Aufträgen', async ({ page }) => {
   await expect(page).toHaveURL(/\/auftraege$/)
 })
 
-test('401: Sitzung gilt nicht mehr, lokal abgemeldet, neutraler Hinweis im Profil, kein zweiter Aufruf', async ({ page }) => {
+test('401: Sitzung gilt nicht mehr, lokal abgemeldet, neutraler Hinweis im Profil, kein zweiter Aufruf', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   await open(page)
   const state = await mock(page, [{ status: 401, json: { error: 'unauthorized' } }])
@@ -160,7 +160,7 @@ test('401: Sitzung gilt nicht mehr, lokal abgemeldet, neutraler Hinweis im Profi
   expect(errors.filter((e) => !/status of 401/.test(e))).toEqual([])
 })
 
-test('Doppelklick sendet genau einen Aufruf', async ({ page }) => {
+test('Doppelklick sendet genau einen Aufruf', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   const state = await mock(page, [{ json: { deleted: true }, delay: 800 }, { json: { deleted: true } }])
   await openSheet(page)
@@ -170,7 +170,7 @@ test('Doppelklick sendet genau einen Aufruf', async ({ page }) => {
   expect(state.bodies).toHaveLength(1)
 })
 
-test('„Doch nicht“ sendet nichts und bleibt angemeldet', async ({ page }) => {
+test('„Doch nicht“ sendet nichts und bleibt angemeldet', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await open(page)
   const state = await mock(page, [])
@@ -195,7 +195,7 @@ for (const [status, error, text] of [
   [500, 'internal', 'Das hat nicht geklappt'],
   [200, 'kein deleted', 'Das hat nicht geklappt'],
 ] as const) {
-  test(`${status} ${error}: Text im Sheet, bleibt angemeldet`, async ({ page }) => {
+  test(`${status} ${error}: Text im Sheet, bleibt angemeldet`, { tag: '@breit' }, async ({ page }) => {
     const errors = collectErrors(page)
     const calls = await open(page)
     const state = await mock(page, [{ status, json: status === 200 ? { deleted: false } : { error } }])
@@ -211,7 +211,7 @@ for (const [status, error, text] of [
   })
 }
 
-test('Netzfehler: Hinweis, zweiter Versuch löscht', async ({ page }) => {
+test('Netzfehler: Hinweis, zweiter Versuch löscht', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await open(page)
   const state = await mock(page, [{ abort: true }, { json: { deleted: true } }])
@@ -226,7 +226,7 @@ test('Netzfehler: Hinweis, zweiter Versuch löscht', async ({ page }) => {
   expect(errors.filter((e) => !/ERR_FAILED|Failed to fetch|FunctionsFetchError/.test(e))).toEqual([])
 })
 
-test('Während das Löschen läuft, schließt nichts das Sheet und der Knopf ist gesperrt', async ({ page }) => {
+test('Während das Löschen läuft, schließt nichts das Sheet und der Knopf ist gesperrt', { tag: '@breit' }, async ({ page }) => {
   await open(page)
   const state = await mock(page, [{ json: { deleted: true }, delay: 1500 }])
   await openSheet(page)
@@ -241,7 +241,7 @@ test('Während das Löschen läuft, schließt nichts das Sheet und der Knopf ist
 })
 
 for (const width of [390, 430, 1280]) {
-  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch`, async ({ page }) => {
+  test(`Maße bei ${width} px: kein waagerechtes Scrollen, Zeile und Knöpfe mindestens 44 px hoch`, { tag: '@breit' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
     await open(page)
     await mock(page, [])

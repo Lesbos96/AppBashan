@@ -27,7 +27,7 @@ async function signedInSummary(page: Page, before?: (page: Page) => Promise<void
   await expect(send(page)).toBeEnabled()
 }
 
-test('Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge', async ({ page }) => {
+test('Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Aufträge', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await signedInSummary(page)
@@ -42,7 +42,7 @@ test('Hauptfluss per Tastatur: Termin, Zusammenfassung, Senden, Bestätigung, Au
   expect(errors.filter((e) => !failed.test(e))).toEqual([])
 })
 
-test('Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter', async ({ page }) => {
+test('Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/montage')
   await page.getByRole('button', { name: 'Weiter' }).click()
   await setTerminAddress(page, 'Neubaugasse 12, 1070 Wien')
@@ -62,7 +62,7 @@ test('Termin: Tastatur wählt Tag und Zeitfenster, ohne Tag geht es nicht weiter
   await expect(page.getByText('Vormittag').last()).toBeVisible()
 })
 
-test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung', async ({ page }) => {
+test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Token der angezeigten Sitzung', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)), delay: 700 }))
   await signedInSummary(page)
   await send(page).dblclick()
@@ -82,7 +82,7 @@ test('Doppeltipp auf „Anfrage senden“ ergibt genau einen Aufruf, mit dem Tok
   expect(JSON.stringify(rest)).not.toMatch(/cents|fee|price|total|status/i)
 })
 
-test('Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)', async ({ page }) => {
+test('Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)), delay: 1500 }))
   await signedInSummary(page)
   await send(page).click()
@@ -93,7 +93,7 @@ test('Während des Sendens ist „Anderes Konto“ gesperrt (OPEN_ISSUES A4c-N1)
   expect(calls).toHaveLength(1)
 })
 
-test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur', async ({ page }) => {
+test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur Korrektur', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ status: 400, json: { error: 'invalid_input', message: 'preferredDate: SERVERTEXT' } }))
   await signedInSummary(page)
   await send(page).click()
@@ -104,7 +104,7 @@ test('Fehler 400: Hinweis am Feld statt Servermeldung, Senden gesperrt, Link zur
   await expect(page).toHaveURL(/\/montage\/termin$/)
 })
 
-test('Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen', async ({ page }) => {
+test('Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Verlust-Versprechen', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ status: 422, json: { error: 'too_late' } }))
   await signedInSummary(page)
   await send(page).click()
@@ -114,7 +114,7 @@ test('Fehler 422 (Termin zu nah): Hinweis zum Datum, Link zur Korrektur, kein Ve
   await expect(page).toHaveURL(/\/montage\/termin$/)
 })
 
-test('Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt', async ({ page }) => {
+test('Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führt zur Anmeldung (keine Schleife), der Entwurf bleibt', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ status: 401, json: { error: 'unauthorized' } }))
   await signedInSummary(page)
   await send(page).click()
@@ -126,7 +126,7 @@ test('Fehler 401 bei noch gesetzter Sitzung: Neu anmelden meldet lokal ab, führ
   await expect(page.getByText('Neubaugasse 12, 1070 Wien')).toBeVisible()
 })
 
-test('Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf', async ({ page }) => {
+test('Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ status: 429, json: { error: 'rate_limited' } }))
   await signedInSummary(page)
   await send(page).click()
@@ -136,7 +136,7 @@ test('Fehler 429: Wartehinweis, kein automatischer zweiter Aufruf', async ({ pag
   expect(calls).toHaveLength(1)
 })
 
-test('Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis', async ({ page }) => {
+test('Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef, nie ein Serverpreis', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 500, json: { error: 'internal' } } : n === 2 ? { abort: true } : { json: answer(price(77040)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -151,7 +151,7 @@ test('Fehler 500 und offline: erneuter Versuch per Knopf mit derselben clientRef
   expect(new Set(calls.map((c) => c.body['clientRef'])).size).toBe(1)
 })
 
-test('Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef', async ({ page }) => {
+test('Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 500, json: { error: 'internal' } } : { json: answer(price(77040)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -167,7 +167,7 @@ test('Geänderte Eingaben nach einem Fehler bekommen eine neue clientRef', async
   expect(calls[1]!.body['timeWindow']).toBe('afternoon')
 })
 
-test('Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“', async ({ page }) => {
+test('Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ json: answer({ kind: 'offer', reasons: ['route_missing'] }, { needsQuote: true }) }))
   await signedInSummary(page)
   await send(page).click()
@@ -177,14 +177,14 @@ test('Angebot nötig: kein Preis, Text „Wir melden uns mit einem Angebot“', 
   await expect(page.locator('main', { hasText: 'Anfrage gesendet.' })).not.toContainText('Richtpreis')
 })
 
-test('Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent', async ({ page }) => {
+test('Spanne (Entrümpelung) erscheint als Schätzpreis in ganzen Euro, Festpreis mit Cent', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/')
   await page.evaluate((snapshot) => sessionStorage.setItem('movenow.sent', JSON.stringify({ path: 'entruempelung', id: 'x', status: 'awaiting_offer', needsQuote: true, snapshot, date: '2026-11-13', route: 'Neubaugasse 12' })), range(95000, 155000, 117500))
   await page.goto('/entruempelung/gesendet')
   await expect(page.getByText('950 € bis 1.550 €')).toBeVisible()
 })
 
-test('Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis', async ({ page }) => {
+test('Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ json: answer({ ...price(77040), lines: [{ key: 'assembly', cents: 1 }] }) }))
   await signedInSummary(page)
   await send(page).click()
@@ -192,7 +192,7 @@ test('Unplausible Antwort (Zeilensumme falsch): gespeichert, aber kein Preis', a
   await expect(page.locator('main', { hasText: 'Anfrage gesendet.' })).not.toContainText('770,40')
 })
 
-test('Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet', async ({ page }) => {
+test('Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await signedInSummary(page)
   await page.evaluate(() => {
@@ -206,7 +206,7 @@ test('Kontowechsel zwischen Anzeige und Senden: es wird nichts gesendet', async 
   expect(calls).toHaveLength(0)
 })
 
-test('„Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt', async ({ page }) => {
+test('„Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt', { tag: '@breit' }, async ({ page }) => {
   await signedInSummary(page)
   await page.getByRole('button', { name: 'Anderes Konto' }).click()
   await expect(page).toHaveURL(/\/anmelden$/)
@@ -215,7 +215,7 @@ test('„Anderes Konto“ meldet nur diese Sitzung ab und der Entwurf bleibt', a
   await expect(page.getByText('Neubaugasse 12, 1070 Wien')).toBeVisible()
 })
 
-test('Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet', async ({ page }) => {
+test('Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wird gesendet', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await mockAuth(page)
   await toSummary(page)
@@ -224,7 +224,7 @@ test('Ohne Anmeldung: Hinweis auf das Konto, Weg über die Anmeldung, nichts wir
   expect(calls).toHaveLength(0)
 })
 
-test('Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit', async ({ page, context }) => {
+test('Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit', { tag: '@breit' }, async ({ page, context }) => {
   await anonymousPrices(page)
   await mockAuth(page)
   await toSummary(page)
@@ -246,7 +246,7 @@ test('Magic-Link in neuem Tab: der Entwurf kommt über die Übergabe mit', async
   expect(await tab.evaluate(() => localStorage.getItem('movenow.handover'))).toBeNull()
 })
 
-test('Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash', async ({ page }) => {
+test('Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser Betrag und dieser Hash', { tag: '@breit' }, async ({ page }) => {
   const terms = { cancel_free_hours: 24, cancel_late_percent: 30, cancel_full_percent: 90, cancel_full_days_before: 2, call_out_fee_cents: 2500, termsHash: 'c'.repeat(64) }
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await signedInSummary(page, async (p) => {
@@ -265,7 +265,7 @@ test('Zusammenfassung zeigt Preis und Bedingungen; gesendet werden genau dieser 
   expect(calls[0]!.body['termsHash']).toBe('c'.repeat(64))
 })
 
-test('Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf von quote (390, 430, 1280 px)', async ({ page, backend }) => {
+test('Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf von quote (390, 430, 1280 px)', { tag: '@breit' }, async ({ page, backend }) => {
   backend.bookingOpen = false
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await anonymousPrices(page)
@@ -285,7 +285,7 @@ test('Buchung zu: Hinweis sichtbar über der Leiste, Knopf gesperrt, kein Aufruf
   expect(calls).toHaveLength(0)
 })
 
-test('ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts', async ({ page }) => {
+test('ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt, gesendet wird nichts', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await anonymousPrices(page)
   await toSummary(page)
@@ -295,7 +295,7 @@ test('ohne gemerkten Preis führt die Zusammenfassung zurück zum Preis-Schritt,
   expect(calls).toHaveLength(0)
 })
 
-test('409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich', async ({ page }) => {
+test('409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimmung, clientRef bleibt gleich', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : { json: answer(price(80000)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -314,7 +314,7 @@ test('409 price_changed: Dialog mit neuem Preis, gesendet wird erst nach Zustimm
   expect(calls[1]!.body['shown']).toEqual({ kind: 'price', totalCents: 80000, lowCents: 80000, highCents: 80000 })
 })
 
-test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen', async ({ page }) => {
+test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clientRef passen', { tag: '@breit' }, async ({ page }) => {
   const terms = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'terms_changed', terms } } : { json: answer(price(77040)) }))
   await signedInSummary(page)
@@ -333,7 +333,7 @@ test('409 terms_changed: neue Bedingungen werden bestätigt, termsHash und clien
   expect(calls[1]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
 })
 
-test('409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn', async ({ page }) => {
+test('409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Preis, „Erneut senden“ sendet genau ihn', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : n === 2 ? { abort: true } : { json: answer(price(80000)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -351,7 +351,7 @@ test('409 price_changed, dann Folgefehler: die Karte zeigt den übernommenen Pre
   expect(calls[2]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
 })
 
-test('409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash', async ({ page }) => {
+test('409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernommenen Stufen, „Erneut senden“ sendet deren Hash', { tag: '@breit' }, async ({ page }) => {
   const old = { cancel_free_hours: 48, cancel_late_percent: 20, cancel_full_percent: 80, cancel_full_days_before: 3, call_out_fee_cents: 0, termsHash: 'a'.repeat(64) }
   const next = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'terms_changed', terms: next } } : n === 2 ? { abort: true } : { json: answer(price(77040)) }))
@@ -373,7 +373,7 @@ test('409 terms_changed, dann Folgefehler: „Stornierung“ zeigt die übernomm
   expect(calls[2]!.body['clientRef']).toBe(calls[0]!.body['clientRef'])
 })
 
-test('409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte', async ({ page }) => {
+test('409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird nur über die Karte', { tag: '@breit' }, async ({ page }) => {
   const calls = await mockQuote(page, (n) => (n === 1 ? { status: 409, json: { error: 'price_changed', priceVersion: 2, snapshot: price(80000) } } : { json: answer(price(80000)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -383,7 +383,7 @@ test('409 price_changed: im Dialog ist die Aktionsleiste gesperrt, gesendet wird
   expect(calls).toHaveLength(1)
 })
 
-test('409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt', async ({ page, context }) => {
+test('409 terms_changed: Leiste gesperrt; ohne Einwilligung oder nach Kontowechsel ist auch der Karten-Knopf gesperrt', { tag: '@breit' }, async ({ page, context }) => {
   const terms = { cancel_free_hours: 24, cancel_late_percent: 50, cancel_full_percent: 100, cancel_full_days_before: 1, call_out_fee_cents: 0, termsHash: 'b'.repeat(64) }
   const calls = await mockQuote(page, () => ({ status: 409, json: { error: 'terms_changed', terms } }))
   await signedInSummary(page)
@@ -416,7 +416,7 @@ const incomplete: [string, object][] = [
   ['Bedingungen unlesbar', { error: 'terms_changed', terms: { termsHash: 'b'.repeat(64) } }],
 ]
 for (const [name, json] of incomplete) {
-  test(`409 unvollständig (${name}): wie nicht verfügbar behandelt, kein zweiter Aufruf`, async ({ page }) => {
+  test(`409 unvollständig (${name}): wie nicht verfügbar behandelt, kein zweiter Aufruf`, { tag: '@breit' }, async ({ page }) => {
     const calls = await mockQuote(page, () => ({ status: 409, json }))
     await signedInSummary(page)
     await send(page).click()
@@ -427,7 +427,7 @@ for (const [name, json] of incomplete) {
   })
 }
 
-test('422 pickup_outside_vienna: klare Meldung, Link zu den Angaben', async ({ page }) => {
+test('422 pickup_outside_vienna: klare Meldung, Link zu den Angaben', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ status: 422, json: { error: 'pickup_outside_vienna' } }))
   await signedInSummary(page)
   await send(page).click()
@@ -435,7 +435,7 @@ test('422 pickup_outside_vienna: klare Meldung, Link zu den Angaben', async ({ p
   await expect(page.getByRole('link', { name: 'Angaben ändern' })).toBeVisible()
 })
 
-test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', async ({ page }) => {
+test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', { tag: '@breit' }, async ({ page }) => {
   await mockAuth(page)
   const urls: string[] = []
   await page.route('**/rest/v1/service_requests**', (r) => {
@@ -464,7 +464,7 @@ test('Aufträge: nur eigene Anfragen (Filter und Spalten), Chips und Preise', as
   expect(url.searchParams.get('select')).not.toMatch(/fee|inputs/)
 })
 
-test('Die App liest nie das Journal oder Einstellungen und keine Antwort enthält Gebührenfelder', async ({ page }) => {
+test('Die App liest nie das Journal oder Einstellungen und keine Antwort enthält Gebührenfelder', { tag: '@breit' }, async ({ page }) => {
   const requested: string[] = []
   const keys: string[] = []
   page.on('request', (r) => requested.push(r.url()))
@@ -493,7 +493,7 @@ test('Die App liest nie das Journal oder Einstellungen und keine Antwort enthäl
   expect(keys.filter((k) => k !== 'call_out_fee_cents' && /fee|payout|platform|share|anteil|vat/i.test(k))).toEqual([])
 })
 
-test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', async ({ page, context }) => {
+test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', { tag: '@breit' }, async ({ page, context }) => {
   const calls = await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await signedInSummary(page)
   const other = await context.newPage()
@@ -511,7 +511,7 @@ test('Kontowechsel in einem anderen Tab hebt die Einwilligung auf', async ({ pag
   expect(calls).toHaveLength(0)
 })
 
-test('Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px', async ({ page }) => {
+test('Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links und Knöpfe mindestens 44 px', { tag: '@breit' }, async ({ page }) => {
   await signedInSummary(page)
   // Im Seitenübergang stehen kurz zwei main: erst auf das Ende warten, dann gilt die Prüfung der einen Seite.
   await expect(page.locator('main')).toHaveCount(1)
@@ -522,7 +522,7 @@ test('Zusammenfassung: Richtpreis ohne Gebührenhinweis vor dem Senden, Links un
   }
 })
 
-test('Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag', async ({ page }) => {
+test('Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten Betrag', { tag: '@breit' }, async ({ page }) => {
   // Küche-Beispiel: Vorschau 770,40 €; der Server antwortet mit 790,00 €
   await mockQuote(page, () => ({ json: answer(price(79000)) }))
   await signedInSummary(page)
@@ -533,7 +533,7 @@ test('Serverpreis weicht von der Vorschau ab: sichtbarer Hinweis mit dem alten B
   await expect(page.locator('main').getByText('790,00 €')).toBeVisible()
 })
 
-test('Serverpreis gleich der Vorschau: kein Hinweis', async ({ page }) => {
+test('Serverpreis gleich der Vorschau: kein Hinweis', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ json: answer(price(77040)) }))
   await signedInSummary(page)
   await send(page).click()
@@ -543,7 +543,7 @@ test('Serverpreis gleich der Vorschau: kein Hinweis', async ({ page }) => {
   await expect(page.getByText('Der Preis wurde aktualisiert.')).toHaveCount(0)
 })
 
-test('Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel', async ({ page }) => {
+test('Vorschau mit Preis, Server verlangt ein Angebot: Hinweis statt stillem Wechsel', { tag: '@breit' }, async ({ page }) => {
   await mockQuote(page, () => ({ json: answer({ kind: 'offer', reasons: ['route_missing'] }, { needsQuote: true }) }))
   await signedInSummary(page)
   await send(page).click()

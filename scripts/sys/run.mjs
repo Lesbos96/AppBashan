@@ -65,7 +65,7 @@ for (;;) {
 
 const abdruckVor = SUITEN.includes(ziel) ? fingerabdruck(ziel) : null
 const hash = git('rev-parse', 'HEAD')
-const saubervor = sauber()
+const saubervor = sauber(true)
 const start = Date.now()
 writeSync(fd, `Commit: ${hash}\nArbeitsbaum sauber: ${saubervor ? 'ja' : 'nein'}\nBefehl: ${befehl.anzeige}\nStart: ${new Date(start).toISOString()}\n---\n`)
 const kopfEnde = readFileSync(logPfad).length
@@ -87,7 +87,7 @@ closeSync(fd)
 
 const log = readFileSync(logPfad, 'utf8')
 const tests = (/^\s*Tests\s+(.+)$/m.exec(log) ?? /^\s*(\d+ passed.*)$/m.exec(log))?.[1]?.trim() ?? null
-const stabil = hash === git('rev-parse', 'HEAD') && saubervor === sauber() && (abdruckVor === null || abdruckVor === fingerabdruck(ziel))
+const stabil = hash === git('rev-parse', 'HEAD') && saubervor === sauber(true) && (abdruckVor === null || abdruckVor === fingerabdruck(ziel))
 appendFileSync(
   join(ordner, 'runs.jsonl'),
   JSON.stringify({ nr, ziel, args: extra, befehl: befehl.anzeige, hash, sauber: saubervor, stabil, start: new Date(start).toISOString(), exit: code, sek, tests, logSha: sha256Datei(logPfad), abdruck: abdruckVor }) + '\n',

@@ -2,7 +2,7 @@ import { expect, test } from './backend'
 import { collectErrors } from './console'
 
 // Hauptflow nur mit der Tastatur: Onboarding, Tabs, Info-Sheet.
-test('Erster Start: Onboarding per Tastatur, danach direkt Start', async ({ page }) => {
+test('Erster Start: Onboarding per Tastatur, danach direkt Start', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveURL(/\/willkommen$/)
   await expect(page.getByRole('heading', { name: 'Alles für deinen Move. In einer App.' })).toBeVisible()
@@ -20,13 +20,13 @@ test('Erster Start: Onboarding per Tastatur, danach direkt Start', async ({ page
   await expect(page).toHaveURL(/\/$/)
 })
 
-test('Überspringen beendet das Onboarding', async ({ page }) => {
+test('Überspringen beendet das Onboarding', { tag: '@breit' }, async ({ page }) => {
   await page.goto('/willkommen')
   await page.getByRole('button', { name: 'Überspringen' }).press('Enter')
   await expect(page).toHaveURL(/\/$/)
 })
 
-test.describe('App-Shell', () => {
+test.describe('App-Shell', { tag: '@breit' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
   })
