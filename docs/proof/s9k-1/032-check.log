@@ -1,0 +1,165 @@
+Commit: c519dbf06ef1a52fc9900024e7f740014528b2b9
+Arbeitsbaum sauber: ja
+Befehl: npm run check
+Start: 2026-11-15T13:59:39.546Z
+---
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts supabase/functions/offer-confirm/index.ts supabase/functions/change-propose/index.ts supabase/functions/change-decide/index.ts supabase/functions/cancel-customer/index.ts supabase/functions/cancel-partner/index.ts supabase/functions/admin-correct/index.ts supabase/functions/delete-account/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m supabase/functions/accept/index.ts
+[0m[32mCheck[0m supabase/functions/admin-contact/index.ts
+[0m[32mCheck[0m supabase/functions/outbox-send/index.ts
+[0m[32mCheck[0m supabase/functions/photo-publish/index.ts
+[0m[32mCheck[0m supabase/functions/photo-receipt/index.ts
+[0m[32mCheck[0m supabase/functions/job-photo/index.ts
+[0m[32mCheck[0m supabase/functions/admin-photo/index.ts
+[0m[32mCheck[0m supabase/functions/offer-confirm/index.ts
+[0m[32mCheck[0m supabase/functions/change-propose/index.ts
+[0m[32mCheck[0m supabase/functions/change-decide/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-customer/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-partner/index.ts
+[0m[32mCheck[0m supabase/functions/admin-correct/index.ts
+[0m[32mCheck[0m supabase/functions/delete-account/index.ts
+[0m[32mCheck[0m scripts/measure-photo.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |unit| tests/unit/cancel-handler.test.ts (8 tests) 70ms
+ ✓ |unit| tests/unit/route.test.ts (27 tests) 154ms
+ ✓ |unit| tests/unit/accept.test.ts (10 tests) 107ms
+ ✓ |unit| tests/unit/cancel-partner-handler.test.ts (11 tests) 71ms
+ ✓ |unit| tests/unit/offer-confirm.test.ts (4 tests) 66ms
+ ✓ |unit| tests/unit/admin-correct-handler.test.ts (9 tests) 72ms
+ ✓ |unit| tests/unit/change-handlers.test.ts (16 tests) 104ms
+ ✓ |unit| tests/unit/pricing.test.ts (85 tests) 144ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 227ms
+ ✓ |unit| tests/unit/partner-docs.test.ts (22 tests) 51ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 132ms
+ ✓ |unit| tests/unit/sys-docs-importe.test.ts (12 tests) 352ms
+   ✓ Importe aus docs/ gehören in den Fingerabdruck (1)
+     ✓ jeder Import aus docs/ in src/ und tests/ steht in DOCS_IMPORTE (sonst ändert die Datei die App, aber keinen Fingerabdruck) 348ms
+ ✓ |unit| tests/unit/sys-fertig.test.ts (37 tests) 412ms
+   ✓ Merge-Gate: pruefeFertig (37)
+     ✓ R3 (16)
+       ✓ stageNachweise legt die genannten, von .gitignore ausgenommenen Logs in den Index, sonst nichts (kein git add -f von Hand) 392ms
+ ✓ |unit| tests/unit/quote.test.ts (60 tests) 260ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (6 tests) 39ms
+ ✓ |unit| tests/unit/partner-jobs.test.ts (83 tests) 49ms
+ ✓ |unit| tests/unit/draft.test.ts (46 tests) 64ms
+ ✓ |unit| tests/unit/jobs-client.test.ts (48 tests) 85ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 791ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 966ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 28ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 36ms
+ ✓ |unit| tests/unit/change.test.ts (12 tests) 44ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (11 tests) 34ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 25ms
+ ✓ |unit| tests/unit/partner-register.test.ts (47 tests) 32ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 48ms
+ ✓ |unit| tests/unit/journal-csv.test.ts (106 tests) 43ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 689ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 643ms
+ ✓ |unit| tests/unit/account-client.test.ts (12 tests) 36ms
+ ✓ |unit| tests/unit/delete-account-handler.test.ts (8 tests) 35ms
+ ✓ |unit| tests/unit/auth-token.test.ts (5 tests) 29ms
+ ✓ |unit| tests/unit/cancel-client.test.ts (17 tests) 35ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (19 tests) 46ms
+ ✓ |unit| tests/unit/partner-journal.test.ts (22 tests) 37ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (18 tests) 43ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 16ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 8ms
+ ✓ |unit| tests/unit/sys-stufe.test.ts (18 tests) 11ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 16ms
+ ✓ |unit| tests/unit/commission-csv.test.ts (6 tests) 13ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 12ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 11ms
+ ✓ |unit| tests/unit/fee-staffel.test.ts (26 tests) 24ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 30ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 11ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 18ms
+ ✓ |unit| tests/unit/positiv-register.test.ts (7 tests) 20ms
+ ✓ |unit| tests/unit/admin-correct-db.test.ts (2 tests) 11ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 146ms
+ ✓ |unit| tests/unit/auth.test.ts (56 tests) 21ms
+ ✓ |unit| tests/unit/mfa-client.test.ts (21 tests) 14ms
+ ✓ |unit| tests/unit/client-lib.test.ts (14 tests) 13ms
+ ✓ |unit| tests/unit/partner-change.test.ts (19 tests) 17ms
+ ✓ |unit| tests/unit/partner-my-jobs.test.ts (49 tests) 18ms
+ ✓ |unit| tests/unit/partner-cancel.test.ts (31 tests) 14ms
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 26ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 3ms
+ ✓ |unit| tests/unit/sys-run.test.ts (13 tests) 3260ms
+   ✓ Test-Startprogramm run.mjs (13)
+     ✓ ein absichtlich roter Befehl ergibt EXIT ungleich 0 im Prozess und im Log, Kopf mit Hash, Sauber-Angabe und Befehl 1446ms
+     ✓ ein zweiter Lauf überschreibt das erste Log nicht 807ms
+ ✓ |unit| tests/unit/sys-session.test.ts (13 tests) 3419ms
+   ✓ Berater je Schritt (agents.jsonl) (2)
+     ✓ der Hook stempelt jede Zeile mit dem Branch des Projektordners (ohne Git: null) 1063ms
+   ✓ Sitzungsprotokoll session.mjs (8)
+     ✓ SessionStart protokolliert das Modell vom Programm 459ms
+     ✓ SessionStart ohne Modellfeld hält Transkript und Feldnamen fest (Beleg für das fehlende Feld) 589ms
+ ✓ |unit| tests/unit/sys-gate-loesch.test.ts (48 tests) 3796ms
+   ✓ Lösch-Gate (Trockenlauf mit Attrappe, nichts wird gestartet) (19)
+     ✓ Skript nach der Freigabe geändert (anderer SHA-256): blockiert 722ms
+     ✓ gebundene Datei nach der Freigabe geändert, Skript unverändert: blockiert 702ms
+     ✓ Urteil gesperrt: blockiert 456ms
+ ✓ |unit| tests/unit/sys-gate-db.test.ts (34 tests) 4776ms
+   ✓ Datenbank-Gate (Trockenlauf mit Attrappe, keine DB, kein Push) (17)
+     ✓ Freigabe mit anderem SHA-256 (Datei nach der Freigabe geändert): blockiert 740ms
+     ✓ Freigabe für anderen Pfad: blockiert 703ms
+     ✓ Urteil gesperrt: blockiert 455ms
+   ✓ AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push (9)
+     ✓ H1: die Attrappe schreibt nie in einen Ordner unter tmp/proof (aufgelöst, ohne Groß/Klein) 879ms
+ ✓ |unit| tests/unit/sys-fingerabdruck.test.ts (4 tests) 4285ms
+   ✓ Fingerabdruck je Suite (in einem Wegwerf-Repo) (4)
+     ✓ Doku-Änderungen ändern keinen Fingerabdruck (check ist „alles außer docs und Markdown“) 1951ms
+     ✓ Änderung unter src ändert check und e2e, nicht rls 798ms
+     ✓ Änderung an einer Migration ändert check und rls, nicht e2e 670ms
+     ✓ gleicher Stand, gleicher Hash; package.json zählt für alle drei 863ms
+ ✓ |unit| tests/unit/sys-guard.test.ts (400 tests) 28294ms
+   ✓ Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund) (51)
+     ✓ Test am Start-Programm vorbei: npm run check; echo EXIT=$? 745ms
+     ✓ Test am Start-Programm vorbei: cd x && npm run test:rls 606ms
+     ✓ Test am Start-Programm vorbei: FOO=1 npm run shots 410ms
+     ✓ Write auf Läufe, Logs, Protokolle und .git 604ms
+     ✓ Freigabe und Abnahme nur von advisor-report 317ms
+   ✓ u1b M18: verschachtelte Shells (35)
+     ✓ Skriptdateien: der Inhalt wird mitgeprüft, nicht lesbar heißt verweigert 494ms
+     ✓ Skriptdateien mit Optionswerten, Hüllen, Leerzeichen im Pfad und ohne Endung (Abnahme AM1) 449ms
+   ✓ u1b Lösch-Gate im Guard (42)
+     ✓ Write und Edit auf docs/freigaben immer verweigert, loesch-freigabe in tmp/proof nur von advisor-report, loesch-lauf nie 304ms
+   ✓ u1b Abnahme Runde 2: Befehlsersetzung, Umleitungen, Skriptpfade (31)
+     ✓ Skriptdateien: harmlose in denselben Formen gehen durch, absolute Pfade ohne Endung und Pfade mit Leerzeichen in Hüllen werden gelesen 448ms
+
+ Test Files  64 passed (64)
+      Tests  1865 passed (1865)
+   Start at  14:59:56
+   Duration  28.60s (tests 82%, import 13%, transform 4%, worker 1%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+
+---
+Dauer: 45.1 s
+EXIT=0
