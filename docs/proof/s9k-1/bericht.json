@@ -1,0 +1,71 @@
+{
+  "schritt": "s9k-1",
+  "stufe": "R3",
+  "gate": "blockiert",
+  "gruende": [
+    "Arbeitsbaum nicht sauber",
+    "check: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert) für den aktuellen Fingerabdruck",
+    "e2e: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert) für den aktuellen Fingerabdruck"
+  ],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 497
+  },
+  "sitzung": "07699fe9-1b63-4a44-bff8-95d76db54daa",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 2,
+    "reviewer": 2
+  },
+  "hash": "f797407561bc05c99fbc48159709af5dd801a2dd",
+  "stand": "d8a369308e5cc4a2fd10a53ec19857b22b88455f9085e11538a15e5ca0d402d6",
+  "mainVorher": "1b26050409db2c34f1f11572520b1afe48b64034",
+  "commits": 7,
+  "geaendert": {
+    "docs": 6,
+    "scripts": 1,
+    "src": 8,
+    "supabase/functions": 4,
+    "supabase/migrations": 1,
+    "tests/e2e": 5,
+    "tests/rls": 4,
+    "andere": 3,
+    "tests/unit": 5
+  },
+  "laeufe": {
+    "check": null,
+    "rls": {
+      "nr": 29,
+      "exit": 0,
+      "tests": "373 passed (373)",
+      "sek": 1576.8,
+      "hash": "f797407561bc05c99fbc48159709af5dd801a2dd",
+      "schritt": "s9k-1",
+      "log": "docs\\proof\\s9k-1\\029-rls.log"
+    },
+    "e2e": null
+  },
+  "versuche": {
+    "gesamt": 31,
+    "rot": 15
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261115104122_0064_report_flow.sql",
+      "sha256": "d47f3e4c97433d1d6a1b08a04593be33a57881f74960c5b8a2f2ea8bc7a886c4"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs\\proof\\s9k-1\\s9k-1-abnahme.md",
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\s9k-1\\s9k-1-abnahme.md",
+    "docs\\proof\\s9k-1\\db-antrag-1.json",
+    "docs\\proof\\s9k-1\\db-freigabe-1.md",
+    "docs\\proof\\s9k-1\\loesch-lauf.jsonl",
+    "docs\\proof\\s9k-1\\s9k-1-review.md"
+  ]
+}
