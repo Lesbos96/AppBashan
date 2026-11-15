@@ -110,7 +110,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
       {(live || r.status === 'completed') && !r.not_done_reported_at && <Termin id={r.id} completed={r.status === 'completed'} onDone={done} />}
       {(live || r.status === 'completed') && r.not_done_reported_at && !r.not_done_resolved_at && (
         <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
-          Du hast gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
+          Du hast gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn.
         </p>
       )}
       {r.status === 'accepted' && !started && !r.not_done_reported_at && <Cancel id={r.id} storno={r.cancel_fee_waived ? [] : snapshotStorno(r.price_revisions?.snapshot)} onDone={() => done()} />}

@@ -287,6 +287,7 @@ test.describe('Anfrage zurückziehen', () => {
     const s = withdrawn()
     await mock(page, s)
     await open(page)
+    expect((await page.getByRole('button', { name: 'Anfrage zurückziehen' }).boundingBox())!.height).toBeGreaterThanOrEqual(44)
     await page.getByRole('button', { name: 'Anfrage zurückziehen' }).focus()
     await page.keyboard.press('Enter')
     const confirm = page.getByRole('dialog', { name: 'Anfrage zurückziehen' }).getByRole('button', { name: 'Ja, zurückziehen' })

@@ -32,6 +32,7 @@ const shots: Shot[] = [
   { name: 'abgeschlossen-frage', row: row({ status: 'completed' }), canReport: true, region: 'Hat der Auftrag stattgefunden?' },
   { name: 'termin-frage', row: row({ status: 'in_progress' }), canReport: true, region: 'Hat der Auftrag stattgefunden?' },
   { name: 'gemeldet-pruefung', row: row({ status: 'in_progress', not_done_reported_at: '2026-01-02T08:00:00Z' }), canReport: false, region: null },
+  { name: 'zurueckziehen-ruhe', row: row({ status: 'awaiting_offer', termin_at: '2099-12-15T07:00:00Z' }), canReport: false, region: null },
   { name: 'zurueckziehen-sheet', row: row({ status: 'awaiting_offer', termin_at: '2099-12-15T07:00:00Z' }), canReport: false, region: null, open: 'Anfrage zurückziehen' },
 ]
 

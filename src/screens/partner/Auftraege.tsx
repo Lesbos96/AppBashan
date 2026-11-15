@@ -241,7 +241,7 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       <Betraege j={j} />
       {j.underReview && (
         <p role="status" className="m-0 text-body">
-          Der Kunde hat gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn und melden uns bei dir.
+          Der Kunde hat gemeldet, dass der Auftrag nicht stattgefunden hat. Wir prüfen ihn.
         </p>
       )}
       {j.status === 'accepted' && !j.ended && !j.underReview && (

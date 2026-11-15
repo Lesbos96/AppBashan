@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Button } from '../../components/Button'
-import { ErrorState, Loading } from '../../components/States'
 import { completeJob, loadReportInfo, reportNotDone } from '../../lib/jobs'
 import { useLoad } from '../../lib/prices'
 import { Bestaetigen } from './Bestaetigen'
@@ -15,8 +14,18 @@ export function Termin({ id, completed, onDone }: { id: string; completed: boole
   const [info, retry] = useLoad(() => loadReportInfo(id))
   const [mode, setMode] = useState<'yes' | 'no' | null>(null)
   const close = () => setMode(null)
-  if (info.status === 'loading') return <Loading label="Frage zum Termin laden" />
-  if (info.status === 'error') return <ErrorState text="Die Frage zum Termin konnte nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />
+  // Beim Laden nichts zeigen (die Frage ist meist gar nicht offen); bei Fehler nur eine dezente Zeile, kein Rückfall auf die Geräteuhr
+  if (info.status === 'loading') return null
+  if (info.status === 'error') {
+    return (
+      <div role="alert" className="flex flex-col gap-1 rounded-grouped-list bg-surface p-4 shadow-card">
+        <p className="m-0 text-subhead text-text-secondary">Die Frage zum Termin konnte nicht geladen werden. Prüfe deine Verbindung.</p>
+        <Button variant="plain" onClick={retry}>
+          Erneut versuchen
+        </Button>
+      </div>
+    )
+  }
   if (!info.data.canReport) return null
   const deadline = info.data.reportUntil
   return (
@@ -36,7 +45,7 @@ export function Termin({ id, completed, onDone }: { id: string; completed: boole
         <p className="m-0 text-body">Damit gilt der Auftrag als erledigt. Danach kannst du ihn nicht mehr als „nicht stattgefunden“ melden und einen offenen Nachtrag nicht mehr entscheiden.</p>
       </Bestaetigen>
       <Bestaetigen open={mode === 'no'} onClose={close} title="Nicht stattgefunden" label="Meldung senden" action={() => reportNotDone(id)} onDone={onDone}>
-        <p className="m-0 text-body">Wir prüfen den Auftrag und melden uns bei dir. Danach kannst du ihn nicht mehr als erledigt bestätigen.</p>
+        <p className="m-0 text-body">Wir prüfen den Auftrag. Danach kannst du ihn nicht mehr als erledigt bestätigen.</p>
       </Bestaetigen>
     </section>
   )
