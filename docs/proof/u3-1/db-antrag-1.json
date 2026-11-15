@@ -1,0 +1,6 @@
+[
+  {
+    "datei": "supabase/migrations/20261115092753_0063_outbox_dispatch_owner_only.sql",
+    "sha256": "e3ef7333ad31180d12fd787b511bb4eecf78d8dec41731cc7cf96823ed564d3b"
+  }
+]
