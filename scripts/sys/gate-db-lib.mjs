@@ -65,6 +65,45 @@ export function pruefePush(offen, freigaben) {
   return { ok: gruende.length === 0, gruende }
 }
 
+// Startmarke, die vor dem CLI-Start in runs.jsonl geschrieben wird (AM5): freigegebene Version, Pfad und SHA-256. Gelingt der Push, aber nicht das Schreiben der Marken
+// (Liste nicht lesbar, Absturz), holt `nachtrag` sie aus der Startmarke nach; sonst bliebe `fertig` für diese Migration dauerhaft blockiert.
+export const startMarke = (offen, start = new Date().toISOString()) => ({ ziel: 'db-push-start', start, migrationen: offen.map(({ version, pfad, sha256 }) => ({ version, pfad, sha256 })) })
+
+// zeilen: geparste Zeilen von runs.jsonl. Migrationen aus Startmarken, für die es keine Marke `db-push` mit gleichem Pfad und SHA-256 gibt.
+export function unmarkierteStarts(zeilen) {
+  const markiert = new Set(zeilen.filter((z) => z.ziel === 'db-push').flatMap((z) => (z.migrationen ?? []).map((m) => `${m.pfad}\0${m.sha256}`)))
+  const offen = new Map()
+  for (const z of zeilen.filter((x) => x.ziel === 'db-push-start')) for (const m of z.migrationen ?? []) if (!markiert.has(`${m.pfad}\0${m.sha256}`)) offen.set(`${m.pfad}\0${m.sha256}`, { ...m, start: z.start })
+  return [...offen.values()]
+}
+
+// Nachtrag: Marke nur mit positivem Beleg (die Version steht in der Liste mit `remote`) und unverändertem SHA-256. Noch nicht angewendete Migrationen bleiben stumm offen;
+// eine fehlende oder geänderte Datei ergibt keine Marke, sondern einen Grund (fail closed).
+export function nachtragMarken(vorher, liste, shaJetzt) {
+  const eintraege = Array.isArray(liste) ? liste : liste?.migrations
+  if (!Array.isArray(eintraege)) throw new Error('Unerwartete Form der Migrationsliste (erwartet { migrations: [...] })')
+  const angewendet = new Set(eintraege.filter((e) => e?.remote).map((e) => e.local))
+  const marken = []
+  const gruende = []
+  const offen = []
+  for (const m of vorher) {
+    if (!angewendet.has(m.version)) {
+      offen.push(m)
+      continue
+    }
+    let sha
+    try {
+      sha = shaJetzt(m.pfad)
+    } catch {
+      gruende.push(`${m.pfad}: Datei nicht lesbar, keine Marke`)
+      continue
+    }
+    if (sha === m.sha256) marken.push({ pfad: m.pfad, sha256: m.sha256, start: m.start })
+    else gruende.push(`${m.pfad}: Inhalt hat sich seit der Freigabe geändert (SHA256 ${m.sha256} freigegeben), keine Marke`)
+  }
+  return { marken, gruende, offen }
+}
+
 // Marken nach einem Push (auch einem teilweisen): je tatsächlich angewendeter Migration (vorher offen, nachher nicht mehr) { pfad, sha256 } mit dem SHA,
 // der vor dem Push freigegeben war. Weicht der SHA der Datei nach dem Push ab, gibt es für sie keine Marke und einen Grund.
 export function marken(vorher, nachher, shaJetzt) {

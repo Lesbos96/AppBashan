@@ -28,4 +28,5 @@ paths:
 ## Datenbank-Weg
 - Neue Migration: `npx supabase migration new <name>`. Auf Dev nur über `npm run db:antrag` → Freigabe durch `advisor-report` (`db-freigabe-<n>.md`, SHA-256 je Datei, `Urteil: frei`) → `npm run db:push` (zieht `db:types` nach).
 - Direkte `supabase db push`, `migration repair` und die Supabase-Connector-Werkzeuge sind gesperrt.
+- Gelang der Push, aber nicht das Schreiben der Marken (`fertig` blockiert dann): `npm run db:nachtrag` holt sie aus der Startmarke `db-push-start` nach (nur bei unverändertem SHA-256).
 - Edge Functions nach einer Migration, die ihre Basis ändert, im selben Schritt neu deployen (dazwischen scheitern die Geldwege, fail closed).

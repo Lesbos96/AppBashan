@@ -13,7 +13,7 @@ const BERATER_DATEI = /(^|[\\/])(db-freigabe-[^\\/]*|loesch-freigabe-[^\\/]*|[^\
 const SQL_SCHREIBEND =
   /\b(insert|update|delete|truncate|drop|alter|create|grant|revoke|call|copy|do|merge|execute|perform|into|set|reset|lock|refresh|vacuum|comment|prepare)\b|\b(admin_\w+|set_config|setval|pg_terminate_backend|pg_cancel_backend|dblink\w*|lo_\w+)\s*\(|\b(cron|net)\./i
 const SHELL = '(?:bash|sh|zsh|dash|ksh|pwsh|powershell|cmd)'
-const PROGRAMME = '(?:npm|npx|node|vitest|playwright|supabase|psql|bash|sh|zsh|dash|ksh|pwsh|powershell|cmd|python3?|deno|tsx|dotenv)'
+const PROGRAMME = '(?:npm|npx|node|vitest|playwright|supabase|psql|git|bash|sh|zsh|dash|ksh|pwsh|powershell|cmd|python3?|deno|tsx|dotenv)'
 const MCP_DB = /(execute_sql|apply_migration|reset_branch|restore_project|delete_branch|merge_branch|deploy_edge_function)/i
 
 // Führende Hüllen (Umgebungsvariablen, time, & , npx, npm exec, dotenv -e … --, Klammern, then/do/exec/env …, node …/supabase.js) entfernen, damit das Programm vorn steht;
@@ -219,10 +219,54 @@ function klammerStuecke(roh, kahl) {
   return out.map((x) => x.trim()).filter(Boolean)
 }
 
+// Wörter eines Segments, in dem git vorkommt. Umleitungen (`2>x`, `> x`, `2>&1`, `<x`) erkennt man am Rohwort und wirft sie samt Ziel weg, erst danach entfallen Anführungszeichen, Backslashes,
+// Backticks und `^` (ein Argument `">x"` ist also ein Wert, keine Umleitung; `A\ B`, `"a\"b"` und `core.hooks\Path` bleiben je ein Wort).
+const GIT_WORT = /(?:\\[\s\S]|"(?:\\[\s\S]|[^"\\])*"|'[^']*'|[^\s"'\\])+/g
+const istGit = (roh) => /^git(?:\.exe)?$/i.test(roh.replace(/["']/g, '').split(/[\\/]/).pop())
+function gitWoerter(s) {
+  const roh = [...s.matchAll(GIT_WORT)].map((m) => m[0])
+  const out = []
+  for (let i = 0; i < roh.length; i++) {
+    if (/^(?:\d*|&)(?:>{1,2}|<)$/.test(roh[i])) i++
+    else if (!/^(?:\d*|&)[<>]/.test(roh[i])) out.push(roh[i].replace(/\\([\s\S])|["'`^]/g, '$1'))
+  }
+  return { roh, w: out }
+}
+
+const HOOKS_AN = 'Git-Hooks bleiben an'
+const HOOKSPATH = 'core.hooksPath setzen ist gesperrt; `npm run prepare` setzt es richtig'
+// Umgebung vor irgendeinem git im ganzen Befehl (`export GIT_CONFIG_COUNT=1; git push`, `$env:GIT_CONFIG_COUNT=1; git push`, `env "GIT_CONFIG_COUNT=1" git push`); `GLOBAL` und `SYSTEM` entfallen,
+// weil das lokal gesetzte `.githooks` gewinnt. Mit `=`, damit ein Commit-Text, der den Namen nur nennt, nicht trifft.
+function gitUmgebung(befehl) {
+  if (!/\bGIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+|PARAMETERS)=/i.test(befehl)) return null
+  return [...befehl.matchAll(GIT_WORT)].some((m) => istGit(m[0])) ? `${HOOKS_AN} (GIT_CONFIG_* vor git ist gesperrt).` : null
+}
+
+// Positionsunabhängig (Fable-Rat u2b/u3b): Schlüssel und Wörter zählen, wo auch immer sie im Segment stehen, sobald irgendein Wort `git` (Basisname, auch `git.exe`) vorkommt (`xargs git`, `env -u X git`).
+// Die Muster treffen die übliche Schreibweise, keine Sicherheitsgrenze (Kopf der Datei); die zweite Ebene ist `hooksAktiv` in fertig und der pre-push-Hook. Bekannte Falschalarme (fail closed, nicht lockern):
+// `git config user.name edit`, `git grep core.hooksPath`, `git -C x config core.hooksPath`. Bekannte Grenzen: Variablen als Schlüssel oder Flag (`"$K"`), Aliase, `include.path`, Schreiben nach `.git/config`, `GIT_DIR`.
+function gitGrund(seg, k, kahl) {
+  const { roh, w } = gitWoerter(seg)
+  if (!roh.some(istGit)) return null
+  if (/--no-verify\b/.test(kahl) || w.some((x) => x.split('=')[0].length >= 9 && '--no-verify'.startsWith(x.split('=')[0]))) return `${HOOKS_AN} (\`--no-verify\`, auch abgekürzt oder in Anführungszeichen, ist gesperrt).`
+  // Leseform nur als ganzes Segment: `git config [Leseflags] [get] core.hooksPath` ohne globale Optionen (Umleitungen sind schon entfernt); alles andere mit dem Schlüssel setzt, löscht oder ist nicht prüfbar.
+  const wk = gitWoerter(k).w
+  const ohneFlags = wk.slice(2).filter((x) => !/^(--(local|global|system|worktree|show-origin|show-scope|get|get-all|null)|-z)$/i.test(x))
+  const lesen = istGit(wk[0] ?? '') && wk[1]?.toLowerCase() === 'config' && ((ohneFlags.length === 1 && /^core\.hookspath$/i.test(ohneFlags[0])) || (ohneFlags.length === 2 && ohneFlags[0].toLowerCase() === 'get' && /^core\.hookspath$/i.test(ohneFlags[1])))
+  if (!lesen && w.some((x) => /(?:^|=)core\.hookspath/i.test(x))) return `${HOOKS_AN} (\`${HOOKSPATH}\`).`
+  if (w.some((x) => x.toLowerCase() === 'config')) {
+    if (w.some((x) => /^(?:-e|--edit|--remove-section|--rename-section|edit|remove-section|rename-section)$/i.test(x))) return `${HOOKS_AN} (\`git config edit\`, \`remove-section\` und \`rename-section\` sind gesperrt).`
+    if (roh.some((x) => /^core\.\S*[$`]/i.test(x.replace(/["']/g, '')))) return `${HOOKS_AN} (ein Schlüssel \`core.…\` mit Variable oder Ersetzung ist nicht prüfbar).`
+  }
+  return null
+}
+
 export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
   if (tiefe > 4) return 'Shell-Verschachtelung tiefer als 4: nicht prüfbar.'
   const befehl = ohneHeredoc(roherBefehl)
   if (!stueck) {
+    const env = gitUmgebung(befehl)
+    if (env) return env
     for (const { roh } of segmente(befehl)) {
       const kahl = blankiere(roh)
       if (!/[()]|\{\s|\s\}|\{$/.test(kahl)) continue
@@ -297,32 +341,8 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
     }
     const direkt = loeschDirekt(k)
     if (direkt) return direkt
-    if (/^git\b/.test(k) && /--no-verify\b/.test(kahl)) return 'Git-Hooks bleiben an (`--no-verify` ist gesperrt).'
-    if (/^git\b/.test(k)) {
-      // Wortweise (Anführungszeichen entfallen je Wort, `git "-c" "core.hooksPath=x"`): Git vergleicht den Schlüssel ohne Beachtung der Groß- und Kleinschreibung.
-      // Globale Optionen (`-c k=v`, `--config-env=k=v`) stehen vor dem Unterbefehl; Wörter in Anführungszeichen hinter `commit -m` sind keine Optionen.
-      // Shell-artige Zerlegung: ein Wort ist eine Folge aus Stücken in Anführungszeichen und Zeichen ohne Leerraum (`user.name="A B"`); Umleitungswörter (`2>$null`) zählen nicht.
-      const w = [...k.matchAll(/(?:"[^"]*"|'[^']*'|[^\s"'])+/g)].map((m) => m[0].replace(/["']/g, '')).filter((x) => !/^\d*>/.test(x))
-      const optionen = []
-      let i = 1
-      while (i < w.length && w[i].startsWith('-')) {
-        const mitWert = /^(-c|-C|--config-env|--git-dir|--work-tree|--exec-path|--namespace|--attr-source)$/.test(w[i])
-        optionen.push(...w.slice(i, i + (mitWert ? 2 : 1)))
-        i += mitWert ? 2 : 1
-      }
-      const unterbefehl = (w[i] ?? '').toLowerCase()
-      const rest = w.slice(i + 1)
-      const SCHLUESSEL = /core\.hookspath/i
-      // Lesen (`git config core.hooksPath`, `--get`, `get`) bleibt erlaubt; Setzen, Löschen und `-c core.hooksPath=…` nicht.
-      const lesewoerter = rest.filter((x) => !/^(--(local|global|system|worktree|show-origin|get|get-all)|get)$/i.test(x))
-      const nurLesen = unterbefehl === 'config' && lesewoerter.length === 1 && SCHLUESSEL.test(lesewoerter[0])
-      if (optionen.some((x) => SCHLUESSEL.test(x)) || (unterbefehl === 'config' && rest.some((x) => SCHLUESSEL.test(x)) && !nurLesen)) {
-        return 'Git-Hooks bleiben an (`core.hooksPath` setzen ist gesperrt; `npm run prepare` setzt es richtig).'
-      }
-      if (unterbefehl === 'config' && rest.some((x) => /^(--)?(remove-section|rename-section|edit)$|^-e$/i.test(x))) {
-        return 'Git-Hooks bleiben an (`git config edit`, `remove-section` und `rename-section` sind gesperrt).'
-      }
-    }
+    const gg = gitGrund(seg, k, kahl)
+    if (gg) return gg
     if (/^python3?\s+-(\s|$)/.test(k)) return 'Kein Python über stdin (hängt unter Windows). Node-Skript oder temporäre Datei unter tmp/ nutzen.'
     // docs/freigaben (Lösch-Freigaben) schreibt nur `npm run loesch -- uebernehme`: jedes Segment mit diesem Pfad, das kein Lesebefehl ist, und jede Umleitung dorthin wird verweigert.
     // Steht der Pfad nur in Anführungszeichen (Text, Argument eines Programms), zählt er nur bei einem schreibenden Programm oder einer Umleitung.

@@ -11,6 +11,13 @@ Die 15 Fragen vom 2026-11-14 sind beantwortet (ENTSCHEIDUNGEN Nr. 148 bis 162); 
 - Aufwand: bei Nein keiner, bei Ja klein (R3)
 - Quelle: Planprüfung u2b; OFFEN u2b-2
 
+### 2. Behält der direkte `git push` seine `ask`-Regel auch nach dem Probe-Schritt?
+- Worum es geht: Die flüchtigen Umgehungen des Pre-Push-Hooks (`git -c core.hooksPath=x push`, `--no-verify`, `GIT_CONFIG_*`) fängt der Guard in der üblichen Schreibweise (u3b), aber er ist keine Sicherheitsgrenze: Aliase, Variablen als Schlüssel und Umgebung aus einem früheren Aufruf bleiben offen. Die dauerhafte Umgehung fängt `hooksAktiv` in `fertig`. Die `ask`-Regel für `git push` ist die einzige Sperre gegen einen Push, der das Gate umgeht.
+- Empfehlung: Ja, die Regel für `git push` bleibt; `commit`, `merge`, `rm` und dotenv können nach dem Probe-Schritt entfallen. `npm run fertig` pusht ohnehin selbst.
+- Bei „Nein“: ein Push auf `main` ist nur noch durch Guard und Pre-Push-Hook geschützt; ein bewusst gebauter Umweg (Alias) wäre nicht gesperrt.
+- Aufwand: keiner (Einstellung in `.claude/settings.json`, R3)
+- Quelle: Abnahme u3b, Rat von Fable; OFFEN u3b-1
+
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
 - Zwei Bestätigungen stehen nur in `docs/OFFEN.md`: Obergrenze für Nachträge je Auftrag und Stunde (S9i7-4) und eine einzige USt.-Regel für alle Firmen bis Phase 2 (S9b0-B).

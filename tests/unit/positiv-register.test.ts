@@ -46,6 +46,11 @@ describe('Register gegen database.types.ts', () => {
     }
   })
 
+  it('kein Registertext beendet die Rollback-Probe (`probes` klebt die Texte in begin; … rollback;)', () => {
+    const t = text('../support/positiv.ts')
+    expect(t).not.toMatch(/\brollback\s*(;|to\b|and\b)|\bsavepoint\b|\bend\s+transaction\b/i)
+  })
+
   it('Geldspalten sind ganzzahlig: jede Spalte *_cents und prior_*, dazu die Wertfunktionen payout_preview und my_cancel_info nur int4 oder int8', () => {
     const geld = (n: string) => /_cents$/.test(n) || /^prior_(fee|net|payout|total|vat)$/.test(n)
     const alle = Object.entries(REGISTER) as [string, { spalten?: Record<string, string>; typ?: string }][]

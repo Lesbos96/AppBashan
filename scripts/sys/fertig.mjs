@@ -83,7 +83,7 @@ export function pruefeFertig(c) {
       if (!(c.abnahme?.geloescht ?? []).includes(p)) g.push(`${p}: gelöscht, gehört aber zur Mindestmenge der Abnahme; die Abnahme muss die Löschung mit der Zeile „Geloescht: ${p}“ nennen`)
     }
     if (!c.ohneBericht) {
-      for (const p of c.berichtKopienFehlen ?? []) g.push(`${p}: in bericht.json genannt, aber nicht im Commit (ignorierte Logs mit git add -f)`)
+      for (const p of c.berichtKopienFehlen ?? []) g.push(`${p}: in bericht.json genannt, aber nicht im Commit (npm run bericht legt sie in den Index; danach committen)`)
       // gruen.json im Commit: jeder Eintrag ist entweder der von origin/main oder der des gültigen Laufs (Abdruck, Hash, Schritt, Start); von Hand gesetzte Einträge zählen nicht.
       const gleich = (a, b) => ['abdruck', 'hash', 'schritt', 'zeit'].every((k) => a?.[k] === b?.[k])
       for (const [s, h] of Object.entries(c.gruenHead ?? {})) {
@@ -97,6 +97,13 @@ export function pruefeFertig(c) {
   }
   if (c.standZeilen !== null && c.standZeilen > 40) g.push('docs/STAND.md hat mehr als 40 Zeilen')
   return g
+}
+
+// Nimmt die Nachweise eines Berichts in den Index auf, auch die von `.gitignore` ausgenommenen Logs (`*.log`): nur die genannten Pfade (nie ein ganzer Ordner mit alten, ungeprüften Logs),
+// sodass kein `git add -f` von Hand nötig ist. Commit und Unveränderlichkeit bleiben unberührt; fehlt eine Datei, wirft git (fail closed).
+export function stageNachweise(pfade, wurzel = '.') {
+  const liste = [...new Set(pfade)].filter(Boolean)
+  if (liste.length) execFileSync('git', ['-C', wurzel, 'add', '-f', '--', ...liste], { stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
 // Läufe lesen und gegen die Logdatei prüfen: Hash, Kopf (Commit, Befehl, Sauber-Angabe), Schlusszeile EXIT.
@@ -173,7 +180,7 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
     abnahmeVeraltet: (abnahme?.dateien ?? []).filter((d) => !existsSync(d.pfad) || sha256Datei(d.pfad) !== d.sha).map((d) => d.pfad),
     abnahmeFehlt: pfade.filter((p) => MUSS_ABNAHME.test(p) && existsSync(p) && !genannt.has(p)),
     geloeschtMuss: pfade.filter((p) => MUSS_ABNAHME.test(p) && !existsSync(p)),
-    // Kopien und Logs, die bericht.json nennt, müssen im Commit liegen (`*.log` ist ignoriert: ein vergessenes `git add -f` fiele sonst nicht auf).
+    // Kopien und Logs, die bericht.json nennt, müssen im Commit liegen (`*.log` ist ignoriert; `npm run bericht` legt sie per stageNachweise in den Index, ein nicht committeter Index fällt hier auf).
     berichtKopienFehlen: [...(bericht?.kopien ?? []), ...Object.values(bericht?.laeufe ?? {}).map((l) => l?.log)].filter(Boolean).map((p) => p.replace(/\\/g, '/')).filter((p) => !imHead(p)),
     neueRlsTests: geaendert('A', 'tests/rls').filter((f) => f.endsWith('.test.ts')),
     berichtStand: bericht?.stand ?? null,

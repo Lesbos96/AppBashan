@@ -1,10 +1,10 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { marken, offeneMigrationen, parseFreigabe, pruefePush } from '../../scripts/sys/gate-db-lib.mjs'
+import { marken, nachtragMarken, offeneMigrationen, parseFreigabe, pruefePush, startMarke, unmarkierteStarts } from '../../scripts/sys/gate-db-lib.mjs'
 
 const SQL = 'select 1;\n'
 const sha = (t: string) => createHash('sha256').update(t).digest('hex')
@@ -108,6 +108,74 @@ describe('M16: Marken nach dem Push binden den Inhalt', () => {
     expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [f, { ...f, urteil: 'gesperrt' }]).ok).toBe(false)
     expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [{ ...f, urteil: 'gesperrt' }, f]).ok).toBe(false)
     expect(pruefePush([{ pfad: 'a.sql', sha256: A }], [f]).ok).toBe(true)
+  })
+})
+
+describe('AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push', () => {
+  const m = (version: string, sha256: string) => ({ version, pfad: `supabase/migrations/${version}_x.sql`, sha256 })
+  const A = 'a'.repeat(64)
+  const B = 'b'.repeat(64)
+  it('startMarke bündelt Version, Pfad und SHA-256 der freigegebenen Migrationen', () => {
+    const z = startMarke([m('1', A)], '2026-11-15T10:00:00.000Z')
+    expect(z).toEqual({ ziel: 'db-push-start', start: '2026-11-15T10:00:00.000Z', migrationen: [m('1', A)] })
+  })
+  it('unmarkierteStarts: nur Startmarken-Einträge, die keine Marke mit gleichem Pfad und SHA-256 haben', () => {
+    const zeilen = [
+      startMarke([m('1', A), m('2', B)], 't1'),
+      { ziel: 'db-push', start: 't2', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: A }] },
+      { ziel: 'check', nr: 3 },
+    ]
+    expect(unmarkierteStarts(zeilen)).toEqual([{ ...m('2', B), start: 't1' }])
+    expect(unmarkierteStarts([startMarke([m('1', A)], 't1'), { ziel: 'db-push', start: 't2', migrationen: [{ pfad: 'supabase/migrations/1_x.sql', sha256: B }] }])).toEqual([{ ...m('1', A), start: 't1' }]) // Marke mit anderem SHA deckt nicht ab
+    expect(unmarkierteStarts([])).toEqual([])
+  })
+  it('nachtragMarken: nur mit positivem Beleg (Version steht mit remote in der Liste) und unverändertem SHA-256', () => {
+    const liste = (remote: string) => ({ migrations: [{ local: '1', remote }] })
+    const v = { ...m('1', A), start: 't1' }
+    expect(nachtragMarken([v], liste('1'), () => A)).toEqual({ marken: [{ pfad: v.pfad, sha256: A, start: 't1' }], gruende: [], offen: [] })
+    expect(nachtragMarken([v], liste(''), () => A)).toEqual({ marken: [], gruende: [], offen: [v] }) // noch nicht angewendet: keine Marke
+    expect(nachtragMarken([v], { migrations: [] }, () => A).marken).toEqual([]) // Version fehlt in der Liste: kein Beleg
+    expect(nachtragMarken([v], liste('1'), () => B).gruende.join()).toMatch(/Inhalt hat sich seit der Freigabe geändert/)
+    expect(nachtragMarken([v], liste('1'), () => { throw new Error('weg') }).gruende.join()).toMatch(/Datei nicht lesbar/)
+    expect(() => nachtragMarken([v], { fehler: 1 }, () => A)).toThrow(/Unerwartete Form/)
+  })
+  const nachtrag = (a: ReturnType<typeof aufbau>, listeRemote: string) => {
+    writeFileSync(join(a.dir, 'liste.json'), JSON.stringify({ migrations: [{ local: '20261101100000', remote: '20261101100000' }, { local: '20261201100000', remote: listeRemote }] }))
+    return cli(a, 'nachtrag')
+  }
+  const mitStart = (sha256: string) => {
+    const a = aufbau()
+    writeFileSync(join(a.frei, 'runs.jsonl'), JSON.stringify(startMarke([{ version: '20261201100000', pfad: a.pfad, sha256 }], '2026-11-01T10:00:00.000Z')) + '\n')
+    return a
+  }
+  const runs = (a: ReturnType<typeof aufbau>) => readFileSync(join(a.frei, 'runs.jsonl'), 'utf8').trim().split('\n').map((z) => JSON.parse(z))
+  it('nach einem gelungenen Push ohne Marke schreibt `nachtrag` die Marke, ein zweiter Lauf nichts mehr', () => {
+    const a = mitStart(sha(SQL))
+    const r = nachtrag(a, '20261201100000')
+    expect(r.status).toBe(0)
+    expect(r.stdout).toMatch(/1 Marke\(n\) db-push/)
+    expect(runs(a).at(-1)).toMatchObject({ ziel: 'db-push', nachtrag: true, startmarke: ['2026-11-01T10:00:00.000Z'], migrationen: [{ pfad: a.pfad, sha256: sha(SQL) }] })
+    expect(Date.parse(runs(a).at(-1).start)).toBeGreaterThan(Date.parse('2026-11-01T10:00:00.000Z')) // Zeitpunkt des Nachtrags: ein rls-Lauf muss danach laufen
+    expect(nachtrag(a, '20261201100000').stdout).toMatch(/keine Startmarke ohne Marke/)
+    expect(runs(a)).toHaveLength(2)
+  })
+  it('Migration noch nicht angewendet (remote leer): keine Marke', () => {
+    const a = mitStart(sha(SQL))
+    expect(nachtrag(a, '').status).toBe(0)
+    expect(runs(a)).toHaveLength(1)
+  })
+  it('Datei nach der Startmarke geändert: keine Marke, Exit 1', () => {
+    const a = mitStart(sha('select 9;\n'))
+    const r = nachtrag(a, '20261201100000')
+    expect(r.status).toBe(1)
+    expect(r.stderr).toMatch(/Inhalt hat sich seit der Freigabe geändert/)
+    expect(runs(a)).toHaveLength(1)
+  })
+  it('ohne Startmarke: nichts zu tun, nie eine Marke aus dem Nichts', () => {
+    const a = aufbau()
+    const r = nachtrag(a, '20261201100000')
+    expect(r.status).toBe(0)
+    expect(r.stdout).toMatch(/keine Startmarke ohne Marke/)
   })
 })
 

@@ -67,6 +67,7 @@
     "setup:photo-publish": "dotenv -e .env.local -- node scripts/setup-photo-publish.mjs",
     "db:antrag": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs antrag",
     "db:push": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs push && npm run db:types",
+    "db:nachtrag": "dotenv -e .env.local -- node scripts/sys/gate-db.mjs nachtrag && npm run db:types",
     "loesch": "dotenv -e .env.local -- node scripts/sys/gate-loesch.mjs",
     "t": "node scripts/sys/run.mjs",
     "bericht": "node scripts/sys/bericht.mjs",

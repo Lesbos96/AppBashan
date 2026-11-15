@@ -3,6 +3,7 @@ export interface SitzungsDatei {
   transcript?: string | null
   session_id?: string | null
 }
+export function beraterDesSchritts(zeilen: { ereignis?: string; agent_type?: string | null; schritt?: string | null }[], schritt: string): Record<string, number>
 export function modelleAusTranskript(text: string): Record<string, number>
 export function transkriptPfad(session: SitzungsDatei | null, projekt?: string): string | null
 export function modellDerSitzung(

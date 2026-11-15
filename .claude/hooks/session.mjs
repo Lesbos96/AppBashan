@@ -1,5 +1,6 @@
 // Sitzungsprotokoll (Hooks SessionStart, SubagentStart, SubagentStop, UserPromptSubmit).
 // Das Modell kommt vom Programm (Feld `model`, laut Doku optional; fehlt es, nennt der Bericht das Modell aus dem Transkript), nicht von der Selbstauskunft des Modells.
+import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -12,6 +13,15 @@ function schreibe(datei, inhalt, anhaengen = false) {
   mkdirSync(dirname(datei), { recursive: true })
   if (anhaengen) appendFileSync(datei, inhalt)
   else writeFileSync(datei, inhalt)
+}
+
+// Schrittname wie `schrittName()` in scripts/sys/lib.mjs (Branch, Schrägstriche zu Bindestrichen); null ohne Git oder Branch.
+function aktuellerSchritt() {
+  try {
+    return execFileSync('git', ['branch', '--show-current'], { cwd: projekt, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().replace(/[\\/]/g, '-') || null
+  } catch {
+    return null
+  }
 }
 
 // Gibt den Blockgrund zurück oder null.
@@ -38,7 +48,8 @@ export function verarbeite(e) {
     }
     case 'SubagentStart':
     case 'SubagentStop':
-      schreibe(join(root, 'agents.jsonl'), JSON.stringify({ zeit: jetzt, ereignis: e.hook_event_name, agent_type: e.agent_type ?? null, agent_id: e.agent_id ?? null }) + '\n', true)
+      // `schritt` = Branch des Projektordners (der Schrittname): so zählt der Bericht nur die Berater des eigenen Schritts. Ohne Git oder im Detached-Zustand null.
+      schreibe(join(root, 'agents.jsonl'), JSON.stringify({ zeit: jetzt, ereignis: e.hook_event_name, agent_type: e.agent_type ?? null, agent_id: e.agent_id ?? null, schritt: aktuellerSchritt() }) + '\n', true)
       return null
     case 'UserPromptSubmit': {
       const modell = existsSync(sessionDatei) ? JSON.parse(readFileSync(sessionDatei, 'utf8')).modell : null

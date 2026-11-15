@@ -51,3 +51,4 @@ export interface FertigKontext {
 export const MUSS_ABNAHME: RegExp
 export function gueltigerLauf(c: FertigKontext, suite: string): Lauf | null
 export function pruefeFertig(c: FertigKontext): string[]
+export function stageNachweise(pfade: string[], wurzel?: string): void

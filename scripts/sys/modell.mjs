@@ -20,6 +20,13 @@ export function modelleAusTranskript(text) {
   return n
 }
 
+// Berater (SubagentStart) je Art, nur die Zeilen von agents.jsonl mit `schritt` gleich dem Schritt: ältere Zeilen ohne Schritt und andere Schritte zählen nicht.
+export function beraterDesSchritts(zeilen, schritt) {
+  const n = {}
+  for (const z of zeilen) if (z.ereignis === 'SubagentStart' && z.schritt === schritt) n[z.agent_type] = (n[z.agent_type] ?? 0) + 1
+  return n
+}
+
 // Pfad aus session.json (`transcript`, vom Hook) oder, falls der Hook ihn nicht bekam, aus Konfigurationsordner, Projekt-Slug und Sitzungs-ID.
 export function transkriptPfad(session, projekt = process.cwd()) {
   if (session?.transcript) return session.transcript

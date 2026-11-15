@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { modelleAusTranskript, modellDerSitzung, transkriptPfad } from '../../scripts/sys/modell.mjs'
+import { beraterDesSchritts, modelleAusTranskript, modellDerSitzung, transkriptPfad } from '../../scripts/sys/modell.mjs'
 
 const eintrag = (model: string, extra: object = {}) => JSON.stringify({ type: 'assistant', message: { model }, ...extra })
 
@@ -35,6 +35,39 @@ describe('Modell aus dem Transkript (Ersatz für das fehlende Hook-Feld)', () =>
     expect(modellDerSitzung(null)).toEqual({ modell: null, modelle: {}, quelle: null })
     expect(modellDerSitzung({ modell: null, transcript: dir })).toEqual({ modell: null, modelle: {}, quelle: null }) // Lesefehler (Ordner statt Datei): kein Abbruch
     expect(transkriptPfad({ session_id: 'abc' }, 'C:\\Users\\x\\Music\\MoveNow')).toMatch(/projects[\\/]C--Users-x-Music-MoveNow[\\/]abc\.jsonl$/)
+  })
+})
+
+describe('Berater je Schritt (agents.jsonl)', () => {
+  const z = (ereignis: string, agent_type: string, schritt?: string | null) => ({ ereignis, agent_type, ...(schritt === undefined ? {} : { schritt }) })
+  it('zählt nur SubagentStart des aktuellen Schritts; ältere Zeilen ohne Schritt und andere Schritte zählen nicht', () => {
+    const zeilen = [
+      z('SubagentStart', 'advisor'), // Altbestand ohne Schritt
+      z('SubagentStart', 'advisor', 'u3'),
+      z('SubagentStart', 'advisor', 'u3b'),
+      z('SubagentStop', 'advisor', 'u3b'),
+      z('SubagentStart', 'advisor-report', 'u3b'),
+      z('SubagentStart', 'advisor-report', 'u3b'),
+      z('SubagentStart', 'Explore', null),
+    ]
+    expect(beraterDesSchritts(zeilen, 'u3b')).toEqual({ advisor: 1, 'advisor-report': 2 })
+    expect(beraterDesSchritts(zeilen, 'u3')).toEqual({ advisor: 1 })
+    expect(beraterDesSchritts([], 'u3b')).toEqual({})
+  })
+  it('der Hook stempelt jede Zeile mit dem Branch des Projektordners (ohne Git: null)', () => {
+    const mitGit = mkdtempSync(join(tmpdir(), 'agents-git-'))
+    const ohneGit = mkdtempSync(join(tmpdir(), 'agents-nogit-'))
+    expect(spawnSync('git', ['init', '-b', 'probe-schritt'], { cwd: mitGit }).status).toBe(0)
+    for (const [projekt, erwartet] of [[mitGit, 'probe-schritt'], [ohneGit, null]] as const) {
+      const root = join(projekt, 'proof')
+      spawnSync(process.execPath, [join(process.cwd(), '.claude/hooks/session.mjs')], {
+        input: JSON.stringify({ hook_event_name: 'SubagentStart', agent_type: 'advisor', agent_id: 'a1' }),
+        encoding: 'utf8',
+        cwd: projekt,
+        env: { ...process.env, CLAUDE_PROJECT_DIR: projekt, PROOF_ROOT: root, GIT_CEILING_DIRECTORIES: join(projekt, '..') },
+      })
+      expect(JSON.parse(readFileSync(join(root, 'agents.jsonl'), 'utf8').trim()).schritt).toBe(erwartet)
+    }
   })
 })
 

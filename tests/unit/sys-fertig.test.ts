@@ -1,5 +1,9 @@
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MUSS_ABNAHME, pruefeFertig, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
+import { MUSS_ABNAHME, pruefeFertig, stageNachweise, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
 
 const AB = { check: 'a1', e2e: 'a2', rls: 'a3' }
 const lauf = (ziel: string, extra: Partial<Lauf> = {}): Lauf => ({
@@ -193,6 +197,20 @@ describe('Merge-Gate: pruefeFertig', () => {
     it('N23: .claude/agents gehört zur Mindestmenge der Abnahme', () => {
       expect(MUSS_ABNAHME.test('.claude/agents/advisor.md')).toBe(true)
       expect(MUSS_ABNAHME.test('.claude/rules/geld.md')).toBe(false)
+    })
+    it('stageNachweise legt die genannten, von .gitignore ausgenommenen Logs in den Index, sonst nichts (kein git add -f von Hand)', () => {
+      const dir = mkdtempSync(join(tmpdir(), 'stage-'))
+      const git = (...a: string[]) => spawnSync('git', ['-C', dir, ...a], { encoding: 'utf8' })
+      expect(git('init', '-b', 'x').status).toBe(0)
+      writeFileSync(join(dir, '.gitignore'), '*.log\n')
+      mkdirSync(join(dir, 'docs/proof/u3b'), { recursive: true })
+      for (const f of ['001-check.log', 'u3b-probe-guard-004.log', 'alt-ungenannt.log']) writeFileSync(join(dir, 'docs/proof/u3b', f), 'x\n')
+      writeFileSync(join(dir, 'docs/proof/u3b/bericht.md'), 'x\n')
+      expect(git('ls-files').stdout.trim()).toBe('') // nichts im Index
+      stageNachweise(['docs/proof/u3b/001-check.log', 'docs/proof/u3b/u3b-probe-guard-004.log', 'docs/proof/u3b/bericht.md', 'docs/proof/u3b/001-check.log'], dir)
+      expect(git('ls-files').stdout.trim().split('\n')).toEqual(['docs/proof/u3b/001-check.log', 'docs/proof/u3b/bericht.md', 'docs/proof/u3b/u3b-probe-guard-004.log'])
+      expect(() => stageNachweise(['docs/proof/u3b/fehlt.log'], dir)).toThrow() // fehlende Datei: fail closed
+      expect(() => stageNachweise([], dir)).not.toThrow()
     })
     it('N25: Kopie oder Log aus bericht.json fehlt im Commit', () => {
       expect(pruefeFertig(r3({ berichtKopienFehlen: ['docs/proof/u2b/037-check.log'] })).join()).toMatch(/docs\/proof\/u2b\/037-check\.log.*nicht im Commit/)

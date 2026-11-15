@@ -1,12 +1,13 @@
 // Datenbank-Gate. `antrag`: schreibt die Hashes der noch nicht auf Dev liegenden Migrationen.
-// `push`: lässt nur durch, wenn zu jeder offenen Migration eine Fable-Freigabe mit gleichem Pfad und SHA-256 vorliegt (fail-closed), startet danach selbst
-// `supabase db push`, liest die Liste neu und schreibt je tatsächlich angewendeter Migration die Marke `db-push` { pfad, sha256 } in runs.jsonl (auch nach einem
-// teilweisen Push). Weicht der Inhalt einer Datei nach dem Push vom freigegebenen SHA-256 ab, gibt es für sie keine Marke.
+// `push`: lässt nur durch, wenn zu jeder offenen Migration eine Fable-Freigabe mit gleichem Pfad und SHA-256 vorliegt (fail-closed), schreibt die Startmarke `db-push-start`,
+// startet danach selbst `supabase db push`, liest die Liste neu (bis zu dreimal) und schreibt je tatsächlich angewendeter Migration die Marke `db-push` { pfad, sha256 } in runs.jsonl
+// (auch nach einem teilweisen Push). Weicht der Inhalt einer Datei nach dem Push vom freigegebenen SHA-256 ab, gibt es für sie keine Marke.
+// `nachtrag` (AM5): holt fehlende Marken aus den Startmarken nach, wenn der Push gelang, die Marken aber nicht geschrieben wurden (gleiche Prüfung: Liste, SHA-256).
 // `--trocken --liste <json> --dir <ordner> --freigaben <ordner>`: Attrappe ohne Datenbank, nur die Prüfung. Diese Optionen gibt es nur mit --trocken.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { marken, offeneMigrationen, parseFreigabe, pruefePush } from './gate-db-lib.mjs'
+import { marken, nachtragMarken, offeneMigrationen, parseFreigabe, pruefePush, startMarke, unmarkierteStarts } from './gate-db-lib.mjs'
 import { PROOF_ROOT, schrittName, sha256Datei } from './lib.mjs'
 
 const [modus, ...rest] = process.argv.slice(2)
@@ -17,9 +18,9 @@ const opt = (name) => {
 }
 const OPTIONEN = ['--liste', '--dir', '--freigaben']
 const attrappe = OPTIONEN.some((o) => rest.includes(o))
-const ungueltig = !['antrag', 'push'].includes(modus ?? '') || (attrappe && !trocken) || (trocken && !OPTIONEN.every((o) => opt(o)))
+const ungueltig = !['antrag', 'push', 'nachtrag'].includes(modus ?? '') || (attrappe && !trocken) || (trocken && !OPTIONEN.every((o) => opt(o)))
 if (ungueltig) {
-  console.error('Aufruf: gate-db.mjs antrag|push   (Attrappe nur mit: antrag|push --trocken --liste <json> --dir <ordner> --freigaben <ordner>)')
+  console.error('Aufruf: gate-db.mjs antrag|push|nachtrag   (Attrappe nur mit: antrag|push|nachtrag --trocken --liste <json> --dir <ordner> --freigaben <ordner>)')
   process.exit(2)
 }
 
@@ -35,8 +36,8 @@ function liesListe() {
 }
 
 let offen
+let liste
 try {
-  let liste
   if (trocken) {
     liste = JSON.parse(readFileSync(opt('--liste'), 'utf8'))
   } else {
@@ -59,6 +60,28 @@ if (modus === 'antrag') {
   process.exit(0)
 }
 
+const runsDatei = join(ordner, 'runs.jsonl')
+const schreibeMarken = (marken, extra = {}) => {
+  mkdirSync(ordner, { recursive: true })
+  if (marken.length) appendFileSync(runsDatei, JSON.stringify({ ziel: 'db-push', start: new Date().toISOString(), ...extra, migrationen: marken }) + '\n')
+}
+
+if (modus === 'nachtrag') {
+  // AM5: Push gelungen, Marken fehlen (Liste danach nicht lesbar, Absturz): aus den Startmarken ohne Marke nachtragen. Die Nachtragsmarke trägt als `start` den Zeitpunkt des Nachtrags
+  // (ein rls-Lauf muss danach laufen) und verweist auf die Startmarken.
+  const zeilen = existsSync(runsDatei) ? readFileSync(runsDatei, 'utf8').split('\n').filter(Boolean).flatMap((z) => { try { return [JSON.parse(z)] } catch { return [] } }) : []
+  const vorher = unmarkierteStarts(zeilen)
+  if (vorher.length === 0) {
+    console.log('GATE-DB nachtrag: keine Startmarke ohne Marke')
+    process.exit(0)
+  }
+  const n = nachtragMarken(vorher, liste, sha256Datei)
+  schreibeMarken(n.marken.map(({ pfad, sha256 }) => ({ pfad, sha256 })), { nachtrag: true, startmarke: [...new Set(n.marken.map((x) => x.start))] })
+  console.log(`GATE-DB nachtrag: ${n.marken.length} Marke(n) db-push geschrieben, ${n.offen.length} noch nicht angewendet`)
+  if (n.gruende.length) fehler(n.gruende.join('\n- '))
+  process.exit(0)
+}
+
 const freigaben = existsSync(ordner)
   ? readdirSync(ordner)
       .filter((f) => /^db-freigabe-.*\.md$/.test(f))
@@ -72,15 +95,20 @@ if (trocken) {
 }
 
 console.log(`GATE-DB: frei (${offen.length} offene Migration(en)), starte supabase db push`)
+mkdirSync(ordner, { recursive: true })
+appendFileSync(runsDatei, JSON.stringify(startMarke(offen)) + '\n') // AM5: vor dem CLI-Start, damit `nachtrag` nach einem gelungenen Push ohne Marke weiß, was freigegeben war
 const cli = spawnSync(process.execPath, [SUPABASE, 'db', 'push', '--linked', '--yes'], { stdio: 'inherit' })
 let m
-try {
-  m = marken(offen, offeneMigrationen(liesListe(), 'supabase/migrations'), sha256Datei)
-} catch (e) {
-  fehler(`Liste nach dem Push nicht lesbar (${e.message.split('\n')[0]}), keine Marke. Danach \`npm run db:antrag\` und Stand prüfen.`)
+let letzterFehler = ''
+for (let versuch = 1; versuch <= 3 && !m; versuch++) {
+  try {
+    m = marken(offen, offeneMigrationen(liesListe(), 'supabase/migrations'), sha256Datei)
+  } catch (e) {
+    letzterFehler = e.message.split('\n')[0]
+  }
 }
-mkdirSync(ordner, { recursive: true })
-if (m.marken.length) appendFileSync(join(ordner, 'runs.jsonl'), JSON.stringify({ ziel: 'db-push', start: new Date().toISOString(), migrationen: m.marken }) + '\n')
+if (!m) fehler(`Liste nach dem Push nicht lesbar (${letzterFehler}), keine Marke. Danach \`npm run db:nachtrag\` (holt die Marken aus der Startmarke nach).`)
+schreibeMarken(m.marken)
 console.log(`GATE-DB: ${m.marken.length} Marke(n) db-push geschrieben, CLI-Exit ${cli.status}`)
 if (m.gruende.length) fehler(m.gruende.join('\n- '))
 process.exit(cli.status ?? 1)

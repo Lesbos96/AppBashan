@@ -3,10 +3,10 @@
 import { execFileSync } from 'node:child_process'
 import { constants, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { gueltigerLauf, pruefeFertig, sammle } from './fertig.mjs'
+import { gueltigerLauf, pruefeFertig, sammle, stageNachweise } from './fertig.mjs'
 import { SUITEN } from './fingerabdruck.mjs'
 import { git, hooksAktiv, PROOF_ROOT, schrittName, sha256Datei } from './lib.mjs'
-import { modellDerSitzung } from './modell.mjs'
+import { beraterDesSchritts, modellDerSitzung } from './modell.mjs'
 
 const schritt = schrittName()
 // R3-Prüfungen (Freigaben, Abnahme, Rot-vor-Grün) zählen mit; nur die Prüfung des Berichts selbst entfällt.
@@ -29,8 +29,7 @@ const lesen = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null
 const session = lesen(join(PROOF_ROOT, 'session.json'))
 const { modell, modelle, quelle: modellQuelle } = modellDerSitzung(session, process.cwd())
 const agents = existsSync(join(PROOF_ROOT, 'agents.jsonl')) ? readFileSync(join(PROOF_ROOT, 'agents.jsonl'), 'utf8').split('\n').filter(Boolean).map((z) => JSON.parse(z)) : []
-const berater = {}
-for (const a of agents.filter((x) => x.ereignis === 'SubagentStart')) berater[a.agent_type] = (berater[a.agent_type] ?? 0) + 1
+const berater = beraterDesSchritts(agents, schritt) // nur die Aufrufe dieses Schritts (der Hook stempelt jede Zeile mit dem Branch)
 
 const laeufe = {}
 const gruenNeu = lesen('docs/proof/gruen.json') ?? {}
@@ -127,5 +126,7 @@ writeFileSync(
   ].join('\n'),
 )
 writeFileSync('docs/proof/gruen.json', JSON.stringify(gruenNeu, null, 2) + '\n')
+// Nur die genannten Nachweise (auch die ignorierten Logs) in den Index legen; committen tut die Session.
+stageNachweise([...json.kopien, ...Object.values(laeufe).map((l) => l?.log), join(ziel, 'bericht.json'), join(ziel, 'bericht.md'), 'docs/proof/gruen.json'].filter(Boolean).map((p) => p.replace(/\\/g, '/')))
 console.log(readFileSync(join(ziel, 'bericht.md'), 'utf8'))
 process.exit(gruende.length === 0 ? 0 : 1)
