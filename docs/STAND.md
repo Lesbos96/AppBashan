@@ -1,20 +1,19 @@
 # MoveNow · Stand
 
-Stand 2026-11-14, nach Schritt u2b (Fristen und Mängel aus u2). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-15, nach Schritt u3 (Testlücke Mocks ↔ Datenbank). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9p-1 (Provisionsstaffel) gebaut und auf `main`: Kunde (Anfrage, Angebote, Nachtrag, Storno, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung).
-- Arbeitssystem: u1, u1b, u2 und u2b sind erledigt. u2b: Guard erkennt Befehle hinter PowerShell-Zuweisung, in `if`/`while`/`until` und in Klammern (AM10); N19 bis N25 behoben; `bericht.md` nennt das Modell aus dem Transkript, trennt übernommene Läufe und legt die Abnahme unter `docs/proof/<schritt>/` ab; `rls` bei R3 gilt nur mit grünem Lauf von höchstens 7 Tagen (`zeit` in `gruen.json`).
+- Arbeitssystem: u1, u1b, u2, u2b und u3 sind erledigt. u3: Positivzeilen-Register `tests/support/positiv.ts` (Aufbau und Aufrufe in `tests/rls/positiv.test.ts`, Abgleich mit `database.types.ts` in `tests/unit/positiv-register.test.ts`): 77 öffentliche Funktionen haben eine Positivzeile mit erlaubtem Akteur, Spaltentypen und exakter EXECUTE-Menge, 2 stehen in der Ausnahmeliste (`quote_save_booking`: Miete; `outbox_dispatch`: toter Grant, OFFEN u3-1). Eine neue Funktion ohne Eintrag macht `check` rot. `mockRpc<'name'>` (`tests/e2e/backend.ts`) bindet e2e-Mocks an `Returns`. `plpgsql_check` ist auf Dev verfügbar (2.8), nicht eingeschaltet (OFFEN u3-2).
 - Beks hat die 15 Fragen vom 2026-11-14 beantwortet (`docs/ENTSCHEIDUNGEN.md` Nr. 148 bis 162); Folgearbeiten stehen in `docs/OFFEN.md`, gebaut ist davon nichts.
 - Datenbank Dev: 62 Migrationen, lokal = remote bis `20261114100000` (0062). Nächste Migration 0063.
 - Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung und GOLIVE 34 erledigt sind.
 
 ## Nächster Schritt
-**u3 · Testlücke** (R3, Sonnet 5.5, Effort hoch; `docs/SYSTEM_VORSCHLAG.md` Abschnitt 3 d): Positivzeilen-Register `tests/rls/positiv.test.ts` mit Abgleich gegen `database.types.ts`, getypter Mock-Helfer `mockRpc`, Probe `plpgsql_check`. Funde werden eigene R3-Schritte.
+**u3b** (R3 klein, Sonnet 5.5, Effort hoch; OFFEN „u3b“): u2b-3 (git-Block im Guard positionsunabhängig), `agents.jsonl` je Schritt zählen, Rot-Beweis für die `fertig`-Tests. Vor dem Entfall der `ask`-Regeln für `git push` und `git commit`, spätestens vor dem Probe-Schritt s9k-1.
 
-Davor oder daneben (Details in `docs/OFFEN.md`, „Fristen aus dem Arbeitssystem“):
-- **u2b-3** (Guard, git-Block: M5, M6, M7, N11): kleiner R3-Schritt mit Fable-Abnahme, vor dem Entfall der `ask`-Regeln für `git push` und `git commit`.
-- **u1b-6/AM5**: vor der ersten echten Migration (u3 selbst braucht keine).
+Danach oder daneben, je ein eigener R3-Schritt:
+- **u3-1 + u3-4** (Migration 0063 und Register-Nachzug): EXECUTE für `service_role` an `outbox_dispatch` (und die elf `'us'`-Funktionen, N15) entziehen, Ausnahme streichen, Funde N1, N3 bis N8, N11 bis N13 aus `docs/OFFEN.md` u3-4. Einzuplanen: **u1b-6/AM5** vor der ersten echten Migration; jede Änderung an `tests/support/positiv.ts` macht `check` rot, bis ihr Hash in `scripts/sys/loesch-register.json` nachgeführt ist (Gate-Datei, braucht Fable-Abnahme); N18: `payout_preview` und `my_cancel_info` zusätzlich in `NieAusnahme`/Pflichtliste des Unit-Tests; N19: ein roter Lauf für den Geldtest (`total_cents: 'numeric'` setzen).
 
 ## Danach
 1. Probe: ein R3-Schritt mit dem neuen System (Vorschlag: **s9k-1**, Meldung „nicht stattgefunden“ als ein Zustandsablauf, GOLIVE 34). Zeit und Rückfragen notieren, mit s9i-7c2 vergleichen. Danach dürfen die `ask`-Regeln für commit, merge, push, rm, dotenv entfallen.
@@ -30,4 +29,5 @@ Davor oder daneben (Details in `docs/OFFEN.md`, „Fristen aus dem Arbeitssystem
 - Verweise im Code und in alten Nachweisen auf `docs/OPEN_ISSUES.md`, `PROGRESS.md`, `AUTOPILOT.md` meinen `docs/archiv/`.
 - Sperrreihenfolge überall: Auftrag, dann Firma. Wettlauftests lassen Testdaten auf Dev stehen (Angebote und Journal sind unlöschbar).
 - Edge Functions deployen: noch ohne Gate, nur über die `ask`-Regel (OFFEN u1-2). Deno läuft über `npm run check:deno`.
-- Vollauf `rls` 25 bis 30 Minuten (u2b: 1878 s): im Hintergrund starten; die Supabase-CLI stürzt gelegentlich ab (Bun-Crash in `ownerSql`), dann den Lauf unverändert wiederholen.
+- Vollauf `rls` 15 bis 30 Minuten (u3: 905 s und 1451 s, u2b: 1878 s): im Hintergrund starten, nie zusammen mit anderen Läufen; die Supabase-CLI stürzt gelegentlich ab (Bun-Crash in `ownerSql`), dann den Lauf unverändert wiederholen.
+- Bekannter Flake: `tests/rls/offers.test.ts` „Snapshot ohne Gebühr“ sucht `fee` im Snapshot-Text und trifft mit etwa 1 % Wahrscheinlichkeit die Hexfolge in der zufälligen `offerId` (u3 Lauf 1 rot, unveränderte Wiederholung grün; gleiche Art wie OFFEN S9h4-8). Bei Rot dort: Lauf wiederholen, bei zweitem Rot untersuchen.
