@@ -1,0 +1,87 @@
+{
+  "schritt": "sys1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 262
+  },
+  "sitzung": "e07b874d-6e4f-4e0c-b74b-ac8c4d5307c2",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 5
+  },
+  "hash": "41849b681d3866347f826445c092559bdc351c02",
+  "stand": "e30de55610788b968d0987818c8504b18d8e80024f4ddd8dd576873393b89e48",
+  "mainVorher": "16a46f6143d1f1e28ada8f9e9334db148740fc28",
+  "commits": 10,
+  "geaendert": {
+    ".claude": 4,
+    "docs": 4,
+    "scripts": 7,
+    "supabase/migrations": 1,
+    "tests/rls": 2,
+    "andere": 1,
+    "tests/unit": 3
+  },
+  "laeufe": {
+    "check": {
+      "nr": 14,
+      "exit": 0,
+      "tests": "2009 passed (2009)",
+      "sek": 47.7,
+      "hash": "0b736e7094fd18d8e383f7ba51956a11b731e3b9",
+      "schritt": "sys1",
+      "log": "docs\\proof\\sys1\\014-check.log"
+    },
+    "rls": {
+      "nr": 16,
+      "exit": 0,
+      "tests": "387 passed (387)",
+      "sek": 1666.2,
+      "hash": "0b736e7094fd18d8e383f7ba51956a11b731e3b9",
+      "schritt": "sys1",
+      "log": "docs\\proof\\sys1\\016-rls.log"
+    },
+    "e2e": {
+      "nr": 15,
+      "exit": 0,
+      "tests": "688 passed (11.6m)",
+      "sek": 699.9,
+      "hash": "0b736e7094fd18d8e383f7ba51956a11b731e3b9",
+      "schritt": "sys1",
+      "log": "docs\\proof\\sys1\\015-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 16,
+    "rot": 6
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261116150000_0070_default_privileges.sql",
+      "sha256": "0291d11ddd48710fefa0d175bcfaa1a1ca96700f64b2b4b339fc6038b1c7772c"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs/proof/sys1/sys1-abnahme-1.md",
+    "quelle": "tmp/proof/sys1-abnahme-1.md",
+    "sha256": "3fc6890c61d0d209ecdeb2cb9551fc4aa602af7058cd58257a73389ea9e57a00",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\sys1\\db-antrag-1.json",
+    "docs\\proof\\sys1\\db-freigabe-1.md",
+    "docs\\proof\\sys1\\loesch-freigabe-1.md",
+    "docs\\proof\\sys1\\loesch-freigabe-2.md",
+    "docs\\proof\\sys1\\loesch-freigabe-3.md",
+    "docs\\proof\\sys1\\loesch-lauf.jsonl",
+    "docs\\proof\\sys1\\sys1-abnahme-1.md",
+    "docs\\proof\\sys1\\sys1-plan.md"
+  ]
+}
