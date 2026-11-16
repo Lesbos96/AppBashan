@@ -1689,6 +1689,17 @@ export type Database = {
           total_cents: number
         }[]
       }
+      cancel_replay: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_photos: string[]
+          p_reason: string
+          p_request: string
+          p_shown: number
+        }
+        Returns: string
+      }
       complete_due: { Args: never; Returns: number }
       complete_job: { Args: { p_request: string }; Returns: undefined }
       confirm_offer: {
@@ -2014,6 +2025,16 @@ export type Database = {
           source: string
           total_cents: number
         }[]
+      }
+      propose_change_replay: {
+        Args: {
+          p_actor: string
+          p_changes: Json
+          p_photos: string[]
+          p_request: string
+          p_shown_total: number
+        }
+        Returns: string
       }
       publish_version: {
         Args: { p_actor: string; p_version: number }
