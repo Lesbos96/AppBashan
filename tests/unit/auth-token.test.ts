@@ -59,7 +59,7 @@ describe('rejectToken', () => {
     const secret = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1In0.c2lnbmF0dXI'
     let thrown: Error | undefined
     try {
-      rejectToken({ name: 'AuthApiError', status: 500, code: 'unexpected_failure', message: `invalid JWT ${secret}` })
+      rejectToken({ name: 'AuthApiError', status: 500, code: 'unexpected_failure', message: `invalid JWT ${secret}` } as AuthErr)
     } catch (x) {
       thrown = x as Error
     }
