@@ -25,6 +25,35 @@ function deps(claimed: OutboxRow[], over: Partial<OutboxDeps> = {}): OutboxDeps 
 }
 const call = (d: OutboxDeps) => handleOutbox(new Request('https://x.test/outbox', { method: 'POST', headers: { 'x-outbox-secret': 'o' }, body: '{}' }), d)
 
+describe('outbox-send Zugang vor Konfiguration (u5-1)', () => {
+  it('ohne Versand (send null, SMTP fehlt): ohne oder falsches Secret 401, nie 503; mit richtigem Secret 503 ohne claim', async () => {
+    let claims = 0
+    const d = deps(rows(1), { send: null, claim: async () => (claims++, rows(1)) })
+    const call2 = (secret: string | null) => handleOutbox(new Request('https://x.test/outbox', { method: 'POST', headers: secret === null ? {} : { 'x-outbox-secret': secret }, body: '{}' }), d)
+    for (const s of [null, 'falsch', '']) {
+      const res = await call2(s)
+      expect(res.status, `Secret ${s}`).toBe(401)
+      expect(await res.json()).toEqual({ error: 'unauthorized' })
+    }
+    const res = await call2('o')
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ error: 'mail_not_configured' })
+    expect(claims).toBe(0)
+    expect(d.marks).toEqual([])
+  })
+
+  it('ohne APP_URL ebenso 503 nach der Prüfung; leeres Secret in der Umgebung: jeder Aufruf 401, auch mit leerem Header', async () => {
+    const d = deps(rows(1), { appUrl: '' })
+    expect((await call(d)).status).toBe(503)
+    const none = deps(rows(1), { secret: '' })
+    for (const s of ['', 'o']) {
+      const res = await handleOutbox(new Request('https://x.test/outbox', { method: 'POST', headers: { 'x-outbox-secret': s }, body: '{}' }), none)
+      expect(res.status, `Header '${s}'`).toBe(401)
+    }
+    expect(none.sent).toEqual([])
+  })
+})
+
 describe('outbox-send Markieren (K3)', () => {
   it('Mail ging raus, mark(true) schlägt fehl: kein zweites mark(false), nicht als SMTP-Fehler gezählt, Lauf geht weiter', async () => {
     const d = deps(rows(2), {

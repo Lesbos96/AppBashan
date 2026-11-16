@@ -1,6 +1,7 @@
 // Edge-Function-Logik der Foto-Pipeline (S9d): `photo-publish` (Kopie je Foto), `photo-receipt` (Beleg-Upload), `job-photo` (signierte URLs
 // für Partner und Kunde), `admin-photo` (Support). Alle Zugriffe kommen über `deps` (Secret-Key-Client in db.ts, Fakes in den Unit-Tests).
 // Antworten enthalten nie Speicherpfade; die Pfade stehen nur in den signierten URLs (600 s).
+import { AuthServiceError } from '../auth.ts'
 import { corsHeaders, json, readBytesLimited } from '../http.ts'
 import { HttpError } from '../route/facts.ts'
 import { type AuthUser, authed, body, DbError, type Log, preflight, sameSecret, STATUS, UUID } from '../jobs/handlers.ts'
@@ -14,6 +15,11 @@ function fail(e: unknown, event: string, log: Log, origin: Record<string, string
   const status = STATUS[code]
   if (status) return json(status, { error: code }, origin)
   if (e instanceof HttpError) return json(e.status, { error: e.code }, origin)
+  // Störung des Auth-Dienstes (n12b-1): die Meldung ist fester Text mit Status und Code, nie Token oder Originalmeldung
+  if (e instanceof AuthServiceError) {
+    log({ event, code: e.message })
+    return json(500, { error: 'internal' }, origin)
+  }
   // nur feste Codes ins Log (`upload_failed`, `sign_failed` …); jeder andere Text könnte Pfade oder Adressen enthalten
   log({ event, code: e instanceof Error && /^[a-z_]{3,40}$/.test(e.message) ? e.message : 'internal' })
   return json(500, { error: 'internal' }, origin)
@@ -21,7 +27,7 @@ function fail(e: unknown, event: string, log: Log, origin: Record<string, string
 
 // photo-publish --------------------------------------------------------------------------------------------------------------
 export type PublishDeps = {
-  /** Leer: Function nicht eingerichtet (503). */
+  /** Leer: Function nicht eingerichtet, jeder Aufruf wird abgelehnt (401, fail closed). */
   secret: string
   /** Quelldatei des geclaimten Fotos; `DbError('stale_claim')`, wenn Versuch oder Lease nicht mehr gelten. */
   begin(jobPhotoId: string, attempt: number): Promise<string>
@@ -40,8 +46,8 @@ export type PublishDeps = {
  */
 export async function handlePublish(req: Request, deps: PublishDeps): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' })
-  if (!deps.secret) return json(503, { error: 'not_configured' })
-  if (!(await sameSecret(req.headers.get('x-publish-secret') ?? '', deps.secret))) return json(401, { error: 'unauthorized' })
+  // Aufrufer vor der Konfiguration (u5-1): ohne Secret in der Umgebung wird jeder Aufruf abgelehnt, auch ein leerer Header
+  if (!deps.secret || !(await sameSecret(req.headers.get('x-publish-secret') ?? '', deps.secret))) return json(401, { error: 'unauthorized' })
   try {
     const b = await body(req)
     const id = b?.job_photo_id

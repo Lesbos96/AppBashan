@@ -40,7 +40,7 @@ supabase(
 for (const fn of ['photo-publish', 'photo-receipt', 'job-photo', 'admin-photo', 'photo-cleanup']) supabase('functions', 'deploy', fn, '--use-api')
 
 // Probeaufruf (Abnahme S9d, M2): Function-Secret und Vault-Wert müssen übereinstimmen, sonst endet später jedes Foto still in attempts_exhausted.
-// Eine unbekannte Foto-ID liefert 409 (stale_claim); 401 heißt: die Secrets weichen ab, 503: PUBLISH_SECRET fehlt in der Function.
+// Eine unbekannte Foto-ID liefert 409 (stale_claim); 401 heißt: PUBLISH_SECRET fehlt in der Function oder weicht vom Vault-Wert ab.
 let status = 0
 for (let i = 0; i < 5 && status !== 409; i++) {
   if (i > 0) await new Promise((r) => setTimeout(r, 3000))
@@ -52,7 +52,7 @@ for (let i = 0; i < 5 && status !== 409; i++) {
   status = res.status
 }
 if (status !== 409) {
-  console.error(`Probeaufruf von photo-publish: Status ${status}, erwartet 409. Secrets prüfen (401: Vault und Function-Secret weichen ab, 503: PUBLISH_SECRET fehlt).`)
+  console.error(`Probeaufruf von photo-publish: Status ${status}, erwartet 409. Secrets prüfen (401: PUBLISH_SECRET fehlt in der Function oder weicht vom Vault-Wert ab).`)
   process.exit(1)
 }
 console.log('Foto-Pipeline eingerichtet: Secret gesetzt, Vault gefüllt, fünf Functions deployt, Probeaufruf bestanden.')

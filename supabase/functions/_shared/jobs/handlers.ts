@@ -229,7 +229,8 @@ export type OutboxDeps = {
   customerEmail(userId: string): Promise<string | null>
   /** `completion_days` aus den Einstellungen (S9g-7); nur für completion_ask abgefragt. */
   completionDays(): Promise<number>
-  send(mail: Mail): Promise<void>
+  /** `null`: kein Versand eingerichtet (SMTP, MAIL_FROM); der Handler antwortet nach der Prüfung des Aufrufers mit 503 und fasst die Outbox nicht an. */
+  send: ((mail: Mail) => Promise<void>) | null
   appUrl: string
   log: Log
 }
@@ -280,6 +281,8 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' })
   const got = req.headers.get('x-outbox-secret') ?? ''
   if (!deps.secret || !(await sameSecret(got, deps.secret))) return json(401, { error: 'unauthorized' })
+  const send = deps.send
+  if (!send || !deps.appUrl) return json(503, { error: 'mail_not_configured' }) // erst nach der Prüfung des Aufrufers (u5-1); die Zeilen bleiben pending
   let sent = 0
   let failed = 0
   // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
@@ -296,7 +299,7 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
       const t = TEXTS[row.kind]
       const to = row.recipientKind === 'partner' ? row.partnerEmail : await deps.customerEmail(row.recipientId)
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
-      await deps.send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
+      await send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
     } catch (e) {
       failed++
       const code = safeCode(e)

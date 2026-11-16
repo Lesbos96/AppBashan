@@ -68,5 +68,17 @@ describe('auth.getUser: Antworten auf ein Token (Messung)', () => {
       expect(res.status, `${name} (Leerzeichen)`).toBe(401)
       expect(await res.json(), `${name} (Leerzeichen) Text`).toEqual({ error: 'unauthorized' })
     }
+    // fh1 (u5-1): die zwei Cron-Functions prüfen den Aufrufer (Header mit Secret) vor der Konfiguration: ohne oder mit falschem Header 401, nie 503
+    for (const [name, header] of [['outbox-send', 'x-outbox-secret'], ['photo-publish', 'x-publish-secret']] as const) {
+      for (const [how, headers] of [['ohne Header', {}], ['falscher Header', { [header]: 'falsch' }]] as const) {
+        const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/${name}`, {
+          method: 'POST',
+          headers: { apikey: env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), 'content-type': 'application/json', ...headers },
+          body: '{}',
+        })
+        expect(res.status, `${name} (${how})`).toBe(401)
+        expect(await res.json(), `${name} (${how}) Text`).toEqual({ error: 'unauthorized' })
+      }
+    }
   }, 120_000)
 })

@@ -1,5 +1,6 @@
 // Handler der Foto-Functions (S9d) mit Fakes: Zugang (Secret, JWT, aal), Eingabe, Fehlerabbildung, kein Pfad in Antworten und Logs.
 import { describe, expect, it } from 'vitest'
+import { AuthServiceError } from '../../supabase/functions/_shared/auth.ts'
 import { DbError, handleOutbox } from '../../supabase/functions/_shared/jobs/handlers.ts'
 import {
   handleAdminPhoto,
@@ -57,10 +58,17 @@ describe('photo-publish', () => {
     expect(JSON.stringify(d.logs)).not.toContain(COPY)
   })
 
-  it('Zugang: nur POST, ohne Secret in der Umgebung 503, falsches oder fehlendes Secret 401, ohne dass etwas läuft', async () => {
+  it('Zugang: nur POST, ohne Secret in der Umgebung 401 (u5-1, fail closed, auch mit leerem Header), falsches oder fehlendes Secret 401, ohne dass etwas läuft', async () => {
     const d = publishDeps()
     expect((await handlePublish(new Request('https://x.test/', { method: 'GET' }), d)).status).toBe(405)
-    expect((await handlePublish(pub({ job_photo_id: J, attempt: 1 }), publishDeps({ secret: '' }))).status).toBe(503)
+    const none = publishDeps({ secret: '' })
+    for (const secret of ['s3cret', '']) {
+      const res = await handlePublish(pub({ job_photo_id: J, attempt: 1 }, secret), none)
+      expect(res.status, `Header '${secret}'`).toBe(401)
+      expect(await res.json()).toEqual({ error: 'unauthorized' })
+    }
+    expect((await handlePublish(json('https://x.test/', { job_photo_id: J, attempt: 1 }, {}), none)).status).toBe(401)
+    expect(none.calls).toEqual([])
     expect((await handlePublish(pub({ job_photo_id: J, attempt: 1 }, 'falsch'), d)).status).toBe(401)
     expect((await handlePublish(json('https://x.test/', { job_photo_id: J, attempt: 1 }, {}), d)).status).toBe(401)
     expect(d.calls).toEqual([])
@@ -234,6 +242,37 @@ describe('admin-photo', () => {
   it('kein admin: 403, zu kurze Begründung: 422', async () => {
     expect((await handleAdminPhoto(ap({ requestId: R, reason: 'Support-Fall 4711' }), deps({ photos: async () => Promise.reject(new DbError('not_admin')) }))).status).toBe(403)
     expect((await handleAdminPhoto(ap({ requestId: R, reason: 'kurz' }), deps({ photos: async () => Promise.reject(new DbError('reason_required')) }))).status).toBe(422)
+  })
+})
+
+// n12b-1: Störung des Auth-Dienstes ----------------------------------------------------------------------------------------------
+describe('Foto-Functions: Störung des Auth-Dienstes (n12b-1)', () => {
+  const TOKEN = 'abc.def.ghi'
+  const auth = (token = TOKEN) => ({ authorization: `Bearer ${token}` })
+  const fault = async () => {
+    throw new AuthServiceError(500, 'unexpected_failure')
+  }
+  const EXPECT = { event: 'X', code: 'auth_service_error status=500 code=unexpected_failure' }
+  const check = async (event: string, run: (log: (e: Record<string, unknown>) => void) => Promise<Response>) => {
+    const logs: Record<string, unknown>[] = []
+    const res = await run((e) => void logs.push(e))
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'internal' })
+    expect(logs).toEqual([{ ...EXPECT, event }])
+    expect(JSON.stringify(logs)).not.toContain(TOKEN)
+  }
+
+  it('photo-receipt, job-photo und admin-photo loggen den festen Text mit Status und Code, nie das Token; Antwort 500', async () => {
+    await check('photo_receipt_failed', (log) => handleReceipt(rec(`?request=${R}`, JPEG, auth()), receiptDeps({ getUser: fault, log })))
+    await check('job_photo_failed', (log) => handleJobPhoto(jp({ listingId: J }, auth()), jobDeps({ getUser: fault, log })))
+    await check('admin_photo_failed', (log) =>
+      handleAdminPhoto(json('https://x.test/admin-photo', { requestId: R, reason: 'Support-Fall 4711' }, auth()), {
+        allowedOrigins: [],
+        getUser: fault,
+        photos: async () => [],
+        log,
+      }),
+    )
   })
 })
 
