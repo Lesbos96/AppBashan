@@ -49,7 +49,9 @@ describe('Annahme: Wiederholung nach verlorener Antwort', () => {
       { name: 'andere Auszahlung', sql: `= ${replay(a, lid('a'), rev, s.payoutCents + 1)}`, as: sr },
       { name: 'Zuordnung beenden', sql: `update public.assignments set ended_at = now(), ended_reason = 'cancelled_by_customer' where request_id = '${R}'` },
       { name: 'nach beendeter Zuordnung', sql: `= ${replay(a, lid('a'))}`, as: sr },
-      { name: 'ohne Recht (authenticated)', sql: `perform ${replay(a, lid('a'))}`, as: 'authenticated' },
+      // feste Zufalls-IDs: als `authenticated` wird keine Tabelle gelesen, die Meldung kommt allein vom fehlenden EXECUTE
+      { name: 'ohne Recht (authenticated)', sql: `perform public.partner_accept_replay(gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), 1)`, as: 'authenticated' },
+      { name: 'ohne Recht (anon)', sql: `perform public.partner_accept_replay(gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), 1)`, as: 'anon' },
     ])
     const NULLV = '= <null>'
     expect(r['vor der Annahme'], JSON.stringify(r)).toBe(NULLV)
@@ -61,6 +63,6 @@ describe('Annahme: Wiederholung nach verlorener Antwort', () => {
     for (const k of ['andere Firma, eigenes Listing', 'andere Firma, fremdes Listing', 'Kunde als Akteur', 'Akteur null', 'andere Revision', 'andere Auszahlung', 'nach beendeter Zuordnung']) {
       expect(r[k], k).toBe(NULLV)
     }
-    expect(r['ohne Recht (authenticated)']).toMatch(/^42501/)
+    for (const k of ['ohne Recht (authenticated)', 'ohne Recht (anon)']) expect(r[k], k).toMatch(/^42501: permission denied for function partner_accept_replay/)
   }, 120_000)
 })

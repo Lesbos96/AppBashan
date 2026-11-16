@@ -102,13 +102,18 @@ describe('accept', () => {
     expect(await broken.text()).not.toContain('geheim')
   })
 
-  it('veralteter Satz: einmal mit frischen Werten, sonst 409 fee_rate_changed', async () => {
-    let n = 0
-    const retry = deps({ accept: async () => { if (n++ === 0) throw new DbError('rate_mismatch'); return 'assign-2' } })
-    expect((await handleAccept(req(ok), retry)).status).toBe(200)
-    const stuck = deps({ accept: async () => { throw new DbError('rate_mismatch') } })
-    const res = await handleAccept(req(ok), stuck)
-    expect([res.status, (await res.json()).error]).toEqual([409, 'fee_rate_changed'])
+  it('veralteter Satz (rate_mismatch oder amount_mismatch): einmal mit frisch geladener Basis, sonst 409 fee_rate_changed', async () => {
+    for (const code of ['rate_mismatch', 'amount_mismatch']) {
+      let n = 0
+      let basisCalls = 0
+      const retry = deps({ basis: async () => { basisCalls++; return BASIS }, accept: async () => { if (n++ === 0) throw new DbError(code); return 'assign-2' } })
+      expect((await handleAccept(req(ok), retry)).status, code).toBe(200)
+      expect(basisCalls, code).toBe(2)
+      let stuckBasis = 0
+      const stuck = deps({ basis: async () => { stuckBasis++; return BASIS }, accept: async () => { throw new DbError(code) } })
+      const res = await handleAccept(req(ok), stuck)
+      expect([res.status, (await res.json()).error, stuckBasis], code).toEqual([409, 'fee_rate_changed', 2])
+    }
   })
 
   it('OPTIONS und falsche Methode', async () => {
