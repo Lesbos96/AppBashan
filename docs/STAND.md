@@ -9,7 +9,7 @@ Stand 2026-11-16, nach Schritt sys2 (PUBLIC-Default und Härtung der Schutzskrip
 - Der Guard sperrt Löschen und Verschieben von `tmp/proof` samt Elternordnern (`rm -rf tmp`, `tmp//proof`, Platzhalter, `cd` im selben Befehl); Ziel-Wörter beim Verschieben sind frei. Klammerlisten wie `mv tmp{,2}` und weitere Schreibweisen sind nicht abgedeckt: OFFEN sys1-4.
 - 0070: neue Funktionen in `public` bekommen kein EXECUTE automatisch für `anon`, `authenticated`, `service_role`; Wettlauf-Test zum Storno ohne Gebühr (`tests/rls/storno-wettlauf.test.ts`) mit Negativkontrolle `MV_WETTLAUF_OHNE_SPERRE=1` (steht jetzt im Log-Kopf).
 - fh1 (0069): Wiederholung bei `withdraw`, `withdraw_offer`, `withdraw_change`, `start_job`, `complete_job` antwortet 200; `outbox-send` und `photo-publish` prüfen den Aufrufer vor der Konfiguration.
-- Tests: `e2e-desktop` nur für Specs mit Tag `@breit`; `rls` bleibt ein Arbeiter; Volllauf `rls` rund 1666 s (über der Grenze von 1200 s, OFFEN fh1-6). Jede Abnahme-Runde ist eine neue Datei `tmp/proof/<schritt>-abnahme-<n>.md`.
+- Tests: `e2e-desktop` nur für Specs mit Tag `@breit`; `rls` bleibt ein Arbeiter; Volllauf `rls` 2126 s in sys2 (über der Grenze von 1200 s, OFFEN fh1-6). Jede Abnahme-Runde ist eine neue Datei `tmp/proof/<schritt>-abnahme-<n>.md`.
 - Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung und GOLIVE 34 erledigt sind.
 
 ## Nächster Schritt
