@@ -1,0 +1,83 @@
+{
+  "schritt": "n15",
+  "stufe": "R3",
+  "gate": "blockiert",
+  "gruende": [
+    "R3: tests/rls/auth-token-codes.test.ts: kein roter Lauf vor dem ersten grünen"
+  ],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 268
+  },
+  "sitzung": "ef4a1c14-ef3f-4bf8-a802-f13cecc8c48f",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 2
+  },
+  "hash": "c61dd3f2963ffd64179c8b7083e3c08f7e22603d",
+  "stand": "afc34d19b11b1c49bab3837a01edb21f607ed62c97339c00ff37446e11703051",
+  "mainVorher": "9f77264de716b11ae09a8eef7c5273472efb194b",
+  "commits": 7,
+  "geaendert": {
+    "docs": 5,
+    "scripts": 1,
+    "supabase/functions": 1,
+    "supabase/migrations": 1,
+    "tests/rls": 6,
+    "andere": 1,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 20,
+      "exit": 0,
+      "tests": "1922 passed (1922)",
+      "sek": 51,
+      "hash": "c61dd3f2963ffd64179c8b7083e3c08f7e22603d",
+      "schritt": "n15",
+      "log": "docs\\proof\\n15\\020-check.log"
+    },
+    "rls": {
+      "nr": 22,
+      "exit": 0,
+      "tests": "378 passed (378)",
+      "sek": 1528,
+      "hash": "c61dd3f2963ffd64179c8b7083e3c08f7e22603d",
+      "schritt": "n15",
+      "log": "docs\\proof\\n15\\022-rls.log"
+    },
+    "e2e": {
+      "nr": 21,
+      "exit": 0,
+      "tests": "680 passed (11.0m)",
+      "sek": 662.6,
+      "hash": "c61dd3f2963ffd64179c8b7083e3c08f7e22603d",
+      "schritt": "n15",
+      "log": "docs\\proof\\n15\\021-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 22,
+    "rot": 9
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261116022741_0066_execute_entzug.sql",
+      "sha256": "c2b7ab7237d0b4e8ce25e0b9fd12b9b54151b6c8540fb156d9b30cce8ce709f0"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs\\proof\\n15\\n15-abnahme-1.md",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\n15\\db-antrag-1.json",
+    "docs\\proof\\n15\\db-freigabe-1.md",
+    "docs\\proof\\n15\\loesch-lauf.jsonl",
+    "docs\\proof\\n15\\n15-abnahme-1.md"
+  ]
+}
