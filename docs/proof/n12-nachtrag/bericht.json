@@ -1,0 +1,61 @@
+{
+  "schritt": "n12-nachtrag",
+  "stufe": "R0",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Hook",
+  "modelle": {
+    "claude-sonnet-5-5": 1
+  },
+  "sitzung": "f9e034e7-b257-4e93-8007-84e474e22661",
+  "berater": {},
+  "hash": "6b66cf25c77cb3e6e8bd12352658e862a6fca94b",
+  "stand": "cfe203c0fd5a49a790477aac3c31ac356974b8f4d8772a3fd0f277a5cb3b1754",
+  "mainVorher": "0e6b6616fe359623f2a60ab8b0a52df344027ec4",
+  "commits": 1,
+  "geaendert": {
+    "docs": 4
+  },
+  "laeufe": {
+    "check": {
+      "nr": 20,
+      "exit": 0,
+      "tests": "1923 passed (1923)",
+      "sek": 43.4,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12-nachtrag\\020-check.log",
+      "uebernommen": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de"
+    },
+    "rls": {
+      "nr": 23,
+      "exit": 0,
+      "tests": "379 passed (379)",
+      "sek": 1179.7,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12-nachtrag\\023-rls.log",
+      "uebernommen": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de"
+    },
+    "e2e": {
+      "nr": 21,
+      "exit": 0,
+      "tests": "688 passed (11.2m)",
+      "sek": 671,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12-nachtrag\\021-e2e.log",
+      "uebernommen": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de"
+    }
+  },
+  "versuche": {
+    "gesamt": 0,
+    "rot": 0
+  },
+  "migrationen": [],
+  "abnahme": null,
+  "kopien": [
+    "docs\\proof\\n12-nachtrag\\n12-nachtrag-bewertung.md"
+  ]
+}
