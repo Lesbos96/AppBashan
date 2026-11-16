@@ -1,0 +1,12 @@
+Commit: c9601da1c53e1ca6cf83a561a2e8e36f1a1cfc8d
+Arbeitsbaum sauber: ja
+Befehl: node scripts/sys/fertig.mjs --nur-pruefen
+Start: 2026-11-16T01:50:28.254Z
+---
+FERTIG BLOCKIERT (merge):
+- rls: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert, nach dem letzten db-push) für den aktuellen Fingerabdruck
+- bericht.json fehlt im Commit oder ist nicht aktuell (npm run bericht, dann committen)
+
+---
+Dauer: 4.6 s
+EXIT=1
