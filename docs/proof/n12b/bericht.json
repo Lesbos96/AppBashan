@@ -4,46 +4,46 @@
   "gate": "bestanden",
   "gruende": [],
   "modell": "claude-sonnet-5-5",
-  "modellQuelle": "Transkript",
+  "modellQuelle": "Hook",
   "modelle": {
-    "claude-sonnet-5-5": 401
+    "claude-sonnet-5-5": 1
   },
   "sitzung": "d4a88d57-9d40-430a-bb7b-7101a8baf9c2",
   "berater": {
     "advisor": 1,
     "advisor-report": 2
   },
-  "hash": "5e4a74bfc1c6353eeebcf386d238cfbbe96a2485",
-  "stand": "9b53707ae8e8e33b8f269222f0767591e9db0c6a1810f67480a9c22654a987b1",
+  "hash": "8e24d68f4f3b5221d734b00e88779e98c6d07395",
+  "stand": "21e549ff81eabd210889d0ae1b2f6df710f3a04029c6291bfec14f75aeea4f02",
   "mainVorher": "f83f15bf64e65ef37b1084e8ac198da6e52e31de",
-  "commits": 4,
+  "commits": 6,
   "geaendert": {
-    "docs": 4,
+    "docs": 16,
     "scripts": 1,
     "supabase/functions": 11,
     "supabase/migrations": 1,
-    "tests/rls": 8,
+    "tests/rls": 7,
     "andere": 1,
     "tests/unit": 6
   },
   "laeufe": {
     "check": {
-      "nr": 40,
+      "nr": 44,
       "exit": 0,
       "tests": "1957 passed (1957)",
-      "sek": 39,
-      "hash": "5e4a74bfc1c6353eeebcf386d238cfbbe96a2485",
+      "sek": 67.1,
+      "hash": "8e24d68f4f3b5221d734b00e88779e98c6d07395",
       "schritt": "n12b",
-      "log": "docs\\proof\\n12b\\040-check.log"
+      "log": "docs\\proof\\n12b\\044-check.log"
     },
     "rls": {
-      "nr": 43,
+      "nr": 45,
       "exit": 0,
-      "tests": "381 passed (381)",
-      "sek": 1065.2,
-      "hash": "5e4a74bfc1c6353eeebcf386d238cfbbe96a2485",
+      "tests": "380 passed (380)",
+      "sek": 1248,
+      "hash": "8e24d68f4f3b5221d734b00e88779e98c6d07395",
       "schritt": "n12b",
-      "log": "docs\\proof\\n12b\\043-rls.log"
+      "log": "docs\\proof\\n12b\\045-rls.log"
     },
     "e2e": {
       "nr": 41,
@@ -56,7 +56,7 @@
     }
   },
   "versuche": {
-    "gesamt": 43,
+    "gesamt": 45,
     "rot": 16
   },
   "migrationen": [
@@ -74,9 +74,9 @@
   "kopien": [
     "docs\\proof\\n12b\\db-antrag-1.json",
     "docs\\proof\\n12b\\db-freigabe-1.md",
-    "docs\\proof\\n12b\\loesch-lauf.jsonl",
+    "docs\\proof\\n12b\\loesch-lauf-99bed5c8.jsonl",
     "docs\\proof\\n12b\\n12b-abnahme-1.md",
-    "docs\\proof\\n12b\\n12b-bewertung.md",
+    "docs\\proof\\n12b\\n12b-bewertung-8ae5601c.md",
     "docs\\proof\\n12b\\n12b-plan.md"
   ]
 }
