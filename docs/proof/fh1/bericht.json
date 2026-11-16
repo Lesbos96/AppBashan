@@ -1,0 +1,74 @@
+{
+  "schritt": "fh1",
+  "stufe": "R3",
+  "gate": "blockiert",
+  "gruende": [
+    "check: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert) für den aktuellen Fingerabdruck",
+    "Lösch-Gate: scripts/setup-photo-publish.mjs: keine Freigabe für Pfad und SHA256 5698229747155056f4b5641ccbc4f4b6bb776a3371126db83eab9d6186f924f8"
+  ],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 301
+  },
+  "sitzung": "51c62d66-6562-45e5-9179-a080ac25787c",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 2
+  },
+  "hash": "05d55915ba37d173f9d1ca4a88fc5f814a9f2235",
+  "stand": "6951a521704565e38e7134b536bb127379c3205ddf76abfaafe6edf2859c8d18",
+  "mainVorher": "6d70ddb2e98232baae011e5c6bc603d77445e18d",
+  "commits": 2,
+  "geaendert": {
+    "docs": 3,
+    "scripts": 1,
+    "supabase/functions": 4,
+    "supabase/migrations": 1,
+    "tests/rls": 8,
+    "tests/unit": 2
+  },
+  "laeufe": {
+    "check": null,
+    "rls": {
+      "nr": 24,
+      "exit": 0,
+      "tests": "382 passed (382)",
+      "sek": 1340.4,
+      "hash": "05d55915ba37d173f9d1ca4a88fc5f814a9f2235",
+      "schritt": "fh1",
+      "log": "docs\\proof\\fh1\\024-rls.log"
+    },
+    "e2e": {
+      "nr": 13,
+      "exit": 0,
+      "tests": "688 passed (11.1m)",
+      "sek": 668.6,
+      "hash": "cd73ce5262a9eef36a5a634f278f8e0a5f1a14fa",
+      "schritt": "fh1",
+      "log": "docs\\proof\\fh1\\013-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 24,
+    "rot": 10
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261116140000_0069_replay_rest.sql",
+      "sha256": "f3110adde7fa947f18cc9ef417d1af47617fbe2929f07751a53527e31ba76d67"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs\\proof\\fh1\\fh1-abnahme-1.md",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\fh1\\db-antrag-1.json",
+    "docs\\proof\\fh1\\db-freigabe-1.md",
+    "docs\\proof\\fh1\\loesch-lauf.jsonl",
+    "docs\\proof\\fh1\\fh1-abnahme-1.md"
+  ]
+}

@@ -6,15 +6,15 @@
     "zeit": "2026-11-16T11:50:51.208Z"
   },
   "rls": {
-    "abdruck": "34741c9a2f9e2515310d5db741a052d2f9a2e5eee6a1d267d4231036a278f257",
-    "hash": "8e24d68f4f3b5221d734b00e88779e98c6d07395",
-    "schritt": "n12b",
-    "zeit": "2026-11-16T10:41:59.800Z"
+    "abdruck": "07246511d49406426373bff6fe977ddba82d0f2a3576c9ac4c0b78c0886ef5d7",
+    "hash": "05d55915ba37d173f9d1ca4a88fc5f814a9f2235",
+    "schritt": "fh1",
+    "zeit": "2026-11-16T13:18:42.868Z"
   },
   "e2e": {
-    "abdruck": "b913530c86bd0076461061b8450ea857f80efb6f5a3ee0d5900deaf1060a764e",
-    "hash": "f86106b5f7db2dfb6823608eda7e9ec9c488b76e",
-    "schritt": "s9i-7d",
-    "zeit": "2026-11-16T11:51:38.269Z"
+    "abdruck": "91e1d0546e38903f2cd4645d5524f35db3edf9414b6fbed6cfae4fb61877c8a1",
+    "hash": "cd73ce5262a9eef36a5a634f278f8e0a5f1a14fa",
+    "schritt": "fh1",
+    "zeit": "2026-11-16T12:35:44.155Z"
   }
 }
