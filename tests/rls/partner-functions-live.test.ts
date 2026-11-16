@@ -129,12 +129,15 @@ describe('cancel-partner live (Dev, echte Tokens)', () => {
     expect(r).toEqual({ status: 409, body: { error: 'amount_changed' } })
     expect(await state(J1)).toEqual(before)
   })
-  live('zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung', async () => {
+  live('zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung, alle drei antworten 200 mit dem ersten Ergebnis (n12b)', async () => {
     const body = { requestId: J2, reason: 'unavailable', shownCallOutCents: 0 }
     const rs = await Promise.all([fn('cancel-partner', pa.jwt2, body), fn('cancel-partner', pa.jwt2, body)])
-    expect(rs.map((r) => r.status).sort(), JSON.stringify(rs)).toEqual([200, 404])
+    expect(rs, JSON.stringify(rs)).toEqual([{ status: 200, body: { status: 'cancelled_by_partner', callOutCents: 0 } }, { status: 200, body: { status: 'cancelled_by_partner', callOutCents: 0 } }])
     const late = await fn('cancel-partner', pa.jwt2, body)
-    expect(late).toEqual({ status: 404, body: { error: 'not_found' } })
+    expect(late).toEqual({ status: 200, body: { status: 'cancelled_by_partner', callOutCents: 0 } })
+    // nicht dieselbe Wiederholung: anderer Grund oder fremde Firma bleibt 404, nie ein Ergebnis
+    expect(await fn('cancel-partner', pa.jwt2, { ...body, reason: 'other' })).toEqual({ status: 404, body: { error: 'not_found' } })
+    expect(await fn('cancel-partner', pb.jwt2, body)).toEqual({ status: 404, body: { error: 'not_found' } })
     const s = await state(J2)
     expect(s.status).toBe('cancelled_by_partner')
     expect(await count('commission_entries', 'request_id', J2, { kind: 'cancellation' })).toBe(1)

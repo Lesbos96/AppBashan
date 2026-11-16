@@ -349,6 +349,10 @@ describe('W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 T
     expect(snap(W4).status).toBe('accepted')
     const r = await fn('cancel-customer', cust.jwt, { requestId: W4, shownFeeCents: 0 })
     expect(r, JSON.stringify(r)).toEqual({ status: 200, body: { status: 'cancelled_by_customer', cancelFeeCents: 0 } })
+    // n12b: Wiederholung nach verlorener Antwort: dasselbe Ergebnis; mit anderer gezeigter Gebühr oder von der Firma bleibt es 409 bzw. 404, nie ein Betrag
+    expect(await fn('cancel-customer', cust.jwt, { requestId: W4, shownFeeCents: 0 })).toEqual(r)
+    expect(await fn('cancel-customer', cust.jwt, { requestId: W4, shownFeeCents: 100 })).toEqual({ status: 409, body: { error: 'invalid_transition' } })
+    expect((await fn('cancel-customer', pa.jwt2, { requestId: W4, shownFeeCents: 0 })).status).toBe(404)
     const s = step('W4', '2 cancel-customer', W4)
     expect(s.status).toBe('cancelled_by_customer')
     expect(kinds(s)).toEqual(['booking+', 'cancellation-'])

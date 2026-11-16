@@ -245,7 +245,8 @@ describe('Provisionsjournal', () => {
       { name: 'Stornogebühr anderer USt.-Satz', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000), vr: 0.16 }) },
       { name: 'Stornogebühr genau Gesamtpreis (nach Storno der booking)', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s, save: 'f5' }) },
       { name: 'zweite Stornogebühr', sql: J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) }) },
-      { name: 'Gegenbuchung der ersten, dann neue Stornogebühr', sql: `${J.step({ p: 'a', req: R.r5, kind: 'correction', of: 'f5', s: neg(s), ...same })}; ${J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) })}` },
+      // 0068 (n12b): höchstens eine Gebührenzeile je Anfrage, auch nach der Gegenbuchung (vorher: ok); der Unique-Index hält sie auf, nicht der Trigger
+      { name: 'Gegenbuchung der ersten, dann neue Stornogebühr: Index', sql: `${J.step({ p: 'a', req: R.r5, kind: 'correction', of: 'f5', s: neg(s), ...same })}; ${J.step({ p: 'a', req: R.r5, kind: 'cancellation_fee', s: RT.split(5000) })}` },
       { name: 'Stornogebühr Firma payment_hold', sql: J.step({ p: 'h', req: R.r6, kind: 'cancellation_fee', s: RT.split(5000) }) },
     ]
     const r = probes(
@@ -259,7 +260,7 @@ describe('Provisionsjournal', () => {
     for (const k of ['Betrag ≠ Differenz', 'Revision 1 statt der aktuellen', 'zweite change ohne neue Differenz', 'negative Differenz', 'Stornogebühr über Gesamtpreis', 'Stornogebühr negativ', 'Stornogebühr bei lebender booking', 'Stornogebühr 0', 'Gebühr 1 Cent daneben', 'zweite Stornogebühr']) P0001(r[k], 'amount_mismatch')
     P0001(r['change mit leerem Satz'], 'rate_mismatch')
     P0001(r['Stornogebühr mit leerem Satz'], 'rate_mismatch')
-    expect(r['Gegenbuchung der ersten, dann neue Stornogebühr']).toBe('ok')
+    expect(r['Gegenbuchung der ersten, dann neue Stornogebühr: Index']).toMatch(/^23505:.*commission_one_cancellation_fee/)
     P0001(r['andere Firma'], 'partner_mismatch')
     P0001(r['Stornogebühr andere Firma'], 'partner_mismatch')
     P0001(r['Firma pending'], 'partner_not_active')

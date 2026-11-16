@@ -84,8 +84,6 @@ describe('Wiederholung des Stornos nach Erfolg', () => {
       { name: 'S1 Zeilen', sql: `=${journal(S1)}` },
       { name: 'S1 Gebührensumme', sql: `=(select coalesce(sum(fee_cents), 0) from public.commission_entries where request_id = '${S1}')` },
       { name: 'S1 Audit', sql: `=${count(`public.audit_log where action = 'cancel_by_partner' and entity_id = '${S1}'`)}` },
-      // eine zweite Pauschale auf dieselbe Anfrage lehnt der Index ab (0068)
-      { name: 'S1 zweite Pauschalenzeile', sql: `perform private.commission_book(${P('a')}, '${S1}', (select current_revision from public.service_requests where id = '${S1}'), 'cancellation_fee', null, ${CALL_OUT}, ${RT.vr}, ${FEE.feeCents}, ${FEE.feeNetCents}, ${FEE.feeVatCents}, ${FEE.payoutCents}, ${RT.fsv}, ${RT.vrv})` },
       // Messung Kunde mit Stornogebühr
       { name: 'C1 Storno mit Gebühr', as: 'service_role', sql: customerCancel(U.cust, C1, LATE) },
       { name: 'C1 Wiederholung', as: 'service_role', sql: customerCancel(U.cust, C1, LATE) },
@@ -128,6 +126,9 @@ describe('Wiederholung des Stornos nach Erfolg', () => {
       // nach negate_fee stimmt das Journal nicht mehr mit dem Audit überein
       { name: 'S1 negate_fee', as: 'service_role', sql: `perform public.admin_correct('${U.adm}', 'aal2', '${S1}', 'negate_fee', 'Begründung für den Test', null, 0, ${RT.vr}, 0, 0, 0, 0, ${RT.fsv}, ${RT.vrv})` },
       svc('S1 Replay nach negate_fee', replay(U.pa, S1, CP, CALL_OUT, "'scope_impossible'", RECEIPTS(S1))),
+      // Nach der Gegenbuchung lässt der Trigger eine neue Gebührenzeile durch; nur der Index (0068) hält sie auf: höchstens eine Pauschale je Anfrage, auch nach negate_fee.
+      // Vor dem Push meldet der Schritt „ok“ (Zeile geschrieben): das ist der Ist-Wert des Rot-Beweises.
+      { name: 'S1 neue Pauschale nach negate_fee', sql: `perform private.commission_book(${P('a')}, '${S1}', (select current_revision from public.service_requests where id = '${S1}'), 'cancellation_fee', null, ${CALL_OUT}, ${RT.vr}, ${FEE.feeCents}, ${FEE.feeNetCents}, ${FEE.feeVatCents}, ${FEE.payoutCents}, ${RT.fsv}, ${RT.vrv})` },
       // Rechte
       { name: 'authenticated', as: 'authenticated', claims: A(U.cust), sql: `perform ${replay(U.cust, C1, CC, LATE)}` },
       { name: 'anon', as: 'anon', sql: `perform ${replay(U.cust, C1, CC, LATE)}` },
@@ -143,7 +144,6 @@ describe('Wiederholung des Stornos nach Erfolg', () => {
     val(r['S1 Zeilen'], '3')
     val(r['S1 Gebührensumme'], String(splitFee(CALL_OUT, { tiers: RT.tiers, vatRate: RT.vr }).feeCents))
     val(r['S1 Audit'], '1')
-    err(r['S1 zweite Pauschalenzeile'], '23505') // Unique-Index aus 0068: höchstens eine Pauschale je Anfrage
     expect(r['C1 Storno mit Gebühr']).toBe('ok')
     err(r['C1 Wiederholung'], 'invalid_transition')
     val(r['C1 Gebührenzeilen'], '1')
@@ -168,6 +168,7 @@ describe('Wiederholung des Stornos nach Erfolg', () => {
     val(r['A4 Replay Kunde'], '<null>')
     expect(r['S1 negate_fee']).toBe('ok')
     val(r['S1 Replay nach negate_fee'], '<null>')
+    err(r['S1 neue Pauschale nach negate_fee'], 'commission_one_cancellation_fee') // 23505, Unique-Index aus 0068
     err(r['authenticated'], '42501')
     err(r['anon'], '42501')
     val(r['S2 Replay ausgetretenes Mitglied'], '<null>')
