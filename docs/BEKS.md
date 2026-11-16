@@ -10,8 +10,10 @@ Die Fragen 1 und 2 vom 2026-11-15 (u4) sind beantwortet (ENTSCHEIDUNGEN Nr. 178 
 
 Die Fragen 1 und 2 vom 2026-11-16 (n15) sind beantwortet (ENTSCHEIDUNGEN Nr. 184).
 
+Die Frage 1 vom 2026-11-16 (n12, Hinweistext bei verlorener Antwort) ist beantwortet (ENTSCHEIDUNGEN Nr. 186).
+
 ## Offene Fragen
-1. **Hinweistext bei verlorener Antwort (n12, nicht blockierend):** Ändert der Kunde nach einer verlorenen Antwort seine Anfrage, und die erste ist schon gespeichert, zeigt die Zusammenfassung statt zu senden: „Deine Anfrage ist schon angekommen, nur die Bestätigung ging verloren. Willst du etwas ändern, ziehe sie unter Aufträge zurück und sende dann neu.“ mit dem Link „Anfrage ansehen“ (`src/screens/anfrage/Zusammenfassung.tsx`, `existsText`). Passt der Text, oder soll er anders klingen? Empfehlung: so lassen, er sagt, was passiert ist und was der Kunde tun kann, und nennt weder Gebühr noch Technik.
+Keine.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
