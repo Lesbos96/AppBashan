@@ -1,0 +1,84 @@
+{
+  "schritt": "n12",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 334
+  },
+  "sitzung": "f9e034e7-b257-4e93-8007-84e474e22661",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 2
+  },
+  "hash": "67ff0af908ddd03b3263b7758dbc1d843270f124",
+  "stand": "cfe203c0fd5a49a790477aac3c31ac356974b8f4d8772a3fd0f277a5cb3b1754",
+  "mainVorher": "8edce370e75b9b97dc681b9acad8e0cf7e85a3fd",
+  "commits": 6,
+  "geaendert": {
+    "docs": 5,
+    "scripts": 1,
+    "src": 3,
+    "supabase/functions": 3,
+    "supabase/migrations": 1,
+    "tests/e2e": 3,
+    "tests/rls": 3,
+    "andere": 1,
+    "tests/unit": 4
+  },
+  "laeufe": {
+    "check": {
+      "nr": 20,
+      "exit": 0,
+      "tests": "1923 passed (1923)",
+      "sek": 43.4,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12\\020-check.log"
+    },
+    "rls": {
+      "nr": 23,
+      "exit": 0,
+      "tests": "379 passed (379)",
+      "sek": 1179.7,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12\\023-rls.log"
+    },
+    "e2e": {
+      "nr": 21,
+      "exit": 0,
+      "tests": "688 passed (11.2m)",
+      "sek": 671,
+      "hash": "4c3c0a705fba7f095e1212e0bf32ca6e9ba257de",
+      "schritt": "n12",
+      "log": "docs\\proof\\n12\\021-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 23,
+    "rot": 9
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261116120000_0067_accept_replay.sql",
+      "sha256": "2787c9d7e5266d9d4a3755e8ed27b8c91e67ce66a6ebcedd79c35f683565119c"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs\\proof\\n12\\n12-abnahme-1.md",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\n12\\db-antrag-1.json",
+    "docs\\proof\\n12\\db-freigabe-1.md",
+    "docs\\proof\\n12\\loesch-lauf.jsonl",
+    "docs\\proof\\n12\\n12-abnahme-1.md",
+    "docs\\proof\\n12\\n12-bewertung.md"
+  ]
+}
