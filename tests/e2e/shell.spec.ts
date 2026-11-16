@@ -98,7 +98,7 @@ test.describe('App-Shell', { tag: '@breit' }, () => {
 
   test('Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf', async ({ page }) => {
     const errors = collectErrors(page)
-    for (const path of ['/', '/miete', '/auftraege', '/profil', '/profil/preise', '/profil/datenschutz', '/profil/impressum', '/umzug', '/gibt-es-nicht']) {
+    for (const path of ['/', '/auftraege', '/profil', '/profil/preise', '/profil/datenschutz', '/profil/impressum', '/umzug', '/gibt-es-nicht']) {
       await page.goto(path, { waitUntil: 'networkidle' })
       const overflow = await page.evaluate<boolean>('document.documentElement.scrollWidth > document.documentElement.clientWidth')
       expect(overflow, path).toBe(false)

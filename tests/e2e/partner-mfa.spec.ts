@@ -221,18 +221,24 @@ test.describe('Anmeldung mit Faktor', { tag: '@breit' }, () => {
 })
 
 test.describe('Zugang je Firmenstatus', { tag: '@breit' }, () => {
-  for (const status of ['rejected', 'suspended'] as const) {
-    test(`${status} mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente`, async ({ page }) => {
-      const f = factor('v1', 'verified')
-      const { mfa } = await open(page, { status, factors: [f], aal: 'aal2' })
-      await expect(page.getByRole('heading', { name: 'Transporte Huber GmbH' })).toBeVisible()
-      await expect(page.getByText(status === 'rejected' ? 'Abgelehnt' : 'Gesperrt', { exact: true })).toBeVisible()
-      await expect(docsHeading(page)).toHaveCount(0)
-      await expect(code(page)).toHaveCount(0)
-      await expect(start(page)).toHaveCount(0)
-      expect(mfa.log).toEqual([])
-    })
-  }
+  test('rejected mit aal2: nur die Statuskarte, keine Abfrage, keine Dokumente', async ({ page }) => {
+    const f = factor('v1', 'verified')
+    const { mfa } = await open(page, { status: 'rejected', factors: [f], aal: 'aal2' })
+    await expect(page.getByRole('heading', { name: 'Transporte Huber GmbH' })).toBeVisible()
+    await expect(page.getByText('Abgelehnt', { exact: true })).toBeVisible()
+    await expect(docsHeading(page)).toHaveCount(0)
+    await expect(code(page)).toHaveCount(0)
+    await expect(start(page)).toHaveCount(0)
+    expect(mfa.log).toEqual([])
+  })
+
+  test('suspended mit aal2: Statuskarte, Abrechnung, keine Dokumente', async ({ page }) => {
+    const f = factor('v1', 'verified')
+    await open(page, { status: 'suspended', factors: [f], aal: 'aal2' })
+    await expect(page.getByText('Gesperrt', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Abrechnung' })).toBeVisible()
+    await expect(docsHeading(page)).toHaveCount(0)
+  })
 
   test('rejected ohne Faktor (aal1): ebenfalls nur die Karte, keine Einrichtung', async ({ page }) => {
     await open(page, { status: 'rejected' })

@@ -30,7 +30,7 @@ test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebü
   await expect(c).toContainText('Preis für den Kunden')
   await expect(c).toContainText('689,61 €')
   await expect(c).toContainText('Du erhältst')
-  await expect(c).toContainText('586,17 €')
+  await expect(c).toContainText('610,65 €')
   const html = await page.content()
   for (const v of [CONTACT.name, CONTACT.phone, CONTACT.email, CONTACT.from_address, CONTACT.to_address, RQ1]) expect(html, `„${v}“ darf nicht im DOM stehen`).not.toContain(v)
   await noFee(page)
@@ -155,7 +155,7 @@ test('Storno: ohne Betrag, mit Stufe und mit Pauschale; keine falsche Beschriftu
     myJobs: [
       job({ status: 'cancelled_by_customer', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_customer', total_cents: 0, payout_cents: 0 }),
       job({ assignment_id: A2, request_id: RQ2, status: 'cancelled_by_customer', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_customer', total_cents: 34481, payout_cents: 29309 }),
-      job({ assignment_id: '0a92c3c4-5061-4273-a45f-4a3b2c1d0e9f', request_id: 'af03d4d5-6172-4384-b560-5b4c3d2e1f0a', status: 'cancelled_by_partner', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 5865 }),
+      job({ assignment_id: '0a92c3c4-5061-4273-a45f-4a3b2c1d0e9f', request_id: 'af03d4d5-6172-4384-b560-5b4c3d2e1f0a', status: 'cancelled_by_partner', ended_at: '2026-12-01T10:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 6072 }),
     ],
   })
   await expect(beendet(page)).toBeVisible()
@@ -234,7 +234,7 @@ test('Annahme in den Anfragen lädt die Aufträge nach: der neue Auftrag erschei
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(angenommen(page)).toBeVisible()
   await expect(card(page)).toContainText('689,61 €')
-  await expect(card(page)).toContainText('586,17 €')
+  await expect(card(page)).toContainText('610,65 €')
   expect(jobs.accepts).toHaveLength(1)
 })
 

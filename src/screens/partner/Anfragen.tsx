@@ -240,7 +240,7 @@ function AngebotSheet({ l, open, onClose, onDone }: { l: Listing; open: boolean;
         {cents !== null && (
           <>
             <Zeile label="Dein Angebot">{euro(cents)}</Zeile>
-            {payout !== null && <Zeile label="Du erhältst voraussichtlich">{euro(payout)}</Zeile>}
+            {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
             <p className="m-0 text-subhead text-text-secondary">Dein Anteil steht mit dem Senden fest. Verbindlich, bis du das Angebot zurückziehst oder es abläuft.</p>
           </>
         )}

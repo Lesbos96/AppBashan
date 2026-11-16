@@ -51,7 +51,7 @@ async function open(page: Page, init: Partial<State>) {
   return state
 }
 
-const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Gebühr|Plattform|Provision|15 ?%|10,35|58,65/)
+const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Gebühr|Plattform|Provision|15 ?%|8,28|60,72/)
 const absage = (page: Page) => page.getByRole('region', { name: 'Absage der Firma' })
 
 test('mit Pauschale: Betrag des Servers, außerhalb der App in Rechnung, keine Weitervermittlung, nie die Gebühr', async ({ page }) => {

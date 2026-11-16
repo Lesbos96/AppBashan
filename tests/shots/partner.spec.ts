@@ -276,7 +276,7 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
-  // Absage (s9i-7b2): Pauschale 69,00 €, Gebühr 10,35 €, Auszahlung 58,65 € (Live-Test-Beispiel, 15 %)
+  // Absage (s9i-7b2): Pauschale 69,00 €, Gebühr 8,28 €, Auszahlung 60,72 € (Staffel v2)
   {
     name: 'absage-grund',
     open: ACTIVE,
@@ -377,7 +377,7 @@ const shots: Shot[] = [
     wait: heading('Angenommen'),
   },
   { name: 'absage-karte-ohne-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 0, payout_cents: 0 })] }, wait: heading('Beendet') },
-  { name: 'absage-karte-mit-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 5865 })] }, wait: heading('Beendet') },
+  { name: 'absage-karte-mit-pauschale', open: ACTIVE, jobs: { myJobs: [job({ status: 'cancelled_by_partner', ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner', total_cents: 6900, payout_cents: 6072 })] }, wait: heading('Beendet') },
   {
     name: 'angebot-eingabe-fehler',
     open: ACTIVE,

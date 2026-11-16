@@ -1,4 +1,3 @@
-import { Link } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Backdrop } from '../components/Backdrop'
 import { Icon } from '../components/Icon'
@@ -51,19 +50,6 @@ export function Start() {
             <ServiceCard key={s.to} to={s.to} title={s.title} description={s.description} illustration={<Illustration name={s.illustration} />} />
           ))}
         </div>
-
-        <Link
-          to="/miete"
-          className="press relative mt-3 flex h-[104px] items-center overflow-hidden rounded-hero-card bg-(image:--gradient-rent-card) text-white"
-        >
-          <span aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(60%_90%_at_85%_20%,rgba(143,214,207,0.22)_0%,rgba(143,214,207,0)_70%)]" />
-          <span className="relative flex w-[212px] flex-col gap-[3px] pl-[18px]">
-            <span className="text-eyebrow text-mint">SELBST FAHREN</span>
-            <span className="text-[19px]/[23px] font-bold tracking-[-0.3px] whitespace-nowrap">Transporter mieten</span>
-            <span className="text-[12.5px]/4 text-white/75">Tageweise, von 6 bis 17 m³</span>
-          </span>
-          <Illustration name="van-start" className="absolute -right-3.5 bottom-1.5" />
-        </Link>
 
         <p className="m-0 mt-3 text-center text-footnote text-text-secondary">Richtpreis ohne Konto. Anmelden erst beim Absenden.</p>
       </div>

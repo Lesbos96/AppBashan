@@ -8,7 +8,7 @@ import { PNG_1PX } from './mfa-helpers'
  * Partner-Portal 3b (s9i-7b2): Absage durch die Firma. Backend gemockt (tests/e2e/jobs-helpers.ts: `cancel-partner`, `my_jobs`, `photo-receipt`).
  * Was der Server erzwingt (Pauschale, Berechtigung, Belege, Kontaktsperre, Gebühr), belegen tests/rls/cancellation-partner*.test.ts und
  * tests/rls/job-contact-after-cancel.test.ts. Hier: Die Oberfläche zeigt die Beträge des Servers, sendet genau den gezeigten, sendet nie selbst erneut
- * und lädt nach einem Netzfehler den Status neu. Rechenbeispiel (Live-Test): Pauschale 6.900 ct, Satz 15 % → Gebühr 1.035 ct, Auszahlung 5.865 ct.
+ * und lädt nach einem Netzfehler den Status neu. Rechenbeispiel (Live-Test): Pauschale 6.900 ct, Staffel v2 → Gebühr 828 ct, Auszahlung 6.072 ct.
  */
 
 const real = (errors: string[]) => errors.filter((e) => !e.startsWith('Failed to load resource'))
@@ -59,14 +59,14 @@ test('Storno durch den Kunden ohne Pauschale: Kontakt gesperrt (Nr. 154)', async
   expect(real(errors)).toEqual([])
 })
 
-test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale', { tag: '@breit' }, async ({ page }) => {
+test('mit Pauschale: 69,00 € / Gebühr 8,28 € / Auszahlung 60,72 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page)
   await startCheck(page)
   const d = dialog(page)
   await expect(d).toContainText('69,00 €')
-  await expect(d).toContainText('10,35 €')
-  await expect(d).toContainText('58,65 €')
+  await expect(d).toContainText('8,28 €')
+  await expect(d).toContainText('60,72 €')
   await expect(d).toContainText('Der Kunde schuldet dir 69,00 €')
   await expect(d).toContainText('außerhalb der App in Rechnung')
   await expect(d.getByRole('button', { name: 'Absagen', exact: true }), 'ohne Auswahl kein Absenden').toBeDisabled()
@@ -85,7 +85,7 @@ test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein B
   await expect(page.getByRole('status').filter({ hasText: 'außerhalb der App in Rechnung' })).toBeVisible()
   await expect(card(page)).toContainText('Von dir storniert')
   await expect(card(page)).toContainText('69,00 €')
-  await expect(card(page)).toContainText('58,65 €')
+  await expect(card(page)).toContainText('60,72 €')
   await expect(card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }), 'mit Pauschale bleibt der Kontakt').toBeVisible()
   expect(real(errors)).toEqual([])
 })
@@ -118,7 +118,7 @@ test('409 amount_changed: neue Vorschau mit neuem Betrag, nichts wird automatisc
   await d.getByRole('button', { name: 'Für 69,00 € absagen' }).click()
   await expect(d).toContainText('Der Betrag hat sich geändert')
   await expect(d).toContainText('80,00 €')
-  await expect(d).toContainText('68,00 €')
+  await expect(d).toContainText('70,40 €')
   expect(sends(jobs), 'genau ein Sendeversuch').toHaveLength(1)
   expect(previews(jobs)).toHaveLength(2)
   await page.waitForTimeout(600)

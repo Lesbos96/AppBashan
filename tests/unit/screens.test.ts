@@ -117,9 +117,9 @@ describe('Ruhige Screens', () => {
   })
 
   it('Platzhalter „Folgt“ zeigt keinen Inhalt aus Phase 2', () => {
-    const html = render(h(Folgt, { title: 'Transporter mieten' }), '/miete')
+    const html = render(h(Folgt, { title: 'Für Vermieter' }), '/profil/vermieter')
     expectCustomerRules(html)
-    expect(text(html)).toContain('Transporter mieten')
+    expect(text(html)).toContain('Für Vermieter')
   })
 })
 

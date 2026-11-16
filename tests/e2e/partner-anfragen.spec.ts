@@ -27,7 +27,7 @@ test('Liste: Umfang, Preis und Auszahlung; keine Kontaktdaten und keine Adresse 
   await expect(c).toContainText('Vormittag')
   await expect(c).toContainText('Lift') // Umfang aus der Whitelist (Lift am Ziel)
   await expect(c).toContainText('689,61 €')
-  await expect(c).toContainText('586,17 €')
+  await expect(c).toContainText('610,65 €')
   // Alles im DOM (Text, Attribute, versteckte Knoten): keine fremden Schlüssel aus `inputs`
   const html = await page.content()
   for (const v of Object.values(SENTINEL)) expect(html, `„${v}“ darf nicht im DOM stehen`).not.toContain(v)
@@ -53,11 +53,11 @@ test('Annahme: das Sheet nennt Preis und Auszahlung, gesendet wird genau die gez
   const errors = collectErrors(page)
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
-  await expect(dialog(page)).toContainText('586,17 €')
+  await expect(dialog(page)).toContainText('610,65 €')
   await expect(dialog(page)).toContainText('689,61 €')
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
-  expect(jobs.accepts).toEqual([{ listingId: L1, revisionId: REV1, shownPayoutCents: 58617 }])
+  expect(jobs.accepts).toEqual([{ listingId: L1, revisionId: REV1, shownPayoutCents: 61065 }])
   await expect(page.getByRole('button', { name: 'Annehmen' })).toHaveCount(0)
   await noFee(page)
   expect(real(errors)).toEqual([])
@@ -87,21 +87,21 @@ test('Wettlauf: der zweite Partner bekommt eine verständliche Meldung, die List
 test('geänderte Auszahlung: neu laden, neu bestätigen lassen, nie automatisch erneut senden', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'payout_changed' } }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
-  jobs.payoutRate = 0.2
+  jobs.feeExtra = 5000
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByText('Deine Auszahlung hat sich geändert')).toBeVisible()
-  await expect(card(page)).toContainText('551,69 €') // 689,61 − 20 % (137,92)
+  await expect(card(page)).toContainText('560,65 €') // 689,61 − 78,96 − 50,00
   expect(jobs.accepts).toHaveLength(1)
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
-  expect(jobs.accepts[1]).toMatchObject({ shownPayoutCents: 55169 })
+  expect(jobs.accepts[1]).toMatchObject({ shownPayoutCents: 56065 })
 })
 
 test('ohne Auszahlungsvorschau keine Auszahlung und keine Annahme', { tag: '@breit' }, async ({ page }) => {
   await openJobs(page, { listings: [fixed()], payoutFails: true })
   await expect(card(page)).toContainText('689,61 €')
-  await expect(card(page)).not.toContainText('586,17')
+  await expect(card(page)).not.toContainText('610,65')
   await expect(card(page).getByRole('button', { name: 'Annehmen' })).toBeDisabled()
 })
 
@@ -122,7 +122,8 @@ test('Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht e
   await field.fill('700,50')
   await dialog(page).getByRole('button', { name: 'Weiter' }).click()
   await expect(dialog(page)).toContainText('700,50 €')
-  await expect(dialog(page)).toContainText('voraussichtlich')
+  await expect(dialog(page)).toContainText('Du erhältst')
+  await expect(dialog(page)).not.toContainText('voraussichtlich')
   await dialog(page).getByRole('button', { name: 'Verbindlich senden' }).click()
   expect(jobs.sends).toEqual([{ p_listing: L2, p_amount: 70050 }])
   const mine = page.getByRole('heading', { name: 'Meine Angebote', level: 2 })
@@ -233,7 +234,7 @@ test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge
   await expect(page.getByRole('article')).toHaveCount(1)
   await expect(card(page)).toContainText('700,00 €')
   await expect(card(page)).toContainText('595,00 €')
-  await expect(page.locator('body')).not.toContainText(/689,61|586,17/)
+  await expect(page.locator('body')).not.toContainText(/689,61|610,65/)
   await expect(page.getByRole('button', { name: 'Annehmen' })).toHaveCount(0)
 })
 

@@ -1,9 +1,10 @@
 # MoveNow · Stand
 
-Stand 2026-11-16, nach Schritt n12b (Migration 0068; davor n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-16, nach Schritt s9i-7d (UI-Bündel, keine Migration; davor n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung). Datenbank Dev: 68 Migrationen, lokal = remote bis `20261116130000` (0068), 17 Edge Functions deployt (alle `verify_jwt` aus; die Prüfung des Aufrufers steckt in den Handlern). Nächste Migration 0069.
+- s9i-7d (R1, nur Oberfläche und Mocks): E2E-Mocks rechnen die Staffel v2 (`staffelFee` in `tests/e2e/backend.ts`, 689,61 € → 610,65 €); „Du erhältst“ ohne „voraussichtlich“; Karte „Transporter mieten“ und `/miete` entfernt; gesperrte Firmen (`suspended`) sehen mit aal2 Statuskarte und Abrechnung, keine Dokumente (`Partner.tsx`). Rest von S9i7c1-1 und zwei neue Punkte in OFFEN.
 - n12b (Branch `n12b`, Nr. 187 bis 190): Wiederholt dieselbe Partei einen erfolgreichen Storno (Kunde: `cancel-customer`, Firma: `cancel-partner`), Nachtrag (`change-propose`) oder ein Angebot (`send_offer`), kommt das erste Ergebnis (200) statt 409. 0068: `cancel_replay` (Audit als Quelle, Betrag, Grund und Belege in SQL verglichen, nur Status nach außen), `propose_change_replay`, Block in `send_offer`, `my_report_info` prüft ein gelöschtes Profil, Unique-Index `commission_one_cancellation_fee` (höchstens eine Gebührenzeile je Anfrage, auch nach Gegenbuchung, Nr. 188). Gemessen: ein zweiter Partner-Storno mit Pauschale scheitert vor jeder Buchung (`not_found`), eine Pauschalenzeile. Auth: `authed` und `handleJobPhoto` lehnen Tokens mit Leerzeichen oder Sonderzeichen mit 401 ab (vorher 500), `AuthServiceError` nennt Status und Code, `must` bildet 40P01 auf `retry` ab, `delete-account` wiederholt einmal. Alle 14 Functions mit `jobs/handlers.ts` oder `db.ts` neu deployt (Stand `tmp/proof/n12b/deploy.log`).
 - n12 (Nr. 185, 186): Anfrage (App, `findSentRequest`) und Annahme (`partner_accept_replay`, 0067) liefern nach verlorener Antwort dasselbe Ergebnis; Tabelle aller Aktionen in `tmp/proof/n12-bewertung.md`. Offen aus n12-2: `withdraw_offer`, `withdraw_change`, `withdraw`, `start_job`, `complete_job` (App-RPCs ohne Handler).
 - n15: 0066 entzieht `service_role` EXECUTE bei zwölf Funktionen (Register `positiv.ts` nur `'u'`); `rejectToken` (`_shared/auth.ts`): 401 nur bei Code `bad_jwt`, `session_expired`, `session_not_found`, `user_not_found`, `user_banned` oder Typ `AuthSessionMissingError`, sonst 500.
@@ -14,7 +15,7 @@ Stand 2026-11-16, nach Schritt n12b (Migration 0068; davor n12, n15, u5, st1). D
 
 ## Nächster Schritt
 1. Nach Wert: Belege-Migration S9i7-12 mit Dedupe der Belege (OFFEN n12-1, R3) · Rest von n12-2 (fünf App-RPCs) · Mailversand (GOLIVE 35, 36) · Härtung mit Turnstile · Produktivprojekt · Hosting · Rechtstexte · Abnahme.
-2. UI-Bündel s9i-7d (Karte „Transporter mieten“ weg, „voraussichtlich“ bei „Du erhältst“, `decline_listing` S9i6-5) und die Texte zum Festangebot ohne Pauschale (GOLIVE 32).
+2. `decline_listing` (S9i6-5) und die Texte zum Festangebot ohne Pauschale (GOLIVE 32).
 
 ## Wartet auf Beks
 - Keine offene Frage an Beks (n12b beantwortet, Nr. 190).

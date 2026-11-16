@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test'
 import type { Database, Json } from '../../supabase/functions/_shared/database.types.ts'
-import { cors, mockRpc, RpcFail, rest, type RpcReturn } from './backend'
+import { cors, mockRpc, RpcFail, rest, staffelFee, type RpcReturn } from './backend'
 import { factor, openPartner, type OpenOpts } from './mfa-helpers'
 
 /*
@@ -57,7 +57,7 @@ export const A1 = '6b5e7f80-1c2d-4e3f-a01b-0c9d8e7f6a5b'
 export const A2 = '7c6f8091-2d3e-4f40-b12c-1d0e9f8a7b6c'
 export const RQ1 = '8d70a1a2-3e4f-4051-a23d-2e1f0a9b8c7d'
 export const RQ2 = '9e81b2b3-4f50-4162-b34e-3f2a1b0c9d8e'
-/** Angenommener Umzug in Bezirk 3 (Ziel 10), Termin 2. Dezember 2026, 08:00 Uhr Wiener Zeit; 689,61 € mit Auszahlung 586,17 €; noch nicht startbar */
+/** Angenommener Umzug in Bezirk 3 (Ziel 10), Termin 2. Dezember 2026, 08:00 Uhr Wiener Zeit; 689,61 € mit Auszahlung 610,65 €; noch nicht startbar */
 export const job = (over: Partial<JobRow> = {}): JobRow => ({
   assignment_id: A1,
   request_id: RQ1,
@@ -73,7 +73,7 @@ export const job = (over: Partial<JobRow> = {}): JobRow => ({
   preferred_date: '2026-12-02',
   time_window: 'morning',
   total_cents: 68961,
-  payout_cents: 58617,
+  payout_cents: 61065,
   can_start: false,
   under_review: false,
   ...over,
@@ -125,7 +125,7 @@ export type Ans = { status: number; json: unknown; lost?: true }
 
 const IN = (extra: Record<string, unknown> = {}) => ({ goods: 'normal', crew: 2, vehicles: 1, vehicleType: 'van', hours: 3, fromFloor: 2, toFloor: 0, fromLift: false, toLift: true, boxes: 10, parking: 0, packing: false, assembly: null, ...SENTINEL, ...extra })
 
-/** Festpreis 689,61 € (Auszahlung bei 15 % und 20 %: 586,17 €) */
+/** Festpreis 689,61 € (Staffel v2: Gebühr 78,96 €, Auszahlung 610,65 €) */
 export const fixed = (over: Partial<ListingRow> = {}): ListingRow => ({
   id: L1,
   revision_id: REV1,
@@ -150,8 +150,8 @@ export const range = (over: Partial<ListingRow> = {}): ListingRow =>
 export type JobsState = {
   listings: ListingRow[]
   offers: OfferRow[]
-  /** Satz der Auszahlungsvorschau (`payout_preview`, Standard 15 %); ein Test ändert ihn wie der Server nach einer Staffeländerung */
-  payoutRate: number
+  /** Aufschlag in Cent auf die Gebühr der Staffel v2 in `payout_preview` (Standard 0); ein Test ändert ihn wie der Server nach einer Staffeländerung */
+  feeExtra: number
   /** true: `payout_preview` antwortet mit einem Fehler, die App zeigt dann keine Auszahlung */
   payoutFails: boolean
   accepts: Record<string, unknown>[]
@@ -212,7 +212,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], payoutRate: 0.15, payoutFails: false, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], feeExtra: 0, payoutFails: false, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
   // Journal (s9i-7c1): wie PostgREST: Zeilen des Monats, Ausschnitt nach `Range`, Gesamtzahl im Kopf `content-range` (sichtbar für die App über expose-headers)
   await page.route('**/rest/v1/rpc/my_commissions**', (r) => {
     const o = pre(r)
@@ -254,7 +254,7 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
   await mockRpc(page, 'payout_preview', ({ p_total }) => {
     s.payoutReads++
     if (s.payoutFails) return new RpcFail(500, { code: 'XX000', message: 'boom', details: null, hint: null })
-    return p_total - Math.round(p_total * s.payoutRate)
+    return p_total - staffelFee(p_total) - s.feeExtra
   })
   await page.route('**/functions/v1/accept', (r) => {
     const o = pre(r)
@@ -332,14 +332,14 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     const body = r.request().postDataJSON() as Record<string, unknown>
     s.cancels.push(body)
     const callOut = body.reason === 'scope_impossible' ? s.callOut : 0
-    const payout = callOut - Math.round(callOut * 0.15)
+    const payout = callOut - staffelFee(callOut)
     const a = (body.preview === true ? s.cancelPreviewAnswers : s.cancelAnswers).shift()
     if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
     if (body.preview === true) return r.fulfill({ headers: cors, json: { callOutCents: callOut, payoutCents: payout } })
     // Wie der Server: die Pauschale fällt nur mit Belegen an (`feeBaseCents = ids.length > 0 ? callOutCents : 0`)
     const due = Array.isArray(body.photoIds) && body.photoIds.length > 0 ? callOut : 0
     if (body.shownCallOutCents !== due) return r.fulfill({ status: 409, headers: cors, json: { error: 'amount_changed' } })
-    s.myJobs = s.myJobs.map((j) => (j.request_id === body.requestId ? { ...j, status: 'cancelled_by_partner' as const, ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner' as const, total_cents: due, payout_cents: due - Math.round(due * 0.15) } : j))
+    s.myJobs = s.myJobs.map((j) => (j.request_id === body.requestId ? { ...j, status: 'cancelled_by_partner' as const, ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_partner' as const, total_cents: due, payout_cents: due - staffelFee(due) } : j))
     return r.fulfill({ headers: cors, json: { status: 'cancelled_by_partner', callOutCents: due } })
   })
   // Start, Abschluss und Kontakt: der Mock verhält sich wie der Server (Status, Zuordnung); Fehler kommen aus den Warteschlangen

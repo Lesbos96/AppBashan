@@ -102,11 +102,13 @@ test('Ladezustand: während der Anfrage sind Knopf und Monatsfeld gesperrt, der 
 })
 
 for (const status of ['pending', 'active', 'payment_hold', 'suspended', 'rejected'] as const) {
-  test(`Firmenstatus ${status}: Karte ${status === 'active' || status === 'payment_hold' ? 'sichtbar' : 'nicht vorhanden, kein Aufruf'}`, async ({ page }) => {
+  const shown = status === 'active' || status === 'payment_hold' || status === 'suspended'
+  test(`Firmenstatus ${status}: Karte ${shown ? 'sichtbar' : 'nicht vorhanden, kein Aufruf'}`, async ({ page }) => {
     const { jobs } = await openJobs(page, { commissions: COMMISSIONS }, { status })
     if (status === 'pending' || status === 'active' || status === 'payment_hold') await expect(page.getByRole('heading', { name: 'Dokumente' })).toBeVisible()
     else await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible()
-    await expect(card(page)).toHaveCount(status === 'active' || status === 'payment_hold' ? 1 : 0)
+    if (status === 'suspended') await expect(page.getByRole('heading', { name: 'Dokumente' })).toHaveCount(0)
+    await expect(card(page)).toHaveCount(shown ? 1 : 0)
     expect(jobs.journalCalls).toEqual([])
   })
 }

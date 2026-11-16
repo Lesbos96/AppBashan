@@ -92,7 +92,6 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
   { name: 'preise', path: '/profil/preise', fit: false, ready: (page) => expect(page.getByText('Montage & Demontage')).toBeVisible() },
   { name: 'datenschutz', path: '/profil/datenschutz' },
   { name: 'impressum', path: '/profil/impressum' },
-  { name: 'miete', path: '/miete' },
   // `route` ist gemockt (feste Beispielantwort): keine Aussage über echte Kilometer
   { name: 'transport', path: '/transport', mock: {}, ready: (page) => expect(page.getByRole('heading', { name: 'Was muss mit?' })).toBeVisible() },
   {

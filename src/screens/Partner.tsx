@@ -15,7 +15,8 @@ import { MfaGate } from './partner/Mfa'
 import { Registrierung } from './partner/Registrierung'
 
 // Status, in denen die Firma Dokumente hochladen darf (wie `partner_document_slot` in 0024); dahinter folgt ab s9i-6 das übrige Portal
-const ACCESS: Firm['status'][] = ['pending', 'active', 'payment_hold']
+// Gesperrte Firmen (suspended) kommen mit aal2 nur an die Abrechnung (Beks, Frage 10, Nr. 157)
+const ACCESS: Firm['status'][] = ['pending', 'active', 'payment_hold', 'suspended']
 
 /** Partner-Portal (s9i-5a, 5b): ohne Firma die Registrierung, mit Firma der Status, dahinter die Schranke (aal2) und die Dokumente. */
 export function Partner() {
@@ -66,21 +67,17 @@ function Status({ firm, focus }: { firm: Firm; focus: boolean }) {
           {firm.status_reason && <p className="m-0 break-words text-body text-text-secondary">Begründung: {firm.status_reason}</p>}
         </Card>
       </div>
-      {/* Abgelehnte und gesperrte Firmen haben dahinter nichts zu sehen; alle anderen brauchen aal2 (zweiter Faktor) für die Dokumente */}
+      {/* Abgelehnte Firmen haben dahinter nichts zu sehen; alle anderen brauchen aal2 (zweiter Faktor) */}
       {ACCESS.includes(firm.status) && (
         <MfaGate>
           {(recheck) => (
             <>
               {/* Aufträge wickelt eine aktive oder pausierte Firma ab (my_job_partner_id); Anfragen sehen und annehmen darf nur eine aktive (pending: der Server liefert nichts, der Abruf bleibt aus) */}
               {firm.status === 'active' && <Anfragen onChange={() => setChanges((n) => n + 1)} />}
-              {(firm.status === 'active' || firm.status === 'payment_hold') && (
-                <>
-                  <PartnerAuftraege reloadKey={changes} />
-                  {/* Journal: eine Firma ohne Annahme hat keine Zeilen (pending, rejected); gesperrte Firmen sehen im Portal nichts (ACCESS), siehe OPEN_ISSUES S9i7c1-3 */}
-                  <Abrechnung />
-                </>
-              )}
-              <Dokumente partnerId={firm.id} onDenied={recheck} />
+              {(firm.status === 'active' || firm.status === 'payment_hold') && <PartnerAuftraege reloadKey={changes} />}
+              {/* Journal: eine Firma ohne Annahme hat keine Zeilen (pending, rejected); eine gesperrte Firma lädt ihre Abrechnung weiter herunter */}
+              {(firm.status === 'active' || firm.status === 'payment_hold' || firm.status === 'suspended') && <Abrechnung />}
+              {firm.status !== 'suspended' && <Dokumente partnerId={firm.id} onDenied={recheck} />}
             </>
           )}
         </MfaGate>

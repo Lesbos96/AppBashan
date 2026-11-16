@@ -59,7 +59,6 @@ export const router = createBrowserRouter([
     HydrateFallback: () => null,
     children: [
       page('/', <Start />, { key: 'start', title: 'Start', root: true }, { loader: () => (hasOnboarded() ? null : redirect('/willkommen')) }),
-      page('miete', <Folgt title="Transporter mieten" />, { key: 'miete', title: 'Transporter mieten', root: true }),
       lazyPage('auftraege', async () => { const { Auftraege } = await screens.auftraege(); return <Auftraege /> }, { key: 'auftraege', title: 'Aufträge', root: true }, { loader: requireSession }),
       lazyPage('auftraege/:id', async () => { const { Auftrag } = await screens.auftrag(); return <Auftrag /> }, { key: 'auftrag', title: 'Auftrag', bar: false }, { loader: requireSession }),
       lazyPage('partner', async () => { const { Partner } = await screens.partner(); return <Partner /> }, { key: 'partner', title: 'Partner', bar: false }, { loader: requireSession }),

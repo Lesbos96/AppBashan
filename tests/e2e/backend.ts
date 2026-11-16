@@ -27,6 +27,9 @@ export const PRICE_ROWS = [...seed.matchAll(ROW)]
 // Dieselbe Zahl prüft scripts/s9a1-verify.mjs gegen die Dev-Datenbank; ändert sich der Seed, soll das hier laut scheitern.
 if (PRICE_ROWS.length !== 28) throw new Error(`seed.sql: ${PRICE_ROWS.length} Tarifzeilen gelesen, erwartet 28`)
 
+/** Provisionsstaffel v2 wie der Server (geld.md): 12 % bis 50.000 ct, 10 % bis 100.000 ct, 7 % darüber; Stufenanteile summiert, einmal gerundet. Nur für Mocks. */
+export const staffelFee = (total: number) => Math.round(Math.min(total, 50000) * 0.12 + Math.max(0, Math.min(total, 100000) - 50000) * 0.1 + Math.max(0, total - 100000) * 0.07)
+
 const setting = (key: string) => {
   const m = new RegExp(`\\('${key}', 1, (\\d+),`).exec(seed)
   if (!m) throw new Error(`seed.sql: ${key} nicht gefunden`)
@@ -117,8 +120,8 @@ export async function installBackend(context: BrowserContext, appOrigin: string)
   // Partner-Anfragen (s9i-6a): ohne eigenen Mock hat die aktive Firma keine Anfragen und keine Angebote (tests/e2e/jobs-helpers.ts überschreibt)
   await context.route('**/rest/v1/job_listings**', (r) => rest(r, []))
   await context.route('**/rest/v1/partner_offers**', (r) => rest(r, []))
-  // Vorschau „Du erhältst“ (s9p-1): der Server rechnet mit Staffel v1 (15 %, half-up in Cent); der Client rechnet nichts selbst
-  await mockRpc(context, 'payout_preview', ({ p_total }) => p_total - Math.round(p_total * 0.15))
+  // Vorschau „Du erhältst“ (s9p-1): der Server rechnet mit der Staffel v2; der Client rechnet nichts selbst
+  await mockRpc(context, 'payout_preview', ({ p_total }) => p_total - staffelFee(p_total))
   // Aufträge der Firma (s9i-6b): ohne eigenen Mock hat die Firma keine
   await mockRpc(context, 'my_jobs', [])
   // Preisgrundlage und Nachtrag der Firma (s9i-7a)

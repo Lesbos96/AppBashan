@@ -282,19 +282,13 @@ test.describe('W4 Entrümpelung', () => {
   })
 })
 
-test.describe('W6 Transportermiete und W7 Vermieter (noch nicht gebaut)', () => {
-  test('Start-Karte „Transporter mieten“ führt zum Platzhalter, ohne Aufruf ans Backend', async ({ page }) => {
-    const backendCalls: string[] = []
-    page.on('request', (r) => {
-      if (/\/(rest|functions|auth|storage)\/v1\//.test(r.url())) backendCalls.push(r.url())
-    })
+test.describe('W6 Transportermiete (Phase 2, nicht in der App) und W7 Vermieter (noch nicht gebaut)', () => {
+  test('Start ohne Karte „Transporter mieten“, /miete ist unbekannt', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: /Transporter mieten/ }).click()
-    await expect(page).toHaveURL(/\/miete$/)
-    await expect(page.getByRole('heading', { name: 'Transporter mieten', level: 1 })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Dieser Bereich ist noch nicht verfügbar' })).toBeVisible()
-    await expect(page.getByRole('button', { name: /senden|buchen|anfragen/i })).toHaveCount(0)
-    expect(backendCalls).toEqual([])
+    await expect(page.getByRole('heading', { name: 'Was hast du vor?' })).toBeVisible()
+    await expect(page.getByText('Transporter mieten')).toHaveCount(0)
+    await page.goto('/miete')
+    await expect(page.getByRole('heading', { name: 'Seite nicht gefunden' })).toBeVisible()
   })
 
   test('Profil → „Für Vermieter“ zeigt den Platzhalter, Zurück führt zum Profil', async ({ page }) => {
