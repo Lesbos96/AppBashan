@@ -96,8 +96,9 @@ describe('Vorschlag (propose_change)', () => {
       named('Replay andere Belege', { as: 'service_role', sql: `=${replay(R, { photos: PH(R, 'b') })} is null` }),
       named('Replay andere Anfrage', { as: 'service_role', sql: `=${replay(R, { req: R2 })} is null` }),
       named('Replay NULL', { as: 'service_role', sql: `=public.propose_change_replay(null::uuid, '${R}', '{"hours":6}'::jsonb, 80000, ${PH(R, 'a')}) is null` }),
-      named('Replay authenticated', { as: 'authenticated', claims: A2(U.pa), sql: `perform ${replay(R)}` }),
-      named('Replay anon', { as: 'anon', sql: `perform ${replay(R)}` }),
+      // feste Ids statt der Unterabfrage auf job_photos: sonst endet die Probe schon am Leserecht der Tabelle, nicht an der Funktion
+      named('Replay authenticated', { as: 'authenticated', claims: A2(U.pa), sql: `perform ${replay(R, { photos: `'{}'::uuid[]` })}` }),
+      named('Replay anon', { as: 'anon', sql: `perform ${replay(R, { photos: `'{}'::uuid[]` })}` }),
       named('ein Nachtrag', { sql: `=${count(`public.price_revisions where request_id = '${R}' and source = 'change_order'`)}` }),
       named('Outbox Kunde', { sql: `=${count(`public.outbox where kind = 'change_proposed' and request_id = '${R}' and recipient_id = '${U.cust}'`)}` }),
       named('Kunde sieht den Vorschlag', { as: 'authenticated', claims: A2(U.cust), sql: `=${count(`public.price_revisions where request_id = '${R}' and source = 'change_order'`)}` }),

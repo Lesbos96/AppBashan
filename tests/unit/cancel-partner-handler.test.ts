@@ -77,6 +77,12 @@ describe('handleCancelPartner: Wiederholung nach Erfolg (n12b)', () => {
     expect(await res.json()).toEqual({ error: 'not_found' })
     expect(d.replays).toHaveLength(1)
   })
+  it('Fehler der Nachfrage: 500 internal, kein Ergebnis', async () => {
+    const d = deps({ basis: ended, replay: async () => { throw new Error('boom') } })
+    const res = await call(d, body)
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'internal' })
+  })
   it('Vorschau und andere Fehler (invalid_transition, under_review) fragen nie nach', async () => {
     const d = deps({ basis: ended })
     expect((await call(d, { requestId: REQ, reason: 'scope_impossible', preview: true })).status).toBe(404)

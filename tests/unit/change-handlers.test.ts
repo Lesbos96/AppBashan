@@ -92,6 +92,12 @@ describe('change-propose: Wiederholung nach Erfolg (n12b)', () => {
     expect(await json(res)).toEqual({ error: 'change_open' })
     expect(d.replays).toHaveLength(1)
   })
+  it('Fehler der Nachfrage: 500 internal, kein Ergebnis', async () => {
+    const d = pdeps({ basis: open, replay: async () => { throw new Error('boom') } })
+    const res = await handleProposeChange(post(okBody), d)
+    expect(res.status).toBe(500)
+    expect(await json(res)).toEqual({ error: 'internal' })
+  })
   it('Vorschau bei offenem Nachtrag bleibt 409 ohne Nachfrage; andere Fehler fragen nie nach', async () => {
     const d = pdeps({ basis: open })
     expect((await handleProposeChange(post(previewBody), d)).status).toBe(409)

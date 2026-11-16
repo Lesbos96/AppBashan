@@ -151,6 +151,8 @@ describe('cancel-partner live (Dev, echte Tokens)', () => {
     const photos = ((await service.from('job_photos').select('id').eq('request_id', J4).eq('kind', 'receipt')).data ?? []).map((p) => p.id)
     expect(photos).toHaveLength(1)
     expect(await fn('cancel-partner', pa.jwt2, { ...base, photoIds: photos, shownCallOutCents: 6900 })).toEqual({ status: 200, body: { status: 'cancelled_by_partner', callOutCents: 6900 } })
+    // n12b: dieselbe Wiederholung nach verlorener Antwort mit Pauschale: dasselbe Ergebnis, unten bleibt es bei genau einer Gebührenzeile
+    expect(await fn('cancel-partner', pa.jwt2, { ...base, photoIds: photos, shownCallOutCents: 6900 })).toEqual({ status: 200, body: { status: 'cancelled_by_partner', callOutCents: 6900 } })
     const rows = ownerSql(`select total_cents, fee_cents, fee_net_cents, fee_vat_cents, payout_cents from public.commission_entries where request_id = '${J4}' and kind = 'cancellation_fee'`)
     expect(rows.map((r) => [Number(r.total_cents), Number(r.fee_cents), Number(r.fee_net_cents), Number(r.fee_vat_cents), Number(r.payout_cents)])).toEqual([
       [6900, fee.feeCents, fee.feeNetCents, fee.feeVatCents, fee.payoutCents],

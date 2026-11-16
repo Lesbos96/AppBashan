@@ -59,8 +59,7 @@ describe('auth.getUser: Antworten auf ein Token (Messung)', () => {
       }
     }
     // n12b N1: ein Authorization-Wert mit Leerzeichen oder Sonderzeichen ist kein Token: 401 ohne Aufruf bei Auth (vorher 500, Auth-Störung im Log).
-    // `quote` gehört nicht dazu: dort bedeutet ein unbrauchbares Token „anonym“.
-    for (const name of FUNCTIONS.filter((n) => n !== 'quote')) {
+    for (const name of FUNCTIONS) {
       const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/${name}`, {
         method: 'POST',
         headers: { authorization: 'Bearer a b', apikey: env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), 'content-type': 'application/json' },
