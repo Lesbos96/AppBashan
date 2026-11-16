@@ -1,6 +1,7 @@
 // Edge-Function-Logik für Annahme (`accept`, Art A), Support-Kontakt (`admin-contact`) und Mailversand (`outbox-send`), S9c.
 // Alle Datenzugriffe kommen über `deps` (Secret-Key-Client in index.ts, Fakes in den Unit-Tests). Das JWT prüft getUser; aal steht darin.
 import { type FeeTier, splitFee } from '../pricing/index.ts'
+import { TOKEN_FORM } from '../auth.ts'
 import { corsHeaders, json, readLimited } from '../http.ts'
 
 /** Fehler der Datenbank-Funktionen: `code` ist die Meldung der Exception (z. B. `already_taken`). */
@@ -52,7 +53,7 @@ export const STATUS: Record<string, number> = {
 
 export async function authed(req: Request, deps: { getUser(jwt: string): Promise<AuthUser | null> }, origin: Record<string, string>, needAal2 = true) {
   const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-  const user = jwt ? await deps.getUser(jwt) : null
+  const user = jwt && TOKEN_FORM.test(jwt) ? await deps.getUser(jwt) : null
   if (!user) return { res: json(401, { error: 'unauthorized' }, origin) }
   if (needAal2 && user.aal !== 'aal2') return { res: json(403, { error: 'mfa_required' }, origin) }
   return { user }

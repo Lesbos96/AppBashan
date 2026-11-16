@@ -21,6 +21,8 @@ export type PartnerDeps = {
   getUser(jwt: string): Promise<AuthUser | null>
   basis(userId: string, aal: string, requestId: string, reason: string): Promise<PartnerBasis>
   cancel(userId: string, aal: string, call: PartnerCall): Promise<string>
+  /** Der Status, wenn `userId` (Mitglied der Firma) diese Anfrage selbst abgesagt hat und Betrag, Grund und Belege zum ersten Aufruf passen, sonst null. */
+  replay(userId: string, requestId: string, reason: string, photoIds: string[], shownCallOutCents: number): Promise<string | null>
   log: Log
 }
 
@@ -64,23 +66,35 @@ export async function handleCancelPartner(req: Request, deps: PartnerDeps): Prom
       return json(200, { callOutCents: basis.callOutCents, payoutCents: splitOf(basis.callOutCents, basis).payoutCents }, origin)
     }
     const ids = (photoIds ?? []) as string[]
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const basis = await deps.basis(a.user.id, a.user.aal, requestId, reason)
-      const feeBaseCents = ids.length > 0 ? basis.callOutCents : 0
-      if (feeBaseCents !== shownCallOutCents) throw new DbError('amount_changed')
-      try {
-        const status = await deps.cancel(a.user.id, a.user.aal, { requestId, reason, photoIds: ids, basis, feeBaseCents, split: splitOf(feeBaseCents, basis) })
-        return json(200, { status, callOutCents: feeBaseCents }, origin)
-      } catch (e) {
-        const code = e instanceof DbError ? e.code : ''
-        if (RETRY_CODES.has(code)) {
-          if (attempt === 1) throw new DbError('retry')
-          continue
+    const run = async (): Promise<Response> => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const basis = await deps.basis(a.user.id, a.user.aal, requestId, reason)
+        const feeBaseCents = ids.length > 0 ? basis.callOutCents : 0
+        if (feeBaseCents !== shownCallOutCents) throw new DbError('amount_changed')
+        try {
+          const status = await deps.cancel(a.user.id, a.user.aal, { requestId, reason, photoIds: ids, basis, feeBaseCents, split: splitOf(feeBaseCents, basis) })
+          return json(200, { status, callOutCents: feeBaseCents }, origin)
+        } catch (e) {
+          const code = e instanceof DbError ? e.code : ''
+          if (RETRY_CODES.has(code)) {
+            if (attempt === 1) throw new DbError('retry')
+            continue
+          }
+          throw e
         }
-        throw e
       }
+      throw new DbError('retry')
     }
-    throw new DbError('retry')
+    try {
+      return await run()
+    } catch (e) {
+      // Wiederholung nach verlorener Antwort (n12b): nach der eigenen Absage ist die Zuordnung beendet, das Tor meldet `not_found`. Hat diese Person die Anfrage selbst abgesagt
+      // (Betrag, Grund und Belege wie beim ersten Aufruf), kommt dasselbe Ergebnis, sonst bleibt es beim Fehler. `invalid_transition` kann nach der eigenen Absage nicht kommen.
+      if (!(e instanceof DbError) || e.code !== 'not_found') throw e
+      const status = await deps.replay(a.user.id, requestId, reason, ids, shownCallOutCents as number)
+      if (!status) throw e
+      return json(200, { status, callOutCents: shownCallOutCents }, origin)
+    }
   } catch (e) {
     const code = e instanceof DbError ? e.code : ''
     const status = RETRY_CODES.has(code) ? 409 : code === 'amount_changed' ? 409 : STATUS[code]

@@ -55,7 +55,19 @@ describe('auth.getUser: Antworten auf ein Token (Messung)', () => {
           body: '{}',
         })
         expect(res.status, `${name} (${how})`).toBe(401)
+        expect(await res.json(), `${name} (${how}) Text`).toEqual({ error: 'unauthorized' }) // n12b N5: wirklich die Antwort für ein abgelehntes Token
       }
+    }
+    // n12b N1: ein Authorization-Wert mit Leerzeichen oder Sonderzeichen ist kein Token: 401 ohne Aufruf bei Auth (vorher 500, Auth-Störung im Log).
+    // `quote` gehört nicht dazu: dort bedeutet ein unbrauchbares Token „anonym“.
+    for (const name of FUNCTIONS.filter((n) => n !== 'quote')) {
+      const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/${name}`, {
+        method: 'POST',
+        headers: { authorization: 'Bearer a b', apikey: env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), 'content-type': 'application/json' },
+        body: '{}',
+      })
+      expect(res.status, `${name} (Leerzeichen)`).toBe(401)
+      expect(await res.json(), `${name} (Leerzeichen) Text`).toEqual({ error: 'unauthorized' })
     }
   }, 120_000)
 })

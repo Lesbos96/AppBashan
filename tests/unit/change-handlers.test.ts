@@ -36,12 +36,18 @@ const json = async (r: Response) => (await r.json()) as Record<string, unknown>
 
 // propose ------------------------------------------------------------------------------------------------------------------
 const BASIS: ProposeBasis = { revisionId: REV, source: 'submit', inputs: OLD, priceVersion: 7, totalCents: BOOKED, service: 'move', route: ROUTE }
-function pdeps(over: Partial<ProposeDeps> = {}): ProposeDeps & { calls: ProposeCall[]; versions: number[] } {
+function pdeps(over: Partial<ProposeDeps> = {}): ProposeDeps & { calls: ProposeCall[]; versions: number[]; replays: unknown[][] } {
   const calls: ProposeCall[] = []
   const versions: number[] = []
+  const replays: unknown[][] = []
   return {
     calls,
     versions,
+    replays,
+    replay: async (...a: unknown[]) => {
+      replays.push(a)
+      return null
+    },
     allowedOrigins: [],
     getUser: async () => ({ id: 'p1', aal: 'aal2' }),
     loadPricing: async (v) => {
@@ -60,6 +66,41 @@ function pdeps(over: Partial<ProposeDeps> = {}): ProposeDeps & { calls: ProposeC
 const NEW7 = priceOf({ hours: 7 }) // gebuchter Preis + Modul(neu) − Modul(alt) mit dem gebuchten Preis BOOKED
 const okBody = { requestId: REQ, changes: { hours: 7 }, photoIds: [PH], shownTotalCents: NEW7 }
 const previewBody = { requestId: REQ, changes: { hours: 7 }, preview: true }
+
+describe('change-propose: Wiederholung nach Erfolg (n12b)', () => {
+  const open = async () => {
+    throw new DbError('change_open')
+  }
+  it('Grundlage meldet change_open und der offene Nachtrag ist derselbe Vorschlag: 200 mit dessen Id, nichts wird angelegt', async () => {
+    const d = pdeps({ basis: open, replay: async (...a: unknown[]) => (d.replays.push(a), 'rev-old') })
+    const res = await handleProposeChange(post(okBody), d)
+    expect(res.status).toBe(200)
+    expect(await json(res)).toEqual({ revisionId: 'rev-old', totalCents: NEW7 })
+    expect(d.replays).toEqual([['p1', REQ, { hours: 7 }, NEW7, [PH]]])
+    expect(d.calls).toHaveLength(0)
+  })
+  it('Wettlauf: change_open erst beim Anlegen (der andere Aufruf war schneller): ebenso 200', async () => {
+    const d = pdeps({ propose: open, replay: async () => 'rev-old' })
+    const res = await handleProposeChange(post(okBody), d)
+    expect(res.status).toBe(200)
+    expect(await json(res)).toEqual({ revisionId: 'rev-old', totalCents: NEW7 })
+  })
+  it('ein anderer Vorschlag (null): der ursprüngliche Fehler 409 change_open', async () => {
+    const d = pdeps({ basis: open })
+    const res = await handleProposeChange(post(okBody), d)
+    expect(res.status).toBe(409)
+    expect(await json(res)).toEqual({ error: 'change_open' })
+    expect(d.replays).toHaveLength(1)
+  })
+  it('Vorschau bei offenem Nachtrag bleibt 409 ohne Nachfrage; andere Fehler fragen nie nach', async () => {
+    const d = pdeps({ basis: open })
+    expect((await handleProposeChange(post(previewBody), d)).status).toBe(409)
+    const e = pdeps({ propose: async () => { throw new DbError('receipt_required') } })
+    expect((await handleProposeChange(post(okBody), e)).status).toBe(422)
+    expect(d.replays).toHaveLength(0)
+    expect(e.replays).toHaveLength(0)
+  })
+})
 
 describe('change-propose', () => {
   it('Erfolg: gebuchter Preis + Modul(neu) − Modul(alt), mit der gebuchten Preisversion; der Betrag kommt vom Server, der Aufrufer bestätigt ihn nur', async () => {

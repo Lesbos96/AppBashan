@@ -129,9 +129,10 @@ export async function handleJobPhoto(req: Request, deps: JobPhotoDeps): Promise<
   const early = preflight(req, origin)
   if (early) return early
   try {
-    const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-    const user = jwt ? await deps.getUser(jwt) : null
-    if (!user) return json(401, { error: 'unauthorized' }, origin)
+    // dieselbe Prüfung wie überall (Form des Tokens, 401), ohne aal2: Kunde und Partner rufen auf, die Datenbank prüft den Rest
+    const a = await authed(req, deps, origin, false)
+    if (a.res) return a.res
+    const user = a.user
     const { listingId, requestId } = ((await body(req)) ?? {}) as Record<string, unknown>
     const ok = (v: unknown): v is string => typeof v === 'string' && UUID.test(v)
     if (ok(listingId) === ok(requestId) || (listingId !== undefined && !ok(listingId)) || (requestId !== undefined && !ok(requestId))) {

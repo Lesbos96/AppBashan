@@ -80,6 +80,11 @@ describe('Angebot senden (send_offer)', () => {
       sendAs('a', U.pa, R, 150000),
       named('Status offered', { sql: `=${status(R)}` }),
       sendAs('a zweites', U.pa, R, 120000),
+      // n12b: dieselbe Wiederholung nach verlorener Antwort liefert die Id des ersten Angebots, ohne neue Zeile und ohne Mail
+      named('a wiederholt', { as: 'authenticated', claims: A2(U.pa), sql: `perform set_config('app.n12b_offer', ${SO(U.pa, R, 150000)}::text, true)` }),
+      named('a wiederholt: gleiche Id', { sql: `=current_setting('app.n12b_offer') = ${OFF(R, 'a')}::text` }),
+      named('a Angebote', { sql: `=${count(`public.partner_offers where request_id = '${R}' and partner_id = ${P('a')}`)}` }),
+      named('a Mails', { sql: `=${count(`public.outbox where kind = 'offer_new' and request_id = '${R}'`)}` }),
       sendAs('b', U.pb, R, 160000),
       sendAs('c', U.pc, R, 170000),
       sendAs('vierter', U.ph, R, 180000),
@@ -105,6 +110,10 @@ describe('Angebot senden (send_offer)', () => {
     ok(r['a'])
     expect(r['Status offered']).toBe('= offered')
     err(r['a zweites'], 'offer_exists')
+    ok(r['a wiederholt'])
+    expect(r['a wiederholt: gleiche Id']).toBe('= true')
+    rows(r['a Angebote'], 1)
+    rows(r['a Mails'], 1)
     ok(r['b'])
     ok(r['c'])
     err(r['vierter'], 'offer_limit')

@@ -5,8 +5,13 @@ import { getUser, must, type Db } from '../jobs/db.ts'
 import { DbError } from '../jobs/handlers.ts'
 import type { DecideDeps, ProposeDeps } from './handlers.ts'
 
-export const proposeDb = (db: Db): Pick<ProposeDeps, 'getUser' | 'loadPricing' | 'basis' | 'propose'> => ({
+export const proposeDb = (db: Db): Pick<ProposeDeps, 'getUser' | 'loadPricing' | 'basis' | 'propose' | 'replay'> => ({
   getUser: (jwt) => getUser(db, jwt),
+  async replay(userId, requestId, changes, shownTotalCents, photoIds) {
+    const r = await db.rpc('propose_change_replay', { p_actor: userId, p_request: requestId, p_changes: changes as never, p_shown_total: shownTotalCents, p_photos: photoIds })
+    if (r.error) throw new DbError(r.error.message)
+    return r.data
+  },
   async loadPricing(version) {
     // Hash der gebuchten Version vor dem Rechnen prüfen: bei Abweichung Abbruch (500), nichts wird gespeichert.
     const verified = await db.rpc('verify_price_version', { p_version: version })

@@ -7,8 +7,9 @@ import { rejectToken } from '../auth.ts'
 import { type AcceptDeps, type AuthUser, type ContactDeps, DbError, type OfferDeps, type OutboxDeps } from './handlers.ts'
 
 export type Db = SupabaseClient<Database>
-export const must = <T>(r: { data: T; error: { message: string } | null }): NonNullable<T> => {
-  if (r.error) throw new DbError(r.error.message)
+// 40P01: die Datenbank hat diesen Aufruf als Opfer eines Deadlocks zurückgerollt, nichts ist geschrieben: neutral `retry` (409), die App kann wiederholen.
+export const must = <T>(r: { data: T; error: { message: string; code?: string } | null }): NonNullable<T> => {
+  if (r.error) throw new DbError(r.error.code === '40P01' ? 'retry' : r.error.message)
   if (r.data == null) throw new DbError('no_data')
   return r.data
 }

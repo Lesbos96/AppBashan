@@ -6,8 +6,13 @@ import { DbError } from '../jobs/handlers.ts'
 import type { CancelDeps } from './handlers.ts'
 import type { PartnerDeps } from './partner.ts'
 
-export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' | 'cancel'> => ({
+export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' | 'cancel' | 'replay'> => ({
   getUser: (jwt) => getUser(db, jwt),
+  async replay(userId, requestId, reason, photoIds, shown) {
+    const r = await db.rpc('cancel_replay', { p_actor: userId, p_request: requestId, p_action: 'cancel_by_partner', p_shown: shown, p_reason: reason, p_photos: photoIds })
+    if (r.error) throw new DbError(r.error.message)
+    return r.data
+  },
   async basis(userId, aal, requestId, reason) {
     const row = must(await db.rpc('cancel_by_partner_basis', { p_actor: userId, p_aal: aal, p_request: requestId, p_reason: reason }))[0]
     if (!row) throw new DbError('not_found')
@@ -42,8 +47,14 @@ export const cancelPartnerDb = (db: Db): Pick<PartnerDeps, 'getUser' | 'basis' |
   },
 })
 
-export const cancelDb = (db: Db): Pick<CancelDeps, 'getUser' | 'basis' | 'cancel'> => ({
+export const cancelDb = (db: Db): Pick<CancelDeps, 'getUser' | 'basis' | 'cancel' | 'replay'> => ({
   getUser: (jwt) => getUser(db, jwt),
+  async replay(userId, requestId, shown) {
+    // Grund und Belege gelten nur beim Storno der Firma; die Funktion ignoriert sie beim Kunden
+    const r = await db.rpc('cancel_replay', { p_actor: userId, p_request: requestId, p_action: 'cancel_by_customer', p_shown: shown, p_reason: '', p_photos: [] })
+    if (r.error) throw new DbError(r.error.message)
+    return r.data
+  },
   async basis(userId, requestId) {
     const row = must(await db.rpc('cancel_by_customer_basis', { p_actor: userId, p_request: requestId }))[0]
     if (!row) throw new DbError('not_found')

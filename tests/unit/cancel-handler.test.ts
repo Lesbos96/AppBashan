@@ -10,12 +10,17 @@ const basis = (over: Partial<CancelBasis> = {}): CancelBasis => ({
   status: 'accepted', totalCents: 68961, feeBaseCents: 34481, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1, ...over,
 })
 
-type Fake = CancelDeps & { calls: CancelCall[]; basisCalls: number; logs: Record<string, unknown>[] }
+type Fake = CancelDeps & { calls: CancelCall[]; basisCalls: number; logs: Record<string, unknown>[]; replays: unknown[][] }
 function deps(over: Partial<CancelDeps> = {}, bases: CancelBasis[] = [basis()]): Fake {
   const d: Fake = {
     calls: [] as CancelCall[],
     basisCalls: 0,
     logs: [] as Record<string, unknown>[],
+    replays: [] as unknown[][],
+    replay: async (...a: unknown[]) => {
+      d.replays.push(a)
+      return null
+    },
     allowedOrigins: [],
     getUser: async (jwt: string) => (jwt === 'ok' ? { id: 'u1', aal: 'aal1' } : null),
     basis: async () => bases[Math.min(d.basisCalls++, bases.length - 1)] as CancelBasis,
@@ -30,6 +35,47 @@ function deps(over: Partial<CancelDeps> = {}, bases: CancelBasis[] = [basis()]):
 }
 const call = (d: CancelDeps, body: unknown = { requestId: REQ, shownFeeCents: 34481 }, jwt = 'ok') =>
   handleCancelCustomer(new Request('https://x.test/cancel', { method: 'POST', headers: jwt ? { authorization: `Bearer ${jwt}` } : {}, body: JSON.stringify(body) }), d)
+
+describe('handleCancelCustomer: Wiederholung nach Erfolg (n12b)', () => {
+  const gone = async () => {
+    throw new DbError('invalid_transition')
+  }
+  it('Grundlage meldet invalid_transition und der Kunde hat selbst storniert (Betrag stimmt): 200 mit dem ersten Ergebnis, nichts wird gebucht', async () => {
+    const d = deps({ basis: gone, replay: async (...a: unknown[]) => (d.replays.push(a), 'cancelled_by_customer') })
+    const res = await call(d)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'cancelled_by_customer', cancelFeeCents: 34481 })
+    expect(d.replays).toEqual([['u1', REQ, 34481]])
+    expect(d.calls).toHaveLength(0)
+  })
+  it('Wettlauf: invalid_transition erst beim Storno (der andere Aufruf war schneller): ebenso 200', async () => {
+    const d = deps({ cancel: gone, replay: async () => 'cancelled_by_customer' })
+    const res = await call(d)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'cancelled_by_customer', cancelFeeCents: 34481 })
+  })
+  it('keine Wiederholung der eigenen Partei (null): der ursprüngliche Fehler, 409 invalid_transition ohne Betrag', async () => {
+    const d = deps({ basis: gone })
+    const res = await call(d)
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'invalid_transition' })
+    expect(d.replays).toHaveLength(1)
+  })
+  it('Vorschau und andere Fehler fragen nie nach: 409 ohne Nachfrage', async () => {
+    const d = deps({ basis: gone })
+    expect((await call(d, { requestId: REQ, preview: true })).status).toBe(409)
+    const e = deps({ basis: async () => { throw new DbError('under_review') } })
+    expect((await call(e)).status).toBe(409)
+    expect(d.replays).toHaveLength(0)
+    expect(e.replays).toHaveLength(0)
+  })
+  it('Fehler der Nachfrage: 500 internal, geloggt ohne Details', async () => {
+    const d = deps({ basis: gone, replay: async () => { throw new Error('boom') } })
+    const res = await call(d)
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'internal' })
+  })
+})
 
 describe('handleCancelCustomer', () => {
   it('rechnet die Stornogebühr mit dem Satz der Buchung und antwortet mit dem Betrag des Kunden (ohne Plattformgebühr)', async () => {

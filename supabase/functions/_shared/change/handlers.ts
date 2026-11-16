@@ -43,6 +43,8 @@ export type ProposeDeps = {
   loadPricing(version: number): Promise<{ rows: readonly PriceConfigRow[] }>
   basis(userId: string, aal: string, requestId: string): Promise<ProposeBasis>
   propose(userId: string, aal: string, call: ProposeCall): Promise<string>
+  /** Die Id des offenen Nachtrags, wenn `userId` (Mitglied der Firma) genau diesen Vorschlag (Betrag, Eingaben, Belege) schon gestellt hat, sonst null. */
+  replay(userId: string, requestId: string, changes: Record<string, unknown>, shownTotalCents: number, photoIds: string[]): Promise<string | null>
   log: Log
 }
 
@@ -106,21 +108,33 @@ export async function handleProposeChange(req: Request, deps: ProposeDeps): Prom
       return json(400, { error: 'invalid_input' }, origin)
     }
     if (Object.keys(changes).some((k) => ROUTE_KEYS.has(k))) return json(422, { error: 'route_locked' }, origin)
-    const basis = await deps.basis(a.user.id, a.user.aal, requestId)
-    if (basis.source === 'partner_offer') throw new DbError('change_not_allowed')
-    if (!isRecord(basis.inputs)) throw new DbError('invalid_input')
-    const known = new Set(Object.keys(basis.inputs))
-    if (Object.keys(changes).some((k) => !known.has(k) || k === 'service')) return json(400, { error: 'invalid_input' }, origin)
-    // Beide Rechnungen mit der gebuchten Version; unvollständiger Tarif: Abbruch (kein Standardwert).
-    const tariffs = buildTariffs((await deps.loadPricing(basis.priceVersion)).rows)
-    const route = routeFacts(basis.route)
-    const before = priced(basis.service, basis.inputs, tariffs, route)
-    const after = priced(basis.service, { ...basis.inputs, ...changes }, tariffs, route)
-    const totalCents = changeTotal(basis.totalCents, after.price, before.price)
-    if (isPreview) return json(200, { totalCents, baseCents: basis.totalCents }, origin)
-    if (totalCents !== shownTotalCents) throw new DbError('amount_changed')
-    const revisionId = await deps.propose(a.user.id, a.user.aal, { requestId, baseRevisionId: basis.revisionId, inputs: after.inputs, totalCents, photoIds: photoIds as string[] })
-    return json(200, { revisionId, totalCents }, origin)
+    const run = async (): Promise<Response> => {
+      const basis = await deps.basis(a.user.id, a.user.aal, requestId)
+      if (basis.source === 'partner_offer') throw new DbError('change_not_allowed')
+      if (!isRecord(basis.inputs)) throw new DbError('invalid_input')
+      const known = new Set(Object.keys(basis.inputs))
+      if (Object.keys(changes).some((k) => !known.has(k) || k === 'service')) return json(400, { error: 'invalid_input' }, origin)
+      // Beide Rechnungen mit der gebuchten Version; unvollständiger Tarif: Abbruch (kein Standardwert).
+      const tariffs = buildTariffs((await deps.loadPricing(basis.priceVersion)).rows)
+      const route = routeFacts(basis.route)
+      const before = priced(basis.service, basis.inputs, tariffs, route)
+      const after = priced(basis.service, { ...basis.inputs, ...changes }, tariffs, route)
+      const totalCents = changeTotal(basis.totalCents, after.price, before.price)
+      if (isPreview) return json(200, { totalCents, baseCents: basis.totalCents }, origin)
+      if (totalCents !== shownTotalCents) throw new DbError('amount_changed')
+      const revisionId = await deps.propose(a.user.id, a.user.aal, { requestId, baseRevisionId: basis.revisionId, inputs: after.inputs, totalCents, photoIds: photoIds as string[] })
+      return json(200, { revisionId, totalCents }, origin)
+    }
+    try {
+      return await run()
+    } catch (e) {
+      // Wiederholung nach verlorener Antwort (n12b): ist der offene Nachtrag genau dieser Vorschlag derselben Firma (gezeigter Betrag, Eingaben, Belege), kommt seine Id, sonst bleibt es bei `change_open`.
+      // Die Vorschau fragt nie nach.
+      if (isPreview || !(e instanceof DbError) || e.code !== 'change_open') throw e
+      const revisionId = await deps.replay(a.user.id, requestId, changes, shownTotalCents as number, photoIds as string[])
+      if (!revisionId) throw e
+      return json(200, { revisionId, totalCents: shownTotalCents }, origin)
+    }
   } catch (e) {
     if (e instanceof InputError) return json(422, { error: 'invalid_input' }, origin)
     if (e instanceof TariffError) {

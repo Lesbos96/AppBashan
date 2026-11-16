@@ -39,6 +39,9 @@ const PH = (req: string, key: string, n = 1) => `array(select id from public.job
 type PO = { user?: string; aal?: string; base?: string; total?: number; photos?: string }
 const propose = (req: string, o: PO = {}) =>
   `public.propose_change('${o.user ?? U.pa}', '${o.aal ?? 'aal2'}', '${req}', ${o.base ?? CUR(req)}, '{"hours":6}'::jsonb, ${o.total ?? 80000}, ${o.photos ?? PH(req, 'a')})`
+/** `propose_change_replay` mit den Werten des Vorschlags `propose()`; je Feld überschreibbar. */
+const replay = (req: string, o: { user?: string; req?: string; changes?: string; total?: number; photos?: string } = {}) =>
+  `public.propose_change_replay('${o.user ?? U.pa}', '${o.req ?? req}', ${o.changes ?? `'{"hours":6}'::jsonb`}, ${o.total ?? 80000}, ${o.photos ?? PH(req, 'a')})`
 const OPEN = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'proposed')`
 const ACC = (req: string) => `(select id from public.price_revisions where request_id = '${req}' and source = 'change_order' and status = 'accepted' order by n desc limit 1)`
 
@@ -83,6 +86,19 @@ describe('Vorschlag (propose_change)', () => {
       }),
       named('Auftrag unverändert', { sql: `=(select concat_ws(',', status, (select n from public.price_revisions where id = current_revision)) from public.service_requests where id = '${R}')` }),
       svc('zweiter offener', propose(R, { total: 90000 })),
+      // n12b: propose_change_replay liefert nach verlorener Antwort die Id des offenen Nachtrags nur bei gleichem Betrag, gleichen Eingaben und Belegen
+      named('Replay', { as: 'service_role', sql: `=${replay(R)} = ${OPEN(R)}` }),
+      named('Replay Belege als Menge', { as: 'service_role', sql: `=${replay(R, { photos: `array(select id from public.job_photos where request_id = '${R}' and uploaded_partner_id = ${P('a')} order by id desc)` })} = ${OPEN(R)}` }),
+      named('Replay andere Firma', { as: 'service_role', sql: `=${replay(R, { user: U.pb })} is null` }),
+      named('Replay Kunde', { as: 'service_role', sql: `=${replay(R, { user: U.cust })} is null` }),
+      named('Replay anderer Betrag', { as: 'service_role', sql: `=${replay(R, { total: 90000 })} is null` }),
+      named('Replay andere Eingabe', { as: 'service_role', sql: `=${replay(R, { changes: `'{"hours":7}'::jsonb` })} is null` }),
+      named('Replay andere Belege', { as: 'service_role', sql: `=${replay(R, { photos: PH(R, 'b') })} is null` }),
+      named('Replay andere Anfrage', { as: 'service_role', sql: `=${replay(R, { req: R2 })} is null` }),
+      named('Replay NULL', { as: 'service_role', sql: `=public.propose_change_replay(null::uuid, '${R}', '{"hours":6}'::jsonb, 80000, ${PH(R, 'a')}) is null` }),
+      named('Replay authenticated', { as: 'authenticated', claims: A2(U.pa), sql: `perform ${replay(R)}` }),
+      named('Replay anon', { as: 'anon', sql: `perform ${replay(R)}` }),
+      named('ein Nachtrag', { sql: `=${count(`public.price_revisions where request_id = '${R}' and source = 'change_order'`)}` }),
       named('Outbox Kunde', { sql: `=${count(`public.outbox where kind = 'change_proposed' and request_id = '${R}' and recipient_id = '${U.cust}'`)}` }),
       named('Kunde sieht den Vorschlag', { as: 'authenticated', claims: A2(U.cust), sql: `=${count(`public.price_revisions where request_id = '${R}' and source = 'change_order'`)}` }),
       named('Kunde: keine Gebühr in Spalten und Snapshot', {
@@ -94,6 +110,8 @@ describe('Vorschlag (propose_change)', () => {
       named('Partner liest Revisionen nicht', { as: 'authenticated', claims: A2(U.pa), sql: `=${count(`public.price_revisions where request_id = '${R}'`)}` }),
       named('fremder Kunde sieht nichts', { as: 'authenticated', claims: A2(U.cust2), sql: `=${count(`public.price_revisions where request_id = '${R}' and source = 'change_order'`)}` }),
       named('Audit', { sql: `=${count(`public.audit_log where action = 'propose_change' and entity_id = ${OPEN(R)}::text`)}` }),
+      named('Nachtrag läuft ab', { sql: noTrg(`update public.price_revisions set valid_until = now() - interval '1 minute' where id = ${OPEN(R)}`) }),
+      named('Replay abgelaufen', { as: 'service_role', sql: `=${replay(R)} is null` }),
     ]
     const r = probes(setup, steps)
     err(r['aal1'], 'mfa_required')
@@ -112,6 +130,13 @@ describe('Vorschlag (propose_change)', () => {
     expect(r['Zeile']).toBe('= proposed,2,change_order,t,t,1,1,80000,t')
     expect(r['Auftrag unverändert']).toBe('= accepted,1')
     err(r['zweiter offener'], 'change_open')
+    expect(r['Replay']).toBe('= true')
+    expect(r['Replay Belege als Menge']).toBe('= true')
+    for (const k of ['andere Firma', 'Kunde', 'anderer Betrag', 'andere Eingabe', 'andere Belege', 'andere Anfrage', 'NULL']) expect(r[`Replay ${k}`], k).toBe('= true')
+    err(r['Replay authenticated'], '42501')
+    err(r['Replay anon'], '42501')
+    expect(r['Replay abgelaufen']).toBe('= true')
+    rows(r['ein Nachtrag'], 1)
     rows(r['Outbox Kunde'], 1)
     rows(r['Kunde sieht den Vorschlag'], 1)
     rows(r['Kunde: keine Gebühr in Spalten und Snapshot'], 0)

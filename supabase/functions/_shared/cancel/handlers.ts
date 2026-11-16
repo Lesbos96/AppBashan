@@ -21,6 +21,8 @@ export type CancelDeps = {
   getUser(jwt: string): Promise<AuthUser | null>
   basis(userId: string, requestId: string): Promise<CancelBasis>
   cancel(userId: string, call: CancelCall): Promise<string>
+  /** Der Status, wenn `userId` diese Anfrage selbst storniert hat und die gezeigte Gebühr zum ersten Aufruf passt (Journal und Audit), sonst null. */
+  replay(userId: string, requestId: string, shownFeeCents: number): Promise<string | null>
   log: Log
 }
 
@@ -46,27 +48,38 @@ export async function handleCancelCustomer(req: Request, deps: CancelDeps): Prom
     ) {
       return json(400, { error: 'invalid_input' }, origin)
     }
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const basis = await deps.basis(a.user.id, requestId)
-      // Vorschau: der Betrag kommt aus derselben Stelle wie das Storno (keine zweite Stufenlogik im Client)
-      if (isPreview) return json(200, { cancelFeeCents: basis.feeBaseCents }, origin)
-      // Gebucht wird nur, was der Kunde gesehen hat: wechselt die Stufe, muss er neu bestätigen
-      if (basis.feeBaseCents !== shownFeeCents) return json(409, { error: 'cancel_fee_changed', cancelFeeCents: basis.feeBaseCents }, origin)
-      const shown = shownFeeCents as number
-      const split = shown > 0 ? splitFee(shown, { tiers: basis.feeTiers, vatRate: basis.feeVatRate }) : ZERO
-      try {
-        const status = await deps.cancel(a.user.id, { requestId, shownFeeCents: shown, basis, split })
-        return json(200, { status, cancelFeeCents: shown }, origin)
-      } catch (e) {
-        const code = e instanceof DbError ? e.code : ''
-        if (RETRY_CODES.has(code)) {
-          if (attempt === 1) throw new DbError('retry')
-          continue
+    const run = async (): Promise<Response> => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const basis = await deps.basis(a.user.id, requestId)
+        // Vorschau: der Betrag kommt aus derselben Stelle wie das Storno (keine zweite Stufenlogik im Client)
+        if (isPreview) return json(200, { cancelFeeCents: basis.feeBaseCents }, origin)
+        // Gebucht wird nur, was der Kunde gesehen hat: wechselt die Stufe, muss er neu bestätigen
+        if (basis.feeBaseCents !== shownFeeCents) return json(409, { error: 'cancel_fee_changed', cancelFeeCents: basis.feeBaseCents }, origin)
+        const shown = shownFeeCents as number
+        const split = shown > 0 ? splitFee(shown, { tiers: basis.feeTiers, vatRate: basis.feeVatRate }) : ZERO
+        try {
+          const status = await deps.cancel(a.user.id, { requestId, shownFeeCents: shown, basis, split })
+          return json(200, { status, cancelFeeCents: shown }, origin)
+        } catch (e) {
+          const code = e instanceof DbError ? e.code : ''
+          if (RETRY_CODES.has(code)) {
+            if (attempt === 1) throw new DbError('retry')
+            continue
+          }
+          throw e
         }
-        throw e
       }
+      throw new DbError('retry')
     }
-    throw new DbError('retry')
+    try {
+      return await run()
+    } catch (e) {
+      // Wiederholung nach verlorener Antwort (n12b): hat dieser Kunde die Anfrage selbst storniert (gezeigte Gebühr wie beim ersten Aufruf), kommt dasselbe Ergebnis, sonst bleibt es beim Fehler.
+      if (isPreview || !(e instanceof DbError) || e.code !== 'invalid_transition') throw e
+      const status = await deps.replay(a.user.id, requestId, shownFeeCents as number)
+      if (!status) throw e
+      return json(200, { status, cancelFeeCents: shownFeeCents }, origin)
+    }
   } catch (e) {
     const code = e instanceof DbError ? e.code : ''
     const status = RETRY_CODES.has(code) ? 409 : STATUS[code]

@@ -11,9 +11,14 @@ const basis = (over: Partial<PartnerBasis> = {}): PartnerBasis => ({
   status: 'accepted', totalCents: 68961, callOutCents: 6900, feeTiers: [{ upToCents: null, bp: 1500 }], feeVatRate: 0.2, feeScheduleVersion: 1, feeVatRateVersion: 1, ...over,
 })
 
-type Fake = PartnerDeps & { calls: PartnerCall[]; basisCalls: number; aals: string[]; reasons: string[]; logs: Record<string, unknown>[] }
+type Fake = PartnerDeps & { calls: PartnerCall[]; basisCalls: number; aals: string[]; reasons: string[]; logs: Record<string, unknown>[]; replays: unknown[][] }
 function deps(over: Partial<PartnerDeps> = {}, aal = 'aal2'): Fake {
   const d: Fake = {
+    replays: [] as unknown[][],
+    replay: async (...a: unknown[]) => {
+      d.replays.push(a)
+      return null
+    },
     calls: [] as PartnerCall[],
     basisCalls: 0,
     aals: [] as string[],
@@ -38,6 +43,49 @@ function deps(over: Partial<PartnerDeps> = {}, aal = 'aal2'): Fake {
 }
 const call = (d: PartnerDeps, body: unknown = { requestId: REQ, reason: 'unavailable', shownCallOutCents: 0 }, jwt = 'ok') =>
   handleCancelPartner(new Request('https://x.test/cancel', { method: 'POST', headers: jwt ? { authorization: `Bearer ${jwt}` } : {}, body: JSON.stringify(body) }), d)
+
+describe('handleCancelPartner: Wiederholung nach Erfolg (n12b)', () => {
+  const ended = async () => {
+    throw new DbError('not_found')
+  }
+  const body = { requestId: REQ, reason: 'scope_impossible', photoIds: [PHOTO], shownCallOutCents: 6900 }
+  it('Grundlage meldet not_found (Zuordnung beendet) und die Firma hat selbst abgesagt: 200 mit dem ersten Ergebnis, nichts wird gebucht', async () => {
+    const d = deps({ basis: ended, replay: async (...a: unknown[]) => (d.replays.push(a), 'cancelled_by_partner') })
+    const res = await call(d, body)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'cancelled_by_partner', callOutCents: 6900 })
+    expect(d.replays).toEqual([['u1', REQ, 'scope_impossible', [PHOTO], 6900]])
+    expect(d.calls).toHaveLength(0)
+  })
+  it('ohne Belege: Betrag 0 und leere Belegmenge gehen an die Nachfrage', async () => {
+    const d = deps({ basis: ended, replay: async (...a: unknown[]) => (d.replays.push(a), 'cancelled_by_partner') })
+    const res = await call(d)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'cancelled_by_partner', callOutCents: 0 })
+    expect(d.replays).toEqual([['u1', REQ, 'unavailable', [], 0]])
+  })
+  it('Wettlauf: not_found erst beim Absagen (der andere Aufruf war schneller): ebenso 200', async () => {
+    const d = deps({ cancel: ended, replay: async () => 'cancelled_by_partner' })
+    const res = await call(d, body)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'cancelled_by_partner', callOutCents: 6900 })
+  })
+  it('keine Wiederholung der eigenen Partei (null): der ursprüngliche Fehler, 404 not_found', async () => {
+    const d = deps({ basis: ended })
+    const res = await call(d, body)
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'not_found' })
+    expect(d.replays).toHaveLength(1)
+  })
+  it('Vorschau und andere Fehler (invalid_transition, under_review) fragen nie nach', async () => {
+    const d = deps({ basis: ended })
+    expect((await call(d, { requestId: REQ, reason: 'scope_impossible', preview: true })).status).toBe(404)
+    const e = deps({ basis: async () => { throw new DbError('invalid_transition') } })
+    expect((await call(e, body)).status).toBe(409)
+    expect(d.replays).toHaveLength(0)
+    expect(e.replays).toHaveLength(0)
+  })
+})
 
 describe('handleCancelPartner', () => {
   it('ohne Belege: keine Pauschale, Aufteilung 0', async () => {

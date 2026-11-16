@@ -197,14 +197,14 @@ describe('change-propose und change-decide live (Dev, echte Tokens)', () => {
     expect(r).toEqual({ status: 409, body: { error: 'amount_changed' } })
     expect(await state(J3)).toEqual(before)
   })
-  live('Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 409 change_open, genau ein offener Nachtrag', async () => {
+  live('Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 200 mit derselben Antwort, genau ein offener Nachtrag', async () => {
     const photo = await service.from('job_photos').select('id').eq('request_id', J3).eq('kind', 'receipt')
     const body = { ...change, photoIds: (photo.data ?? []).map((p) => p.id), shownTotalCents: total }
     const first = await fn('change-propose', pa.jwt2, body)
     expect(first.status, JSON.stringify(first)).toBe(200)
     expect(first.body.totalCents).toBe(total)
     const again = await fn('change-propose', pa.jwt2, body)
-    expect(again).toEqual({ status: 409, body: { error: 'change_open' } })
+    expect(again).toEqual(first)
     expect(await count('price_revisions', 'request_id', J3, { status: 'proposed' })).toBe(1)
   })
   live('change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile', async () => {

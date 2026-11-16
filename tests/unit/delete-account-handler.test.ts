@@ -20,6 +20,28 @@ describe('accountDb.remove', () => {
   it('Fehlercode der Datenbank kommt als DbError an', async () => {
     await expect(accountDb(fake({ data: null, error: { message: 'open_requests' } }).db).remove('u1')).rejects.toEqual(new DbError('open_requests'))
   })
+  // n12b (OFFEN n15-1 N7): Deadlock (40P01, Opfer gegen cancel_by_partner): die Funktion ist zurückgerollt, einmal wiederholen, dann `retry`
+  const seq = (results: { message: string; code?: string }[]) => {
+    let n = 0
+    const db = { rpc: async () => ({ data: null, error: results[n++] ?? null }) } as unknown as Db
+    return { db, calls: () => n }
+  }
+  const DEAD = { message: 'deadlock detected', code: '40P01' }
+  it('40P01 beim ersten Aufruf: ein zweiter Aufruf, dessen Erfolg zählt', async () => {
+    const s = seq([DEAD])
+    await expect(accountDb(s.db).remove('u1')).resolves.toBeUndefined()
+    expect(s.calls()).toBe(2)
+  })
+  it('40P01 zweimal: genau zwei Aufrufe, dann DbError retry (409), nie der Text der Datenbank', async () => {
+    const s = seq([DEAD, DEAD, DEAD])
+    await expect(accountDb(s.db).remove('u1')).rejects.toEqual(new DbError('retry'))
+    expect(s.calls()).toBe(2)
+  })
+  it('anderer Fehler: kein zweiter Aufruf', async () => {
+    const s = seq([{ message: 'open_requests', code: 'P0001' }, DEAD])
+    await expect(accountDb(s.db).remove('u1')).rejects.toEqual(new DbError('open_requests'))
+    expect(s.calls()).toBe(1)
+  })
 })
 
 type Fake = DeleteAccountDeps & { removed: string[]; logs: Record<string, unknown>[] }

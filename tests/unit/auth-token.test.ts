@@ -26,9 +26,11 @@ const REJECTED: AuthErr[] = [
   { name: 'AuthApiError', status: 403, code: 'user_not_found' },
   { name: 'AuthApiError', status: 403, code: 'user_banned' },
   { name: 'AuthSessionMissingError', status: 400 },
+  { name: 'AuthApiError', status: 400, code: 'session_not_found' }, // n12b N2: falls auth-js den Code statt des Fehlertyps liefert
 ]
 const FAULTS: AuthErr[] = [
   { name: 'AuthApiError', status: 401 }, // Gateway: falscher oder rotierter Schlüssel der Function, ohne Code
+  { name: 'AuthApiError', status: 500, code: 'bad_jwt' }, // n12b N4: ein abgelehnter Code gilt nur bei Status 400, 401 oder 403
   { name: 'AuthApiError', status: 403, code: 'unexpected_failure' },
   { name: 'AuthApiError', status: 400, code: 'validation_failed' },
   { name: 'AuthApiError', status: 500, code: 'unexpected_failure' },
@@ -54,6 +56,21 @@ describe('rejectToken', () => {
       expect(thrown, label(e)).toBeInstanceOf(AuthServiceError)
       expect(thrown, label(e)).toMatchObject({ authStatus: e.status, authCode: e.code })
     }
+  })
+  it('n12b N3: die Meldung nennt Status und Code als kurzen Bezeichner, sonst Striche (kein Freitext aus dem Auth-Dienst)', () => {
+    const msg = (e: AuthErr) => {
+      try {
+        rejectToken(e)
+      } catch (x) {
+        return (x as Error).message
+      }
+      return 'nicht geworfen'
+    }
+    expect(msg({ name: 'AuthApiError', status: 500, code: 'unexpected_failure' })).toBe('auth_service_error status=500 code=unexpected_failure')
+    expect(msg({ name: 'AuthApiError', status: 401 })).toBe('auth_service_error status=401 code=-')
+    expect(msg({ name: 'AuthUnknownError', status: undefined })).toBe('auth_service_error status=- code=-')
+    expect(msg({ name: 'AuthApiError', status: 500, code: 'Bearer eyJhbGciOi.x.y' })).toBe('auth_service_error status=500 code=-')
+    expect(msg({ name: 'AuthApiError', status: 500, code: 'a'.repeat(41) })).toBe('auth_service_error status=500 code=-')
   })
   it('der geworfene Fehler enthält weder Token noch Originalmeldung', () => {
     const secret = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1In0.c2lnbmF0dXI'
@@ -104,6 +121,22 @@ const HANDLERS: [string, (req: Request, d: never) => Promise<Response>, 'getUser
   ['job-photo', handleJobPhoto as never, 'getUser'],
   ['quote', handleQuote as never, 'getUserId'],
 ]
+
+// n12b N1: ein Authorization-Wert, der kein Token sein kann (Leerzeichen, Sonderzeichen), ist 401 ohne Aufruf bei Auth (vorher 500 mit Störung im Log).
+describe('Handler: Wert ohne Tokenform', () => {
+  for (const [name, handler, dep] of HANDLERS.filter(([n]) => n !== 'quote')) {
+    it(`${name}: 401 unauthorized, getUser nie aufgerufen`, async () => {
+      let called = 0
+      const d = { allowedOrigins: [], [dep]: async () => (called++, null), log: () => {} }
+      for (const authorization of ['Bearer a b', 'Bearer a%b', 'Bearer a;b']) {
+        const res = await handler(new Request('https://x.test/f', { method: 'POST', headers: { authorization }, body: JSON.stringify({ confirm: true }) }), d as never)
+        expect(res.status, authorization).toBe(401)
+        expect(await res.json(), authorization).toEqual({ error: 'unauthorized' })
+      }
+      expect(called).toBe(0)
+    })
+  }
+})
 
 describe('Handler bei gestörtem Auth-Dienst', () => {
   for (const [name, handler, dep] of HANDLERS) {
