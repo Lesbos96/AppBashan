@@ -26,6 +26,8 @@ const status = (req: string) => `(select status::text from public.service_reques
 const count = (sql: string) => `(select count(*) from ${sql})`
 const journal = (req: string, where = 'true') => count(`public.commission_entries where request_id = '${req}' and ${where}`)
 const FIVE = "now() + interval '5 days'"
+// 0065 (Nr. 148): die Pauschale gibt es erst ab Terminbeginn; Fälle mit Pauschale brauchen einen begonnenen Termin
+const PAST = "now() - interval '2 hours'"
 
 function accepted(id: string, termin = FIVE): string {
   const snap = `{"kind":"price","totalCents":${TOTAL},"lowCents":${TOTAL},"highCents":${TOTAL},"lines":[],${TERMS}}`
@@ -74,12 +76,13 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
   it('Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag', () => {
     // höchstens 5 offene Aufträge je Firma (partner_open_jobs_max): zwei Ansätze mit je 5
     const [E0, E1, E2, E3, E4, E5, E6, E7, B1, B2] = [newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()] as const
-    const setup = `${BASE} ${accepted(E0)} ${accepted(E1)} ${declined(E1)} ${accepted(E2)} ${receipt(E2)} ${propose(E2, 80000, 6)}
-      ${accepted(E3)} ${receipt(E3)} ${propose(E3, 80000, 6)} ${decide(E3, true, 80000, TOTAL)}
-      ${accepted(E4)} ${declined(E4)} ${propose(E4, 80000, 7)} ${decide(E4, true, 80000, TOTAL)}`
-    const setup2 = `${BASE} ${accepted(E5)} ${receipt(E5)} ${propose(E5, 80000, 6)} ${decide(E5, true, 80000, TOTAL)} ${propose(E5, 90000, 8)} ${decide(E5, false, 90000, 80000)}
-      ${accepted(E6)} ${declined(E6)} ${propose(E6, 80000, 7)}
-      ${accepted(E7)} ${declined(E7)} ${propose(E7, 80000, 7)}
+    // E1 liegt in 5 Tagen (Zeitregel, Nr. 148); alle anderen Aufträge haben den Termin begonnen, damit nur die Nachtragsregel (0059) entscheidet
+    const setup = `${BASE} ${accepted(E0, PAST)} ${accepted(E1)} ${declined(E1)} ${accepted(E2, PAST)} ${receipt(E2)} ${propose(E2, 80000, 6)}
+      ${accepted(E3, PAST)} ${receipt(E3)} ${propose(E3, 80000, 6)} ${decide(E3, true, 80000, TOTAL)}
+      ${accepted(E4, PAST)} ${declined(E4)} ${propose(E4, 80000, 7)} ${decide(E4, true, 80000, TOTAL)}`
+    const setup2 = `${BASE} ${accepted(E5, PAST)} ${receipt(E5)} ${propose(E5, 80000, 6)} ${decide(E5, true, 80000, TOTAL)} ${propose(E5, 90000, 8)} ${decide(E5, false, 90000, 80000)}
+      ${accepted(E6, PAST)} ${declined(E6)} ${propose(E6, 80000, 7)}
+      ${accepted(E7, PAST)} ${declined(E7)} ${propose(E7, 80000, 7)}
       ${accepted(B1)} ${accepted(B2, "now() - interval '2 hours'")} update public.service_requests set not_done_reported_at = now() where id = '${B1}';`
     const steps2: Step[] = [
       // die Firma sieht Revisionen nicht per RLS: die ID des offenen Nachtrags vorher als Eigentümer ablegen
@@ -120,7 +123,12 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
     const steps: Step[] = [
       { name: 'E2 abgelaufen', sql: expireOpen(E2) },
       { name: 'E0 kein Nachtrag', as: 'service_role', sql: callOut(E0, 'scope_impossible') },
-      { name: 'E1 abgelehnt', as: 'service_role', sql: callOut(E1, 'scope_impossible') },
+      // Nr. 148: derselbe abgelehnte Nachtrag gibt vor dem Termin keine Pauschale (E1, in 5 Tagen), ab Terminbeginn schon (E2, vor 2 Stunden)
+      { name: 'E1 abgelehnt, Termin in der Zukunft', as: 'service_role', sql: callOut(E1, 'scope_impossible') },
+      { name: 'E1 echt mit Belegen vor dem Termin', as: 'service_role', sql: cancelCall(E1, 'scope_impossible', CALL_OUT, RECEIPTS(E1)) },
+      { name: 'E1 vor dem Termin unverändert', sql: `=${status(E1)} || ':' || ${journal(E1)}` },
+      { name: 'eligible vor dem Termin', sql: `=private.call_out_eligible('${E1}', 'scope_impossible')` },
+      { name: 'eligible ab dem Termin', sql: `=private.call_out_eligible('${E2}', 'scope_impossible')` },
       { name: 'E1 anderer Grund', as: 'service_role', sql: callOut(E1, 'unavailable') },
       { name: 'E2 abgelaufen Basis', as: 'service_role', sql: callOut(E2, 'scope_impossible') },
       { name: 'E3 angenommen', as: 'service_role', sql: callOut(E3, 'scope_impossible') },
@@ -138,16 +146,20 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
       { name: 'alte Grundlage entfernt', as: 'service_role', sql: `perform * from public.cancel_by_partner_basis('${U.pa}', 'aal2', '${E1}')` },
       { name: 'private Prüffunktionen', as: 'service_role', sql: `perform private.call_out_eligible('${E1}', 'scope_impossible')` },
       // NULL-Sicherheit (Planfund M2): Grund NULL ist nie berechtigt
-      { name: 'eligible mit NULL', sql: `=private.call_out_eligible('${E1}', null)` },
-      { name: 'Pauschale mit NULL-Grund', sql: `perform private.partner_cancel_fee(${P('a')}, '${E1}', null, ${RECEIPTS(E1)})` },
+      { name: 'eligible mit NULL', sql: `=private.call_out_eligible('${E2}', null)` },
+      { name: 'Pauschale mit NULL-Grund', sql: `perform private.partner_cancel_fee(${P('a')}, '${E2}', null, ${RECEIPTS(E2)})` },
       // Firma in payment_hold darf wie bisher (geteiltes Tor)
       { name: 'Firma payment_hold', sql: `perform public.admin_set_partner_status('${U.adm}', ${P('a')}, 'payment_hold', 'Zahlungsverzug für den Test')` },
-      { name: 'Basis payment_hold', as: 'service_role', sql: callOut(E1, 'scope_impossible') },
+      { name: 'Basis payment_hold', as: 'service_role', sql: callOut(E2, 'scope_impossible') },
     ]
     const r = probes(setup, steps)
     expect(r['E2 abgelaufen']).toBe('ok')
     val(r['E0 kein Nachtrag'], '0')
-    val(r['E1 abgelehnt'], String(CALL_OUT))
+    val(r['E1 abgelehnt, Termin in der Zukunft'], '0')
+    err(r['E1 echt mit Belegen vor dem Termin'], 'call_out_not_allowed')
+    val(r['E1 vor dem Termin unverändert'], 'accepted:1')
+    val(r['eligible vor dem Termin'], 'false')
+    val(r['eligible ab dem Termin'], 'true')
     val(r['E1 anderer Grund'], '0')
     val(r['E2 abgelaufen Basis'], String(CALL_OUT))
     val(r['E3 angenommen'], '0')
@@ -169,15 +181,36 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
   })
 
   it('Vorschau schreibt nichts: Status, Journal, Outbox, Audit und Revisionen bleiben gleich', () => {
-    const [V1] = [newId()]
-    const setup = `${BASE} ${accepted(V1)} ${declined(V1)}`
+    const [V1, V2, V3, V4, V5] = [newId(), newId(), newId(), newId(), newId()]
+    // Grenze des Terminbeginns (Nr. 148): knapp davor keine Pauschale, knapp danach die Pauschale; ein abgelaufener Nachtrag berechtigt wie ein abgelehnter
+    const setup = `${BASE} ${accepted(V1)} ${declined(V1)} ${accepted(V2, "now() + interval '1 minute'")} ${declined(V2)} ${accepted(V3, "now() - interval '1 minute'")} ${declined(V3)}
+      ${accepted(V4, PAST)} ${receipt(V4)} ${propose(V4, 80000, 6)} ${accepted(V5)} ${declined(V5)}`
     const steps: Step[] = [
+      { name: 'V2 knapp vor dem Termin', as: 'service_role', sql: callOut(V2, 'scope_impossible') },
+      { name: 'V3 knapp nach dem Termin', as: 'service_role', sql: callOut(V3, 'scope_impossible') },
+      { name: 'V4 offener Nachtrag', as: 'service_role', sql: callOut(V4, 'scope_impossible') },
+      { name: 'V4 abgelaufen', sql: expireOpen(V4) },
+      { name: 'V4 nach Ablauf', as: 'service_role', sql: callOut(V4, 'scope_impossible') },
+      // vor dem Termin ohne Belege: Absage gelingt mit 0, keine Pauschale, Folgeanfrage, my_cancel_info 0
+      { name: 'V5 Absage ohne Pauschale', as: 'service_role', sql: cancelCall(V5, 'scope_impossible', 0, null) },
+      { name: 'V5 Journal ohne Pauschale', sql: `=${journal(V5, `kind = 'cancellation_fee'`)}` },
+      { name: 'V5 Folgeanfrage', sql: `=${count(`public.service_requests where reissued_from = '${V5}'`)}` },
+      { name: 'V5 my_cancel_info', as: 'authenticated', claims: A1(U.cust), sql: `=public.my_cancel_info('${V5}')` },
       { name: 'vorher', sql: snapshot(V1) },
       { name: 'Vorschau', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', V1, 'scope_impossible')}` },
       { name: 'Vorschau Fehler', as: 'service_role', sql: `perform * from ${basisOf(U.pa, 'aal2', V1, 'bogus')}` },
       { name: 'nachher', sql: snapshot(V1) },
     ]
     const r = probes(setup, steps)
+    val(r['V2 knapp vor dem Termin'], '0')
+    val(r['V3 knapp nach dem Termin'], String(CALL_OUT))
+    val(r['V4 offener Nachtrag'], '0')
+    expect(r['V4 abgelaufen']).toBe('ok')
+    val(r['V4 nach Ablauf'], String(CALL_OUT))
+    expect(r['V5 Absage ohne Pauschale']).toBe('ok')
+    val(r['V5 Journal ohne Pauschale'], '0')
+    val(r['V5 Folgeanfrage'], '1')
+    val(r['V5 my_cancel_info'], '0')
     expect(r['Vorschau']).toBe('ok')
     err(r['Vorschau Fehler'], 'reason_required')
     expect(r['nachher']).toBe(r['vorher'])
@@ -185,7 +218,7 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
 
   it('my_cancel_info: nur der Kunde, nur nach Firmen-Storno, nur der Betrag der Pauschale', () => {
     const [S1, S2, S3] = [newId(), newId(), newId()]
-    const setup = `${BASE} ${accepted(S1)} ${declined(S1)} ${accepted(S2)} ${accepted(S3)}`
+    const setup = `${BASE} ${accepted(S1, PAST)} ${declined(S1)} ${accepted(S2)} ${accepted(S3)}`
     const info = (req: string) => `=public.my_cancel_info('${req}')`
     const steps: Step[] = [
       { name: 'Info vor Storno', as: 'authenticated', claims: A1(U.cust), sql: info(S1) },

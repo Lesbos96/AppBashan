@@ -334,7 +334,7 @@ describe('W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (
 })
 
 describe('W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer', () => {
-  live('accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact bleibt im Zugriffsfenster (Entscheidung 104, S9i7-10 c)', async () => {
+  live('accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt (Nr. 154)', async () => {
     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W4, partnerA), revisionId: rev1(W4), shownPayoutCents: BOOKED.payout })).status).toBe(200)
     expect(step('W4', '1 accept', W4).status).toBe('accepted')
     expect((await fn('cancel-customer', null, { requestId: W4, shownFeeCents: 0 })).status).toBe(401)
@@ -350,10 +350,10 @@ describe('W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 T
     expect(s.status).toBe('cancelled_by_customer')
     expect(kinds(s)).toEqual(['booking+', 'cancellation-'])
     expect(sum(s.journal)).toEqual(ZERO)
-    // 0060 sperrt job_contact nur nach Storno durch die Firma; nach Storno durch den Kunden bleibt das Zugriffsfenster (Entscheidung 104)
+    // 0065 (Nr. 154): auch nach kostenlosem Storno durch den Kunden ist job_contact sofort gesperrt
     const c = await contact(pa.aal2, W4)
-    expect(c.error).toBeNull()
-    expect(c.data).toHaveLength(1)
+    expect(c.error?.message).toBe('not_assigned')
+    expect(c.data).toBeNull()
   })
 })
 

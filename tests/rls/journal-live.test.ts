@@ -77,8 +77,9 @@ beforeAll(async () => {
   const c80 = splitChange(80000, rates, s0)
   const terms = '"terms":{"cancel_free_hours":48,"cancel_late_percent":50,"cancel_full_percent":100,"cancel_full_days_before":0,"call_out_fee_cents":6900,"termsHash":"x"}'
   const inputs = JSON.stringify({ ...moveInputs, service: 'move' })
-  const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
-    values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, now() + interval '14 days', now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
+  // Nr. 148 (0065): die Pauschale (J4) gibt es erst ab Terminbeginn; J1 und J2 liegen in 14 Tagen
+  const job = (id: string, termin = "now() + interval '14 days'") => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
+    values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, ${termin}, now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
     insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
     values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${pm.pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
@@ -94,7 +95,7 @@ beforeAll(async () => {
       ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.fsv}, ${f.vrv});`
   const D21 = { districts: 'array[21]::smallint[]' }
   ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${firm(pp.id, 'p', 'pending', adm, D21)} ${firm(pr.id, 'r', 'rejected', adm, D21)}
-    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J4)} ${change(J2, true, 'd')} ${change(J4, false, 'c')} commit;`)
+    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J4, "now() - interval '2 hours'")} ${change(J2, true, 'd')} ${change(J4, false, 'c')} commit;`)
   partnerA = String(ownerSql(`select partner_id from public.partner_members where user_id = '${pa.id}'`)[0]?.partner_id ?? '')
   // J1: Storno ohne Pauschale; J2: angenommener Nachtrag, dann Storno ohne Pauschale; J4: abgelehnter Nachtrag, Storno mit Pauschale und Beleg
   expect((await fn('cancel-partner', pa.jwt2, { requestId: J1, reason: 'unavailable', shownCallOutCents: 0 })).status).toBe(200)

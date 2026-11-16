@@ -301,8 +301,9 @@ async function jobCall<T>(fn: 'start_job' | 'complete_job' | 'job_contact', requ
 export const startJob = (requestId: string): Promise<void> => jobCall('start_job', requestId)
 export const finishJob = (requestId: string): Promise<void> => jobCall('complete_job', requestId)
 
-/** Kontakt und Adresse sind nach einer Absage der Firma ohne fällige Pauschale gesperrt (Migration 0060); die Datenbank entscheidet, die Anzeige folgt ihrem Betrag. */
-export const contactLocked = (j: Pick<Job, 'status' | 'totalCents'>): boolean => j.status === 'cancelled_by_partner' && j.totalCents === 0
+/** Kontakt und Adresse sind nach jedem Storno ohne Pauschale gesperrt, durch die Firma oder den Kunden (Migration 0065); die Datenbank entscheidet, die Anzeige folgt ihrem Betrag. */
+export const contactLocked = (j: Pick<Job, 'status' | 'totalCents'>): boolean =>
+  (j.status === 'cancelled_by_partner' || j.status === 'cancelled_by_customer') && j.totalCents === 0
 
 export type Contact = { name: string; phone: string; email: string; stairsDoor: string | null; fromAddress: string | null; toAddress: string | null }
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0

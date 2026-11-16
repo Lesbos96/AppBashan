@@ -13,7 +13,7 @@ import { tryAal2User, type Aal2User } from '../support/totp.ts'
 
 const adm = newId()
 const BOOKED = 68961
-const [J1, J2, J3, J4] = [newId(), newId(), newId(), newId()]
+const [J1, J2, J3, J4, J5] = [newId(), newId(), newId(), newId(), newId()]
 let rates: { tiers: FeeTier[]; vatRate: number } = { tiers: [], vatRate: 0 }
 let skipReason: string | null = null
 let pa: Aal2User, pb: Aal2User, pp: Aal2User, pr: Aal2User, ps: Aal2User
@@ -71,8 +71,9 @@ beforeAll(async () => {
   const c80 = splitChange(80000, rates, s0)
   const terms = '"terms":{"cancel_free_hours":48,"cancel_late_percent":50,"cancel_full_percent":100,"cancel_full_days_before":0,"call_out_fee_cents":6900,"termsHash":"x"}'
   const inputs = JSON.stringify({ ...moveInputs, service: 'move' })
-  const job = (id: string) => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
-    values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, now() + interval '14 days', now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
+  // Nr. 148 (0065): die Pauschale (J4) gibt es erst ab Terminbeginn; alle anderen Aufträge liegen in 14 Tagen
+  const job = (id: string, termin = "now() + interval '14 days'") => `insert into public.service_requests (id, customer_id, client_ref, service, status, district, termin_at, accept_deadline, route)
+    values ('${id}', '${cust.id}', gen_random_uuid(), 'move', 'requested', 21, ${termin}, now() + interval '1 day', '{"region":"vienna","outsideKm":0,"driveHours":0}');
     insert into public.price_revisions (request_id, n, source, inputs, snapshot, price_version, total_cents, low_cents, high_cents)
     values ('${id}', 1, 'submit', '${inputs}', '{"kind":"price","totalCents":${BOOKED},"lowCents":${BOOKED},"highCents":${BOOKED},"lines":[],${terms}}', ${pv}, ${BOOKED}, ${BOOKED}, ${BOOKED});
     update public.service_requests set current_revision = (select id from public.price_revisions where request_id = '${id}' and n = 1) where id = '${id}';
@@ -81,10 +82,15 @@ beforeAll(async () => {
       ${s0.payoutCents}, ${f.vr}, ${s0.feeCents}, ${s0.feeNetCents}, ${s0.feeVatCents}, ${s0.payoutCents}, ${f.fsv}, ${f.vrv});`
   const D21 = { districts: 'array[21]::smallint[]' }
   ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${firm(pp.id, 'p', 'pending', adm, D21)} ${firm(pr.id, 'r', 'rejected', adm, D21)}
-    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J3)} ${job(J4)}
+    ${firm(ps.id, 's', 'suspended', adm, D21)} ${job(J1)} ${job(J2)} ${job(J3)} ${job(J4, "now() - interval '2 hours'")} ${job(J5)}
     insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
     values ('${J3}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now()),
-           ('${J4}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('c', 64), now());
+           ('${J4}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('c', 64), now()),
+           ('${J5}', 'receipt', current_setting('app.p_a')::uuid, 'ready', gen_random_uuid() || '.jpg', repeat('d', 64), now());
+    select public.propose_change('${pa.id}', 'aal2', '${J5}', (select current_revision from public.service_requests where id = '${J5}'), '{"hours":6}'::jsonb, 80000,
+      array(select id from public.job_photos where request_id = '${J5}' and kind = 'receipt'));
+    select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${J5}' and status = 'proposed'), false, 80000, ${f.vr},
+      ${c80.feeCents}, ${c80.feeNetCents}, ${c80.feeVatCents}, ${c80.payoutCents}, ${f.fsv}, ${f.vrv});
     select public.propose_change('${pa.id}', 'aal2', '${J4}', (select current_revision from public.service_requests where id = '${J4}'), '{"hours":6}'::jsonb, 80000,
       array(select id from public.job_photos where request_id = '${J4}' and kind = 'receipt'));
     select public.decide_change('${cust.id}', (select id from public.price_revisions where request_id = '${J4}' and status = 'proposed'), false, 80000, ${f.vr},
@@ -152,6 +158,16 @@ describe('cancel-partner live (Dev, echte Tokens)', () => {
     const mine = await cust.db.rpc('my_cancel_info', { p_request: J4 })
     expect(mine.data, JSON.stringify(mine.error)).toBe(6900)
     expect((await cust2.db.rpc('my_cancel_info', { p_request: J4 })).error).not.toBeNull()
+  })
+  live('Nr. 148: vor dem Termin (J5, in 14 Tagen, Nachtrag abgelehnt) zeigt die Vorschau 0, ein Aufruf mit Belegen und 6.900 gibt 409, nichts geschrieben', async () => {
+    const base = { requestId: J5, reason: 'scope_impossible' }
+    expect(await fn('cancel-partner', pa.jwt2, { ...base, preview: true })).toEqual({ status: 200, body: { callOutCents: 0, payoutCents: 0 } })
+    const photos = ((await service.from('job_photos').select('id').eq('request_id', J5).eq('kind', 'receipt')).data ?? []).map((p) => p.id)
+    expect(photos).toHaveLength(1)
+    const before = await state(J5)
+    expect(await fn('cancel-partner', pa.jwt2, { ...base, photoIds: photos, shownCallOutCents: 6900 })).toEqual({ status: 409, body: { error: 'amount_changed' } })
+    expect(await state(J5)).toEqual(before)
+    expect(before.status).toBe('accepted')
   })
 })
 

@@ -82,10 +82,13 @@ describe('cancelAsPartner', () => {
 })
 
 describe('contactLocked', () => {
-  it('nur nach Absage der Firma ohne Pauschale', () => {
+  it('nach jedem Storno ohne Pauschale, durch die Firma oder den Kunden (Nr. 154)', () => {
     expect(contactLocked({ status: 'cancelled_by_partner', totalCents: 0 })).toBe(true)
     expect(contactLocked({ status: 'cancelled_by_partner', totalCents: 6900 })).toBe(false)
-    expect(contactLocked({ status: 'cancelled_by_customer', totalCents: 0 })).toBe(false)
+    expect(contactLocked({ status: 'cancelled_by_customer', totalCents: 0 })).toBe(true)
+    expect(contactLocked({ status: 'cancelled_by_customer', totalCents: 6900 })).toBe(false)
+    expect(contactLocked({ status: 'cancelled_by_customer', totalCents: null })).toBe(false)
+    expect(contactLocked({ status: 'completed', totalCents: 0 })).toBe(false)
     expect(contactLocked({ status: 'accepted', totalCents: 0 })).toBe(false)
   })
 })

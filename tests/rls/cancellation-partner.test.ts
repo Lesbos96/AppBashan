@@ -228,9 +228,9 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
   it('scope_impossible: Pauschale nur mit Beleg nach abgelehntem Nachtrag, keine Weitervermittlung', () => {
     const [S1, S2, S3, S5, S6, S7] = [newId(), newId(), newId(), newId(), newId(), newId()]
     const FIVE = "now() + interval '5 days'"
-    const setup = `${BASE} ${accepted(S6, "now() - interval '2 hours'", 'b')} ${accepted(S7, FIVE)} ${accepted(S1, FIVE)} ${receipt(S1)} ${propose(S1)} ${decide(S1, false)}
-      ${accepted(S2, FIVE)} ${receipt(S2)} ${accepted(S3, FIVE)}
-      ${accepted(S5, FIVE)} ${receipt(S5)} ${propose(S5)} ${decide(S5, false)}
+    const setup = `${BASE} ${accepted(S6, "now() - interval '2 hours'", 'b')} ${accepted(S7, FIVE)} ${accepted(S1, "now() - interval '2 hours'")} ${receipt(S1)} ${propose(S1)} ${decide(S1, false)}
+      ${accepted(S2, "now() - interval '2 hours'")} ${receipt(S2)} ${accepted(S3, FIVE)}
+      ${accepted(S5, "now() - interval '2 hours'")} ${receipt(S5)} ${propose(S5)} ${decide(S5, false)}
       insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
         values ('${S5}', 'receipt', ${P('b')}, 'ready', gen_random_uuid() || '.jpg', repeat('c', 64), now());`
     const steps: Step[] = [

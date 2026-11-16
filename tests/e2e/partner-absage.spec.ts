@@ -51,6 +51,14 @@ test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach ge
   expect(real(errors)).toEqual([])
 })
 
+test('Storno durch den Kunden ohne Pauschale: Kontakt gesperrt (Nr. 154)', async ({ page }) => {
+  const errors = collectErrors(page)
+  await openJobs(page, { myJobs: [job({ ended_at: '2026-12-01T12:00:00+00:00', ended_reason: 'cancelled_by_customer', status: 'cancelled_by_customer', total_cents: 0 })], changes: [] })
+  await expect(card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }), 'Kundenstorno ohne Pauschale').toHaveCount(0)
+  await expect(card(page)).toContainText('Kontakt und Adresse sind gesperrt')
+  expect(real(errors)).toEqual([])
+})
+
 test('mit Pauschale: 69,00 € / Gebühr 10,35 € / Auszahlung 58,65 €, ein Beleg nötig, gesendet wird die gezeigte Pauschale', { tag: '@breit' }, async ({ page }) => {
   const errors = collectErrors(page)
   const { jobs } = await open(page)
