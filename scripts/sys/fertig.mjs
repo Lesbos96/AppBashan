@@ -76,12 +76,13 @@ export function pruefeFertig(c) {
       // Der erste grüne Lauf zählt nach Inhalt (egal unter welchem Pfad), der rote nur unter dem Endpfad: eine Umbenennung braucht ihr eigenes Rot,
       // und ein Rot, das nur durch eine später geänderte Erwartung entstand, passt nicht zum Endstand.
       for (const { pfad: t, sha256: endSha } of c.neueRlsTests) {
-        // sys1-3: ohne Zusatzargumente; ein Schalter (im Log-Kopf erfasst, sonst logOk false) ist beim Rot erlaubt (die Abnahme beurteilt ihn), beim Grün nicht.
-        const lauf = c.runs
-          .filter((r) => r.schritt === c.schritt && r.logOk && r.dateiSha && endSha && r.dateiSha === endSha && (r.args ?? []).length === 0 && Array.isArray(r.schalter) && (r.exit !== 0 || r.schalter.length === 0))
-          .sort((a, b) => a.nr - b.nr)
+        // sys1-3: das erste Grün bestimmt sich wie in sys1 über alle Läufe der Endfassung (auch mit Argumenten oder Schaltern: sonst ginge Grün, Änderung, Rot, Grün durch).
+        // Das Rot davor braucht leere Argumente (ein Schalter, im Log-Kopf erfasst, ist erlaubt, die Abnahme beurteilt ihn); danach muss ein Grün ohne Argumente und ohne Schalter folgen.
+        const lauf = c.runs.filter((r) => r.schritt === c.schritt && r.logOk && r.dateiSha && endSha && r.dateiSha === endSha).sort((a, b) => a.nr - b.nr)
         const ersterGruen = lauf.find((r) => r.exit === 0)
-        if (!ersterGruen || !lauf.some((r) => r.ziel === t && r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen (beide mit der Datei des Endstands, SHA-256 ${endSha || 'fehlt'})`)
+        const rot = ersterGruen && lauf.find((r) => r.ziel === t && r.exit !== 0 && r.nr < ersterGruen.nr && (r.args ?? []).length === 0 && Array.isArray(r.schalter))
+        const zaehlt = rot && lauf.some((r) => r.exit === 0 && r.nr > rot.nr && (r.args ?? []).length === 0 && Array.isArray(r.schalter) && r.schalter.length === 0)
+        if (!rot || !zaehlt) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen (beide mit der Datei des Endstands, SHA-256 ${endSha || 'fehlt'})`)
       }
     }
     // Lösch-Gate (zweite Ebene): geänderte Register-Skripte brauchen eine Freigabe für den neuen SHA-256, Freigaben bleiben unverändert.

@@ -120,26 +120,42 @@ const norm = (p) => p.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase()
 const WURZEL_K = resolve(WURZEL).replace(/\\/g, '/').toLowerCase()
 const PROOF_K = `${WURZEL_K}/tmp/proof`
 const absolut = (wort, basis) => resolve(basis, wort.replace(/\\/g, '/').replace(/^\/([a-z])(?=\/|$)/i, '$1:')).replace(/\\/g, '/').toLowerCase()
-const globRegex = (p) => new RegExp(`^${p.replace(/[.+^$()|[\]\\{}]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`)
-function trifftProof(k, basis) {
-  const w = woerter(k).slice(1)
-  const iZiel = w.findIndex((x) => /^-(destination|newname)$/i.test(x))
-  // Beim Verschieben zählen nur die Quellen: das Ziel ist das Wort nach -Destination, sonst das letzte.
-  const quellen = /^(mv|move|mi|move-item|ren|rename-item|git\s+mv)\b/i.test(k) ? (iZiel >= 0 ? w.filter((_, i) => i !== iZiel + 1) : w.slice(0, -1)) : w
+const PROOF_S = PROOF_K.split('/').filter(Boolean)
+const segRegex = (s) => new RegExp(`^${s.replace(/\[[^\]]*\]/g, '?').replace(/[.+^$()|\\{}[\]]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`)
+// Segmentweise gegen tmp/proof vergleichen: trifft, wenn jedes der ersten min(Tiefe des Worts, Tiefe von tmp/proof) Segmente passt (Elternordner, tmp/proof selbst, alles darunter; Platzhalter in jedem Segment).
+const trifftSegmente = (p) => {
+  const s = p.split('/').filter(Boolean)
+  return s.slice(0, PROOF_S.length).every((t, i) => (/[*?[]/.test(t) ? segRegex(t).test(PROOF_S[i]) : t === PROOF_S[i]))
+}
+const zielParam = (x) => {
+  const n = x.toLowerCase().replace(/[:=].*$/, '')
+  return n === '-t' || n === '--target-directory' || (n.length >= 3 && ('-destination'.startsWith(n) || '-newname'.startsWith(n)))
+}
+// bases: Arbeitsordner, die der Befehl bis hier haben kann (Wurzel und jedes Ziel eines cd), jedes Wort wird gegen alle aufgelöst.
+function trifftProof(k, bases) {
+  const w = []
+  const w0 = woerter(k).slice(1)
+  for (let i = 0; i < w0.length; i++) {
+    if (/^(\d|&)?>{1,2}$/.test(w0[i])) i++ // Umleitung samt Ziel
+    else if (!/^(\d|&)?>{1,2}\S/.test(w0[i])) w.push(w0[i])
+  }
+  // Beim Verschieben zählen nur die Quellen: das Ziel ist der Wert des Ziel-Parameters (-t, --target-directory, -Destination, -NewName, auch abgekürzt), sonst das letzte Wort.
+  let quellen = w
+  if (/^(mv|move|mi|move-item|ren|rename-item|git\s+mv)\b/i.test(k)) {
+    const iz = w.findIndex(zielParam)
+    quellen = iz >= 0 ? w.filter((x, i) => i !== iz && !(i === iz + 1 && !/[:=]/.test(w[iz]))) : w.slice(0, -1)
+  }
   return quellen
     .filter((x) => !/^[-/]/.test(x) || /^\/\S*[\\/]/.test(x))
     .flatMap((x) => x.split(','))
-    .map((x) => x.replace(/[{}]/g, ''))
+    .map((x) => x.replace(/["'{}]/g, ''))
     .filter(Boolean)
-    .some((x) => {
-      const p = absolut(x, basis)
-      if (p === `${PROOF_K}/lauf.lock`) return false
-      if (!/[*?]/.test(p)) return p === PROOF_K || p.startsWith(`${PROOF_K}/`) || PROOF_K.startsWith(`${p.replace(/\/$/, '')}/`) // Nachweise darin, sie selbst oder ein Elternordner
-      const fest = p.slice(0, p.search(/[*?]/))
-      if (fest.startsWith(`${PROOF_K}/`)) return true // Platzhalter unter tmp/proof
-      const re = globRegex(p)
-      return [PROOF_K, ...[...PROOF_K.matchAll(/\//g)].map((m) => PROOF_K.slice(0, m.index))].some((e) => re.test(e)) // Platzhalter trifft tmp/proof oder einen Elternordner
-    })
+    .some((x) =>
+      [...bases].some((b) => {
+        const p = absolut(x, b)
+        return p !== `${PROOF_K}/lauf.lock` && trifftSegmente(p)
+      }),
+    )
 }
 // Innentext verschachtelter Shells grob entquotet (alle Anführungszeichen und Escapes entfernt) neu prüfen, statt ihn genau zu parsen.
 const grob = (t) => t.trim().replace(/\\(["'])/g, '$1').replace(/["'`]/g, '')
@@ -318,13 +334,16 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
     const g = entscheideBefehl(inner, tiefe + 1)
     if (g) return g
   }
-  let basis = WURZEL_K // Arbeitsordner für relative Wörter; `cd` im selben Befehl verschiebt ihn (sys1-4)
+  const bases = new Set([WURZEL_K]) // Arbeitsordner für relative Wörter; jedes `cd` im selben Befehl fügt einen hinzu, keiner fällt weg (Unterschale, popd, gescheitertes cd; sys1-4)
   for (const { roh, kahl, trenner } of segmente(befehl)) {
     const seg = roh.trim()
     if (!seg) continue
     const k = kern(seg)
     const kk = kern(kahl.trim())
-    if (/^(cd|pushd|chdir|set-location|sl)\s/i.test(k)) basis = absolut(woerter(k).slice(1).find((x) => !/^\/[a-z]$|^-/i.test(x)) ?? '.', basis)
+    if (/^(cd|pushd|chdir|set-location|sl|push-location)\s/i.test(k)) {
+      const ziel = woerter(k).slice(1).find((x) => !/^\/[a-z]$|^-/i.test(x)) ?? '.'
+      for (const b of [...bases]) bases.add(absolut(ziel, b))
+    }
     if (/^(vitest|playwright\s+test)\b/.test(k) || /^npm\s+(t|tst|test)(\s|$)/.test(k) || /^npm\s+(?:run|run-script|rum|urn)\s+(check|test|test:\S+|shots(:all)?)(\s|$)/.test(k)) {
       return 'Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.'
     }
@@ -410,7 +429,7 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
       if (betrifft.some((x) => (x.includes('/') ? /(^|\/)tmp\/proof(\/|$)/.test(x) : SKRIPT_DATEI.test(x) || BERATER_DATEI.test(x) || /abnahme|freigabe|runs\.jsonl|^\d{3}-/.test(x)))) {
         return 'Nachweise unter tmp/proof (Abnahmen, Freigaben, Läufe, Logs) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
       }
-      if (trifftProof(k, basis)) return 'Nachweise unter tmp/proof und ihre Elternordner (tmp, Projektwurzel) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
+      if (trifftProof(k, bases)) return 'Nachweise unter tmp/proof und ihre Elternordner (tmp, Projektwurzel) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
     }
   }
   return null

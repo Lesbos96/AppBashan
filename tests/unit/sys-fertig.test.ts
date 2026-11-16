@@ -211,6 +211,15 @@ describe('Merge-Gate: pruefeFertig', () => {
       expect(pruefeFertig(rls(rot(), gruen({ schalter: ['MV_X=1'] }))).join()).toMatch(/kein roter Lauf/)
       expect(pruefeFertig(rls(rot(), gruen({ args: ['-t', 'x'] }))).join()).toMatch(/kein roter Lauf/)
     })
+    it('sys2-Abnahme M5: Grün mit Argument oder Schalter ist trotzdem das erste Grün: Grün, Änderung, Rot, Grün geht nicht durch', () => {
+      // Endfassung grün mit Argument (nr 1), dann Rot (nr 2), dann ein zählendes Grün (nr 3): das Rot kommt nach dem ersten Grün
+      expect(pruefeFertig(rls(gruen({ nr: 1, args: ['-t', 'x'] }), rot({ nr: 2 }), gruen({ nr: 3 }))).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(gruen({ nr: 1, schalter: ['MV_X=1'] }), rot({ nr: 2 }), gruen({ nr: 3 }))).join()).toMatch(/kein roter Lauf/)
+      // Rot, dann nur ein Grün mit Argument: es fehlt das zählende Grün
+      expect(pruefeFertig(rls(rot(), gruen({ args: ['-t', 'x'] }))).join()).toMatch(/kein roter Lauf/)
+      // Rot, Grün mit Argument, dann zählendes Grün: gültig
+      expect(pruefeFertig(rls(rot(), gruen({ nr: 2, args: ['-t', 'x'] }), gruen({ nr: 3 })))).toEqual([])
+    })
     it('Log nicht gültig (logOk false) zählt nicht', () => {
       expect(pruefeFertig(rls(rot({ logOk: false }), gruen())).join()).toMatch(/kein roter Lauf/)
     })

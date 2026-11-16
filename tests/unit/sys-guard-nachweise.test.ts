@@ -74,8 +74,25 @@ describe('Guard: Löschen und Verschieben unter tmp/proof', () => {
     'cd tmp/proof && rm -rf sys1',
     'cd tmp/proof/sys1; rm *.md',
     'Set-Location tmp; Remove-Item proof -Recurse',
+    // Abnahme sys2 Runde 1 (M1 bis M4): Platzhalter in Zwischenordnern, Arbeitsordner-Menge, Ziel-Parameter, Anführungszeichen und Zeichenklassen im Wort
+    'rm tmp/*/*.log',
+    'rm tmp/*/x.png',
+    'rm -rf tmp/*/sys2',
+    'rm tmp/pro*/sys2-abnahme-1.md',
+    'mv -t x tmp',
+    'mv --target-directory=x tmp',
+    'Move-Item -Dest x tmp',
+    'Move-Item -Destination:x tmp',
+    'Move-Item tmp -Destination x',
+    'rm -rf tmp/"proof"',
+    "rm -rf tm'p'",
+    'rm -rf tm[p]',
+    'rm -rf tmp/proo[f]',
+    '(cd src && ls); rm -rf tmp',
+    'cd gibtsnicht; rm -rf tmp',
+    'Push-Location tmp; Remove-Item proof -Recurse',
   ])('sys1-4 verweigert: %s', (befehl) => {
-    const r = bash(befehl, /^(Remove-Item|ri |Set-Location)/i.test(befehl) ? 'PowerShell' : 'Bash')
+    const r = bash(befehl, /^(Remove-Item|ri |Set-Location|Move-Item|Push-Location)/i.test(befehl) ? 'PowerShell' : 'Bash')
     expect(r.exit, r.stderr).toBe(2)
     expect(r.stderr).toMatch(/tmp\/proof|Nachweise/)
   })
@@ -92,8 +109,14 @@ describe('Guard: Löschen und Verschieben unter tmp/proof', () => {
     'cd tmp/shots && rm a.png',
     'cd tmp && rm -rf shots',
     'Remove-Item -Path tmp\\shots -Recurse',
+    'mv x.png . 2>/dev/null',
+    'Move-Item a.png -Destination .',
+    'Move-Item a.png -Destination:.',
+    'mv -t tmp/shots a.png',
+    'mv --target-directory=tmp/shots a.png',
+    'rm tmp/*.png',
   ])('sys1-4 erlaubt: %s', (befehl) => {
-    const r = bash(befehl, /^Remove-Item/i.test(befehl) ? 'PowerShell' : 'Bash')
+    const r = bash(befehl, /^(Remove-Item|Move-Item)/i.test(befehl) ? 'PowerShell' : 'Bash')
     expect(r.exit, r.stderr).toBe(0)
   })
 
