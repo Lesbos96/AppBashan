@@ -235,10 +235,10 @@ describe('Kunden setzen nur „zurückgezogen"', () => {
     expect(await requestStatus(requestB)).toBe('requested')
   })
 
-  it('eigene Anfrage zurückziehen, danach nicht wieder öffnen', async () => {
+  it('eigene Anfrage zurückziehen, danach nicht wieder öffnen; die Wiederholung liefert den Status (fh1, 0069)', async () => {
     expect(must(await a.db.rpc('withdraw', { p_request: requestA }))).toBe('withdrawn')
     expect((await a.db.from('service_requests').update({ status: 'requested' }).eq('id', requestA)).error?.code).toBe('42501')
-    expect((await a.db.rpc('withdraw', { p_request: requestA })).error?.message).toBe('invalid_transition')
+    expect(must(await a.db.rpc('withdraw', { p_request: requestA }))).toBe('withdrawn')
     expect(await requestStatus(requestA)).toBe('withdrawn')
   })
 

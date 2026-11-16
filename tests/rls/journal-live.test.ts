@@ -177,7 +177,14 @@ describe('my_commissions für den Journal-Export (Dev, echte Tokens)', () => {
 
   live('Abgleich mit export_commissions (admin): dieselben Zeilen und Beträge', async () => {
     const mineRows = (await appCall(pa.aal2)).data ?? []
-    const exp = await (service.rpc('export_commissions', { p_actor: adm, p_month: `${month}-01` }) as unknown as Promise<{ data: R[] | null }>)
+    // PostgREST liefert höchstens 1000 Zeilen je Antwort; auf Dev sammeln sich im Monat mehr Journalzeilen (Testreste), deshalb seitenweise lesen (fh1)
+    const exp: { data: R[] } = { data: [] }
+    for (let from = 0; ; from += 1000) {
+      const page = await (service.rpc('export_commissions', { p_actor: adm, p_month: `${month}-01` }).range(from, from + 999) as unknown as Promise<{ data: R[] | null; error: { message: string } | null }>)
+      expect(page.error, 'export_commissions').toBeNull()
+      exp.data.push(...(page.data ?? []))
+      if ((page.data ?? []).length < 1000) break
+    }
     const key = (x: R) => `${x.entry_id}|${x.kind}|${x.reverses_entry_id}|${x.total_cents}|${x.fee_cents}|${x.fee_net_cents}|${x.fee_vat_cents}|${x.payout_cents}`
     const own = (exp.data ?? []).filter((x) => OURS.includes(x.request_id))
     expect(mineRows.map(key).sort()).toEqual(own.map(key).sort())

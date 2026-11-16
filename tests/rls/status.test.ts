@@ -86,13 +86,14 @@ describe('Status nur über Funktionen', () => {
     expect((await a.db.from('service_requests').insert({ customer_id: a.id, service: 'move' } as never)).error?.code).toBe(DENIED)
   })
 
-  it('withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal invalid_transition, fremd not_found, anon 42501', async () => {
+  it('withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal ok ohne zweites Ereignis (fh1, 0069), fremd not_found, anon 42501', async () => {
     const id = await makeRequest(a.id)
     expect(must(await a.db.rpc('withdraw', { p_request: id }))).toBe('withdrawn')
     expect(must(await service.from('service_requests').select('status').eq('id', id).single()).status).toBe('withdrawn')
     const events = ownerSql(`select from_status, to_status, actor_id, actor_role from public.status_events where request_id = '${id}'`)
     expect(events).toEqual([{ from_status: 'requested', to_status: 'withdrawn', actor_id: a.id, actor_role: 'customer' }])
-    expect((await a.db.rpc('withdraw', { p_request: id })).error).toMatchObject({ code: 'P0001', message: 'invalid_transition' })
+    expect(must(await a.db.rpc('withdraw', { p_request: id }))).toBe('withdrawn')
+    expect(ownerSql(`select to_status from public.status_events where request_id = '${id}'`)).toEqual([{ to_status: 'withdrawn' }])
     const other = await makeRequest(b.id)
     expect((await a.db.rpc('withdraw', { p_request: other })).error).toMatchObject({ code: 'P0001', message: 'not_found' })
     expect((await a.db.rpc('withdraw', { p_request: '99999999-9999-4999-8999-999999999999' })).error).toMatchObject({ message: 'not_found' })

@@ -420,7 +420,7 @@ describe('Ablehnen, Zurückziehen, Ablauf', () => {
     expect(r['R2 offered (b gültig)']).toBe('= offered')
     ok(r['withdraw b'])
     expect(r['R2 awaiting_offer']).toBe('= awaiting_offer')
-    err(r['withdraw nochmal'], 'invalid_transition')
+    ok(r['withdraw nochmal']) // fh1 (0069): Wiederholung der Firma nach Erfolg ist ok, ohne Wirkung (tests/rls/replay-rest.test.ts)
     ok(r['Kunde zieht zurück'])
     rows(r['R3 Angebote offen'], 0)
     expect(r['R3 Angebot rejected']).toBe('= rejected')

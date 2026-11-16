@@ -364,7 +364,7 @@ describe('Rückzug, Ablauf, Auftragsende, Firma gesperrt', () => {
     ok(r['Rückzug'])
     expect(r['Status withdrawn']).toBe('= withdrawn')
     rows(r['Outbox withdrawn'], 1)
-    err(r['zweiter Rückzug'], 'invalid_transition')
+    ok(r['zweiter Rückzug']) // fh1 (0069): Wiederholung derselben Person nach Erfolg ist ok, ohne zweite Outbox-Zeile und ohne zweiten Audit (tests/rls/replay-rest.test.ts)
     err(r['Entscheidung nach Rückzug'], 'invalid_transition')
     ok(r['Frist vorbei'])
     err(r['Entscheidung nach Frist'], 'change_not_valid')

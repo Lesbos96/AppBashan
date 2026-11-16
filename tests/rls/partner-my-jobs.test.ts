@@ -218,10 +218,10 @@ describe('Kontakt, Start und Abschluss', () => {
     expect(r['vorher']).toBe(`= accepted:true:68961:${s.payoutCents}:false`)
     expect(r['start']).toBe('ok')
     expect(r['läuft']).toBe(`= in_progress:false:68961:${s.payoutCents}:false`)
-    err(r['start doppelt'], 'invalid_transition')
+    expect(r['start doppelt']).toBe('ok') // fh1 (0069): Wiederholung derselben Person nach Erfolg ist ok, ohne Wirkung (tests/rls/replay-rest.test.ts)
     expect(r['abschluss']).toBe('ok')
     expect(r['beendet']).toBe(`= completed:false:68961:${s.payoutCents}:true`)
-    err(r['abschluss doppelt'], 'not_found')
+    expect(r['abschluss doppelt']).toBe('ok') // fh1 (0069), wie start doppelt
     err(r['start nach Abschluss'], 'not_assigned')
     expect(r['Zukunft unberührt']).toBe(`= accepted:false:68961:${s.payoutCents}:false`)
   })
