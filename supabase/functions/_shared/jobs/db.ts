@@ -26,8 +26,13 @@ export async function getUser(db: Db, jwt: string): Promise<AuthUser | null> {
   }
 }
 
-export const acceptDb = (db: Db): Pick<AcceptDeps, 'getUser' | 'basis' | 'accept'> => ({
+export const acceptDb = (db: Db): Pick<AcceptDeps, 'getUser' | 'basis' | 'accept' | 'replay'> => ({
   getUser: (jwt) => getUser(db, jwt),
+  async replay(userId, listingId, revisionId, shownPayoutCents) {
+    const r = await db.rpc('partner_accept_replay', { p_actor: userId, p_listing: listingId, p_revision: revisionId, p_shown_payout: shownPayoutCents })
+    if (r.error) throw new DbError(r.error.message)
+    return r.data
+  },
   async basis(userId, listingId) {
     const row = must(await db.rpc('partner_accept_basis', { p_actor: userId, p_listing: listingId }))[0]
     if (!row) throw new DbError('not_found')

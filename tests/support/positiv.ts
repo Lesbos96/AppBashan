@@ -167,7 +167,7 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
 
 /** Nie Ausnahme (Auflage 5 der Planprüfung u3): Geld-, Zuschlags-, Rechte- und Kontaktwege. */
 export const NIE_AUSNAHME = [
-  'partner_accept', 'partner_accept_basis', 'confirm_offer', 'confirm_offer_basis', 'decide_change', 'decide_change_basis', 'propose_change', 'propose_change_basis',
+  'partner_accept', 'partner_accept_basis', 'partner_accept_replay', 'confirm_offer', 'confirm_offer_basis', 'decide_change', 'decide_change_basis', 'propose_change', 'propose_change_basis',
   'cancel_by_customer', 'cancel_by_customer_basis', 'cancel_by_partner', 'cancel_by_partner_basis', 'admin_correct', 'admin_correct_basis', 'send_offer',
   'payout_preview', 'my_cancel_info', 'my_commissions', 'export_commissions', 'my_jobs', 'my_job_changes', 'my_request_offers', 'quote_save_request', 'start_job', 'complete_job',
   'job_contact', 'register_partner', 'admin_approve_partner', 'admin_set_partner_status', 'admin_grant_role',
@@ -222,6 +222,10 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   partner_accept: {
     als: 'service_role', welt: 'auftrag', ausfuehren: 's', ergebnis: 'wert', typ: 'uuid',
     aufruf: (c) => `public.partner_accept('${U.pa}', ${LID(R.q0, 'a')}, ${rev1(R.q0)}, ${c.s.payoutCents}, ${fee(c, c.s)})`,
+  },
+  partner_accept_replay: {
+    als: 'service_role', welt: 'auftrag', ausfuehren: 's', ergebnis: 'wert', typ: 'uuid',
+    aufruf: (c) => `public.partner_accept_replay('${U.pa}', ${LID(R.j1, 'a')}, ${rev1(R.j1)}, ${c.s.payoutCents})`,
   },
   my_jobs: {
     ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,

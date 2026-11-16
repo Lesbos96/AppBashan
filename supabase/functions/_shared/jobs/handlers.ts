@@ -78,6 +78,8 @@ export type AcceptDeps = {
   getUser(jwt: string): Promise<AuthUser | null>
   basis(userId: string, listingId: string): Promise<AcceptBasis>
   accept(userId: string, call: AcceptCall): Promise<string>
+  /** Die assignmentId, wenn `userId` (Firma) dieses Listing bereits mit dieser Revision und Auszahlung angenommen hat, sonst null. */
+  replay(userId: string, listingId: string, revisionId: string, shownPayoutCents: number): Promise<string | null>
   log: Log
 }
 
@@ -94,25 +96,36 @@ export async function handleAccept(req: Request, deps: AcceptDeps): Promise<Resp
     if (typeof listingId !== 'string' || !UUID.test(listingId) || typeof revisionId !== 'string' || !UUID.test(revisionId) || !Number.isSafeInteger(shownPayoutCents) || (shownPayoutCents as number) <= 0) {
       return json(400, { error: 'invalid_input' }, origin)
     }
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const basis = await deps.basis(a.user.id, listingId)
-      if (basis.revisionId !== revisionId) throw new DbError('revision_changed')
-      const split = splitFee(basis.totalCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate })
-      if (split.payoutCents !== shownPayoutCents) throw new DbError('payout_changed')
-      try {
-        const assignmentId = await deps.accept(a.user.id, { listingId, revisionId, shownPayoutCents: shownPayoutCents as number, basis, split })
-        return json(200, { assignmentId }, origin)
-      } catch (e) {
-        // Satz oder Betrag wurde zwischen Lesen und Schreiben geändert: einmal mit frischen Werten, sonst 409.
-        const code = e instanceof DbError ? e.code : ''
-        if (code === 'rate_mismatch' || code === 'amount_mismatch') {
-          if (attempt === 1) throw new DbError('fee_rate_changed')
-          continue
+    const userId = a.user.id
+    const run = async (): Promise<string> => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const basis = await deps.basis(userId, listingId)
+        if (basis.revisionId !== revisionId) throw new DbError('revision_changed')
+        const split = splitFee(basis.totalCents, { tiers: basis.feeTiers, vatRate: basis.feeVatRate })
+        if (split.payoutCents !== shownPayoutCents) throw new DbError('payout_changed')
+        try {
+          return await deps.accept(userId, { listingId, revisionId, shownPayoutCents: shownPayoutCents as number, basis, split })
+        } catch (e) {
+          // Satz oder Betrag wurde zwischen Lesen und Schreiben geändert: einmal mit frischen Werten, sonst 409.
+          const code = e instanceof DbError ? e.code : ''
+          if (code === 'rate_mismatch' || code === 'amount_mismatch') {
+            if (attempt === 1) throw new DbError('fee_rate_changed')
+            continue
+          }
+          throw e
         }
-        throw e
       }
+      throw new DbError('fee_rate_changed')
     }
-    throw new DbError('fee_rate_changed')
+    try {
+      return json(200, { assignmentId: await run() }, origin)
+    } catch (e) {
+      // Wiederholung nach verlorener Antwort (N-12): hat diese Firma das Listing selbst angenommen (gleiche Revision, gleiche Auszahlung), kommt dieselbe assignmentId, sonst bleibt es bei 409.
+      if (!(e instanceof DbError) || e.code !== 'already_taken') throw e
+      const assignmentId = await deps.replay(userId, listingId, revisionId, shownPayoutCents as number)
+      if (!assignmentId) throw e
+      return json(200, { assignmentId }, origin)
+    }
   } catch (e) {
     const code = e instanceof DbError ? e.code : ''
     const status = STATUS[code]

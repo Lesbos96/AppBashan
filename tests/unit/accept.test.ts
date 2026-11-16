@@ -22,11 +22,12 @@ function deps(over: Partial<AcceptDeps> = {}): AcceptDeps & { calls: unknown[] }
       calls.push(c)
       return 'assign-1'
     },
+    replay: async () => null,
     log: () => {},
     ...over,
   }
 }
-const ok = { listingId: L, revisionId: R, shownPayoutCents: PAYOUT }
+const ok ={ listingId: L, revisionId: R, shownPayoutCents: PAYOUT }
 
 describe('accept', () => {
   it('Erfolg: rechnet die Gebühr mit splitFee und ruft die Datenbank-Funktion', async () => {
@@ -73,6 +74,32 @@ describe('accept', () => {
     const res = await handleAccept(req(ok), deps({ accept: async () => { throw new Error('geheim: Detail') } }))
     expect(res.status).toBe(500)
     expect(await res.text()).not.toContain('geheim')
+  })
+
+  it('Wiederholung nach verlorener Antwort (N-12): already_taken, aber von dieser Firma angenommen → 200 mit derselben assignmentId', async () => {
+    const seen: unknown[] = []
+    const replay: AcceptDeps['replay'] = async (...a) => {
+      seen.push(a)
+      return 'assign-1'
+    }
+    // already_taken aus der Basis (Listing nicht mehr offen) und aus der Annahme selbst (Wettlauf)
+    for (const over of [{ basis: async () => { throw new DbError('already_taken') } }, { accept: async () => { throw new DbError('already_taken') } }]) {
+      const res = await handleAccept(req({ ...ok, partnerId: 'fremd' }), deps({ ...over, replay }))
+      expect([res.status, await res.json()]).toEqual([200, { assignmentId: 'assign-1' }])
+    }
+    expect(seen).toEqual([['u1', L, R, PAYOUT], ['u1', L, R, PAYOUT]]) // Akteur aus dem geprüften JWT, nie aus dem Body
+  })
+
+  it('Wiederholung: ohne eigene Annahme (replay null) bleibt es bei 409; andere Codes fragen nicht nach; ein Fehler dort ist 500 ohne Details', async () => {
+    const taken = { accept: async () => { throw new DbError('already_taken') } }
+    const none = await handleAccept(req(ok), deps(taken))
+    expect([none.status, (await none.json()).error]).toEqual([409, 'already_taken'])
+    let asked = 0
+    const expired = await handleAccept(req(ok), deps({ accept: async () => { throw new DbError('expired') }, replay: async () => { asked++; return 'assign-1' } }))
+    expect([expired.status, asked]).toEqual([409, 0])
+    const broken = await handleAccept(req(ok), deps({ ...taken, replay: async () => { throw new Error('geheim: Detail') } }))
+    expect(broken.status).toBe(500)
+    expect(await broken.text()).not.toContain('geheim')
   })
 
   it('veralteter Satz: einmal mit frischen Werten, sonst 409 fee_rate_changed', async () => {

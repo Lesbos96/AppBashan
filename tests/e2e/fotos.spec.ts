@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
-import { expect, test } from './backend'
-import { UUID, answer, price } from './anfrage-helpers'
+import { expect, rest, test } from './backend'
+import { UUID, answer, cors, price } from './anfrage-helpers'
 import { collectErrors } from './console'
 import { mockPhotos, prepareSummary, REQUEST, sendButton, sendWithPhotos, storageError } from './fotos-helpers'
 
@@ -180,6 +180,69 @@ test('Verlorene Antwort, dann Foto entfernt: neue clientRef, photoIds = angezeig
   expect(ids(second)).toEqual([id2]) // genau das angezeigte Foto
   expect(calls.uploads.at(-1)!.path).toBe(`u-1/${second.clientRef}/${id2}.jpg`)
   expect(calls.removedFiles).toEqual([[`u-1/${first.clientRef}/${id1}.jpg`, `u-1/${first.clientRef}/${id2}.jpg`]])
+})
+
+// N-12: die erste Anfrage kam an (der Server hat sie gespeichert), nur die Antwort ging verloren.
+test('Antwort verloren, erneut senden: gleiche clientRef, kein Lesen früherer Refs, eine Anfrage', { tag: '@breit' }, async ({ page }) => {
+  await mockPhotos(page)
+  const lookups: string[] = []
+  await page.route('**/rest/v1/service_requests**', (r) => {
+    lookups.push(r.request().url())
+    return rest(r, [])
+  })
+  const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
+  await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
+  await sendButton(page).click()
+  await expect(page).toHaveURL(/\/entruempelung\/gesendet$/)
+  expect(quoteCalls).toHaveLength(2)
+  expect(quoteCalls[1]!.body.clientRef).toBe(quoteCalls[0]!.body.clientRef)
+  expect(lookups.filter((u) => u.includes('client_ref'))).toEqual([])
+})
+
+async function removeFirstPhotoAndSend(page: Page) {
+  await page.getByRole('link', { name: 'Termin' }).click()
+  await expect(page.getByRole('heading', { name: 'Wann passt es?' })).toBeVisible()
+  await page.getByRole('link', { name: 'Entrümpelung' }).click()
+  await page.getByRole('link', { name: 'Zurück' }).click()
+  await page.getByRole('button', { name: 'Foto 1 entfernen' }).click()
+  await page.getByRole('button', { name: 'Richtwert anzeigen' }).click()
+  await page.getByRole('button', { name: 'Ort & Wunschtermin' }).click()
+  await page.getByRole('button', { name: 'Zur Zusammenfassung' }).click()
+  await page.getByRole('checkbox').check()
+  await sendButton(page).click()
+}
+
+test('Antwort verloren, dann Foto entfernt, erste Anfrage ist schon gespeichert: kein Upload, kein zweites Senden, Hinweis mit Link', { tag: '@breit' }, async ({ page }) => {
+  const calls = await mockPhotos(page)
+  const lookups: string[] = []
+  const first: { ref?: string } = {}
+  await page.route('**/rest/v1/service_requests**', (r) => {
+    const url = decodeURIComponent(r.request().url())
+    lookups.push(url)
+    // eigene Anfrage (RLS) zu genau der früheren Ref, aktiv
+    return rest(r, first.ref && url.includes(first.ref) && url.includes('status=in.(requested,awaiting_offer,offered,accepted,in_progress)') ? [{ id: REQUEST }] : [])
+  })
+  const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
+  await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
+  first.ref = quoteCalls[0]!.body.clientRef as string
+  const uploadsBefore = calls.uploads.length
+  await removeFirstPhotoAndSend(page)
+  await expect(page.getByRole('alert').filter({ hasText: 'Deine Anfrage ist schon angekommen' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Anfrage ansehen' })).toHaveAttribute('href', `/auftraege/${REQUEST}`)
+  expect(quoteCalls).toHaveLength(1) // nichts Zweites gesendet
+  expect(calls.uploads).toHaveLength(uploadsBefore) // nichts hochgeladen
+  expect(calls.removedFiles).toEqual([]) // die Dateien der ersten Anfrage bleiben, sie gehören ihr
+  expect(lookups.some((u) => u.includes(first.ref!))).toBe(true)
+})
+
+test('Antwort verloren, dann Foto entfernt, Lesen der früheren Refs scheitert: es wird nicht gesendet (fail closed)', { tag: '@breit' }, async ({ page }) => {
+  await mockPhotos(page)
+  await page.route('**/rest/v1/service_requests**', (r) => r.fulfill({ status: 500, headers: cors, json: { message: 'boom' } }))
+  const quoteCalls = await sendWithPhotos(page, { reply: (n) => (n === 1 ? { abort: true } : accepted()), sent: false })
+  await expect(page.getByRole('alert').filter({ hasText: 'Keine Verbindung.' })).toBeVisible()
+  await removeFirstPhotoAndSend(page)
+  await expect(page.getByRole('alert').filter({ hasText: 'Das hat nicht geklappt.' })).toBeVisible()
+  expect(quoteCalls).toHaveLength(1)
 })
 
 test('422 too_many_photos: eigener Text, Weg zurück zu den Angaben', { tag: '@breit' }, async ({ page }) => {

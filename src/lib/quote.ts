@@ -65,19 +65,38 @@ export function refBody(body: Body, photoIds: readonly string[]): Body {
  */
 export function refFor(path: Path, body: Body): string {
   const json = JSON.stringify(body)
+  const stored = readAttempt(path)
+  if (stored && stored.body === json) return stored.ref
+  const ref = crypto.randomUUID()
   try {
-    const stored: unknown = JSON.parse(sessionStorage.getItem(attemptKey(path)) ?? 'null')
-    if (stored && typeof stored === 'object' && 'ref' in stored && 'body' in stored && stored.body === json && typeof stored.ref === 'string' && UUID.test(stored.ref)) return stored.ref
+    // `refs`: jede Ref dieses Entwurfs seit dem letzten bestätigten Erfolg (finishDraft räumt den Eintrag); `earlierRefs` fragt sie ab (N-12)
+    sessionStorage.setItem(attemptKey(path), JSON.stringify({ ref, body: json, refs: [...(stored?.refs ?? []), ref] }))
   } catch {
     // ohne Speicher gilt die Ref nur für diesen Versuch
   }
-  const ref = crypto.randomUUID()
-  try {
-    sessionStorage.setItem(attemptKey(path), JSON.stringify({ ref, body: json }))
-  } catch {
-    // siehe oben
-  }
   return ref
+}
+
+function readAttempt(path: Path): { ref: string; body: string; refs: string[] } | null {
+  try {
+    const s: unknown = JSON.parse(sessionStorage.getItem(attemptKey(path)) ?? 'null')
+    if (!s || typeof s !== 'object' || !('ref' in s) || !('body' in s) || !('refs' in s)) return null
+    if (typeof s.ref !== 'string' || !UUID.test(s.ref) || typeof s.body !== 'string' || !Array.isArray(s.refs)) return null
+    return { ref: s.ref, body: s.body, refs: s.refs.filter((r): r is string => typeof r === 'string' && UUID.test(r)) }
+  } catch {
+    return null
+  }
+}
+
+/** Die früheren Refs dieses Entwurfs (ohne `current`): eine davon kann eine Anfrage sein, deren Antwort verloren ging. */
+export const earlierRefs = (path: Path, current: string): string[] => (readAttempt(path)?.refs ?? []).filter((r) => r !== current)
+
+/** Aktive Anfrage zu einer der Refs, sonst null. Ein Lesefehler ist `unavailable`: dann wird nicht gesendet. Eine zurückgezogene oder beendete Anfrage zählt nicht. */
+export async function findSentRequest(refs: readonly string[]): Promise<string | null> {
+  if (refs.length === 0) return null
+  const { data, error } = await supabase.from('service_requests').select('id').in('client_ref', [...refs]).in('status', ['requested', 'awaiting_offer', 'offered', 'accepted', 'in_progress']).limit(1)
+  if (error) throw new QuoteError('unavailable')
+  return data[0]?.id ?? null
 }
 
 export type QuoteErrorKind = 'invalid_input' | 'unauthorized' | 'rate_limited' | 'offline' | 'unavailable' | 'provider' | 'booking_closed' | 'rejected' | 'price_changed' | 'terms_changed'

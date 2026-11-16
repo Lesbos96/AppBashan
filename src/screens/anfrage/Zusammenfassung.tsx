@@ -13,7 +13,7 @@ import { clearPhotos, getPhotos, renewPhotoIds, usePhotos } from '../../lib/phot
 import { loadPrices, useLoad } from '../../lib/prices'
 import { floorText, lmText, toTariffs } from '../../lib/preview'
 import { formatEuro } from '../../lib/money'
-import { type Terms, QuoteError, buildBody, errorText, invalidTarget, invalidText, loadBookingOpen, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
+import { type Terms, QuoteError, buildBody, earlierRefs, errorText, findSentRequest, invalidTarget, invalidText, loadBookingOpen, loadTerms, priceLabel, refBody, refFor, rejectedText, sendQuote, shownFromSnapshot, shownLabel, termsText } from '../../lib/quote'
 import { useSession } from '../../lib/session'
 import { supabase } from '../../lib/supabase'
 import { type UploadFailure, discardStaging, failureText, forgetStaging, photoRejectedText, uploadAll } from '../../lib/uploads'
@@ -150,7 +150,8 @@ export function Zusammenfassung({ path }: { path: Path }) {
   )
 }
 
-type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'photos'; failure: UploadFailure } | { kind: 'error'; error: QuoteError }
+type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'changed' } | { kind: 'exists'; id: string } | { kind: 'photos'; failure: UploadFailure } | { kind: 'error'; error: QuoteError }
+const existsText = 'Deine Anfrage ist schon angekommen, nur die Bestätigung ging verloren. Willst du etwas ändern, ziehe sie unter Aufträge zurück und sende dann neu.'
 /** 422 von `quote`, nach denen das erneute Senden die Fotos mit neuen Namen hochlädt. */
 const reuploadCodes = ['photo_missing', 'photo_expired']
 /**
@@ -261,6 +262,12 @@ function Inhalt({ path, tariffs, version, terms, bookingOpen }: { path: Path; ta
       const photoIds = toSend.map((p) => p.id)
       // clientRef: Entwurf ohne die bestätigten Angaben (nach einem 409 bleibt sie) und mit dem Fotosatz (anderer Satz = neuer Versuch)
       const clientRef = refFor(path, refBody(body, photoIds))
+      // Verlorene Antwort, dann geänderter Fotosatz: eine frühere Ref kann schon eine aktive Anfrage sein (N-12). Dann nichts hochladen und nichts senden.
+      const sentId = await findSentRequest(earlierRefs(path, clientRef))
+      if (sentId) {
+        setStatus({ kind: 'exists', id: sentId })
+        return
+      }
       // Fotos zuerst ins Staging {user}/{clientRef}/{id}.jpg; ein Ref-Wechsel entfernt vorher die Dateien der alten Ref (uploads.ts).
       // `quote` übernimmt sie mit der Anfrage, danach lassen sie sich nicht mehr ändern
       const failure = await uploadAll(supabase, live.user.id, clientRef, toSend, setUploaded)
@@ -318,7 +325,7 @@ function Inhalt({ path, tariffs, version, terms, bookingOpen }: { path: Path; ta
     void send(session?.user.id ?? '', next)
   }
   const newSnapshot = confirmChange?.conflict.snapshot
-  const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (photoRejectedText[error.code ?? ''] ?? rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'photos' ? failureText[status.failure] : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
+  const text = error && error.kind !== 'price_changed' && error.kind !== 'terms_changed' ? (error.kind === 'invalid_input' ? invalidText(error.field) : error.kind === 'rejected' ? (photoRejectedText[error.code ?? ''] ?? rejectedText[error.code ?? ''] ?? 'Mit einer Angabe stimmt etwas nicht. Prüfe deine Eingaben.') : errorText[error.kind]) : status.kind === 'photos' ? failureText[status.failure] : status.kind === 'exists' ? existsText : status.kind === 'changed' || accountSwitched ? 'Du bist jetzt mit einem anderen Konto angemeldet. Prüfe die E-Mail-Adresse und sende die Anfrage dann erneut.' : null
 
   return (
     <>
@@ -471,6 +478,11 @@ function Inhalt({ path, tariffs, version, terms, bookingOpen }: { path: Path; ta
               <span role="alert">{text}</span>
               {wait > 0 && ` Noch ${wait} s.`}
             </p>
+            {status.kind === 'exists' && (
+              <Link to={`/auftraege/${status.id}`} className="press flex h-11 items-center text-body font-semibold text-accent">
+                Anfrage ansehen
+              </Link>
+            )}
             {error?.kind === 'unauthorized' && (
               <Button variant="tinted" onClick={() => void otherAccount()}>
                 Neu anmelden

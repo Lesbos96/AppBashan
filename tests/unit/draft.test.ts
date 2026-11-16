@@ -5,7 +5,7 @@ const invoke = vi.fn()
 vi.mock('../../src/lib/supabase', () => ({ supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } } }))
 
 const { attemptKey, draftKeys, purgeHandover, readSent, readShownFull, rememberShown, restoreDraft, stashDraft, finishDraft, viennaToday } = await import('../../src/lib/draft')
-const { QuoteError, buildBody, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
+const { QuoteError, buildBody, earlierRefs, parseSnapshot, priceLabel, refBody, refFor, sendQuote, shownLabel, termsText } = await import('../../src/lib/quote')
 
 const store = () => {
   const map = new Map<string, string>()
@@ -152,6 +152,26 @@ describe('clientRef', () => {
 
   it('ist je Service getrennt', () => {
     expect(refFor('montage', { a: 1 })).not.toBe(refFor('umzug', { a: 1 }))
+  })
+
+  it('merkt jede Ref seit dem letzten Erfolg (N-12): earlierRefs ohne die aktuelle, in Reihenfolge; finishDraft räumt sie', () => {
+    const a = refFor('montage', { v: 1 })
+    expect(earlierRefs('montage', a)).toEqual([])
+    const b = refFor('montage', { v: 2 })
+    expect(refFor('montage', { v: 2 })).toBe(b) // gleicher Inhalt erzeugt keine weitere Ref
+    const c = refFor('montage', { v: 3 })
+    expect(earlierRefs('montage', c)).toEqual([a, b])
+    expect(earlierRefs('umzug', c)).toEqual([])
+    sessionStorage.removeItem(attemptKey('montage')) // wie finishDraft
+    expect(earlierRefs('montage', c)).toEqual([])
+  })
+
+  it('earlierRefs ignoriert Unbrauchbares im Speicher', () => {
+    const ref = 'a0b1c2d3-0000-4000-8000-000000000009'
+    sessionStorage.setItem(attemptKey('montage'), JSON.stringify({ ref, body: '{}', refs: ['x', 5, ref, 'a0b1c2d3-0000-4000-8000-000000000008'] }))
+    expect(earlierRefs('montage', ref)).toEqual(['a0b1c2d3-0000-4000-8000-000000000008'])
+    sessionStorage.setItem(attemptKey('montage'), '{kaputt')
+    expect(earlierRefs('montage', ref)).toEqual([])
   })
 })
 
