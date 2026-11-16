@@ -1,7 +1,7 @@
 // s9k1-4/-5: 401 gibt es nur für ein abgelehntes Token. `rejectToken` erkennt es am Fehlercode (nicht am Status allein) oder am Fehlertyp
 // „Sitzung fehlt“ (auth-js macht aus session_not_found einen AuthSessionMissingError, Status 400, ohne Code). Alles andere, auch ein 401 oder 403
 // des Gateways bei rotiertem Function-Schlüssel, ist eine Störung: `AuthServiceError` mit festem Text (nie Token oder Originalmeldung), die
-// Handler antworten 500 und die App meldet nicht ab. Gemessene Codes gegen Dev: OFFEN n15-3 (Messdatei dort, noch nicht als Test).
+// Handler antworten 500 und die App meldet nicht ab. Gemessene Codes gegen Dev: tests/rls/auth-token-codes.test.ts.
 import { describe, expect, it } from 'vitest'
 import { AuthServiceError, rejectToken } from '../../supabase/functions/_shared/auth.ts'
 import { handleDeleteAccount } from '../../supabase/functions/_shared/account/handlers.ts'
