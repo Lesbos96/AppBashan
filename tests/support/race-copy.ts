@@ -19,7 +19,7 @@ const OHNE = 's.id = p_request; perform pg_sleep(2);'
 /** Entfernt das Schema `race_ctl` samt Kopien (auch Reste eines abgebrochenen Laufs). */
 export function entferneKopien() {
   loeschFreigabe(import.meta.url)
-  const vorhanden = Number(ownerSql("select count(*) as n from pg_namespace where nspname = 'race_ctl'")[0]?.n)
+  const vorhanden = Number(ownerSql("select count(*) as n from pg_namespace where nspname = 'race_ctl'")[0]?.n ?? 0)
   ownerSql('drop schema if exists race_ctl cascade')
   loeschLog('tests/support/race-copy.ts', { schemaEntfernt: vorhanden })
 }
@@ -55,8 +55,8 @@ export function legeKopienAn() {
         if replace(replace(replace(neu, '${OHNE}', '${SPERRE}'), v.kopf, v.alt), 'race_ctl.change_gate_nolock(', 'private.change_gate(') is distinct from orig then
           raise exception 'race_copy: Kopie von % weicht vom Original ab', v.alt;
         end if;
-        -- die Kopie muss wirklich nach race_ctl heißen und darf nichts mehr aus private oder public aufrufen, das sie ersetzt (sonst überschriebe `execute` die echte Funktion)
-        if neu not like 'CREATE OR REPLACE FUNCTION race_ctl.%' or position(v.alt in neu) > 0 or position('private.change_gate(' in neu) > 0 then
+        -- die Kopie muss wirklich nach race_ctl heißen und darf nichts mehr aus private oder public aufrufen, das sie ersetzt (sonst überschriebe der Aufruf von execute die echte Funktion)
+        if left(neu, 36) <> 'CREATE OR REPLACE FUNCTION race_ctl.' or position(v.alt in neu) > 0 or position('private.change_gate(' in neu) > 0 then
           raise exception 'race_copy: Kopie von % trägt nicht den Namen in race_ctl oder ruft noch das Original auf', v.alt;
         end if;
         execute neu;

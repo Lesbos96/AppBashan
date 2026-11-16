@@ -13,8 +13,8 @@ describe('abnahmeBericht', () => {
   })
   it('Kopie mit Hash-Suffix im Namen steht so im Bericht (Wert von kopiere, nicht der Name)', () => {
     const b = abnahmeBericht({ abnahme, name: 'sys1-abnahme-2.md', runde: 2, kopie: 'docs/proof/sys1/sys1-abnahme-2-1a2b3c4d.md', sha256: SHA })
-    expect(b.json.datei).toBe('docs/proof/sys1/sys1-abnahme-2-1a2b3c4d.md')
-    expect(b.json.quelle).toBe('tmp/proof/sys1-abnahme-2.md')
+    expect(b.json?.datei).toBe('docs/proof/sys1/sys1-abnahme-2-1a2b3c4d.md')
+    expect(b.json?.quelle).toBe('tmp/proof/sys1-abnahme-2.md')
   })
   it('ohne Abnahme: null und „keine“', () => {
     expect(abnahmeBericht({ abnahme: null, name: null, runde: null, kopie: null, sha256: null })).toEqual({ json: null, zeile: 'Abnahme: keine' })
