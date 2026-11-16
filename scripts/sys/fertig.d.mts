@@ -4,6 +4,8 @@ export interface Lauf {
   nr: number
   ziel: string
   args?: string[]
+  /** Testschalter (MV_*, E2E_*) als NAME=Wert; fehlt das Feld, zählt der Lauf nicht (sys1-3). */
+  schalter?: string[]
   befehl: string
   exit: number
   sauber: boolean
@@ -59,6 +61,7 @@ export interface FertigKontext {
 export const MUSS_ABNAHME: RegExp
 export function gueltigerLauf(c: FertigKontext, suite: string): Lauf | null
 export function pruefeFertig(c: FertigKontext): string[]
+export function kopfPasst(text: string, r: { hash?: string; sauber: boolean; befehl: string; args?: string[]; schalter?: string[] }): boolean
 export function neueRlsDateien(bereich: string, wurzel?: string): string[]
 export function gateMeldung(stufe: string, fingerabdruckSha: string): string
 export function mergeMeldung(commit: string): string

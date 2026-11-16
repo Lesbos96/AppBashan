@@ -120,7 +120,12 @@ const dateiVor = dateiHash()
 const hash = git('rev-parse', 'HEAD')
 const saubervor = sauber(true)
 const start = Date.now()
-writeSync(fd, `Commit: ${hash}\nArbeitsbaum sauber: ${saubervor ? 'ja' : 'nein'}\nBefehl: ${befehl.anzeige}\nStart: ${new Date(start).toISOString()}\n---\n`)
+// Zusatzargumente und Testschalter (MV_*, E2E_*, ohne MV_LAUF) ändern, was ein Lauf prüft: sie stehen im Kopf, `fertig` vergleicht sie mit runs.jsonl (sys1-3).
+const schalter = Object.entries(process.env)
+  .filter(([k]) => /^(MV|E2E)_/i.test(k) && k.toUpperCase() !== 'MV_LAUF')
+  .map(([k, v]) => `${k.toUpperCase()}=${v}`)
+  .sort()
+writeSync(fd, `Commit: ${hash}\nArbeitsbaum sauber: ${saubervor ? 'ja' : 'nein'}\nBefehl: ${befehl.anzeige}\nArgumente: ${JSON.stringify(extra)}\nSchalter: ${JSON.stringify(schalter)}\nStart: ${new Date(start).toISOString()}\n---\n`)
 const kopfEnde = readFileSync(logPfad).length
 
 // MV_LAUF: Kennung des Laufs; Module mit Lösch-Gate (tests/support/sweep.ts) arbeiten nur in einem Lauf dieses Programms.
@@ -144,7 +149,7 @@ const tests = (/^\s*Tests\s+(.+)$/m.exec(log) ?? /^\s*(\d+ passed.*)$/m.exec(log
 const stabil = hash === git('rev-parse', 'HEAD') && saubervor === sauber(true) && (abdruckVor === null || abdruckVor === fingerabdruck(ziel))
 appendFileSync(
   join(ordner, 'runs.jsonl'),
-  JSON.stringify({ nr, ziel, args: extra, befehl: befehl.anzeige, hash, sauber: saubervor, stabil, start: new Date(start).toISOString(), exit: code, sek, tests, logSha: sha256Datei(logPfad), abdruck: abdruckVor, dateiSha: dateiVor && dateiVor === dateiHash() ? dateiVor : null }) + '\n',
+  JSON.stringify({ nr, ziel, args: extra, schalter, befehl: befehl.anzeige, hash, sauber: saubervor, stabil, start: new Date(start).toISOString(), exit: code, sek, tests, logSha: sha256Datei(logPfad), abdruck: abdruckVor, dateiSha: dateiVor && dateiVor === dateiHash() ? dateiVor : null }) + '\n',
 )
 
 const zeilen = log.slice(kopfEnde).split(/\r?\n/)

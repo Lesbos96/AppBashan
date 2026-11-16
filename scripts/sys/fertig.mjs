@@ -30,7 +30,7 @@ export function gueltigerLauf(c, s) {
   return (
     c.runs.find(
       (r) =>
-        r.ziel === s && (r.args ?? []).length === 0 && r.befehl === KANON[s] && r.exit === 0 && r.sauber && r.stabil !== false && r.logOk && r.abdruck === c.abdruck[s] &&
+        r.ziel === s && (r.args ?? []).length === 0 && (r.schalter ?? ['fehlt']).length === 0 && r.befehl === KANON[s] && r.exit === 0 && r.sauber && r.stabil !== false && r.logOk && r.abdruck === c.abdruck[s] &&
         (s !== 'rls' || ((r.start ?? '') > push && (c.stufe !== 'R3' || frisch(r.start, c)))),
     ) ?? null
   )
@@ -76,7 +76,10 @@ export function pruefeFertig(c) {
       // Der erste grüne Lauf zählt nach Inhalt (egal unter welchem Pfad), der rote nur unter dem Endpfad: eine Umbenennung braucht ihr eigenes Rot,
       // und ein Rot, das nur durch eine später geänderte Erwartung entstand, passt nicht zum Endstand.
       for (const { pfad: t, sha256: endSha } of c.neueRlsTests) {
-        const lauf = c.runs.filter((r) => r.schritt === c.schritt && r.logOk && r.dateiSha && endSha && r.dateiSha === endSha).sort((a, b) => a.nr - b.nr)
+        // sys1-3: ohne Zusatzargumente; ein Schalter (im Log-Kopf erfasst, sonst logOk false) ist beim Rot erlaubt (die Abnahme beurteilt ihn), beim Grün nicht.
+        const lauf = c.runs
+          .filter((r) => r.schritt === c.schritt && r.logOk && r.dateiSha && endSha && r.dateiSha === endSha && (r.args ?? []).length === 0 && Array.isArray(r.schalter) && (r.exit !== 0 || r.schalter.length === 0))
+          .sort((a, b) => a.nr - b.nr)
         const ersterGruen = lauf.find((r) => r.exit === 0)
         if (!ersterGruen || !lauf.some((r) => r.ziel === t && r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen (beide mit der Datei des Endstands, SHA-256 ${endSha || 'fehlt'})`)
       }
@@ -111,7 +114,20 @@ export function stageNachweise(pfade, wurzel = '.') {
   if (liste.length) execFileSync('git', ['-C', wurzel, 'add', '-f', '--', ...liste], { stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
-// Läufe lesen und gegen die Logdatei prüfen: Hash, Kopf (Commit, Befehl, Sauber-Angabe), Schlusszeile EXIT.
+// Kopf des Logs (fünf Zeilen) gegen den Eintrag in runs.jsonl; ein Eintrag ohne Feld `schalter` oder ein alter Kopf ohne Argumente und Schalter passt nie (sys1-3).
+export function kopfPasst(text, r) {
+  const kopf = text.split('\n').slice(0, 5)
+  return (
+    Array.isArray(r.schalter) &&
+    kopf[0] === `Commit: ${r.hash}` &&
+    kopf[1] === `Arbeitsbaum sauber: ${r.sauber ? 'ja' : 'nein'}` &&
+    kopf[2] === `Befehl: ${r.befehl}` &&
+    kopf[3] === `Argumente: ${JSON.stringify(r.args ?? [])}` &&
+    kopf[4] === `Schalter: ${JSON.stringify(r.schalter)}`
+  )
+}
+
+// Läufe lesen und gegen die Logdatei prüfen: Hash, Kopf (Commit, Befehl, Sauber-Angabe, Argumente, Schalter), Schlusszeile EXIT.
 export function leseGepruefteRuns() {
   const alle = leseRuns()
   const runs = alle
@@ -122,12 +138,7 @@ export function leseGepruefteRuns() {
       try {
         if (existsSync(log) && sha256Datei(log) === r.logSha) {
           const text = readFileSync(log, 'utf8')
-          const kopf = text.split('\n').slice(0, 3)
-          logOk =
-            kopf[0] === `Commit: ${r.hash}` &&
-            kopf[1] === `Arbeitsbaum sauber: ${r.sauber ? 'ja' : 'nein'}` &&
-            kopf[2] === `Befehl: ${r.befehl}` &&
-            new RegExp(`\\nEXIT=${r.exit}\\s*$`).test(text)
+          logOk = kopfPasst(text, r) && new RegExp(`\\nEXIT=${r.exit}\\s*$`).test(text)
         }
       } catch {
         logOk = false

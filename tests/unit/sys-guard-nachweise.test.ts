@@ -46,6 +46,57 @@ describe('Guard: Löschen und Verschieben unter tmp/proof', () => {
     expect(r.stderr).toMatch(/tmp\/proof|Nachweise/)
   })
 
+  // sys1-4: auch Elternordner (tmp, Wurzel), Schreibweisen (tmp//proof, tmp/./proof, Git-Bash-Pfad), Platzhalter, Klammerlisten und cd im selben Befehl.
+  const gitBash = '/' + resolve('.')[0]!.toLowerCase() + resolve('.').slice(2).replace(/\\/g, '/')
+  it.each([
+    'rm -rf tmp',
+    'rm -r tmp/',
+    'Remove-Item tmp -Recurse',
+    'Remove-Item -Recurse -Force .\\tmp',
+    'ri tmp -Recurse',
+    'rd /s /q tmp',
+    'mv tmp x',
+    'move tmp\\ x',
+    'git mv tmp x',
+    'rm -rf tmp//proof',
+    'rm -rf tmp/./proof',
+    'rm -rf ./tmp',
+    'rm -rf .',
+    'rm -rf ..',
+    'rm -rf tmp/*',
+    'rm -rf tmp/p*',
+    'rm -rf t*',
+    'rm -rf {tmp,dist}',
+    'rm -rf dist tmp',
+    `rm -rf ${gitBash}/tmp`,
+    `rm -rf ${gitBash}/tmp/proof/sys1`,
+    'cd tmp && rm -rf proof',
+    'cd tmp/proof && rm -rf sys1',
+    'cd tmp/proof/sys1; rm *.md',
+    'Set-Location tmp; Remove-Item proof -Recurse',
+  ])('sys1-4 verweigert: %s', (befehl) => {
+    const r = bash(befehl, /^(Remove-Item|ri |Set-Location)/i.test(befehl) ? 'PowerShell' : 'Bash')
+    expect(r.exit, r.stderr).toBe(2)
+    expect(r.stderr).toMatch(/tmp\/proof|Nachweise/)
+  })
+
+  it.each([
+    'rm -rf node_modules dist',
+    'rm -f x 2>/dev/null',
+    'rm tmp/x.txt',
+    'rm -rf tmp/proof-alt',
+    'rm src/x.ts',
+    'mv x.png .',
+    'git mv a.md ..',
+    'mv tmp/x.txt tmp/shots/',
+    'cd tmp/shots && rm a.png',
+    'cd tmp && rm -rf shots',
+    'Remove-Item -Path tmp\\shots -Recurse',
+  ])('sys1-4 erlaubt: %s', (befehl) => {
+    const r = bash(befehl, /^Remove-Item/i.test(befehl) ? 'PowerShell' : 'Bash')
+    expect(r.exit, r.stderr).toBe(0)
+  })
+
   it.each([
     'rm tmp/proof/lauf.lock',
     'rm -f tmp/proof/lauf.lock',

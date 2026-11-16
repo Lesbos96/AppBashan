@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MUSS_ABNAHME, gateMeldung, mergeMeldung, neueRlsDateien, pruefeFertig, stageNachweise, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
+import { MUSS_ABNAHME, gateMeldung, mergeMeldung, kopfPasst, neueRlsDateien, pruefeFertig, stageNachweise, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
 
 const AB = { check: 'a1', e2e: 'a2', rls: 'a3' }
 const lauf = (ziel: string, extra: Partial<Lauf> = {}): Lauf => ({
@@ -11,6 +11,7 @@ const lauf = (ziel: string, extra: Partial<Lauf> = {}): Lauf => ({
   schritt: 's',
   ziel,
   args: [],
+  schalter: [],
   befehl: { check: 'npm run check', e2e: 'npm run test:e2e', rls: 'npm run test:rls' }[ziel] ?? ziel,
   exit: 0,
   sauber: true,
@@ -54,6 +55,21 @@ const r3 = (extra: Partial<FertigKontext> = {}) =>
     ...extra,
   })
 
+describe('sys1-3: kopfPasst (Log-Kopf gegen den Eintrag in runs.jsonl)', () => {
+  const kopf = (a = '[]', s = '[]') => `Commit: h\nArbeitsbaum sauber: ja\nBefehl: b\nArgumente: ${a}\nSchalter: ${s}\nStart: x\n---\n`
+  const r = { hash: 'h', sauber: true, befehl: 'b', args: [] as string[], schalter: [] as string[] }
+  it('passt nur bei genau gleichen Zeilen', () => {
+    expect(kopfPasst(kopf(), r)).toBe(true)
+    expect(kopfPasst(kopf('["x"]', '["MV_A=1"]'), { ...r, args: ['x'], schalter: ['MV_A=1'] })).toBe(true)
+    expect(kopfPasst(kopf(), { ...r, schalter: ['MV_A=1'] })).toBe(false)
+    expect(kopfPasst(kopf('[]', '["MV_A=1"]'), r)).toBe(false)
+    expect(kopfPasst(kopf('["x"]'), r)).toBe(false)
+    expect(kopfPasst(kopf(), { ...r, schalter: undefined })).toBe(false)
+    expect(kopfPasst('Commit: h\nArbeitsbaum sauber: ja\nBefehl: b\nStart: x\n---\n', r)).toBe(false) // alter Kopf ohne die neuen Zeilen
+    expect(kopfPasst(kopf().replace('Commit: h', 'Commit: x'), r)).toBe(false)
+  })
+})
+
 describe('Merge-Gate: pruefeFertig', () => {
   it('grün, wenn alle Pflichtläufe zum Fingerabdruck passen (R1)', () => {
     expect(pruefeFertig(ctx())).toEqual([])
@@ -71,6 +87,8 @@ describe('Merge-Gate: pruefeFertig', () => {
     ['Zusatzargumente', { args: ['-t', 'x'] }],
     ['nicht kanonischer Befehl', { befehl: 'npm run check -- x' }],
     ['Log verändert oder Kopf passt nicht', { logOk: false }],
+    ['sys1-3: Testschalter gesetzt', { schalter: ['MV_X=1'] }],
+    ['sys1-3: Schalter nicht erfasst (Feld fehlt)', { schalter: undefined }],
     ['Baum während des Laufs geändert', { stabil: false }],
   ])('Lauf zählt nicht: %s', (_n, extra) => {
     expect(pruefeFertig(ctx({ runs: [lauf('check', extra), lauf('e2e')] })).join()).toMatch(/check: kein grüner Lauf/)
@@ -185,6 +203,13 @@ describe('Merge-Gate: pruefeFertig', () => {
     it('neuer rls-Test ohne roten Lauf davor blockiert', () => {
       expect(pruefeFertig(rls(gruen())).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)
       expect(pruefeFertig(rls(rot({ nr: 3 }), gruen())).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)
+    })
+    it('sys1-3: Rot mit Zusatzargumenten zählt nicht, Rot mit aufgeführtem Schalter zählt, Grün mit Schalter oder Argumenten nicht', () => {
+      expect(pruefeFertig(rls(rot({ args: ['y.test.ts'] }), gruen())).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(rot({ schalter: ['MV_X=1'] }), gruen()))).toEqual([])
+      expect(pruefeFertig(rls(rot({ schalter: undefined }), gruen())).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(rot(), gruen({ schalter: ['MV_X=1'] }))).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(rot(), gruen({ args: ['-t', 'x'] }))).join()).toMatch(/kein roter Lauf/)
     })
     it('Log nicht gültig (logOk false) zählt nicht', () => {
       expect(pruefeFertig(rls(rot({ logOk: false }), gruen())).join()).toMatch(/kein roter Lauf/)

@@ -115,6 +115,32 @@ function segmente(befehl) {
 
 const SUPABASE = String.raw`\bsupabase(?:\.js)?(?:\s+-\S+)*\s+`
 const norm = (p) => p.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase()
+
+// sys1-4: Wörter eines Lösch- oder Verschiebebefehls gegen den Arbeitsordner auflösen (tmp//proof, tmp/./proof, Git-Bash-Pfad /c/…) und tmp/proof samt Inhalt und Elternordnern schützen.
+const WURZEL_K = resolve(WURZEL).replace(/\\/g, '/').toLowerCase()
+const PROOF_K = `${WURZEL_K}/tmp/proof`
+const absolut = (wort, basis) => resolve(basis, wort.replace(/\\/g, '/').replace(/^\/([a-z])(?=\/|$)/i, '$1:')).replace(/\\/g, '/').toLowerCase()
+const globRegex = (p) => new RegExp(`^${p.replace(/[.+^$()|[\]\\{}]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')}$`)
+function trifftProof(k, basis) {
+  const w = woerter(k).slice(1)
+  const iZiel = w.findIndex((x) => /^-(destination|newname)$/i.test(x))
+  // Beim Verschieben zählen nur die Quellen: das Ziel ist das Wort nach -Destination, sonst das letzte.
+  const quellen = /^(mv|move|mi|move-item|ren|rename-item|git\s+mv)\b/i.test(k) ? (iZiel >= 0 ? w.filter((_, i) => i !== iZiel + 1) : w.slice(0, -1)) : w
+  return quellen
+    .filter((x) => !/^[-/]/.test(x) || /^\/\S*[\\/]/.test(x))
+    .flatMap((x) => x.split(','))
+    .map((x) => x.replace(/[{}]/g, ''))
+    .filter(Boolean)
+    .some((x) => {
+      const p = absolut(x, basis)
+      if (p === `${PROOF_K}/lauf.lock`) return false
+      if (!/[*?]/.test(p)) return p === PROOF_K || p.startsWith(`${PROOF_K}/`) || PROOF_K.startsWith(`${p.replace(/\/$/, '')}/`) // Nachweise darin, sie selbst oder ein Elternordner
+      const fest = p.slice(0, p.search(/[*?]/))
+      if (fest.startsWith(`${PROOF_K}/`)) return true // Platzhalter unter tmp/proof
+      const re = globRegex(p)
+      return [PROOF_K, ...[...PROOF_K.matchAll(/\//g)].map((m) => PROOF_K.slice(0, m.index))].some((e) => re.test(e)) // Platzhalter trifft tmp/proof oder einen Elternordner
+    })
+}
 // Innentext verschachtelter Shells grob entquotet (alle Anführungszeichen und Escapes entfernt) neu prüfen, statt ihn genau zu parsen.
 const grob = (t) => t.trim().replace(/\\(["'])/g, '$1').replace(/["'`]/g, '')
 
@@ -292,11 +318,13 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
     const g = entscheideBefehl(inner, tiefe + 1)
     if (g) return g
   }
+  let basis = WURZEL_K // Arbeitsordner für relative Wörter; `cd` im selben Befehl verschiebt ihn (sys1-4)
   for (const { roh, kahl, trenner } of segmente(befehl)) {
     const seg = roh.trim()
     if (!seg) continue
     const k = kern(seg)
     const kk = kern(kahl.trim())
+    if (/^(cd|pushd|chdir|set-location|sl)\s/i.test(k)) basis = absolut(woerter(k).slice(1).find((x) => !/^\/[a-z]$|^-/i.test(x)) ?? '.', basis)
     if (/^(vitest|playwright\s+test)\b/.test(k) || /^npm\s+(t|tst|test)(\s|$)/.test(k) || /^npm\s+(?:run|run-script|rum|urn)\s+(check|test|test:\S+|shots(:all)?)(\s|$)/.test(k)) {
       return 'Tests nur über das Start-Programm: `npm run t -- check|e2e|rls|shots|<testdatei>`. Es schreibt das Log mit Hash, Sauber-Angabe, Befehl und EXIT selbst.'
     }
@@ -382,6 +410,7 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
       if (betrifft.some((x) => (x.includes('/') ? /(^|\/)tmp\/proof(\/|$)/.test(x) : SKRIPT_DATEI.test(x) || BERATER_DATEI.test(x) || /abnahme|freigabe|runs\.jsonl|^\d{3}-/.test(x)))) {
         return 'Nachweise unter tmp/proof (Abnahmen, Freigaben, Läufe, Logs) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
       }
+      if (trifftProof(k, basis)) return 'Nachweise unter tmp/proof und ihre Elternordner (tmp, Projektwurzel) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
     }
   }
   return null

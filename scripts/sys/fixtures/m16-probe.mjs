@@ -31,7 +31,7 @@ if (modus === 'nach-push') aendere()
 
 const jetzt = sha256Datei(datei)
 const ab = { check: 'a1', e2e: 'a2', rls: 'a3' }
-const lauf = (ziel, befehl) => ({ nr: 1, ziel, args: [], befehl, exit: 0, sauber: true, stabil: true, start: '2026-11-14T10:00:00.000Z', abdruck: ab[ziel], logOk: true })
+const lauf = (ziel, befehl) => ({ nr: 1, ziel, args: [], schalter: [], befehl, exit: 0, sauber: true, stabil: true, start: '2026-11-14T10:00:00.000Z', abdruck: ab[ziel], logOk: true })
 const frei = { modell: 'claude-fable-5-2', dateien: [{ sha: freigegeben, pfad: datei }], urteil: 'frei', hoch: 0 }
 const gruende = pruefeFertig({
   stufe: 'R3',

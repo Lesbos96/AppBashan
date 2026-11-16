@@ -21,11 +21,25 @@ describe('Test-Startprogramm run.mjs', () => {
     expect(zeilen[0]).toMatch(/^Commit: [0-9a-f]{40}$/)
     expect(zeilen[1]).toMatch(/^Arbeitsbaum sauber: (ja|nein)$/)
     expect(zeilen[2]).toBe('Befehl: node scripts/sys/fixtures/rot.mjs')
+    expect(zeilen[3]).toBe('Argumente: ["node","scripts/sys/fixtures/rot.mjs"]')
+    expect(zeilen[4]).toBe('Schalter: []')
     expect(log).toContain('rot\n')
     expect(log).toMatch(/\nEXIT=3\s*$/)
     const zeile = JSON.parse(readFileSync(join(ordner(), 'runs.jsonl'), 'utf8').trim())
     expect(zeile).toMatchObject({ nr: 1, ziel: 'cmd', exit: 3, befehl: 'node scripts/sys/fixtures/rot.mjs' })
     expect(zeile.logSha).toBe(sha(join(ordner(), '001-cmd.log')))
+  })
+
+  it('sys1-3: Testschalter (MV_ und E2E_, ohne MV_LAUF, Namen groß) stehen sortiert im Log-Kopf und in runs.jsonl', () => {
+    const r = spawnSync(process.execPath, ['scripts/sys/run.mjs', 'cmd', 'node', 'scripts/sys/fixtures/rot.mjs'], {
+      encoding: 'utf8',
+      env: { ...process.env, PROOF_ROOT: mkdtempSync(join(tmpdir(), 'run-sw-')), MV_WETTLAUF_OHNE_SPERRE: '1', mv_klein: 'x y', E2E_REDPROOF: '2', MV_LAUF: 'fremd', ANDERE: '3' },
+    })
+    expect(r.status).toBe(3)
+    const wurzel = r.stdout.match(/Log: (.+)\r?\n/)![1]!.replace(/[\\/][^\\/]+$/, '')
+    const soll = ['E2E_REDPROOF=2', 'MV_KLEIN=x y', 'MV_WETTLAUF_OHNE_SPERRE=1']
+    expect(readFileSync(join(wurzel, '001-cmd.log'), 'utf8').split('\n')[4]).toBe(`Schalter: ${JSON.stringify(soll)}`)
+    expect(JSON.parse(readFileSync(join(wurzel, 'runs.jsonl'), 'utf8').trim()).schalter).toEqual(soll)
   })
 
   it('ein zweiter Lauf überschreibt das erste Log nicht', () => {
