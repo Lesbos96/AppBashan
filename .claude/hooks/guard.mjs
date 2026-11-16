@@ -8,8 +8,8 @@ const WURZEL = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const SCHREIBEN = /^(tee|out-file|set-content|add-content|new-item|ni|sc|ac|touch)\b/i
 const KOPIEREN = /^(cp|mv|copy|move|copy-item|move-item)\b/i
 // Dateien, die nur ein Skript bzw. der Berater schreiben darf (nur unter tmp/proof).
-const SKRIPT_DATEI = /(^|[\\/])(runs\.jsonl|\d{3}-[^\\/]*\.log|db-antrag-[^\\/]*|loesch-lauf\.jsonl|session\.json|agents\.jsonl)$/
-const BERATER_DATEI = /(^|[\\/])(db-freigabe-[^\\/]*|loesch-freigabe-[^\\/]*|[^\\/]*-abnahme\.md)$/
+const SKRIPT_DATEI = /(^|[\\/])(runs\.jsonl|\d{3}-[^\\/]*\.log|db-antrag-[^\\/]*|loesch-lauf\.jsonl|session\.json|agents\.jsonl|lauf\.lock)$/
+const BERATER_DATEI = /(^|[\\/])(db-freigabe-[^\\/]*|loesch-freigabe-[^\\/]*|[^\\/]*-abnahme(-[^\\/]*)?\.md)$/
 const SQL_SCHREIBEND =
   /\b(insert|update|delete|truncate|drop|alter|create|grant|revoke|call|copy|do|merge|execute|perform|into|set|reset|lock|refresh|vacuum|comment|prepare)\b|\b(admin_\w+|set_config|setval|pg_terminate_backend|pg_cancel_backend|dblink\w*|lo_\w+)\s*\(|\b(cron|net)\./i
 const SHELL = '(?:bash|sh|zsh|dash|ksh|pwsh|powershell|cmd)'
@@ -384,6 +384,7 @@ export function entscheideDatei(pfad, agentType, vorhanden = existsSync) {
   if (/\/docs\/freigaben\//.test(p)) return 'docs/freigaben schreibt nur `npm run loesch -- uebernehme` (Lösch-Gate), nie ein Schreibwerkzeug.'
   if (/\/tmp\/proof\//.test(p) && SKRIPT_DATEI.test(p)) return 'Läufe, Logs, Anträge und Protokolle schreibt nur ein Skript (npm run t, gate-db, Hooks).'
   if (/\/tmp\/proof\//.test(p) && BERATER_DATEI.test(p) && agentType !== 'advisor-report') return 'Freigaben und Abnahmen schreibt nur der Subagent advisor-report.'
+  if (/\/tmp\/proof\//.test(p) && BERATER_DATEI.test(p) && vorhanden(pfad)) return 'Freigaben und Abnahmen werden nie überschrieben: eine Korrektur oder Kontrollrunde bekommt die nächste Nummer.'
   if (/\/docs\/proof\//.test(p) && vorhanden(pfad)) return 'Nachweise in docs/proof sind unveränderlich (nach dem Schreiben nie ändern).'
   return null
 }

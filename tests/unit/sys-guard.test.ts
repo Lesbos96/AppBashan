@@ -76,6 +76,8 @@ describe('Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund)', () => {
     'Copy-Item foo tmp/proof/u1/003-rls.log',
     'cp foo tmp/proof/u1/db-freigabe-1.md',
     'cp foo tmp/proof/u1-abnahme.md',
+    'cp foo tmp/proof/u1-abnahme-2.md',
+    'cp foo tmp/proof/lauf.lock',
     'cp foo tmp/proof/u1/session.json',
   ])('Nachweise fälschen: %s', (c) => {
     expect(bash(c).exit).toBe(2)
@@ -85,17 +87,25 @@ describe('Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund)', () => {
   })
 
   it('Write auf Läufe, Logs, Protokolle und .git', () => {
-    for (const p of ['/p/tmp/proof/u1/runs.jsonl', 'C:\\p\\tmp\\proof\\u1\\003-check.log', '/p/tmp/proof/u1/db-antrag-1.json', '/p/tmp/proof/session.json', '/p/tmp/proof/agents.jsonl', '/p/.git/config']) {
+    for (const p of ['/p/tmp/proof/u1/runs.jsonl', 'C:\\p\\tmp\\proof\\u1\\003-check.log', '/p/tmp/proof/u1/db-antrag-1.json', '/p/tmp/proof/session.json', '/p/tmp/proof/agents.jsonl', '/p/tmp/proof/lauf.lock', '/p/.git/config']) {
       expect(datei(p).exit, p).toBe(2)
       expect(datei(p, 'advisor-report').exit, `${p} (auch advisor-report)`).toBe(2)
     }
   })
   it('Freigabe und Abnahme nur von advisor-report', () => {
-    for (const p of ['/p/tmp/proof/u1/db-freigabe-1.md', '/p/tmp/proof/u1-abnahme.md']) {
+    for (const p of ['/p/tmp/proof/u1/db-freigabe-1.md', '/p/tmp/proof/u1-abnahme.md', '/p/tmp/proof/u1-abnahme-2.md']) {
       expect(datei(p).exit, p).toBe(2)
       expect(datei(p, 'reviewer').exit, `${p} (reviewer)`).toBe(2)
       expect(datei(p, 'advisor-report').exit, `${p} (advisor-report)`).toBe(0)
     }
+  })
+  it('u5: eine vorhandene Freigabe oder Abnahme überschreibt auch advisor-report nicht (Kontrollrunde = nächste Nummer)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guard-'))
+    mkdirSync(join(dir, 'tmp', 'proof', 'u1'), { recursive: true })
+    for (const f of ['u1-abnahme-1.md', 'u1/db-freigabe-1.md']) writeFileSync(join(dir, 'tmp', 'proof', f), 'x')
+    for (const f of ['u1-abnahme-1.md', 'u1/db-freigabe-1.md']) expect(datei(join(dir, 'tmp', 'proof', f), 'advisor-report').exit, f).toBe(2)
+    expect(datei(join(dir, 'tmp', 'proof', 'u1-abnahme-2.md'), 'advisor-report').exit).toBe(0)
+    expect(datei(join(dir, 'tmp', 'proof', 'u1/db-freigabe-2.md'), 'advisor-report').exit).toBe(0)
   })
   it('vorhandene Nachweise in docs/proof sind unveränderlich, neue Pfade nicht betroffen', () => {
     const dir = mkdtempSync(join(tmpdir(), 'guard-'))

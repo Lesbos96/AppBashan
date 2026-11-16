@@ -143,6 +143,10 @@ describe('Merge-Gate: pruefeFertig', () => {
       expect(pruefeFertig(r3({ abnahmeVeraltet: ['scripts/sys/run.mjs'] })).join()).toMatch(/seit der Abnahme geändert/)
       expect(pruefeFertig(r3({ abnahmeFehlt: ['supabase/functions/quote/index.ts'] })).join()).toMatch(/nicht von der Abnahme genannt/)
     })
+    it('u5: Fehler der Abnahme-Runden (Lücke, Name, Vorgänger) blockieren auch bei gültiger höchster Runde', () => {
+      expect(pruefeFertig(r3({ abnahmeRunden: [] }))).toEqual([])
+      expect(pruefeFertig(r3({ abnahmeRunden: ['Abnahme-Runden nicht lückenlos ab 1 (vorhanden: 2)'] })).join()).toMatch(/R3: Abnahme-Runden nicht lückenlos/)
+    })
     it('neuer rls-Test ohne roten Lauf davor blockiert', () => {
       const c = r3({ neueRlsTests: ['tests/rls/n.test.ts'], runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 }), lauf('tests/rls/n.test.ts', { nr: 2 })] })
       expect(pruefeFertig(c).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)

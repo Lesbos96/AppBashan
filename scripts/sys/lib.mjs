@@ -9,20 +9,20 @@ import { join } from 'node:path'
 export const PROOF_ROOT = 'tmp/proof'
 export const runRoot = () => process.env.PROOF_ROOT ?? PROOF_ROOT
 
-export function git(...args) {
-  return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
-}
+// Ungekürzte Ausgabe (nötig, wo führende Leerzeichen zählen, z. B. `status --porcelain`).
+const gitRoh = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+export const git = (...args) => gitRoh(...args).trim()
 
 export const schrittName = () => git('branch', '--show-current').replace(/[\\/]/g, '-') || 'detached'
 
 // Sauber: keine Änderung an verfolgten Dateien und keine unverfolgten Dateien außerhalb von docs/.
 // Unverfolgte Dateien unter docs/ beeinflussen keine Suite und zählen nicht.
 // `nachweiseImIndex` (nur run.mjs und bericht.mjs): zusätzlich zählt nicht, was `npm run bericht` in den Index legt, ohne Änderung im Arbeitsbaum:
-// neue Nachweise unter docs/proof/ (`A  `) und die drei Dateien, die er neu schreibt (`M  `: docs/proof/gruen.json, <schritt>/bericht.json und .md).
+// neue Nachweise unter docs/proof/ (`A  `) und die drei Dateien, die er neu schreibt (`M  `: docs/proof/gruen.json sowie bericht.json und .md des laufenden Schritts, nie die eines anderen).
 // Kein Fingerabdruck liest docs/proof/. `fertig` und `start-schritt` verlangen weiter einen leeren Index, ebenso jede ungestagete Änderung (` M`, `AM`, `MM`).
 export function sauber(nachweiseImIndex = false) {
-  const zeilen = git('status', '--porcelain').split('\n').filter(Boolean)
-  const berichtZeile = /^(A {2}docs\/proof\/|M {2}docs\/proof\/(gruen\.json|[\w.-]+\/bericht\.(json|md))$)/
+  const zeilen = gitRoh('status', '--porcelain').split('\n').filter(Boolean)
+  const berichtZeile = new RegExp(`^(A {2}docs/proof/|M {2}docs/proof/(gruen\\.json|${schrittName().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/bericht\\.(json|md))$)`)
   return zeilen.every((z) => z.startsWith('?? docs/') || (nachweiseImIndex && berichtZeile.test(z)))
 }
 

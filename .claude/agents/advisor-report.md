@@ -19,6 +19,7 @@ Prüfe
 
 Bericht (Markdown)
 - Erste Zeile exakt: `Modell: <deine Modell-ID>`
+- Abnahme: Die Hauptsession nennt den Pfad `tmp/proof/<schritt>-abnahme-<n>.md`. Du schreibst genau diese Datei und überschreibst nie eine vorhandene (der Guard sperrt es). Zweite Zeile exakt: `Vorgaenger: keiner` (Runde 1) bzw. `Vorgaenger: tmp/proof/<schritt>-abnahme-<n-1>.md`. Ab Runde 2 liest du den Vorgänger und zählst dessen noch nicht behobene hohe Funde in `Offene Findings hoch` mit; die Runde nennt wieder alle Pflichtdateien mit `SHA256:`-Zeile
 - Kopf mit Datum und geprüftem Umfang
 - Bei Abnahmen und Freigaben: je geprüfter Datei eine Zeile `SHA256: <hash> <pfad>` (das Gate vergleicht sie mit dem Endstand); bei Abnahmen und Lösch-Freigaben den Hash aus dem Auftrag, bei DB-Freigaben den Hash aus dem Antrag abschreiben; DB- und Lösch-Freigaben brauchen zusätzlich genau eine Zeile `Urteil: frei` oder `Urteil: gesperrt`
 - Findings nach Schwere (hoch, mittel, niedrig), je `Datei:Zeile – Problem – Fix`

@@ -45,12 +45,9 @@ for (const s of SUITEN) {
   else laeufe[s] = null
 }
 const kopien = []
-const abnahmePfad = join(PROOF_ROOT, `${schritt}-abnahme.md`)
-const abnahmeKopie = existsSync(abnahmePfad) ? kopiere(abnahmePfad) : null // der Nachweis liegt danach unter docs/proof/<schritt>/
-if (abnahmeKopie) kopien.push(abnahmeKopie)
 const ordner = join(PROOF_ROOT, schritt)
 for (const f of existsSync(ordner) ? readdirSync(ordner).filter((x) => /^(db-(freigabe|antrag)-|loesch-(freigabe-|lauf\.jsonl$))/.test(x)) : []) kopien.push(kopiere(join(ordner, f)))
-// Schrittdateien (tmp/proof/<schritt>-*.md|log|json: Plan, Beraterberichte, Ausgangslage) und die Logs der Proben (`npm run t -- cmd node scripts/sys/…`), benannt <schritt>-probe-<skript>-<nr>.log.
+// Schrittdateien (tmp/proof/<schritt>-*.md|log|json: Plan, Beraterberichte, alle Abnahme-Runden <schritt>-abnahme-<n>.md, Ausgangslage) und die Logs der Proben (`npm run t -- cmd node scripts/sys/…`), benannt <schritt>-probe-<skript>-<nr>.log.
 for (const f of readdirSync(PROOF_ROOT).filter((x) => x.startsWith(`${schritt}-`) && /\.(md|log|json)$/.test(x))) kopien.push(kopiere(join(PROOF_ROOT, f)))
 for (const r of c.runs.filter((x) => x.schritt === schritt && x.ziel === 'cmd')) {
   const skript = /scripts\/sys\/(?:fixtures\/)?([\w-]+)\.mjs/.exec(r.befehl)?.[1]
@@ -63,6 +60,7 @@ for (const a of process.argv.slice(2).map((x) => x.replace(/\\/g, '/'))) {
   kopien.push(kopiere(a, `${m[1]}-${m[2]}`))
 }
 
+const abnahmeKopie = c.abnahmeName ? join(ziel, c.abnahmeName) : null // die höchste Runde, kopiert in der Schleife oben
 const rot = c.runs.filter((r) => r.schritt === schritt && r.exit !== 0).length
 const geaendert = {}
 for (const p of git('diff', '--no-renames', '--name-only', 'origin/main...HEAD').split('\n').filter(Boolean)) {
@@ -87,7 +85,7 @@ const json = {
   laeufe,
   versuche: { gesamt: c.runs.filter((r) => r.schritt === schritt).length, rot },
   migrationen: c.neueMigrationen.map((m) => ({ pfad: m.pfad, sha256: m.sha256 })),
-  abnahme: c.abnahme ? { datei: abnahmeKopie, hoch: c.abnahme.hoch, modell: c.abnahme.modell } : null,
+  abnahme: c.abnahme ? { datei: abnahmeKopie, runde: c.abnahmeRunde, hoch: c.abnahme.hoch, modell: c.abnahme.modell } : null,
   kopien: [...new Set(kopien)],
 }
 // Erst die Kopien scannen; bei einem Treffer (Exit ≠ 0) wird weder bericht.json noch gruen.json geschrieben, fertig blockiert dann.
@@ -121,7 +119,7 @@ writeFileSync(
     ...zeilen,
     '',
     `Datenbank: ${json.migrationen.length} neue Migration(en)${json.migrationen.map((m) => `\n  ${m.pfad} SHA256 ${m.sha256.slice(0, 8)}…`).join('')}`,
-    `Abnahme: ${json.abnahme ? `${json.abnahme.datei} · Offene Findings hoch: ${json.abnahme.hoch}` : 'keine'}`,
+    `Abnahme: ${json.abnahme ? `${json.abnahme.datei} · Runde ${json.abnahme.runde} · Offene Findings hoch: ${json.abnahme.hoch}` : 'keine'}`,
     '',
   ].join('\n'),
 )

@@ -15,9 +15,9 @@ function repo() {
     mkdirSync(join(dir, p, '..'), { recursive: true })
     writeFileSync(join(dir, p), text)
   }
-  git('init', '-q')
+  git('init', '-q', '-b', 'u3') // der Schrittname ist der Branch: sauber() lässt nur die Berichte dieses Schritts zu
   datei('.gitignore', '*.log\n')
-  for (const p of ['docs/proof/gruen.json', 'docs/proof/u3/bericht.md', 'docs/proof/u3/alt.md', 'docs/proof/u3/weg.md', 'docs/STAND.md', 'src/a.ts']) datei(p, 'a\n')
+  for (const p of ['docs/proof/gruen.json', 'docs/proof/u3/bericht.md', 'docs/proof/u3/bericht.json', 'docs/proof/u3/bericht.json.bak', 'docs/proof/u2/bericht.json', 'docs/proof/u3/alt.md', 'docs/proof/u3/weg.md', 'docs/STAND.md', 'src/a.ts']) datei(p, 'a\n')
   git('add', '.')
   git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'start')
   // `sauber()` läuft im Arbeitsordner des Prozesses, darum ein Kindprozess im Test-Repo
@@ -51,7 +51,21 @@ describe('sauber()', () => {
     r.weg()
   })
 
+  it('bericht.json des eigenen Schritts als M im Index ist mit nachweiseImIndex sauber', () => {
+    const r = repo()
+    r.datei('docs/proof/u3/bericht.json', 'neu\n')
+    r.git('add', 'docs/proof/u3/bericht.json')
+    expect(r.git('status', '--porcelain')).toMatch(/^M {2}docs\/proof\/u3\/bericht\.json$/m)
+    expect(r.sauber(true)).toBe(true)
+    expect(r.sauber(false)).toBe(false)
+    r.weg()
+  })
+
   it.each([
+    ['bericht.json eines anderen Schritts als M (N1)', (r: ReturnType<typeof repo>) => { r.datei('docs/proof/u2/bericht.json', 'b\n'); r.git('add', 'docs/proof/u2/bericht.json') }],
+    ['bericht.json.bak als M (Endverankerung)', (r: ReturnType<typeof repo>) => { r.datei('docs/proof/u3/bericht.json.bak', 'b\n'); r.git('add', 'docs/proof/u3/bericht.json.bak') }],
+    ['neue gestagte Datei unter docs/proofx/', (r: ReturnType<typeof repo>) => { r.datei('docs/proofx/b.md', 'x\n'); r.git('add', 'docs/proofx/b.md') }],
+    ['neuer gestagter Code (A)', (r: ReturnType<typeof repo>) => { r.datei('src/neu.ts', 'x\n'); r.git('add', 'src/neu.ts') }],
     ['gestagete Änderung eines alten Nachweises', (r: ReturnType<typeof repo>) => { r.datei('docs/proof/u3/alt.md', 'b\n'); r.git('add', 'docs/proof/u3/alt.md') }],
     ['ungestagete Änderung an gruen.json', (r: ReturnType<typeof repo>) => r.datei('docs/proof/gruen.json', 'b\n')],
     ['gestagt und danach weiter geändert (MM)', (r: ReturnType<typeof repo>) => { r.datei('docs/proof/gruen.json', 'b\n'); r.git('add', 'docs/proof/gruen.json'); r.datei('docs/proof/gruen.json', 'c\n') }],

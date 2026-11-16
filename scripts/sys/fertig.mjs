@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { leseAbnahme } from './abnahme-lib.mjs'
 import { fingerabdruck, KANON, SUITEN } from './fingerabdruck.mjs'
 import { parseFreigabe, pruefePush } from './gate-db-lib.mjs'
 import { freigabenAusGit, leseRegister } from './gate-loesch-lib.mjs'
@@ -62,6 +63,7 @@ export function pruefeFertig(c) {
           g.push(`${m.pfad}: keine Marke db-push für Pfad und SHA256 ${m.sha256} (Push nicht über npm run db:push, gescheitert oder Datei nach dem Push geändert)`)
         }
       }
+      g.push(...(c.abnahmeRunden ?? []).map((x) => `R3: ${x}`))
       if (!c.abnahme) g.push('R3: Abnahme-Datei fehlt')
       else {
         if (!c.abnahme.modell.toLowerCase().includes('fable')) g.push('R3: Abnahme nicht von Fable')
@@ -157,8 +159,7 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
   const ordner = join(PROOF_ROOT, schritt)
   const berichtText = ausGit('HEAD', `docs/proof/${schritt}/bericht.json`)
   const bericht = berichtText ? JSON.parse(berichtText) : null
-  const abnahmeText = lies(join(PROOF_ROOT, `${schritt}-abnahme.md`))
-  const abnahme = abnahmeText === null ? null : parseFreigabe(abnahmeText)
+  const { abnahme, runde: abnahmeRunde, name: abnahmeName, gruende: abnahmeRunden } = leseAbnahme(PROOF_ROOT, schritt)
   const genannt = new Set((abnahme?.dateien ?? []).map((d) => d.pfad))
   const { runs, dbPushes } = leseGepruefteRuns()
   const loesch = Object.entries(leseRegister().skripte).flatMap(([p, bindet]) => [p, ...bindet])
@@ -177,6 +178,9 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
     neueMigrationen: geaendert('AM', 'supabase/migrations').map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
     freigaben: existsSync(ordner) ? readdirSync(ordner).filter((f) => /^db-freigabe-.*\.md$/.test(f)).map((f) => parseFreigabe(readFileSync(join(ordner, f), 'utf8'))) : [],
     abnahme,
+    abnahmeRunde,
+    abnahmeName,
+    abnahmeRunden,
     abnahmeVeraltet: (abnahme?.dateien ?? []).filter((d) => !existsSync(d.pfad) || sha256Datei(d.pfad) !== d.sha).map((d) => d.pfad),
     abnahmeFehlt: pfade.filter((p) => MUSS_ABNAHME.test(p) && existsSync(p) && !genannt.has(p)),
     geloeschtMuss: pfade.filter((p) => MUSS_ABNAHME.test(p) && !existsSync(p)),

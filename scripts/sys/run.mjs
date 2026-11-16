@@ -1,7 +1,7 @@
 // Test-Startprogramm: `npm run t -- <ziel> [args]`. Jeder Lauf schreibt sein Log selbst, nur neu anlegen (Flag wx), mit dem echten Exit-Code des Kindprozesses.
 // Ziele: check, e2e, rls, shots, build, eine Testdatei (tests/unit|rls/*.test.ts, *.spec.ts) oder `cmd <programm> <args…>` (ohne Shell, für Proben).
 import { spawn } from 'node:child_process'
-import { appendFileSync, closeSync, mkdirSync, openSync, readdirSync, readFileSync, writeSync } from 'node:fs'
+import { appendFileSync, closeSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, writeFileSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { fingerabdruck, SUITEN } from './fingerabdruck.mjs'
 import { git, runRoot, sauber, schrittName, sha256Datei } from './lib.mjs'
@@ -46,6 +46,49 @@ try {
   process.exit(2)
 }
 
+// Lauf-Sperre: höchstens ein Lauf zugleich (geteilte Dev-Datenbank, Ports, Fingerabdruck). Die Sperrdatei nennt die PID von run.mjs und die des Testkinds
+// (stirbt run.mjs, läuft das Kind unter Windows weiter). Eine Sperre ohne lebenden Prozess wird freigegeben, eine unlesbare zählt als aktiv (fail closed).
+// Grenzen: `kind` ist der npm-Prozess, nicht dessen Enkel (vitest, playwright); ein Lauf mit umgelenktem PROOF_ROOT hat eine eigene Sperre.
+// ponytail: PID-Wiederverwendung hält eine tote Sperre fest (dann Datei löschen), zwei gleichzeitige Räumer einer toten Sperre können beide laufen; Dateisperre mit Betriebssystem-Handle, wenn das stört.
+const sperre = join(runRoot(), 'lauf.lock')
+const lebt = (pid) => {
+  if (!Number.isInteger(pid)) return false
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    return e.code === 'EPERM'
+  }
+}
+mkdirSync(runRoot(), { recursive: true })
+for (let versuch = 0; ; versuch++) {
+  try {
+    writeFileSync(sperre, JSON.stringify({ pid: process.pid }), { flag: 'wx' })
+    break
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e
+    let alt = null
+    try {
+      alt = JSON.parse(readFileSync(sperre, 'utf8'))
+    } catch {
+      // unlesbar: aktiv
+    }
+    if (alt && !lebt(alt.pid) && !lebt(alt.kind) && versuch === 0) {
+      rmSync(sperre, { force: true })
+      continue
+    }
+    console.error(`Lauf aktiv (PID ${alt?.pid ?? '?'}): ${sperre}. Warten, bis er endet; gehört die Sperre keinem Lauf mehr (PID wiederverwendet), Datei löschen.`)
+    process.exit(2)
+  }
+}
+process.on('exit', () => {
+  try {
+    if (JSON.parse(readFileSync(sperre, 'utf8')).pid === process.pid) rmSync(sperre, { force: true }) // nur die eigene Sperre
+  } catch {
+    // schon weg oder unlesbar: nichts zu tun
+  }
+})
+
 const ordner = join(runRoot(), schrittName())
 mkdirSync(ordner, { recursive: true })
 const marke = ziel.replace(/[\\/:]/g, '_')
@@ -72,6 +115,7 @@ const kopfEnde = readFileSync(logPfad).length
 
 // MV_LAUF: Kennung des Laufs; Module mit Lösch-Gate (tests/support/sweep.ts) arbeiten nur in einem Lauf dieses Programms.
 const kind = spawn(befehl.prog, befehl.args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, env: { ...process.env, MV_LAUF: `${schrittName()}/${nr}` } })
+writeFileSync(sperre, JSON.stringify({ pid: process.pid, kind: kind.pid }))
 kind.stdout.on('data', (b) => writeSync(fd, b))
 kind.stderr.on('data', (b) => writeSync(fd, b))
 const code = await new Promise((resolve) => {

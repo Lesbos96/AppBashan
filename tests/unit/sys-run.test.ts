@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -53,5 +53,50 @@ describe('Test-Startprogramm run.mjs', () => {
     const vorher = readdirSync(ordner()).length
     expect(run(...args).status).toBe(2)
     expect(readdirSync(ordner()).length).toBe(vorher)
+  })
+})
+
+describe('Lauf-Sperre von run.mjs', () => {
+  const neuerRoot = () => mkdtempSync(join(tmpdir(), 'sperre-'))
+  const run = (root: string) => spawnSync(process.execPath, ['scripts/sys/run.mjs', 'cmd', 'node', 'scripts/sys/fixtures/rot.mjs'], { encoding: 'utf8', env: { ...process.env, PROOF_ROOT: root } })
+  const sperre = (root: string, inhalt: object) => writeFileSync(join(root, 'lauf.lock'), JSON.stringify(inhalt))
+  const tot = () => spawnSync(process.execPath, ['--version']).pid as number // beendeter Kindprozess: seine PID gehört keinem Prozess mehr
+
+  it('lebende PID: Abbruch mit Exit 2, kein Log, Sperre unverändert', () => {
+    const root = neuerRoot()
+    sperre(root, { pid: process.pid })
+    const r = run(root)
+    expect(r.status).toBe(2)
+    expect(r.stderr).toMatch(/Lauf aktiv/)
+    expect(readdirSync(root)).toEqual(['lauf.lock'])
+    expect(JSON.parse(readFileSync(join(root, 'lauf.lock'), 'utf8'))).toEqual({ pid: process.pid })
+  })
+
+  it('tote PID von run.mjs, aber lebender Testkind (verwaister Lauf): Abbruch mit Exit 2', () => {
+    const root = neuerRoot()
+    sperre(root, { pid: tot(), kind: process.pid })
+    expect(run(root).status).toBe(2)
+    expect(readdirSync(root)).toEqual(['lauf.lock'])
+  })
+
+  it('unlesbare Sperre zählt als aktiv', () => {
+    const root = neuerRoot()
+    writeFileSync(join(root, 'lauf.lock'), '')
+    expect(run(root).status).toBe(2)
+    expect(readdirSync(root)).toEqual(['lauf.lock'])
+  })
+
+  it('Sperre eines beendeten Prozesses wird freigegeben: der Lauf läuft (Exit 3 des Fixtures) und räumt die Sperre ab', () => {
+    const root = neuerRoot()
+    sperre(root, { pid: tot(), kind: tot() })
+    expect(run(root).status).toBe(3)
+    expect(readdirSync(root).sort()).not.toContain('lauf.lock')
+    expect(readdirSync(join(root, readdirSync(root)[0] ?? '')).filter((f) => f.endsWith('.log'))).toEqual(['001-cmd.log'])
+  })
+
+  it('ein Lauf ohne vorhandene Sperre hinterlässt keine', () => {
+    const root = neuerRoot()
+    expect(run(root).status).toBe(3)
+    expect(readdirSync(root)).not.toContain('lauf.lock')
   })
 })

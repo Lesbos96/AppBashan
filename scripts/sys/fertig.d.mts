@@ -39,6 +39,9 @@ export interface FertigKontext {
   neueMigrationen: { pfad: string; sha256: string }[]
   freigaben: Freigabe[]
   abnahme: Freigabe | null
+  abnahmeRunden?: string[]
+  abnahmeRunde?: number | null
+  abnahmeName?: string | null
   abnahmeVeraltet?: string[]
   abnahmeFehlt?: string[]
   neueRlsTests: string[]

@@ -1,13 +1,14 @@
 # MoveNow · Stand
 
-Stand 2026-11-16, nach Schritt st1 (Storno-Regeln aus Beks' Antworten, Migration 0065). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-16, nach Schritt u5 (Abnahme-Runden und Lauf-Sperre per Skript; davor st1, Migration 0065). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung). Datenbank Dev: 65 Migrationen, lokal = remote bis `20261115233507` (0065), 17 Edge Functions deployt (alle `verify_jwt` aus; die Prüfung des Aufrufers steckt in den Handlern: Token, `apikey` bei `route`, geheimer Kopf bei `photo-cleanup`, `outbox-send`, `photo-publish`). Nächste Migration 0066.
 - st1 (Migration 0065): Die Pauschale der Firma beim Storno gibt es erst ab `termin_at` (`private.call_out_eligible`). Nach jedem Storno ohne Pauschale, durch die Firma oder den Kunden, sind `job_contact` und `job_photo_list` sofort gesperrt (`private.partner_data_access`); mit Pauschale gilt das Fenster `partner_access_days`. `my_jobs`, Nachträge und Listing behalten ihr Fenster. App: `contactLocked` gilt für beide Storno-Status. Keine Edge Function geändert, kein Deploy (ENTSCHEIDUNGEN Nr. 180).
 - `geld.md` nennt die Anzeigeorte der Gebühr für die Firma (Absage-Maske, Abrechnungs-Datei) und den Pauschalbetrag für den Kunden (Nr. 149, 150).
 - Tests: `e2e-desktop` nur für Specs mit Tag `@breit` (Beks, ja, Nr. 178); `rls` bleibt ein Arbeiter (Beks, nein, Nr. 179). Volllauf `e2e` 680 Fälle (679 bestanden, 1 übersprungen: `backend.spec.ts:32` nur mit `E2E_REDPROOF=1`).
-- Arbeitssystem: u1 bis u4, s9k-1 und st1 erledigt. Positivzeilen-Register `tests/support/positiv.ts`: eine neue öffentliche Funktion ohne Eintrag macht `check` rot; private Funktionen fallen nicht unter die Pflicht. Jede Änderung an dieser Datei oder an `tests/rls/positiv.test.ts` verlangt den neuen Hash in `scripts/sys/loesch-register.json` (Fable-Abnahme).
+- u5: Jede Abnahme-Runde ist eine neue Datei `tmp/proof/<schritt>-abnahme-<n>.md` mit Kopfzeile `Vorgaenger:`; es zählt die höchste Runde, Lücken, fremde Namen und falsche Vorgänger blockieren `bericht`/`fertig`, der Guard sperrt das Überschreiben auch für `advisor-report`. `npm run t` bricht mit Exit 2 ab, solange `tmp/proof/lauf.lock` einem lebenden Prozess gehört. `sauber()` lässt nur den Bericht des laufenden Schritts im Index zu (OFFEN u4-2 erledigt).
+- Arbeitssystem: u1 bis u5, s9k-1 und st1 erledigt. Positivzeilen-Register `tests/support/positiv.ts`: eine neue öffentliche Funktion ohne Eintrag macht `check` rot; private Funktionen fallen nicht unter die Pflicht. Jede Änderung an dieser Datei oder an `tests/rls/positiv.test.ts` verlangt den neuen Hash in `scripts/sys/loesch-register.json` (Fable-Abnahme).
 - GOLIVE 34 ist gebaut; Kundenmeldungen prüft der Betreiber binnen 3 Werktagen per Admin-Skript (`reported_jobs`), Mail bei neuer Meldung kommt mit dem Mailversand (Nr. 175).
 - Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung und GOLIVE 34 (Betrieb) erledigt sind.
 
@@ -23,6 +24,7 @@ Nach Wert:
 - Rechtstexte, Mail-Anbieter, ORS-Vertrag, Hosting, Turnstile-Konto, Produktivprojekt (`docs/GOLIVE.md`).
 
 ## Hinweise, die jede Session braucht
+- Kontrollrunde der Abnahme = nächste Nummer, nie dieselbe Datei; nie zwei Läufe gleichzeitig starten (die Sperre meldet „Lauf aktiv“).
 - Verweise im Code und in alten Nachweisen auf `docs/OPEN_ISSUES.md`, `PROGRESS.md`, `AUTOPILOT.md` meinen `docs/archiv/`.
 - Sperrreihenfolge überall: Auftrag, dann Firma. Wettlauftests lassen Testdaten auf Dev stehen (Angebote und Journal sind unlöschbar).
 - Edge Functions deployen: nur über die `ask`-Regel (OFFEN u1-2); Deploy-Log schreibt die Hauptsession mit Write. Deno: `npm run check:deno`.
