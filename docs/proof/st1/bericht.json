@@ -1,0 +1,83 @@
+{
+  "schritt": "st1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 399
+  },
+  "sitzung": "6e1ff5f2-58ad-46dd-90c3-5d9879890e64",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 6
+  },
+  "hash": "b1244026ddfc6a33fb6364290b83a3c6bd92f602",
+  "stand": "1d61f02c9b5d7e12e8b8cbefcc10ae684561b674a4d660d27d11919dadf09d4f",
+  "mainVorher": "566cf87514ca0c138a99fdafcfe88593ac5d58d6",
+  "commits": 2,
+  "geaendert": {
+    ".claude": 1,
+    "docs": 5,
+    "src": 1,
+    "supabase/migrations": 1,
+    "tests/e2e": 1,
+    "tests/rls": 6,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 22,
+      "exit": 0,
+      "tests": "1877 passed (1877)",
+      "sek": 60.9,
+      "hash": "d8edf342c11ff127a1871151e4e94b5311450214",
+      "schritt": "st1",
+      "log": "docs\\proof\\st1\\022-check.log"
+    },
+    "rls": {
+      "nr": 24,
+      "exit": 0,
+      "tests": "374 passed (374)",
+      "sek": 1378.2,
+      "hash": "d8edf342c11ff127a1871151e4e94b5311450214",
+      "schritt": "st1",
+      "log": "docs\\proof\\st1\\024-rls.log"
+    },
+    "e2e": {
+      "nr": 23,
+      "exit": 0,
+      "tests": "680 passed (10.9m)",
+      "sek": 654.9,
+      "hash": "d8edf342c11ff127a1871151e4e94b5311450214",
+      "schritt": "st1",
+      "log": "docs\\proof\\st1\\023-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 23,
+    "rot": 9
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261115233507_0065_pauschale_ab_termin.sql",
+      "sha256": "1b39103d8fbd42eed06f690192dd7b76174e281a09b7f18d4f81e7283fddfa07"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs\\proof\\st1\\st1-abnahme-d2a89428.md",
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\st1\\st1-abnahme-d2a89428.md",
+    "docs\\proof\\st1\\db-antrag-1.json",
+    "docs\\proof\\st1\\db-freigabe-1.md",
+    "docs\\proof\\st1\\loesch-lauf.jsonl",
+    "docs\\proof\\st1\\st1-abnahme-2.md",
+    "docs\\proof\\st1\\st1-abnahme-runde1.md",
+    "docs\\proof\\st1\\st1-plan.md"
+  ]
+}
