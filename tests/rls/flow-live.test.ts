@@ -181,6 +181,9 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
     const s1 = step('W1', '2 accept (pa, aal2)', W1)
     expect(s1.status).toBe('accepted')
     expect(s1.journal).toEqual([{ kind: 'booking', rev: false, ...BOOKED }])
+    // N-12: Wiederholung nach verlorener Antwort = dieselbe Antwort ohne zweite Wirkung; andere Auszahlung bleibt 409
+    expect(await fn('accept', pa.jwt2, body), 'Wiederholung').toEqual(ok)
+    expect(await fn('accept', pa.jwt2, { ...body, shownPayoutCents: BOOKED.payout + 1 })).toMatchObject({ status: 409, body: { error: 'already_taken' } })
     expect((await fn('accept', pb.jwt2, { listingId: listingOf(W1, b), revisionId: rev1(W1), shownPayoutCents: BOOKED.payout })).status).toBe(409)
     expect(snap(W1).journal).toHaveLength(1)
   })

@@ -1909,6 +1909,15 @@ export type Database = {
           total_cents: number
         }[]
       }
+      partner_accept_replay: {
+        Args: {
+          p_actor: string
+          p_listing: string
+          p_revision: string
+          p_shown_payout: number
+        }
+        Returns: string
+      }
       partner_quality: {
         Args: never
         Returns: {

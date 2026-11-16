@@ -120,7 +120,8 @@ export const proposed = (status: NonNullable<ChangeRow['change_status']>, over: 
   change({ change_id: CH1, change_status: status, change_total_cents: 81000, change_valid_until: '2026-12-01T10:00:00+00:00', change_decided_at: status === 'proposed' ? null : '2026-11-30T10:00:00+00:00', receipt_ids: [RC1], ...over })
 
 export type OfferRow = { id: string; base_revision_id: string; amount_cents: number; status: 'sent' | 'confirmed' | 'withdrawn' | 'expired' | 'superseded' | 'rejected'; valid_until: string }
-export type Ans = { status: number; json: unknown }
+/** `lost`: der Server führt die Aktion aus, die Antwort geht verloren (nur `accept`). */
+export type Ans = { status: number; json: unknown; lost?: true }
 
 const IN = (extra: Record<string, unknown> = {}) => ({ goods: 'normal', crew: 2, vehicles: 1, vehicleType: 'van', hours: 3, fromFloor: 2, toFloor: 0, fromLift: false, toLift: true, boxes: 10, parking: 0, packing: false, assembly: null, ...SENTINEL, ...extra })
 
@@ -261,11 +262,14 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     const body = r.request().postDataJSON() as Record<string, unknown>
     s.accepts.push(body)
     const a = s.acceptAnswers.shift()
-    if (a) return r.fulfill({ status: a.status, headers: cors, json: a.json })
+    if (a && !a.lost) return r.fulfill({ status: a.status, headers: cors, json: a.json })
     const won = s.listings.find((l) => l.id === body.listingId)
+    // Wiederholung der eigenen Annahme (Migration 0067): dieselbe assignmentId, keine zweite Zuordnung
+    if (won?.status === 'accepted') return r.fulfill({ headers: cors, json: { assignmentId: A1 } })
     s.listings = s.listings.map((l) => (l.id === body.listingId ? { ...l, status: 'accepted' as const } : l))
     // Der Server legt die Zuordnung an; Beträge stammen aus dem Journal (hier: Preis des Listings, Auszahlung wie gesendet)
     if (won) s.myJobs.push(job({ listing_id: won.id, service: won.service, district: won.district, to_district: won.to_district, preferred_date: won.preferred_date, time_window: won.time_window, total_cents: won.total_cents, payout_cents: body.shownPayoutCents as number }))
+    if (a?.lost) return r.abort('failed') // der Server hat gebucht, die Antwort kommt nicht an
     return r.fulfill({ headers: cors, json: { assignmentId: A1 } })
   })
   await mockRpc(page, 'my_jobs', () => {

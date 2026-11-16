@@ -156,31 +156,10 @@ describe('Annahme', () => {
     await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'payout' })
   })
 
-  describe('Gewinner-Retry (Abnahme M1)', () => {
-    const row = { id: ID, revision_id: REV, status: 'accepted', district: 3, to_district: null, service: 'transport', inputs: {}, preferred_date: null, time_window: null, total_cents: 68961, low_cents: 68961, high_cents: 68961, accept_deadline: '2026-12-01T10:00:00Z' }
-    it('already_taken, aber das Listing steht in der eigenen Liste als angenommen → Erfolg', async () => {
-      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'already_taken' }) })
-      result = { data: [row], error: null }
-      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).resolves.toBeUndefined()
-    })
-    it('already_taken und das Listing ist nicht angenommen (anderer Gewinner) → Fehler bleibt', async () => {
-      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'already_taken' }) })
-      result = { data: [{ ...row, status: 'open' }], error: null }
-      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
-    })
-    it('ein anderes angenommenes Listing zählt nicht; ein Lesefehler lässt den Fehler stehen', async () => {
-      // eine Response lässt sich nur einmal lesen: jeder Aufruf bekommt eine neue
-      invoke.mockImplementation(async () => ({ data: null, error: http(409, { error: 'already_taken' }) }))
-      result = { data: [{ ...row, id: '2d1a3b4c-7e8f-4a9b-8c7d-6e5f4a3b2c1d' }], error: null }
-      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
-      result = { data: null, error: { message: 'x' } }
-      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
-    })
-    it('andere Fehler lesen die Liste nicht', async () => {
-      invoke.mockResolvedValue({ data: null, error: http(409, { error: 'payout_changed' }) })
-      await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'payout' })
-      expect(selects).toEqual([])
-    })
+  it('already_taken bleibt „taken“, die App liest die Liste nicht mehr nach (die Wiederholung entscheidet der Server, 0067)', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(409, { error: 'already_taken' }) })
+    await expect(acceptListing({ id: ID, revisionId: REV }, 1)).rejects.toMatchObject({ kind: 'taken' })
+    expect(selects).toEqual([])
   })
 })
 

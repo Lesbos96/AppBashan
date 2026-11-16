@@ -189,18 +189,11 @@ export function parseEuro(input: string): number | null {
 // Aufrufe ------------------------------------------------------------------------------------------------------------------
 /**
  * Annahme eines Festpreis-Listings mit genau der gezeigten Auszahlung; bei anderem Wert antwortet der Server mit 409.
- * Ging die Antwort einer geglückten Annahme verloren, liefert der zweite Versuch `already_taken`: steht das Listing dann als angenommen
- * in der eigenen Liste (nur die Firma mit Zuordnung sieht das), war es der eigene Erfolg.
+ * Ging die Antwort einer geglückten Annahme verloren, antwortet der Server auf den zweiten Versuch derselben Firma mit derselben
+ * assignmentId (200, `partner_accept_replay`); `already_taken` bedeutet dann wirklich: ein anderer war schneller.
  */
 export async function acceptListing(l: Pick<Listing, 'id' | 'revisionId'>, shownPayoutCents: number): Promise<void> {
-  try {
-    await invoke('accept', { listingId: l.id, revisionId: l.revisionId, shownPayoutCents }, CODES)
-  } catch (e) {
-    if (!(e instanceof JobError) || e.kind !== 'taken') throw e
-    const mine = await loadListings().catch(() => [])
-    if (mine.some((x) => x.id === l.id && x.status === 'accepted')) return
-    throw e
-  }
+  await invoke('accept', { listingId: l.id, revisionId: l.revisionId, shownPayoutCents }, CODES)
 }
 
 /** Festangebot in ganzen Cent. Die Prüfung hier spart nur den Umweg; Spanne, Grenzen und Status prüft der Server. */

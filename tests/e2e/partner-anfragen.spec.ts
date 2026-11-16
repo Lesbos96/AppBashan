@@ -206,16 +206,24 @@ test('aktive Firma mit aal2: alle drei Abrufe finden statt (Gegenprobe zu den Zu
   expect(jobs.payoutReads).toBeGreaterThanOrEqual(1)
 })
 
-test('Gewinner-Retry: ging die Antwort der Annahme verloren, zeigt der zweite Versuch „Angenommen“ und nicht „nicht mehr verfügbar“ (Abnahme M1)', { tag: '@breit' }, async ({ page }) => {
-  const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] })
+test('Antwort verloren, erneut senden (N-12): der Server hat die Annahme gebucht, der zweite Versuch derselben Firma liefert „Angenommen“, nie „nicht mehr verfügbar“', { tag: '@breit' }, async ({ page }) => {
+  const { jobs } = await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 0, json: null, lost: true }] })
   await card(page).getByRole('button', { name: 'Annehmen' }).click()
-  // die erste Annahme hat serverseitig gegriffen, nur die Antwort ging verloren: das Listing der Firma steht auf accepted
-  jobs.listings = [fixed({ status: 'accepted' })]
-  jobs.myJobs = [job()]
+  await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
+  await expect(dialog(page).getByRole('alert')).toBeVisible() // keine Antwort: Meldung, Dialog bleibt
   await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
   await expect(page.getByRole('heading', { name: 'Angenommen', level: 2 })).toBeVisible()
   await expect(page.locator('body')).not.toContainText('nicht mehr verfügbar')
-  expect(jobs.accepts).toHaveLength(1)
+  expect(jobs.accepts).toHaveLength(2)
+  expect(jobs.accepts[1]).toEqual(jobs.accepts[0]) // derselbe Aufruf, kein Schlüssel nötig: Listing, Revision und gezeigte Auszahlung sind der Schlüssel
+  expect(jobs.myJobs).toHaveLength(1) // genau eine Zuordnung
+})
+
+test('Annahme: anderer war schneller (409 already_taken) zeigt weiter „nicht mehr verfügbar“', { tag: '@breit' }, async ({ page }) => {
+  await openJobs(page, { listings: [fixed()], acceptAnswers: [{ status: 409, json: { error: 'already_taken' } }] })
+  await card(page).getByRole('button', { name: 'Annehmen' }).click()
+  await dialog(page).getByRole('button', { name: 'Verbindlich annehmen' }).click()
+  await expect(page.locator('body')).toContainText('nicht mehr verfügbar')
 })
 
 test('angenommene Anfrage steht nicht mehr unter „Offene Anfragen“; Beträge kommen aus dem Journal (my_jobs), nicht aus dem Listing (Abnahme H1)', { tag: '@breit' }, async ({ page }) => {
