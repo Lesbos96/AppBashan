@@ -11,6 +11,8 @@ export interface Lauf {
   start?: string
   hash?: string
   schritt?: string
+  /** SHA-256 der rls-Testdatei beim Start des Laufs (nur Läufe einer Datei unter tests/rls; fehlt oder leer = zählt nicht). */
+  dateiSha?: string
   abdruck: string | null
   logOk: boolean
 }
@@ -21,6 +23,8 @@ export interface GruenEintrag {
   zeit?: string
 }
 export interface FertigKontext {
+  /** Name des Schritts; nur Läufe dieses Schritts zählen beim Rot-Beweis. */
+  schritt?: string
   stufe: 'R0' | 'R1' | 'R2' | 'R3'
   sauber: boolean
   ffMoeglich?: boolean
@@ -44,7 +48,8 @@ export interface FertigKontext {
   abnahmeName?: string | null
   abnahmeVeraltet?: string[]
   abnahmeFehlt?: string[]
-  neueRlsTests: string[]
+  /** Neu angelegte rls-Testdateien (eine Umbenennung ist eine neue Datei) mit dem SHA-256 der Datei im Endstand. */
+  neueRlsTests: { pfad: string; sha256: string }[]
   berichtStand: string | null
   berichtGate?: string | null
   standZeilen: number | null
@@ -54,4 +59,7 @@ export interface FertigKontext {
 export const MUSS_ABNAHME: RegExp
 export function gueltigerLauf(c: FertigKontext, suite: string): Lauf | null
 export function pruefeFertig(c: FertigKontext): string[]
+export function neueRlsDateien(bereich: string, wurzel?: string): string[]
+export function gateMeldung(stufe: string, fingerabdruckSha: string): string
+export function mergeMeldung(commit: string): string
 export function stageNachweise(pfade: string[], wurzel?: string): void

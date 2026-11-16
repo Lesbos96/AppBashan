@@ -72,10 +72,13 @@ export function pruefeFertig(c) {
         for (const p of c.abnahmeVeraltet ?? []) g.push(`R3: ${p} hat sich seit der Abnahme geändert`)
         for (const p of c.abnahmeFehlt ?? []) g.push(`R3: ${p} ist geändert, aber nicht von der Abnahme genannt`)
       }
-      for (const t of c.neueRlsTests) {
-        const lauf = c.runs.filter((r) => r.ziel === t && r.logOk).sort((a, b) => a.nr - b.nr)
+      // Rot-vor-Grün (n12b-3): nur Läufe dieses Schritts mit gültigem Log und gesetztem dateiSha; beide Läufe müssen genau die Datei des Endstands geprüft haben.
+      // Der erste grüne Lauf zählt nach Inhalt (egal unter welchem Pfad), der rote nur unter dem Endpfad: eine Umbenennung braucht ihr eigenes Rot,
+      // und ein Rot, das nur durch eine später geänderte Erwartung entstand, passt nicht zum Endstand.
+      for (const { pfad: t, sha256: endSha } of c.neueRlsTests) {
+        const lauf = c.runs.filter((r) => r.schritt === c.schritt && r.logOk && r.dateiSha && endSha && r.dateiSha === endSha).sort((a, b) => a.nr - b.nr)
         const ersterGruen = lauf.find((r) => r.exit === 0)
-        if (!ersterGruen || !lauf.some((r) => r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen`)
+        if (!ersterGruen || !lauf.some((r) => r.ziel === t && r.exit !== 0 && r.nr < ersterGruen.nr)) g.push(`R3: ${t}: kein roter Lauf vor dem ersten grünen (beide mit der Datei des Endstands, SHA-256 ${endSha || 'fehlt'})`)
       }
     }
     // Lösch-Gate (zweite Ebene): geänderte Register-Skripte brauchen eine Freigabe für den neuen SHA-256, Freigaben bleiben unverändert.
@@ -151,6 +154,17 @@ const ausGit = (rev, p) => {
   }
 }
 
+// Neu angelegte Dateien unter tests/rls im Bereich; ohne Umbenennungserkennung (--no-renames), eine umbenannte Datei ist also neu und braucht ihr eigenes Rot.
+export function neueRlsDateien(bereich, wurzel = '.') {
+  return execFileSync('git', ['-C', wurzel, 'diff', '--no-renames', '--name-only', '--diff-filter=A', bereich, '--', 'tests/rls'], { encoding: 'utf8' })
+    .split('\n')
+    .filter((f) => f.endsWith('.test.ts'))
+}
+
+// Meldungen am Ende von `npm run fertig`. Der Fingerabdruck ist ein Hash über die Suite-Dateien, kein Commit.
+export const gateMeldung = (stufe, fingerabdruckSha) => `FERTIG: Gate bestanden (Stufe ${stufe}, Fingerabdruck ${fingerabdruckSha.slice(0, 12)}, kein Commit)`
+export const mergeMeldung = (commit) => `main gemergt und gepusht: ${commit}`
+
 export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht = false }) {
   const bereich = `${von}...${bis}`
   const pfade = git('diff', '--no-renames', '--name-only', bereich).split('\n').filter(Boolean)
@@ -164,6 +178,7 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
   const { runs, dbPushes } = leseGepruefteRuns()
   const loesch = Object.entries(leseRegister().skripte).flatMap(([p, bindet]) => [p, ...bindet])
   return {
+    schritt,
     loeschGeaendert: [...new Set(pfade.filter((p) => loesch.includes(p) && existsSync(p)))].map((pfad) => ({ pfad, sha256: sha256Datei(pfad) })),
     loeschFreigaben: freigabenAusGit('HEAD'),
     freigabenGeaendert: geaendert('MD', 'docs/freigaben'),
@@ -186,7 +201,7 @@ export function sammle({ von, bis = 'HEAD', schritt, schrittPruefen, ohneBericht
     geloeschtMuss: pfade.filter((p) => MUSS_ABNAHME.test(p) && !existsSync(p)),
     // Kopien und Logs, die bericht.json nennt, müssen im Commit liegen (`*.log` ist ignoriert; `npm run bericht` legt sie per stageNachweise in den Index, ein nicht committeter Index fällt hier auf).
     berichtKopienFehlen: [...(bericht?.kopien ?? []), ...Object.values(bericht?.laeufe ?? {}).map((l) => l?.log)].filter(Boolean).map((p) => p.replace(/\\/g, '/')).filter((p) => !imHead(p)),
-    neueRlsTests: geaendert('A', 'tests/rls').filter((f) => f.endsWith('.test.ts')),
+    neueRlsTests: neueRlsDateien(bereich).map((pfad) => ({ pfad, sha256: existsSync(pfad) ? sha256Datei(pfad) : '' })),
     berichtStand: bericht?.stand ?? null,
     berichtGate: bericht?.gate ?? null,
     standZeilen: stand === null ? null : stand.replace(/\r?\n$/, '').split(/\r?\n/).length,
@@ -243,11 +258,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     return git('rev-parse', 'main') === git('rev-parse', 'origin/main')
   })()
   meldeUndEnde(pruefeFertig(ctx), 'merge')
-  console.log(`FERTIG: Gate bestanden (Stufe ${ctx.stufe}, Code-Stand ${sha256(ctx.abdruck.check).slice(0, 12)})`)
+  console.log(gateMeldung(ctx.stufe, sha256(ctx.abdruck.check)))
   if (!args.includes('--nur-pruefen')) {
     const branch = git('branch', '--show-current')
     git('checkout', 'main')
     git('merge', '--ff-only', branch)
-    console.log(execFileSync('git', ['push'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }) || 'push ok')
+    execFileSync('git', ['push'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }) // wirft bei Fehler
+    if (git('rev-parse', 'origin/main') !== git('rev-parse', 'HEAD')) {
+      console.error('Push gemeldet, aber origin/main weicht von main ab.')
+      process.exit(1)
+    }
+    console.log(mergeMeldung(git('rev-parse', '--short', 'HEAD')))
   }
 }

@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const WURZEL = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const SCHREIBEN = /^(tee|out-file|set-content|add-content|new-item|ni|sc|ac|touch)\b/i
 const KOPIEREN = /^(cp|mv|copy|move|copy-item|move-item)\b/i
+const LOESCHEN = /^(rm|del|erase|ri|rd|rmdir|remove-item|rni|unlink|mv|move|mi|move-item|ren|rename-item|git\s+(?:rm|mv))\b/i
 // Dateien, die nur ein Skript bzw. der Berater schreiben darf (nur unter tmp/proof).
 const SKRIPT_DATEI = /(^|[\\/])(runs\.jsonl|\d{3}-[^\\/]*\.log|db-antrag-[^\\/]*|loesch-lauf\.jsonl|session\.json|agents\.jsonl|lauf\.lock)$/
 const BERATER_DATEI = /(^|[\\/])(db-freigabe-[^\\/]*|loesch-freigabe-[^\\/]*|[^\\/]*-abnahme(-[^\\/]*)?\.md)$/
@@ -373,6 +374,14 @@ export function entscheideBefehl(roherBefehl, tiefe = 0, stueck = false) {
     // Berater-Namen (Freigabe, Abnahme) auch ohne Verzeichnis im Ziel (nach `cd tmp/proof/x`), Lauf-Dateien nur unter tmp/proof.
     if ((KOPIEREN.test(k) || SCHREIBEN.test(k) || /^(ren|rename-item|git\s+mv)\b/i.test(k)) && ((/\btmp\/proof\b/.test(ziel) && (SKRIPT_DATEI.test(ziel) || BERATER_DATEI.test(ziel))) || (!ziel.includes('/') && BERATER_DATEI.test(ziel)))) {
       return 'Läufe, Logs, Anträge, Freigaben und Abnahmen entstehen nur durch Start-Programm bzw. advisor-report; nichts dorthin kopieren oder schreiben.'
+    }
+    // u5-3 M1: Löschen und Verschieben von Nachweisen (Abnahme-Runden, Freigaben, runs.jsonl, Logs, Ordner, Platzhalter) hebelt die Kette aus; nur lauf.lock darf weg.
+    // Ein Wort zählt, wenn es unter tmp/proof liegt oder (nach `cd`, ohne Verzeichnis) wie ein Nachweis heißt; Platzhalter mit abnahme, freigabe oder runs.jsonl zählen mit.
+    if (LOESCHEN.test(k)) {
+      const betrifft = woerter(k).slice(1).filter((x) => !/^[-/]/.test(x) || /^\/\S*[\\/]/.test(x)).flatMap((x) => x.split(',')).map(norm).filter((x) => x !== '' && !/(^|\/)lauf\.lock$/.test(x))
+      if (betrifft.some((x) => (x.includes('/') ? /(^|\/)tmp\/proof(\/|$)/.test(x) : SKRIPT_DATEI.test(x) || BERATER_DATEI.test(x) || /abnahme|freigabe|runs\.jsonl|^\d{3}-/.test(x)))) {
+        return 'Nachweise unter tmp/proof (Abnahmen, Freigaben, Läufe, Logs) werden nie gelöscht oder verschoben; nur lauf.lock darf weg, wenn kein Lauf mehr aktiv ist.'
+      }
     }
   }
   return null

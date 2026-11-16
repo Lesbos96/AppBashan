@@ -107,6 +107,16 @@ for (;;) {
 }
 
 const abdruckVor = SUITEN.includes(ziel) ? fingerabdruck(ziel) : null
+// Hash der rls-Testdatei: Rot-vor-Grün (fertig.mjs) zählt einen Lauf nur, wenn die Datei im roten und im grünen Lauf dem Endstand gleicht.
+const rlsDatei = /^tests\/rls\/.+\.test\.ts$/.test(ziel)
+const dateiHash = () => {
+  try {
+    return rlsDatei ? sha256Datei(ziel) : null
+  } catch {
+    return null // Datei fehlt: kein Hash, der Lauf zählt nicht als Rot-Beweis
+  }
+}
+const dateiVor = dateiHash()
 const hash = git('rev-parse', 'HEAD')
 const saubervor = sauber(true)
 const start = Date.now()
@@ -134,7 +144,7 @@ const tests = (/^\s*Tests\s+(.+)$/m.exec(log) ?? /^\s*(\d+ passed.*)$/m.exec(log
 const stabil = hash === git('rev-parse', 'HEAD') && saubervor === sauber(true) && (abdruckVor === null || abdruckVor === fingerabdruck(ziel))
 appendFileSync(
   join(ordner, 'runs.jsonl'),
-  JSON.stringify({ nr, ziel, args: extra, befehl: befehl.anzeige, hash, sauber: saubervor, stabil, start: new Date(start).toISOString(), exit: code, sek, tests, logSha: sha256Datei(logPfad), abdruck: abdruckVor }) + '\n',
+  JSON.stringify({ nr, ziel, args: extra, befehl: befehl.anzeige, hash, sauber: saubervor, stabil, start: new Date(start).toISOString(), exit: code, sek, tests, logSha: sha256Datei(logPfad), abdruck: abdruckVor, dateiSha: dateiVor && dateiVor === dateiHash() ? dateiVor : null }) + '\n',
 )
 
 const zeilen = log.slice(kopfEnde).split(/\r?\n/)

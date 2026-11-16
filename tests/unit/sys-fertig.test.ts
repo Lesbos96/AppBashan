@@ -3,11 +3,12 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MUSS_ABNAHME, pruefeFertig, stageNachweise, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
+import { MUSS_ABNAHME, gateMeldung, mergeMeldung, neueRlsDateien, pruefeFertig, stageNachweise, type FertigKontext, type Lauf } from '../../scripts/sys/fertig.mjs'
 
 const AB = { check: 'a1', e2e: 'a2', rls: 'a3' }
 const lauf = (ziel: string, extra: Partial<Lauf> = {}): Lauf => ({
   nr: 1,
+  schritt: 's',
   ziel,
   args: [],
   befehl: { check: 'npm run check', e2e: 'npm run test:e2e', rls: 'npm run test:rls' }[ziel] ?? ziel,
@@ -20,6 +21,7 @@ const lauf = (ziel: string, extra: Partial<Lauf> = {}): Lauf => ({
   ...extra,
 })
 const ctx = (extra: Partial<FertigKontext> = {}): FertigKontext => ({
+  schritt: 's',
   stufe: 'R1',
   sauber: true,
   ffMoeglich: true,
@@ -129,8 +131,41 @@ describe('Merge-Gate: pruefeFertig', () => {
   })
 
   describe('R3', () => {
+    const N = 'tests/rls/n.test.ts'
+    const F1 = 'f'.repeat(64)
+    const F2 = 'e'.repeat(64)
+    const neu = [{ pfad: N, sha256: F1 }]
+    const basis = [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 })]
+    const rls = (...l: Lauf[]) => r3({ neueRlsTests: neu, runs: [...basis, ...l] })
+    const rot = (extra: Partial<Lauf> = {}) => lauf(N, { nr: 1, exit: 1, dateiSha: F1, ...extra })
+    const gruen = (extra: Partial<Lauf> = {}) => lauf(N, { nr: 2, dateiSha: F1, ...extra })
     it('grün mit Freigabe, Abnahme und Rot-vor-Grün', () => {
-      expect(pruefeFertig(r3({ neueRlsTests: ['tests/rls/n.test.ts'], runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 }), lauf('tests/rls/n.test.ts', { nr: 1, exit: 1 }), lauf('tests/rls/n.test.ts', { nr: 2 })] }))).toEqual([])
+      expect(pruefeFertig(rls(rot(), gruen()))).toEqual([])
+    })
+    it('n12b-3: Rot nur gültig, wenn die Datei im roten und im grünen Lauf byte-gleich dem Endstand ist', () => {
+      // Datei zwischen rot und grün geändert (Erwartung angepasst): das Rot ist keine Prüfung des Endstands
+      expect(pruefeFertig(rls(rot({ dateiSha: F2 }), gruen())).join()).toMatch(/kein roter Lauf/)
+      // grüner Lauf mit anderer Datei als der Endstand
+      expect(pruefeFertig(rls(rot(), gruen({ dateiSha: F2 }))).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+      // Endstand weicht von beiden Läufen ab (Datei nach dem Paar umgeschrieben)
+      expect(pruefeFertig(r3({ neueRlsTests: [{ pfad: N, sha256: F2 }], runs: [...basis, rot(), gruen()] })).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+    })
+    it('n12b-3: fehlendes dateiSha zählt weder bei Rot noch bei Grün (nie undefined === undefined)', () => {
+      expect(pruefeFertig(rls(rot({ dateiSha: undefined }), gruen())).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(rot(), gruen({ dateiSha: undefined }))).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+      expect(pruefeFertig(rls(rot({ dateiSha: undefined }), gruen({ dateiSha: undefined }))).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+      expect(pruefeFertig(r3({ neueRlsTests: [{ pfad: N, sha256: '' }], runs: [...basis, rot({ dateiSha: '' }), gruen({ dateiSha: '' })] })).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+    })
+    it('n12b-3: nur Läufe des eigenen Schritts zählen', () => {
+      expect(pruefeFertig(rls(rot({ schritt: 'alt' }), gruen())).join()).toMatch(/kein roter Lauf/)
+      expect(pruefeFertig(rls(rot(), gruen({ schritt: 'alt' }))).join()).toMatch(/kein roter Lauf|kein grüner Lauf/)
+    })
+    it('n12b-3: Umbenennung: Rot unter dem alten Pfad zählt nicht, Grün zählt nach Inhalt (egal unter welchem Pfad)', () => {
+      expect(pruefeFertig(rls(rot({ ziel: 'tests/rls/alt.test.ts' }), gruen())).join()).toMatch(/kein roter Lauf/)
+      // grüner Lauf unter dem alten Pfad, roter unter dem Endpfad, gleiche Datei: gültig (der Inhalt zählt)
+      expect(pruefeFertig(rls(rot(), gruen({ ziel: 'tests/rls/alt.test.ts' })))).toEqual([])
+      // grüner Lauf unter altem Pfad vor dem roten unter dem Endpfad: Rot kommt nach dem ersten Grün
+      expect(pruefeFertig(rls(rot({ nr: 5 }), gruen({ ziel: 'tests/rls/alt.test.ts', nr: 2 }))).join()).toMatch(/kein roter Lauf/)
     })
     it('neue Migration ohne passende Freigabe blockiert', () => {
       expect(pruefeFertig(r3({ freigaben: [] })).join()).toMatch(/keine Freigabe/)
@@ -148,8 +183,11 @@ describe('Merge-Gate: pruefeFertig', () => {
       expect(pruefeFertig(r3({ abnahmeRunden: ['Abnahme-Runden nicht lückenlos ab 1 (vorhanden: 2)'] })).join()).toMatch(/R3: Abnahme-Runden nicht lückenlos/)
     })
     it('neuer rls-Test ohne roten Lauf davor blockiert', () => {
-      const c = r3({ neueRlsTests: ['tests/rls/n.test.ts'], runs: [lauf('check'), lauf('e2e'), lauf('rls', { nr: 3 }), lauf('tests/rls/n.test.ts', { nr: 2 })] })
-      expect(pruefeFertig(c).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)
+      expect(pruefeFertig(rls(gruen())).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)
+      expect(pruefeFertig(rls(rot({ nr: 3 }), gruen())).join()).toMatch(/kein roter Lauf vor dem ersten grünen/)
+    })
+    it('Log nicht gültig (logOk false) zählt nicht', () => {
+      expect(pruefeFertig(rls(rot({ logOk: false }), gruen())).join()).toMatch(/kein roter Lauf/)
     })
     describe('rls: Übernahme und Läufe höchstens 7 Tage alt', () => {
       // Schritt ohne Migration: keine Freigabe und keine Marke nötig, kein db-push
@@ -220,5 +258,36 @@ describe('Merge-Gate: pruefeFertig', () => {
       expect(pruefeFertig(r3({ berichtKopienFehlen: ['docs/proof/u2b/037-check.log'] })).join()).toMatch(/docs\/proof\/u2b\/037-check\.log.*nicht im Commit/)
       expect(pruefeFertig(r3({ berichtKopienFehlen: ['docs/proof/u2b/037-check.log'], ohneBericht: true }))).toEqual([])
     })
+  })
+})
+
+describe('n12b-3: neueRlsDateien erkennt eine Umbenennung als neue Datei', () => {
+  it('umbenannte (auch byte-gleiche) rls-Datei ist neu, geänderte und unveränderte nicht', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rls-neu-'))
+    const git = (...a: string[]) => {
+      const r = spawnSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })
+      expect(r.status, r.stderr).toBe(0)
+    }
+    git('init', '-b', 'main')
+    mkdirSync(join(dir, 'tests/rls'), { recursive: true })
+    const inhalt = Array.from({ length: 40 }, (_, i) => `// Zeile ${i}`).join('\n') + '\n'
+    for (const f of ['alt', 'bleibt', 'wird-geaendert']) writeFileSync(join(dir, `tests/rls/${f}.test.ts`), inhalt)
+    git('add', '-A')
+    git('commit', '-m', 'basis')
+    git('mv', 'tests/rls/alt.test.ts', 'tests/rls/neu.test.ts') // 100 % identisch: git würde das als Umbenennung führen
+    writeFileSync(join(dir, 'tests/rls/wird-geaendert.test.ts'), inhalt + '// geändert\n')
+    writeFileSync(join(dir, 'tests/rls/echt-neu.test.ts'), 'x\n')
+    git('add', '-A')
+    git('commit', '-m', 'schritt')
+    expect(neueRlsDateien('HEAD~1...HEAD', dir).sort()).toEqual(['tests/rls/echt-neu.test.ts', 'tests/rls/neu.test.ts'])
+  })
+})
+
+describe('fertig: Meldungen', () => {
+  it('Gate-Zeile nennt den Fingerabdruck als Fingerabdruck, nie als Code-Stand; Merge-Zeile den Commit', () => {
+    const g = gateMeldung('R3', 'abcdef0123456789')
+    expect(g).toMatch(/Fingerabdruck abcdef012345/)
+    expect(g).not.toMatch(/Code-Stand/)
+    expect(mergeMeldung('1a2b3c4')).toBe('main gemergt und gepusht: 1a2b3c4')
   })
 })
