@@ -118,7 +118,7 @@ describe('my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster', () => {
     expect(r['a Storno 50 %']).toBe(`= cancelled_by_customer:false:${LATE}:${LATE_SPLIT.payoutCents}:true`)
     expect(r['a Listing und Bezirk']).toBe('= true')
     expect(r['Audit nachher'], 'my_jobs() schreibt keine Audit-Zeile').toBe(r['Audit vorher'])
-    err(r['service_role'], 'not_found')
+    err(r['service_role'], '42501') // n15: EXECUTE für service_role entzogen (0066)
     rowsOf(r['b Anzahl'], 1)
     rowsOf(r['b sieht A nicht'], 0)
     err(r['a aal1'], 'mfa_required')

@@ -147,4 +147,21 @@ describe('Konto löschen bei offener Meldung (M1)', () => {
     expect(r['Z3 ohne Meldung löschen']).toBe('ok')
     val(r['Z4 bleibt unangetastet'], 'true')
   })
+
+  // s9k1-1 (b): Melden mit noch gültigem Token nach der Löschung (PostgREST kennt gelöschte Sitzungen nicht) ergäbe eine offene Meldung zu einem gelöschten Konto.
+  it('nach dem Löschen: report_not_done wirft not_found, die Meldung wird nicht gesetzt', () => {
+    const [Z3e, Z3f] = [newId(), newId()]
+    const setup = `${BASE} ${accepted(Z3e, ago('2 hours'), 'a', U.cd1)} ${completed(Z3e)} ${accepted(Z3f, ago('2 hours'), 'b', U.cd2)} ${completed(Z3f)}`
+    const steps: Step[] = [
+      { name: 'löschen', as: 'service_role', sql: `perform public.delete_account('${U.cd1}')` },
+      { name: 'melden nach Löschung', as: 'authenticated', claims: A1(U.cd1), sql: `perform public.report_not_done('${Z3e}')` },
+      { name: 'keine Meldung', sql: `=(select not_done_reported_at is null from public.service_requests where id = '${Z3e}')` },
+      { name: 'ohne Löschung geht Melden', as: 'authenticated', claims: A1(U.cd2), sql: `perform public.report_not_done('${Z3f}')` },
+    ]
+    const r = probes(setup, steps)
+    expect(r['löschen']).toBe('ok')
+    err(r['melden nach Löschung'], 'not_found')
+    val(r['keine Meldung'], 'true')
+    expect(r['ohne Löschung geht Melden']).toBe('ok')
+  })
 })

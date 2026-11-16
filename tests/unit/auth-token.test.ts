@@ -1,59 +1,124 @@
-// s9k-1 (S9i4-3): 401 gibt es nur für ein abgelehntes Token (Auth antwortet 400, 401 oder 403, auch „session_not_found“ nach dem Löschen
-// des Kontos). Jede andere Antwort des Auth-Dienstes ist eine Störung: werfen, die Handler machen daraus 500, die App meldet nicht ab.
+// s9k1-4/-5: 401 gibt es nur für ein abgelehntes Token. `rejectToken` erkennt es am Fehlercode (nicht am Status allein) oder am Fehlertyp
+// „Sitzung fehlt“ (auth-js macht aus session_not_found einen AuthSessionMissingError, Status 400, ohne Code). Alles andere, auch ein 401 oder 403
+// des Gateways bei rotiertem Function-Schlüssel, ist eine Störung: `AuthServiceError` mit festem Text (nie Token oder Originalmeldung), die
+// Handler antworten 500 und die App meldet nicht ab. Gemessene Codes gegen Dev: tests/rls/auth-token-codes.test.ts.
 import { describe, expect, it } from 'vitest'
+import { AuthServiceError, rejectToken } from '../../supabase/functions/_shared/auth.ts'
 import { handleDeleteAccount } from '../../supabase/functions/_shared/account/handlers.ts'
+import { handleCancelCustomer } from '../../supabase/functions/_shared/cancel/handlers.ts'
+import { handleCancelPartner } from '../../supabase/functions/_shared/cancel/partner.ts'
+import { handleDecideChange, handleProposeChange } from '../../supabase/functions/_shared/change/handlers.ts'
+import { handleAdminCorrect } from '../../supabase/functions/_shared/admin/correct.ts'
+import { handleAccept, handleAdminContact, handleConfirmOffer } from '../../supabase/functions/_shared/jobs/handlers.ts'
+import { handleAdminPhoto, handleJobPhoto, handleReceipt } from '../../supabase/functions/_shared/photo/handlers.ts'
+import { handleQuote } from '../../supabase/functions/_shared/quote/handler.ts'
 import { getUser, type Db } from '../../supabase/functions/_shared/jobs/db.ts'
 import { quoteDb } from '../../supabase/functions/_shared/quote/db.ts'
 
-const jwt = `h.${btoa(JSON.stringify({ aal: 'aal2' }))}.s`
-const authDb = (r: { data: { user: { id: string } | null }; error: { status?: number; name?: string } | null }) => ({ auth: { getUser: async () => r } }) as unknown as Db
+type AuthErr = { name?: string; status?: number; code?: string; message?: string }
+const jwt = `h.${btoa(JSON.stringify({ aal: 'aal2' })).replaceAll('=', '')}.s`
+const authDb = (r: { data: { user: { id: string } | null }; error: AuthErr | null }) => ({ auth: { getUser: async () => r } }) as unknown as Db
 
-const REJECTED = [
-  { name: 'AuthApiError', status: 401 },
-  { name: 'AuthApiError', status: 403 },
+const REJECTED: AuthErr[] = [
+  { name: 'AuthApiError', status: 403, code: 'bad_jwt' },
+  { name: 'AuthApiError', status: 401, code: 'bad_jwt' },
+  { name: 'AuthApiError', status: 401, code: 'session_expired' },
+  { name: 'AuthApiError', status: 403, code: 'user_not_found' },
+  { name: 'AuthApiError', status: 403, code: 'user_banned' },
   { name: 'AuthSessionMissingError', status: 400 },
 ]
-const FAULTS = [
-  { name: 'AuthApiError', status: 500 },
-  { name: 'AuthApiError', status: 429 },
+const FAULTS: AuthErr[] = [
+  { name: 'AuthApiError', status: 401 }, // Gateway: falscher oder rotierter Schlüssel der Function, ohne Code
+  { name: 'AuthApiError', status: 403, code: 'unexpected_failure' },
+  { name: 'AuthApiError', status: 400, code: 'validation_failed' },
+  { name: 'AuthApiError', status: 500, code: 'unexpected_failure' },
+  { name: 'AuthApiError', status: 429, code: 'over_request_rate_limit' },
   { name: 'AuthRetryableFetchError', status: 503 },
   { name: 'AuthRetryableFetchError', status: 0 },
   { name: 'AuthUnknownError', status: undefined },
 ]
+const label = (e: AuthErr) => `${e.name} ${e.status} ${e.code ?? '-'}`
 
-describe('getUser (jobs/db.ts)', () => {
+describe('rejectToken', () => {
+  it('abgelehntes Token (Code oder Sitzung fehlt): null', () => {
+    for (const e of REJECTED) expect(rejectToken(e), label(e)).toBeNull()
+  })
+  it('alles andere (Gateway 401 ohne Code, 5xx, 429, Netz, unbekannt): wirft AuthServiceError mit Status und Code', () => {
+    for (const e of FAULTS) {
+      let thrown: unknown
+      try {
+        rejectToken(e)
+      } catch (x) {
+        thrown = x
+      }
+      expect(thrown, label(e)).toBeInstanceOf(AuthServiceError)
+      expect(thrown, label(e)).toMatchObject({ authStatus: e.status, authCode: e.code })
+    }
+  })
+  it('der geworfene Fehler enthält weder Token noch Originalmeldung', () => {
+    const secret = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1In0.c2lnbmF0dXI'
+    let thrown: Error | undefined
+    try {
+      rejectToken({ name: 'AuthApiError', status: 500, code: 'unexpected_failure', message: `invalid JWT ${secret}` })
+    } catch (x) {
+      thrown = x as Error
+    }
+    expect(thrown).toBeInstanceOf(AuthServiceError)
+    expect(`${thrown?.message} ${thrown?.stack?.split('\n')[0]} ${JSON.stringify(thrown)}`).not.toContain(secret)
+    expect(thrown && 'cause' in thrown).toBe(false)
+  })
+})
+
+describe('getUser (jobs/db.ts) und quote getUserId', () => {
   it('gültiges Token: Nutzer und aal aus dem Token', async () => {
     await expect(getUser(authDb({ data: { user: { id: 'u1' } }, error: null }), jwt)).resolves.toEqual({ id: 'u1', aal: 'aal2' })
+    await expect(quoteDb(authDb({ data: { user: { id: 'u1' } }, error: null })).getUserId(jwt)).resolves.toBe('u1')
   })
-  it('abgelehntes Token (400, 401, 403): null', async () => {
-    for (const error of REJECTED) await expect(getUser(authDb({ data: { user: null }, error }), jwt), `${error.name} ${error.status}`).resolves.toBeNull()
-  })
-  it('Störung des Auth-Dienstes (5xx, 429, Netz, unbekannt): wirft statt null', async () => {
-    for (const error of FAULTS) await expect(getUser(authDb({ data: { user: null }, error }), jwt), `${error.name} ${error.status}`).rejects.toBe(error)
+  it('abgelehnt: null, Störung: AuthServiceError', async () => {
+    for (const error of REJECTED) {
+      await expect(getUser(authDb({ data: { user: null }, error }), jwt), label(error)).resolves.toBeNull()
+      await expect(quoteDb(authDb({ data: { user: null }, error })).getUserId(jwt), label(error)).resolves.toBeNull()
+    }
+    for (const error of FAULTS) {
+      await expect(getUser(authDb({ data: { user: null }, error }), jwt), label(error)).rejects.toBeInstanceOf(AuthServiceError)
+      await expect(quoteDb(authDb({ data: { user: null }, error })).getUserId(jwt), label(error)).rejects.toBeInstanceOf(AuthServiceError)
+    }
   })
 })
 
-describe('quote getUserId', () => {
-  it('gültig, abgelehnt und Störung wie getUser', async () => {
-    await expect(quoteDb(authDb({ data: { user: { id: 'u1' } }, error: null })).getUserId(jwt)).resolves.toBe('u1')
-    for (const error of REJECTED) await expect(quoteDb(authDb({ data: { user: null }, error })).getUserId(jwt), `${error.name} ${error.status}`).resolves.toBeNull()
-    for (const error of FAULTS) await expect(quoteDb(authDb({ data: { user: null }, error })).getUserId(jwt), `${error.name} ${error.status}`).rejects.toBe(error)
-  })
-})
+// Tabelle: jeder Handler, der ein Token prüft. Bei einer Störung des Auth-Dienstes 500 (nie 401, das die App abmeldet), nichts ausgeführt,
+// und die Logzeile enthält weder das Token noch die Originalmeldung des Auth-Dienstes.
+const SECRET = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1In0.c2lnbmF0dXI'
+const HANDLERS: [string, (req: Request, d: never) => Promise<Response>, 'getUser' | 'getUserId'][] = [
+  ['delete-account', handleDeleteAccount as never, 'getUser'],
+  ['cancel-customer', handleCancelCustomer as never, 'getUser'],
+  ['cancel-partner', handleCancelPartner as never, 'getUser'],
+  ['change-propose', handleProposeChange as never, 'getUser'],
+  ['change-decide', handleDecideChange as never, 'getUser'],
+  ['admin-correct', handleAdminCorrect as never, 'getUser'],
+  ['accept', handleAccept as never, 'getUser'],
+  ['offer-confirm', handleConfirmOffer as never, 'getUser'],
+  ['admin-contact', handleAdminContact as never, 'getUser'],
+  ['photo-receipt', handleReceipt as never, 'getUser'],
+  ['admin-photo', handleAdminPhoto as never, 'getUser'],
+  ['job-photo', handleJobPhoto as never, 'getUser'],
+  ['quote', handleQuote as never, 'getUserId'],
+]
 
 describe('Handler bei gestörtem Auth-Dienst', () => {
-  it('delete-account: 500 `internal`, nichts gelöscht (kein 401, das die App abmeldet)', async () => {
-    const logs: Record<string, unknown>[] = []
-    const removed: string[] = []
-    const d = {
-      allowedOrigins: [],
-      getUser: (j: string) => getUser(authDb({ data: { user: null }, error: FAULTS[2]! }), j),
-      remove: async (u: string) => void removed.push(u),
-      log: (e: Record<string, unknown>) => void logs.push(e),
-    }
-    const res = await handleDeleteAccount(new Request('https://x.test/d', { method: 'POST', headers: { authorization: `Bearer ${jwt}` }, body: JSON.stringify({ confirm: true }) }), d)
-    expect(res.status).toBe(500)
-    expect(await res.json()).toEqual({ error: 'internal' })
-    expect(removed).toEqual([])
-  })
+  for (const [name, handler, dep] of HANDLERS) {
+    it(`${name}: 500, kein Token im Log`, async () => {
+      const logs: unknown[] = []
+      const fault = { name: 'AuthRetryableFetchError', status: 503, message: `fetch failed for ${SECRET}` }
+      const d = {
+        allowedOrigins: [],
+        [dep]: async () => rejectToken(fault),
+        log: (e: unknown) => void logs.push(e),
+      }
+      const req = new Request('https://x.test/f', { method: 'POST', headers: { authorization: `Bearer ${SECRET}` }, body: JSON.stringify({ confirm: true }) })
+      const res = await handler(req, d as never)
+      expect(res.status).toBe(500)
+      expect(JSON.stringify(logs)).not.toContain(SECRET)
+    })
+  }
 })

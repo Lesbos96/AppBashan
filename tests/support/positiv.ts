@@ -28,7 +28,7 @@ type PgFor<T> = [NonNullable<Json>] extends [T]
 
 export type Welt = 'angebot' | 'auftrag' | 'verwaltung' | 'betrieb'
 /** Wer EXECUTE hat (a = anon, u = authenticated, s = service_role; leer = nur der Eigentümer), exakt wie im Katalog. */
-export type Exec = '' | 's' | 'u' | 'us' | 'a' | 'aus'
+export type Exec = '' | 's' | 'u' | 'a' | 'aus'
 
 type Akteur = { als: 'authenticated'; user: string; aal: 'aal1' | 'aal2' } | { als: 'anon' } | { als: 'service_role' } | { als: 'owner' }
 type NurService = { als: 'service_role' }
@@ -207,8 +207,8 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   },
   reject_offers: { ...cust, welt: 'angebot', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.reject_offers('${R.o2}')` },
   withdraw_offer: { als: 'authenticated', user: U.pb, aal: 'aal2', welt: 'angebot', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.withdraw_offer(${LS('o_o3_b')})` },
-  decline_listing: { als: 'authenticated', user: U.pc, aal: 'aal2', welt: 'angebot', ausfuehren: 'us', ergebnis: 'void', aufruf: () => `public.decline_listing(${LS('l_o4_c')})` },
-  withdraw: { ...cust, welt: 'angebot', ausfuehren: 'us', ergebnis: 'wert', typ: 'enum', aufruf: () => `public.withdraw('${R.o6}')` },
+  decline_listing: { als: 'authenticated', user: U.pc, aal: 'aal2', welt: 'angebot', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.decline_listing(${LS('l_o4_c')})` },
+  withdraw: { ...cust, welt: 'angebot', ausfuehren: 'u', ergebnis: 'wert', typ: 'enum', aufruf: () => `public.withdraw('${R.o6}')` },
   // Gegenzeilen zu payout_preview und my_cancel_info (Gebühr nur für Partner lesbar): fee-schedule.test.ts:71, 112 und cancellation-partner-preview.test.ts:186.
   payout_preview: { ...partnerA, welt: 'angebot', ausfuehren: 'u', ergebnis: 'wert', typ: 'int8', aufruf: () => 'public.payout_preview(150000)' },
   distribute_request: { als: 'service_role', welt: 'angebot', ausfuehren: 's', ergebnis: 'wert', typ: 'int4', aufruf: () => `public.distribute_request('${R.o5}')` },
@@ -224,7 +224,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: (c) => `public.partner_accept('${U.pa}', ${LID(R.q0, 'a')}, ${rev1(R.q0)}, ${c.s.payoutCents}, ${fee(c, c.s)})`,
   },
   my_jobs: {
-    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: {
       accepted_at: 'timestamptz', assignment_id: 'uuid', can_start: 'bool', district: 'int2', ended_at: 'timestamptz', ended_reason: 'enum', listing_id: 'uuid', payout_cents: 'int8',
       preferred_date: 'date', request_id: 'uuid', service: 'enum', status: 'enum', termin_at: 'timestamptz', time_window: 'text', to_district: 'int2', total_cents: 'int8', under_review: 'bool',
@@ -232,28 +232,28 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: () => 'public.my_jobs()',
   },
   my_report_info: {
-    ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: { can_report: 'bool', report_until: 'timestamptz' },
     aufruf: () => `public.my_report_info('${R.j3}')`,
   },
   my_job_partner: {
-    ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: { contact_email: 'text', contact_name: 'text', contact_phone: 'text', name: 'text' },
     aufruf: () => `public.my_job_partner('${R.j1}')`,
   },
   job_contact: {
-    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: [...fremd, fremdeFirma],
+    ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: [...fremd, fremdeFirma],
     spalten: { email: 'text', from_address: 'text', name: 'text', phone: 'text', preferred_date: 'date', stairs_door: 'text', time_window: 'text', to_address: 'text' },
     aufruf: () => `public.job_contact('${R.j1}')`,
   },
-  start_job: { ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'void', aufruf: () => `public.start_job('${R.j1}')` },
-  report_not_done: { ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'void', aufruf: () => `public.report_not_done('${R.j2}')` },
+  start_job: { ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.start_job('${R.j1}')` },
+  report_not_done: { ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.report_not_done('${R.j2}')` },
   reported_jobs: {
     ...admin2, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: { not_done_reported_at: 'timestamptz', partner_id: 'uuid', partner_name: 'text', request_id: 'uuid', status: 'text', termin_at: 'timestamptz', total_cents: 'int8' },
     aufruf: () => 'public.reported_jobs()',
   },
-  complete_job: { ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'void', aufruf: () => `public.complete_job('${R.j3}')` },
+  complete_job: { ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.complete_job('${R.j3}')` },
   propose_change_basis: {
     als: 'service_role', welt: 'auftrag', ausfuehren: 's', ergebnis: 'zeilen',
     spalten: { high_cents: 'int8', inputs: 'jsonb', low_cents: 'int8', price_version: 'int4', revision_id: 'uuid', route: 'jsonb', service: 'text', source: 'text', total_cents: 'int8' },
@@ -261,7 +261,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   },
   propose_change: { als: 'service_role', welt: 'auftrag', ausfuehren: 's', ergebnis: 'wert', typ: 'uuid', aufruf: () => proposeSql(R.j4) },
   my_job_changes: {
-    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: {
       change_decided_at: 'timestamptz', change_id: 'uuid', change_status: 'text', change_total_cents: 'int8', change_valid_until: 'timestamptz', inputs: 'jsonb', receipt_ids: '_uuid',
       request_id: 'uuid', service: 'enum', source: 'text', total_cents: 'int8',
@@ -300,7 +300,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: (c) => `public.cancel_by_partner('${U.pa}', 'aal2', '${R.c2}', 'other', null, 0, ${fee(c, c.zero)})`,
   },
   // die Absage-Karte des Kunden: Pauschale aus dem Journal, erst nach der Absage der Firma (c2)
-  my_cancel_info: { ...cust, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'wert', typ: 'int8', aufruf: () => `public.my_cancel_info('${R.c2}')` },
+  my_cancel_info: { ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'wert', typ: 'int8', aufruf: () => `public.my_cancel_info('${R.c2}')` },
   partner_quality: {
     ...admin2, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: { cancels: 'int8', last_cancel_at: 'timestamptz', needs_review: 'bool', partner_id: 'uuid' },
@@ -319,7 +319,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: (c) => `public.admin_correct('${U.adm}', 'aal2', '${R.c3}', 'cancel_partner', '${REASON}', 'other', 0, ${fee(c, c.zero)})`,
   },
   my_commissions: {
-    ...partnerA, welt: 'auftrag', ausfuehren: 'us', ergebnis: 'zeilen', gegen: fremd,
+    ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: {
       entry_id: 'uuid', request_id: 'uuid', partner_id: 'uuid', partner_name: 'text', kind: 'enum', reverses_entry_id: 'uuid', created_at: 'timestamptz', total_cents: 'int8', fee_schedule: 'text',
       fee_net_cents: 'int8', fee_vat_cents: 'int8', fee_cents: 'int8', payout_cents: 'int8', vat_rule: 'enum', request_status: 'enum', ended_at: 'timestamptz', billing_month: 'date',
