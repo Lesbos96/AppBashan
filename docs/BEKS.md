@@ -14,8 +14,10 @@ Die Frage 1 vom 2026-11-16 (n12, Hinweistext bei verlorener Antwort) ist beantwo
 
 Die Fragen 1 und 2 vom 2026-11-16 (n12b) sind beantwortet (ENTSCHEIDUNGEN Nr. 190).
 
+Die Frage 1 vom 2026-11-16 (sys1, globaler PUBLIC-Default) ist beantwortet (ENTSCHEIDUNGEN Nr. 191).
+
 ## Offene Fragen
-1. (sys1, 2026-11-16) Soll der globale PUBLIC-Default für neue Funktionen (`alter default privileges for role postgres revoke execute on functions from public`) entfallen? Migration 0070 nimmt `anon`, `authenticated` und `service_role` den automatischen EXECUTE nur im Schema `public` (ein schemagebundenes Revoke kann den PUBLIC-Default nicht entfernen; ein globales wirkt auf jedes Schema, auch `private`). Bis dahin gilt die Regel in `daten.md`: jede neue Funktion bekommt `revoke all … from public` selbst. Empfehlung: ja, als eigener R3-Schritt mit Prüfung aller Funktionen in `private` (OFFEN sys1-1); der Gewinn ist, dass ein vergessenes `revoke` nie mehr eine Funktion öffnet.
+Keine.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
