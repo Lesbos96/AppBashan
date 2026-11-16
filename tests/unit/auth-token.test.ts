@@ -109,7 +109,7 @@ describe('Handler bei gestörtem Auth-Dienst', () => {
   for (const [name, handler, dep] of HANDLERS) {
     it(`${name}: 500, kein Token im Log`, async () => {
       const logs: unknown[] = []
-      const fault = { name: 'AuthRetryableFetchError', status: 503, message: `fetch failed for ${SECRET}` }
+      const fault = Object.assign(new Error(`fetch failed for ${SECRET}`), { name: 'AuthRetryableFetchError', status: 503 }) // wie auth-js: echter Error, Meldung mit Token
       const d = {
         allowedOrigins: [],
         [dep]: async () => rejectToken(fault),
