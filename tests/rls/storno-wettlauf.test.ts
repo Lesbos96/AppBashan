@@ -25,8 +25,11 @@ const startAt = (secs: number) => `select pg_sleep(greatest(0, extract(epoch fro
 
 beforeAll(() => (OHNE_SPERRE ? legeKopienAn() : entferneKopien()))
 afterAll(() => {
-  entferneKopien()
-  sweepTestResidue(adm, true) // admin hat Audit-Einträge und bleibt meist stehen
+  try {
+    entferneKopien()
+  } finally {
+    sweepTestResidue(adm, true) // admin hat Audit-Einträge und bleibt meist stehen
+  }
 })
 
 describe('Wettlauf beim Storno (ohne Gebühr)', () => {

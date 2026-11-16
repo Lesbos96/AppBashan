@@ -19,8 +19,9 @@ const OHNE = 's.id = p_request; perform pg_sleep(2);'
 /** Entfernt das Schema `race_ctl` samt Kopien (auch Reste eines abgebrochenen Laufs). */
 export function entferneKopien() {
   loeschFreigabe(import.meta.url)
+  const vorhanden = Number(ownerSql("select count(*) as n from pg_namespace where nspname = 'race_ctl'")[0]?.n)
   ownerSql('drop schema if exists race_ctl cascade')
-  loeschLog('tests/support/race-copy.ts', { schemaEntfernt: 1 })
+  loeschLog('tests/support/race-copy.ts', { schemaEntfernt: vorhanden })
 }
 
 /** Legt `race_ctl.cancel_by_customer_nolock`, `race_ctl.cancel_by_partner_nolock` und `race_ctl.change_gate_nolock` an. */
@@ -39,8 +40,8 @@ export function legeKopienAn() {
       for v in
         select * from (values
           ('private.change_gate(uuid,text,uuid)'::regprocedure, 'private.change_gate(', 'race_ctl.change_gate_nolock('),
-          ('public.cancel_by_customer(uuid,uuid,bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)'::regprocedure, 'public.cancel_by_customer(', 'race_ctl.cancel_by_customer_nolock('),
-          ('public.cancel_by_partner(uuid,text,uuid,text,uuid[],bigint,numeric,numeric,bigint,bigint,bigint,bigint,integer,integer)'::regprocedure, 'public.cancel_by_partner(', 'race_ctl.cancel_by_partner_nolock(')
+          ('public.cancel_by_customer(uuid,uuid,bigint,numeric,bigint,bigint,bigint,bigint,integer,integer)'::regprocedure, 'public.cancel_by_customer(', 'race_ctl.cancel_by_customer_nolock('),
+          ('public.cancel_by_partner(uuid,text,uuid,text,uuid[],bigint,numeric,bigint,bigint,bigint,bigint,integer,integer)'::regprocedure, 'public.cancel_by_partner(', 'race_ctl.cancel_by_partner_nolock(')
         ) t(f, alt, kopf)
       loop
         orig := pg_get_functiondef(v.f);
@@ -54,8 +55,15 @@ export function legeKopienAn() {
         if replace(replace(replace(neu, '${OHNE}', '${SPERRE}'), v.kopf, v.alt), 'race_ctl.change_gate_nolock(', 'private.change_gate(') is distinct from orig then
           raise exception 'race_copy: Kopie von % weicht vom Original ab', v.alt;
         end if;
+        -- die Kopie muss wirklich nach race_ctl heißen und darf nichts mehr aus private oder public aufrufen, das sie ersetzt (sonst überschriebe `execute` die echte Funktion)
+        if neu not like 'CREATE OR REPLACE FUNCTION race_ctl.%' or position(v.alt in neu) > 0 or position('private.change_gate(' in neu) > 0 then
+          raise exception 'race_copy: Kopie von % trägt nicht den Namen in race_ctl oder ruft noch das Original auf', v.alt;
+        end if;
         execute neu;
       end loop;
+      if (select count(*) from pg_proc p where p.pronamespace = 'race_ctl'::regnamespace) <> 3 then
+        raise exception 'race_copy: erwartet genau drei Funktionen in race_ctl';
+      end if;
       -- Kopien für niemanden außer den Eigentümer ausführbar
       execute (select string_agg(format('revoke all on function %s from public, anon, authenticated, service_role', p.oid::regprocedure), '; ')
                from pg_proc p where p.pronamespace = 'race_ctl'::regnamespace);
