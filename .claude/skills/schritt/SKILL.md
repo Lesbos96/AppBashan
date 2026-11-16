@@ -11,7 +11,7 @@ Der Prompt nennt Name, Ziel, Umfang, Vorgaben und Entscheidungen von Beks. Alles
 1. `npm run start-schritt -- <name>`. Es prüft die Ausgangslage, legt den Branch an und gibt `docs/STAND.md` aus. Bricht es ab: Meldung an Beks, Stopp. Nichts von Hand reparieren.
 2. Stufe schätzen aus den Pfaden, die der Schritt ändern wird (Tabelle unten); maßgeblich ist am Ende `node scripts/sys/stufe.mjs`. Im Zweifel die höhere. Herabstufen gibt es nicht: Das Gate rechnet die Stufe selbst aus den Pfaden.
 3. Nur R3: Faktenliste mit `Datei:Zeile` (über `Explore`), Plan, dann **eine** gebündelte Frage an `advisor` (Dateiliste, nie Diff oder Verlauf). Seine Entscheidung gilt; Abweichung nur mit Begründung im Bericht.
-4. Tests schreiben. R3 zuerst rot (`npm run t -- <testdatei>`), R2 für neue Logik.
+4. Tests schreiben. R3 zuerst rot (`npm run t -- <testdatei>`), R2 für neue Logik. Das Gate rechnet den Rot-Beweis einer neuen rls-Datei nur an, wenn roter und grüner Lauf dieselbe Datei wie der Endstand prüften (Hash in `runs.jsonl`); eine Umbenennung ist eine neue Datei.
 5. Bauen, höchstens 5 Runden je Aufgabe, nur gezielte Läufe. Bleibt ein Fehler nach 2 Runden rot: bei R3 `advisor` fragen. Was nach 5 Runden rot bleibt: nach `docs/OFFEN.md` mit Begründung, einmal berichten.
 6. Migration: `npm run db:antrag` → `advisor-report` bekommt nur den Antrag und schreibt `tmp/proof/<name>/db-freigabe-<n>.md` → `npm run db:push`. Betroffene Edge Functions im selben Zug deployen, danach Live-Aufruf.
 7. UI geändert: `npm run t -- shots` (390) bzw. `npm run t -- shots:all` (430, 768, 1280), dann `reviewer` (Bildsicht, Regeln in `.claude/rules/ui.md`; sein Bericht heißt `tmp/proof/<name>-review.md`).
