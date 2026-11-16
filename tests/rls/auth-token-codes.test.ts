@@ -3,7 +3,7 @@
 // nicht erzeugen: für GoTrue gilt es wie ein gefälschtes (bad_jwt, 403; Annahme, nicht gemessen). Die Messwerte stehen in den Erwartungen.
 import { afterAll, describe, expect, it } from 'vitest'
 import { AuthServiceError, rejectToken } from '../../supabase/functions/_shared/auth.ts'
-import { client, deleteUsers, makeUser, service } from '../support/db.ts'
+import { client, deleteUsers, env, makeUser, service } from '../support/db.ts'
 
 afterAll(deleteUsers)
 
@@ -43,5 +43,18 @@ describe('auth.getUser: Antworten auf ein Token (Messung)', () => {
     expect(gone.error, 'nach der Löschung: Fehler erwartet').not.toBeNull()
     expect(seen(gone.error), 'gelöschtes Konto').toEqual({ name: 'AuthSessionMissingError', status: 400, code: undefined })
     expect(verdict(gone.error)).toBe('null')
-  }, 60_000)
+
+    // Live-Smoke gegen die deployten Functions: gefälschtes Token und Token eines gelöschten Kontos ergeben 401, nie 500
+    const FUNCTIONS = ['accept', 'offer-confirm', 'admin-contact', 'delete-account', 'cancel-customer', 'cancel-partner', 'change-propose', 'change-decide', 'admin-correct', 'photo-receipt', 'admin-photo', 'job-photo', 'quote']
+    for (const [how, token] of [['gefälscht', forged], ['gelöscht', u.jwt]] as const) {
+      for (const name of FUNCTIONS) {
+        const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/${name}`, {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}`, apikey: env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), 'content-type': 'application/json' },
+          body: '{}',
+        })
+        expect(res.status, `${name} (${how})`).toBe(401)
+      }
+    }
+  }, 120_000)
 })
