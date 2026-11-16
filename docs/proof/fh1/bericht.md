@@ -1,15 +1,13 @@
-Schritt fh1 · Stufe R3 (aus Pfaden) · Gate: blockiert
-  OFFEN: check: kein grüner Lauf (kanonischer Befehl ohne Zusatzargumente, EXIT=0, sauber, Log unverändert) für den aktuellen Fingerabdruck
-  OFFEN: Lösch-Gate: scripts/setup-photo-publish.mjs: keine Freigabe für Pfad und SHA256 5698229747155056f4b5641ccbc4f4b6bb776a3371126db83eab9d6186f924f8
-Modell: claude-sonnet-5-5 (Transkript: claude-sonnet-5-5 301×) · Berater: advisor 1×, advisor-report 2×
-Code-Stand: 05d5591 · main vorher: 6d70ddb · Commits: 2
-Geändert: docs 3 · scripts 1 · supabase/functions 4 · supabase/migrations 1 · tests/rls 8 · tests/unit 2
+Schritt fh1 · Stufe R3 (aus Pfaden) · Gate: bestanden
+Modell: claude-sonnet-5-5 (Transkript: claude-sonnet-5-5 322×) · Berater: advisor 1×, advisor-report 2×
+Code-Stand: da688b1 · main vorher: 6d70ddb · Commits: 3
+Geändert: docs 12 · supabase/functions 4 · supabase/migrations 1 · tests/rls 8 · tests/unit 2
 
 Läufe dieses Schritts (auf dem Endstand)
-  rls  EXIT=0  382 passed (382)  1340.4 s  → docs\proof\fh1\024-rls.log
+  check  EXIT=0  1960 passed (1960)  45.8 s  → docs\proof\fh1\025-check.log
+  rls  EXIT=0  382 passed (382)  1534.6 s  → docs\proof\fh1\028-rls.log
   e2e  EXIT=0  688 passed (11.1m)  668.6 s  → docs\proof\fh1\013-e2e.log
-  check  FEHLT
-  Versuche gesamt: 24, davon rot 10 (bleiben in tmp/)
+  Versuche gesamt: 28, davon rot 11 (bleiben in tmp/)
 
 Datenbank: 1 neue Migration(en)
   supabase/migrations/20261116140000_0069_replay_rest.sql SHA256 f3110add…
