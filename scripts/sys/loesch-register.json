@@ -1,6 +1,7 @@
 {
   "skripte": {
     "tests/support/sweep.ts": ["tests/support/marker.ts"],
+    "tests/support/race-copy.ts": [],
     "scripts/admin-call.mjs": [],
     "scripts/live-auth.mjs": [],
     "scripts/live-quote-app.mjs": [],
