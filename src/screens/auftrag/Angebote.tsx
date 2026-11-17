@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { ErrorState, Loading } from '../../components/States'
-import { type Offer, confirmOffer, loadOffers } from '../../lib/jobs'
+import { type Offer, confirmOffer, loadOffers, rejectOffers } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import { useLoad } from '../../lib/prices'
 import { Bestaetigen } from './Bestaetigen'
 
-const until = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' })
+const until = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' }).replace(' um ', ' um ')
 
 /** Festangebote der Partner: Firma, Betrag, Frist. Der Kunde bestätigt genau den gezeigten Betrag. */
 export function Angebote({ id, onDone }: { id: string; onDone: (notice?: string) => void }) {
   const [result, retry] = useLoad(() => loadOffers(id))
   const [pick, setPick] = useState<Offer | null>(null)
+  const [rejectAll, setRejectAll] = useState(false)
   if (result.status === 'loading') return <Loading label="Angebote laden" />
   if (result.status === 'error') return <ErrorState text="Die Angebote konnten nicht geladen werden. Prüfe deine Verbindung." onRetry={retry} />
   const offers = result.data
@@ -33,6 +34,21 @@ export function Angebote({ id, onDone }: { id: string; onDone: (notice?: string)
           </Button>
         </div>
       ))}
+      {offers.length > 0 && (
+        <Button variant="plain" onClick={() => setRejectAll(true)}>
+          Alle Angebote ablehnen
+        </Button>
+      )}
+      <Bestaetigen
+        open={rejectAll}
+        onClose={() => setRejectAll(false)}
+        title="Alle Angebote ablehnen"
+        label="Ja, alle ablehnen"
+        action={() => rejectOffers(id)}
+        onDone={(n) => onDone(n ?? 'Du hast alle Angebote abgelehnt. Die Anfrage ist beendet.')}
+      >
+        <p className="m-0 text-body">Alle Angebote werden abgelehnt, die Anfrage ist danach beendet. Das lässt sich nicht rückgängig machen.</p>
+      </Bestaetigen>
       <Bestaetigen
         open={pick !== null}
         onClose={() => setPick(null)}

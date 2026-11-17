@@ -133,6 +133,25 @@ test('Angebot: Eingabe wird geprüft, gesendet werden ganze Cent, danach steht e
   expect(real(errors)).toEqual([])
 })
 
+test('Festangebot ohne Gesamtpreis: Karte, Angebot-Sheet und Bestätigung nennen „kein Nachtrag, keine Pauschale“; Festpreis nicht', { tag: '@breit' }, async ({ page }) => {
+  const errors = collectErrors(page)
+  const satz = 'Für diese Leistung gibt es keinen Nachtrag und keine Pauschale bei Absage. Prüfe den Umfang vor deiner Annahme.'
+  await openJobs(page, { listings: [fixed(), range()] })
+  await expect(page.getByRole('article')).toHaveCount(2)
+  await expect(card(page, 0)).not.toContainText('keinen Nachtrag')
+  await expect(card(page, 1).getByText(satz, { exact: true }).first(), 'der Satz der Karte, vor den (geschlossenen) Sheets im DOM').toBeVisible()
+  await card(page, 0).getByRole('button', { name: 'Annehmen' }).click()
+  await expect(dialog(page)).not.toContainText('keinen Nachtrag')
+  await dialog(page).getByRole('button', { name: 'Doch nicht' }).click()
+  await card(page, 1).getByRole('button', { name: 'Angebot abgeben' }).click()
+  await expect(dialog(page).getByText(satz, { exact: true })).toBeVisible()
+  await dialog(page).getByLabel('Dein Angebot in Euro').fill('700')
+  await dialog(page).getByRole('button', { name: 'Weiter' }).click()
+  await expect(dialog(page).getByText(satz, { exact: true })).toBeVisible()
+  await noFee(page)
+  expect(real(errors)).toEqual([])
+})
+
 test.describe('Serverantworten beim Angebot', { tag: '@breit' }, () => {
   for (const [code, text] of [
     ['offer_exists', 'Du hast für diese Anfrage schon ein Angebot'],
@@ -155,6 +174,7 @@ test.describe('Serverantworten beim Angebot', { tag: '@breit' }, () => {
 test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [range()], offers: [{ id: O1, base_revision_id: range().revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' }] })
   await expect(card(page)).toContainText('Angebot gesendet')
+  expect(await card(page).textContent(), 'rj1-3: „um“ und Uhrzeit mit geschütztem Leerzeichen').toMatch(/um \d{2}:\d{2}/)
   await expect(card(page).getByRole('button', { name: 'Angebot abgeben' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Zurückziehen' }).click()
   await dialog(page).getByRole('button', { name: 'Angebot zurückziehen' }).click()
@@ -173,6 +193,7 @@ test('Ablehnen: Bestätigung nennt die Folge, Doppelklick sendet einen Aufruf, d
   await expect(dialog(page)).not.toContainText('Angebot')
   await dialog(page).getByRole('button', { name: 'Ablehnen' }).dblclick()
   await expect(page.getByText('Du hast die Anfrage abgelehnt.')).toBeVisible()
+  await expect(page.getByText('Du hast die Anfrage abgelehnt.'), 'rj1-3: der Fokus liegt auf dem Hinweis, nicht auf body').toBeFocused()
   await expect(dialog(page)).toHaveCount(0)
   expect(jobs.declines).toEqual([{ p_listing: L1 }])
   await expect(page.getByRole('article')).toHaveCount(1)

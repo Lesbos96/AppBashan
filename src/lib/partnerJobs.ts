@@ -175,7 +175,8 @@ export function dayLabel(iso: string | null): string | null {
 }
 
 /** Zeitpunkte immer in Wiener Zeit, unabhängig von der Zeitzone des Geräts. */
-export const viennaTime = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' })
+// „um“ und die Uhrzeit bleiben in einer Zeile (geschütztes Leerzeichen, rj1-3)
+export const viennaTime = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' }).replace(' um ', ' um ')
 
 // Eingabe des Angebots -----------------------------------------------------------------------------------------------------
 /** Euro-Eingabe (Komma oder Punkt, höchstens zwei Nachkommastellen, kein Tausenderpunkt) → ganze Cent; sonst `null`. Kein Float. */

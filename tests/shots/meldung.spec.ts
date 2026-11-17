@@ -27,8 +27,15 @@ const row = (over: object) => ({
   ...over,
 })
 
-type Shot = { name: string; row: object; canReport: boolean; region: string | null; open?: string }
+type Shot = { name: string; row: object; canReport: boolean; region: string | null; open?: string; offers?: object[] }
+// rs1: Kunde mit zwei Festangeboten, „Alle Angebote ablehnen“ (Knopf und Sheet)
+const OFFERS = [
+  { offer_id: '2d0a3e5f-7f4c-4a9d-9c83-5e6f7a8b9c0d', amount_cents: 72345, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte' },
+  { offer_id: '1c9f2d4e-6e3b-4f8c-8b72-4d5e6f7a8b9c', amount_cents: 72000, valid_until: '2099-12-02T10:00:00Z', status: 'sent', company_name: 'Zweite Firma' },
+]
 const shots: Shot[] = [
+  { name: 'angebote', row: row({ status: 'offered', termin_at: '2099-12-15T07:00:00Z' }), canReport: false, region: null, offers: OFFERS },
+  { name: 'angebote-ablehnen-sheet', row: row({ status: 'offered', termin_at: '2099-12-15T07:00:00Z' }), canReport: false, region: null, offers: OFFERS, open: 'Alle Angebote ablehnen' },
   { name: 'abgeschlossen-frage', row: row({ status: 'completed' }), canReport: true, region: 'Hat der Auftrag stattgefunden?' },
   { name: 'termin-frage', row: row({ status: 'in_progress' }), canReport: true, region: 'Hat der Auftrag stattgefunden?' },
   { name: 'gemeldet-pruefung', row: row({ status: 'in_progress', not_done_reported_at: '2026-01-02T08:00:00Z' }), canReport: false, region: null },
@@ -52,7 +59,7 @@ for (const width of [0, 320]) {
         return reply(r, single ? s.row : [s.row])
       })
       await mockRpc(page, 'my_report_info', [{ can_report: s.canReport, report_until: s.canReport ? '2026-01-08T07:00:00Z' : null }])
-      await mockRpc(page, 'my_request_offers', [])
+      await mockRpc(page, 'my_request_offers', s.offers ?? [])
       await mockAuth(page)
       await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
       await page.goto(`/anmelden?next=${encodeURIComponent(`/auftraege/${ID}`)}`)

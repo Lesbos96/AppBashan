@@ -23,6 +23,9 @@ const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_report
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const windows: Record<string, string> = { morning: '8 bis 11 Uhr', midday: '11 bis 14 Uhr', afternoon: '14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
 
+/** Die Karte der Aktion verschwindet: der Fokus geht beim Erscheinen des Hinweises auf ihn statt auf body (der Auftrag lädt neu, der Hinweis entsteht neu). */
+const focusOnMount = (el: HTMLElement | null) => el?.focus()
+
 /** Eigene Anfrage (Filter auf die Nutzer-ID: die RLS-Regel „admin liest alles“ gilt hier nicht). `null`: gibt es nicht oder gehört jemand anderem. */
 async function load(userId: string, id: string) {
   if (!UUID.test(id)) return null
@@ -67,7 +70,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   return (
     <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
       {notice && (
-        <p role="alert" className="m-0 text-body font-semibold">
+        <p ref={focusOnMount} role="alert" tabIndex={-1} className="m-0 text-body font-semibold">
           {notice}
         </p>
       )}

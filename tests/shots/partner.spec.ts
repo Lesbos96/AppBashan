@@ -313,6 +313,28 @@ const shots: Shot[] = [
     wait: heading('Angenommen'),
   },
   {
+    name: 'absage-festangebot',
+    open: ACTIVE,
+    jobs: { myJobs: [job()], changes: [change({ source: 'partner_offer' })] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Auftrag absagen' }).click()
+      await page.getByRole('dialog').getByRole('radio', { name: /nicht durchführen/ }).check()
+      await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
+      await expect(page.getByRole('dialog')).toContainText('keinen Nachtrag und keine Pauschale bei Absage')
+    },
+    wait: heading('Angenommen'),
+  },
+  {
+    name: 'festangebot-sheet',
+    open: ACTIVE,
+    jobs: { listings: [range()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Angebot abgeben' }).click()
+      await expect(page.getByRole('dialog')).toContainText('keinen Nachtrag und keine Pauschale bei Absage')
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
     name: 'absage-betrag-geaendert',
     open: ACTIVE,
     jobs: { myJobs: [job()], changes: [change()] },

@@ -39,6 +39,7 @@ export function AbsageSheet({
   requestId,
   started,
   receiptIds,
+  fixedOffer,
   onDone,
 }: {
   open: boolean
@@ -47,6 +48,8 @@ export function AbsageSheet({
   /** Der Termin hat begonnen (Datenbankuhr laut my_jobs): dann ist nur noch `scope_impossible` möglich; der Server entscheidet. */
   started: boolean
   receiptIds: string[]
+  /** Quelle der gültigen Revision ist ein Festangebot (`my_job_changes`); dann nennt die Maske bei Pauschale 0 den Grund. Fehlt die Angabe (Laden gescheitert), entfällt die Zeile. */
+  fixedOffer: boolean
   onDone: (notice?: string, warn?: boolean) => void
 }) {
   const [reason, setReason] = useState<CancelReason>('scope_impossible')
@@ -190,7 +193,8 @@ export function AbsageSheet({
   }
 
   // Ob die Anfrage weitervermittelt wird, entscheidet der Server (Termin zu nah, Festangebot, schon eine Folgeanfrage): nur bedingt zusagen, ab Terminbeginn gar nicht (Abnahme M1)
-  const again = started ? '' : ' Weitervermittlung, wenn der Termin es zulässt.'
+  // Ein Festangebot vermittelt der Server nie weiter (reissue_request, 0046:399)
+  const again = started || fixedOffer ? '' : ' Weitervermittlung, wenn der Termin es zulässt.'
   const free = preview ? preview.callOutCents === 0 || choice === 'free' : false
   const feeChosen = preview ? preview.callOutCents > 0 && choice === 'fee' : false
   const sendable = preview !== null && (free || (feeChosen && have + files.length >= 1 && have + files.length <= 8))
@@ -224,7 +228,10 @@ export function AbsageSheet({
           <>
             <p className="m-0 text-footnote text-text-secondary">Grund: {CANCEL_REASONS.find((r) => r.value === preview.reason)?.label}</p>
             {preview.callOutCents === 0 ? (
-              <p className="m-0 text-body">Der Kunde muss nichts zahlen.{again} Kontakt und Adresse sind danach für dich gesperrt.</p>
+              <>
+                <p className="m-0 text-body">Der Kunde muss nichts zahlen.{again} Kontakt und Adresse sind danach für dich gesperrt.</p>
+                {fixedOffer && <p className="m-0 text-subhead text-text-secondary">Für diese Leistung gibt es keinen Nachtrag und keine Pauschale bei Absage.</p>}
+              </>
             ) : (
               <>
                 <div className="flex flex-col gap-1 rounded-grouped-list bg-surface px-4 py-3 shadow-card">

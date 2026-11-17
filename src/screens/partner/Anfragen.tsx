@@ -28,6 +28,15 @@ import { Bestaetigen } from '../auftrag/Bestaetigen'
 const box = 'flex flex-col gap-3 rounded-grouped-list bg-surface p-4 shadow-card'
 const euro = (cents: number) => <span className="whitespace-nowrap tabular-nums">{formatEuro(cents)}</span>
 
+/**
+ * Ein Festangebot (Anfrage ohne Gesamtpreis, `totalCents === null`) erlaubt keinen Nachtrag (`partnerChange.ts`: Quelle `partner_offer`) und gibt bei Absage keine Pauschale
+ * (`call_out_eligible` verlangt einen abgelehnten Nachtrag, 0065). VORLÄUFIG bis zur Rechtsprüfung wie alle Texte zur Pauschale (docs/GOLIVE.md 32, 33).
+ */
+const KEIN_NACHTRAG = 'Für diese Leistung gibt es keinen Nachtrag und keine Pauschale bei Absage. Prüfe den Umfang vor deiner Annahme.'
+
+/** Die Karte verschwindet nach der Aktion: der Fokus geht beim Erscheinen des Hinweises auf ihn statt auf body (rj1-3; die Liste lädt neu, der Hinweis entsteht neu). */
+const focusOnMount = (el: HTMLElement | null) => el?.focus()
+
 function Zeile({ label, children }: { label: string; children: ReactNode }) {
   return (
     <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-body">
@@ -63,7 +72,7 @@ export function Anfragen({ onChange }: { onChange: () => void }) {
     <>
       {notice && (
         <div className="px-5 pb-4">
-          <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
+          <p ref={focusOnMount} role="status" tabIndex={-1} className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
             {notice}
           </p>
         </div>
@@ -141,6 +150,7 @@ function Karte({ l, offer, onDone }: { l: Listing; offer?: MyOffer; onDone: (not
           </Zeile>
         )
       )}
+      {l.totalCents === null && <p className="m-0 text-subhead text-text-secondary">{KEIN_NACHTRAG}</p>}
       <p className="m-0 text-subhead text-text-secondary">Antwort bis {viennaTime(l.deadline)}</p>
       <Fotos id={l.id} />
       {l.totalCents !== null && (
@@ -234,6 +244,7 @@ function AngebotSheet({ l, open, onClose, onDone }: { l: Listing; open: boolean;
               Gewünscht ist ein Preis zwischen {formatEuro(l.lowCents!)} und {formatEuro(l.highCents!)}.
             </p>
           )}
+          <p className="m-0 text-subhead text-text-secondary">{KEIN_NACHTRAG}</p>
           {error && (
             <p role="alert" className="m-0 text-body text-destructive">
               {error}
@@ -261,6 +272,7 @@ function AngebotSheet({ l, open, onClose, onDone }: { l: Listing; open: boolean;
             <Zeile label="Dein Angebot">{euro(cents)}</Zeile>
             {payout !== null && <Zeile label="Du erhältst">{euro(payout)}</Zeile>}
             <p className="m-0 text-subhead text-text-secondary">Dein Anteil steht mit dem Senden fest. Verbindlich, bis du das Angebot zurückziehst oder es abläuft.</p>
+            <p className="m-0 text-subhead text-text-secondary">{KEIN_NACHTRAG}</p>
           </>
         )}
       </Bestaetigen>

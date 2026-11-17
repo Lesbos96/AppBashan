@@ -109,7 +109,7 @@ export async function invoke(name: string, body: Record<string, unknown>, codes:
   throw new JobError('unavailable')
 }
 
-async function rpc(fn: 'complete_job' | 'report_not_done' | 'withdraw', requestId: string): Promise<void> {
+async function rpc(fn: 'complete_job' | 'report_not_done' | 'withdraw' | 'reject_offers', requestId: string): Promise<void> {
   try {
     const { error } = await supabase.rpc(fn, { p_request: requestId })
     if (!error) return
@@ -201,3 +201,5 @@ export async function loadReportInfo(requestId: string): Promise<ReportInfo> {
 
 /** Anfrage zurückziehen (nur bis zur Zusage); der Server prüft Eigentümer und Status. */
 export const withdrawRequest = (requestId: string) => rpc('withdraw', requestId)
+/** Alle Angebote ablehnen: die Anfrage endet (Status declined); der Server prüft Eigentümer und Status, eine Wiederholung nach Erfolg ist wirkungslos (0072). */
+export const rejectOffers = (requestId: string) => rpc('reject_offers', requestId)

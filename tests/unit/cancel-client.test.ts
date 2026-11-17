@@ -82,7 +82,7 @@ describe('timeline', () => {
     expect(timeline('cancelled_by_partner')).toEqual({ end: 'Die Firma hat den Auftrag abgesagt.' })
     expect(timeline('withdrawn')).toEqual({ end: 'Du hast die Anfrage zurückgezogen.' })
     expect(timeline('expired')).toEqual({ end: 'Die Anfrage ist abgelaufen.' })
-    expect(timeline('declined')).toEqual({ end: 'Die Anfrage wurde abgelehnt.' })
+    expect(timeline('declined')).toEqual({ end: 'Du hast alle Angebote abgelehnt.' })
     expect(timeline('unmatched')).toEqual({ end: 'Wir haben keinen passenden Partner gefunden.' })
   })
 

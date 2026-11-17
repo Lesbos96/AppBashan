@@ -99,7 +99,7 @@ async function mock(page: Page, s: State) {
     })
   })
   await page.route('https://example.test/**', (r) => r.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>' }))
-  for (const name of ['complete_job', 'report_not_done', 'withdraw']) {
+  for (const name of ['complete_job', 'report_not_done', 'withdraw', 'reject_offers']) {
     await page.route(`**/rest/v1/rpc/${name}**`, async (r) => {
       if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
       return answer(name, r.request().postDataJSON(), (a) => (a.status && a.status >= 400 ? r.fulfill({ status: a.status, headers: cors, json: a.json }) : r.fulfill({ status: 204, headers: cors })))
@@ -191,10 +191,47 @@ test.describe('Angebote', { tag: '@breit' }, () => {
     expect(body(s, 'offer-confirm')).toHaveLength(2)
   })
 
-  test('kein gültiges Angebot: Hinweis statt Liste', async ({ page }) => {
+  test('kein gültiges Angebot: Hinweis statt Liste, kein „Alle ablehnen“', async ({ page }) => {
     await mock(page, state({ status: 'offered', offers: [] }))
     await open(page)
     await expect(page.getByText('Gerade liegt kein gültiges Angebot vor.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Alle Angebote ablehnen' })).toHaveCount(0)
+  })
+
+  test('Alle Angebote ablehnen: Bestätigung per Tastatur, ein Aufruf, Hinweis hat den Fokus, Anfrage beendet', async ({ page }) => {
+    const errors = collectErrors(page)
+    const s = offered()
+    s.after['reject_offers'] = { status: 'declined', offers: [] }
+    await mock(page, s)
+    await open(page)
+    const knopf = page.getByRole('button', { name: 'Alle Angebote ablehnen' })
+    expect((await knopf.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    await knopf.focus()
+    await page.keyboard.press('Enter')
+    const confirm = page.getByRole('dialog', { name: 'Alle Angebote ablehnen' }).getByRole('button', { name: 'Ja, alle ablehnen' })
+    expect((await confirm.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    expect(body(s, 'reject_offers'), 'erst die Bestätigung sendet').toEqual([])
+    await confirm.focus()
+    await page.keyboard.press('Enter')
+    const hinweis = page.getByText('Du hast alle Angebote abgelehnt. Die Anfrage ist beendet.')
+    await expect(hinweis).toBeVisible()
+    await expect(hinweis).toBeFocused()
+    expect(body(s, 'reject_offers')).toEqual([{ p_request: ID }])
+    await expect(page.getByText('Angebote', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Anfrage zurückziehen' })).toHaveCount(0)
+    await noFee(page)
+    expect(errors).toEqual([])
+  })
+
+  test('Alle Angebote ablehnen: Server sagt invalid_transition: Hinweis, Sheet zu, neu geladen', async ({ page }) => {
+    const s = offered()
+    s.answers['reject_offers'] = [{ status: 400, json: { message: 'invalid_transition' } }]
+    await mock(page, s)
+    await open(page)
+    await page.getByRole('button', { name: 'Alle Angebote ablehnen' }).click()
+    await page.getByRole('dialog', { name: 'Alle Angebote ablehnen' }).getByRole('button', { name: 'Ja, alle ablehnen' }).click()
+    await expect(page.getByRole('alert').filter({ hasText: 'lässt sich nicht mehr ändern' })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })
 

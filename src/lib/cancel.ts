@@ -97,7 +97,7 @@ const END: Record<string, string> = {
   cancelled_by_partner: 'Die Firma hat den Auftrag abgesagt.',
   withdrawn: 'Du hast die Anfrage zurückgezogen.',
   expired: 'Die Anfrage ist abgelaufen.',
-  declined: 'Die Anfrage wurde abgelehnt.',
+  declined: 'Du hast alle Angebote abgelehnt.',
   unmatched: 'Wir haben keinen passenden Partner gefunden.',
 }
 

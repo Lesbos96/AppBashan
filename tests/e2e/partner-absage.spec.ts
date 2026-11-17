@@ -37,6 +37,7 @@ test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach ge
   await startCheck(page, 'unavailable')
   await expect(dialog(page)).toContainText('Der Kunde muss nichts zahlen')
   await expect(dialog(page)).not.toContainText('Pauschale inkl. USt.')
+  await expect(dialog(page), 'Festpreis: Pauschale 0 allein löst den Festangebot-Satz nicht aus').not.toContainText('keinen Nachtrag')
   expect(previews(jobs)).toEqual([{ requestId: RQ1, reason: 'unavailable', preview: true }])
   expect(sends(jobs), 'die Vorschau bucht nichts').toEqual([])
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
@@ -49,6 +50,24 @@ test('ohne Pauschale: Vorschau 0, gesendet wird 0 ohne Belege, Kontakt danach ge
   await expect(card(page).getByRole('button', { name: 'Kontakt und Adresse anzeigen' }), 'Kontaktsperre ohne Pauschale').toHaveCount(0)
   await expect(card(page)).toContainText('Kontakt und Adresse sind gesperrt')
   expect(real(errors)).toEqual([])
+})
+
+test('Festangebot (Quelle partner_offer) und Pauschale 0: die Maske nennt in einer Zeile, dass es keine Pauschale gibt, und sagt keine Weitervermittlung zu', { tag: '@breit' }, async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, { changes: [change({ source: 'partner_offer' })] })
+  await startCheck(page, 'unavailable')
+  await expect(dialog(page)).toContainText('Der Kunde muss nichts zahlen.')
+  await expect(dialog(page).getByText('Für diese Leistung gibt es keinen Nachtrag und keine Pauschale bei Absage.', { exact: true })).toBeVisible()
+  await expect(dialog(page)).not.toContainText('Weitervermittlung')
+  await expect(dialog(page)).not.toContainText(/Plattform|Provision|15 ?%|MoveNow-Gebühr/)
+  expect(real(errors)).toEqual([])
+})
+
+test('Preisgrundlage nicht geladen (changes leer): keine Zeile zum Festangebot, die Maske funktioniert', async ({ page }) => {
+  await open(page, { changes: [] })
+  await startCheck(page, 'unavailable')
+  await expect(dialog(page)).toContainText('Der Kunde muss nichts zahlen')
+  await expect(dialog(page)).not.toContainText('keinen Nachtrag')
 })
 
 test('Storno durch den Kunden ohne Pauschale: Kontakt gesperrt (Nr. 154)', async ({ page }) => {
