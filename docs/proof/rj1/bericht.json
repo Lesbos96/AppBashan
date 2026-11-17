@@ -1,0 +1,86 @@
+{
+  "schritt": "rj1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 266
+  },
+  "sitzung": "365cd478-c16b-4220-9619-eb82b617d229",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 3,
+    "reviewer": 2
+  },
+  "hash": "2566ed035981659609c99c023a3b0edb1449acca",
+  "stand": "7223acdc849a0a5c9c2fc564e7ef3f4198c325e8134726fe5b02d126b25de980",
+  "mainVorher": "b1738456c53366c487a282824fc884f621affd64",
+  "commits": 5,
+  "geaendert": {
+    "docs": 4,
+    "src": 3,
+    "supabase/migrations": 1,
+    "tests/e2e": 2,
+    "tests/rls": 3,
+    "andere": 1,
+    "tests/unit": 2
+  },
+  "laeufe": {
+    "check": {
+      "nr": 13,
+      "exit": 0,
+      "tests": "2097 passed (2097)",
+      "sek": 89.6,
+      "hash": "ff27e835b7b67467854cf47587ed326de389c4d1",
+      "schritt": "rj1",
+      "log": "docs\\proof\\rj1\\013-check.log"
+    },
+    "rls": {
+      "nr": 15,
+      "exit": 0,
+      "tests": "393 passed (393)",
+      "sek": 1922,
+      "hash": "7d9ea4890100e3c9d35f51af14641e608d823670",
+      "schritt": "rj1",
+      "log": "docs\\proof\\rj1\\015-rls.log"
+    },
+    "e2e": {
+      "nr": 14,
+      "exit": 0,
+      "tests": "698 passed (14.6m)",
+      "sek": 878.4,
+      "hash": "ff27e835b7b67467854cf47587ed326de389c4d1",
+      "schritt": "rj1",
+      "log": "docs\\proof\\rj1\\014-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 15,
+    "rot": 4
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261117111227_0072_replay_ablehnen.sql",
+      "sha256": "163d7d3158dee989b465773c6714aea486af7b3c9bbec1c1077b762f80e42b9e"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs/proof/rj1/rj1-abnahme-2.md",
+    "quelle": "tmp/proof/rj1-abnahme-2.md",
+    "sha256": "c1e26d10b221b4df4a78c6371e6f135696db094fad5609df1ba74f607cc6c4d7",
+    "runde": 2,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\rj1\\db-antrag-1.json",
+    "docs\\proof\\rj1\\db-freigabe-1.md",
+    "docs\\proof\\rj1\\loesch-lauf.jsonl",
+    "docs\\proof\\rj1\\rj1-abnahme-1.md",
+    "docs\\proof\\rj1\\rj1-abnahme-2.md",
+    "docs\\proof\\rj1\\rj1-review-2.md",
+    "docs\\proof\\rj1\\rj1-review.md"
+  ]
+}
