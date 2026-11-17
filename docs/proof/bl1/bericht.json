@@ -1,0 +1,80 @@
+{
+  "schritt": "bl1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 244
+  },
+  "sitzung": "93786b18-a75c-42c5-90de-f51212030787",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 2
+  },
+  "hash": "eb5a6adbd7a0ff8a1002faccead9740a891ff3d5",
+  "stand": "be787f921461343888b6ea6e80ceabd04ab833479f13b08b89f07b7808dbbb1a",
+  "mainVorher": "3e49113a1d23a9c5998f64fdb2076ee30e38c074",
+  "commits": 2,
+  "geaendert": {
+    "docs": 4,
+    "supabase/functions": 1,
+    "supabase/migrations": 1,
+    "tests/rls": 8
+  },
+  "laeufe": {
+    "check": {
+      "nr": 29,
+      "exit": 0,
+      "tests": "2097 passed (2097)",
+      "sek": 69.5,
+      "hash": "50b42ffd98e458c2cd39b6a7bf4bd6c0f984b2b3",
+      "schritt": "bl1",
+      "log": "docs\\proof\\bl1\\029-check.log"
+    },
+    "rls": {
+      "nr": 31,
+      "exit": 0,
+      "tests": "398 passed (398)",
+      "sek": 1581.1,
+      "hash": "50b42ffd98e458c2cd39b6a7bf4bd6c0f984b2b3",
+      "schritt": "bl1",
+      "log": "docs\\proof\\bl1\\031-rls.log"
+    },
+    "e2e": {
+      "nr": 30,
+      "exit": 0,
+      "tests": "707 passed (13.2m)",
+      "sek": 793.6,
+      "hash": "50b42ffd98e458c2cd39b6a7bf4bd6c0f984b2b3",
+      "schritt": "bl1",
+      "log": "docs\\proof\\bl1\\030-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 31,
+    "rot": 9
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261117190247_0073_belege.sql",
+      "sha256": "eb93f02992d2ac789e9f120681bf109b7c96e4cbf96a9bb77962b4a4b5f3609b"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs/proof/bl1/bl1-abnahme-1.md",
+    "quelle": "tmp/proof/bl1-abnahme-1.md",
+    "sha256": "6c3a6f1ea84fdaceaa6fca42d5cc70a3556636c45ae0de512e8fc537e0bb8a05",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\bl1\\db-antrag-1.json",
+    "docs\\proof\\bl1\\db-freigabe-1.md",
+    "docs\\proof\\bl1\\loesch-lauf.jsonl",
+    "docs\\proof\\bl1\\bl1-abnahme-1.md"
+  ]
+}
