@@ -1,0 +1,64 @@
+{
+  "schritt": "web1",
+  "stufe": "R2",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 162
+  },
+  "sitzung": "5c70cff8-343f-4da7-a612-7a25b07108ba",
+  "berater": {
+    "reviewer": 1
+  },
+  "hash": "65db388286e149876437ec6f8753a50146431ac0",
+  "stand": "dbbfc05be4b49ac607cb5b97ec81fa53c17be9786d2915d801c9363e2849df2b",
+  "mainVorher": "3a39b5b489e4b285cfb34442fad53a462e92d1ee",
+  "commits": 3,
+  "geaendert": {
+    "docs": 6,
+    "src": 4,
+    "andere": 2,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 10,
+      "exit": 0,
+      "tests": "2101 passed (2101)",
+      "sek": 88,
+      "hash": "c124372d3cc59e3aaad04c757da79c39817212cc",
+      "schritt": "web1",
+      "log": "docs\\proof\\web1\\010-check.log"
+    },
+    "rls": {
+      "nr": 31,
+      "exit": 0,
+      "tests": "398 passed (398)",
+      "sek": 1581.1,
+      "hash": "50b42ffd98e458c2cd39b6a7bf4bd6c0f984b2b3",
+      "schritt": "bl1",
+      "log": "docs\\proof\\web1\\031-rls.log",
+      "uebernommen": "50b42ffd98e458c2cd39b6a7bf4bd6c0f984b2b3"
+    },
+    "e2e": {
+      "nr": 12,
+      "exit": 0,
+      "tests": "707 passed (13.6m)",
+      "sek": 819.4,
+      "hash": "c124372d3cc59e3aaad04c757da79c39817212cc",
+      "schritt": "web1",
+      "log": "docs\\proof\\web1\\012-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 11,
+    "rot": 2
+  },
+  "migrationen": [],
+  "abnahme": null,
+  "kopien": [
+    "docs\\proof\\web1\\web1-review.md"
+  ]
+}
