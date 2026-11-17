@@ -151,11 +151,33 @@ test('Netzfehler beim Senden: kein zweiter Aufruf, die Aufträge werden neu gela
   const reads = jobs.jobReads
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
   await expect(dialog(page)).toHaveCount(0)
-  await expect(page.getByRole('status').filter({ hasText: 'Wir wissen nicht, ob die Absage angekommen ist' })).toBeVisible()
+  // „Ergebnis unbekannt“ ist die Warnart (role=alert), eine erfolgreiche Absage die ruhige (role=status)
+  await expect(page.getByRole('alert').filter({ hasText: 'Wir wissen nicht, ob die Absage angekommen ist' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Wir wissen nicht' })).toHaveCount(0)
   await expect.poll(() => jobs.jobReads).toBeGreaterThan(reads)
   await page.waitForTimeout(600)
   expect(jobs.cancels.filter((c) => c.preview !== true), 'nie erneut gesendet').toHaveLength(0)
 })
+
+// Sheet-Fuß (S9i7c1-1): der letzte Knopf liegt nach dem Scrollen ganz im Blickfeld und wird von nichts überdeckt, bei 390 und 320 px
+for (const width of [390, 320]) {
+  test(`Absage-Sheet ${width} px: der Absenden-Knopf ist ganz sichtbar und nicht überdeckt`, { tag: '@breit' }, async ({ page }) => {
+    await page.setViewportSize({ width, height: 640 })
+    await open(page)
+    await startCheck(page, 'unavailable')
+    const send = dialog(page).getByRole('button', { name: 'Absagen', exact: true })
+    await send.scrollIntoViewIfNeeded()
+    const box = (await send.boundingBox())!
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.y + box.height, 'Knopf endet im Fenster').toBeLessThanOrEqual(640)
+    const covered = await send.evaluate((el) => {
+      const b = el.getBoundingClientRect()
+      const hit = document.elementFromPoint(b.left + b.width / 2, b.bottom - 2)
+      return !(hit && el.contains(hit))
+    })
+    expect(covered, 'Knopf unten überdeckt').toBe(false)
+  })
+}
 
 test('Doppelklick auf Absagen: ein Aufruf; während der Anfrage sind die Knöpfe gesperrt', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await open(page)
@@ -171,7 +193,7 @@ test('not_found beim Senden (Kunde hat gleichzeitig storniert): Sheet schließt,
   const reads = jobs.jobReads
   await dialog(page).getByRole('button', { name: 'Absagen', exact: true }).click()
   await expect(dialog(page)).toHaveCount(0)
-  await expect(page.getByRole('status').filter({ hasText: 'Das lässt sich nicht mehr ändern' })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: 'Das lässt sich nicht mehr ändern' })).toBeVisible()
   await expect.poll(() => jobs.jobReads).toBeGreaterThan(reads)
 })
 

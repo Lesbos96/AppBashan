@@ -139,14 +139,14 @@ test('Fehlerantworten beim Start und beim Abschluss haben verständliche Texte, 
   jobs.myJobs = [job({ status: 'in_progress' })]
   await start().click()
   await confirm().click()
-  await expect(page.getByRole('status').filter({ hasText: 'Das lässt sich nicht mehr ändern' })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: 'Das lässt sich nicht mehr ändern' })).toBeVisible()
   await expect(dialog(page)).toHaveCount(0)
   await expect(card(page)).toContainText('Läuft')
   expect(jobs.jobReads).toBeGreaterThan(reads)
   jobs.completeAnswers.push(pgErr('not_assigned'))
   await card(page).getByRole('button', { name: 'Auftrag abschließen' }).click()
   await dialog(page).getByRole('button', { name: 'Verbindlich abschließen' }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Das ist nicht mehr verfügbar' })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: 'Das ist nicht mehr verfügbar' })).toBeVisible()
   await expect(page.locator('body')).not.toContainText(/too_early|invalid_transition|not_assigned|mfa_required|P0001/)
 })
 

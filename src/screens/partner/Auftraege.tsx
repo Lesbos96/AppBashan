@@ -129,9 +129,10 @@ function useJobs(reloadKey: number): [Loaded, (quiet: boolean) => void] {
 /** Angenommene und beendete Aufträge (Firma `active` oder `payment_hold`, aal2). Der Server entscheidet über alles. */
 export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
   const [jobs, load] = useJobs(reloadKey)
-  const [notice, setNotice] = useState('')
-  const done = (n?: string) => {
-    setNotice(n ?? '')
+  // Zwei Arten: Aktion erfolgreich (ruhig) oder Fehler bzw. Ergebnis unbekannt (Warnart, neu laden und prüfen)
+  const [notice, setNotice] = useState<{ text: string; warn: boolean } | null>(null)
+  const done = (n?: string, warn = false) => {
+    setNotice(n ? { text: n, warn } : null)
     load(true)
   }
   if (jobs.status === 'loading') return <Loading label="Aufträge laden" />
@@ -142,8 +143,8 @@ export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
     <>
       {notice && (
         <div className="px-5 pb-4">
-          <p role="status" className="m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card">
-            {notice}
+          <p role={notice.warn ? 'alert' : 'status'} className={`m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card ${notice.warn ? 'border border-destructive text-destructive' : ''}`}>
+            {notice.text}
           </p>
         </div>
       )}
@@ -217,7 +218,7 @@ function Betraege({ j }: { j: Job }) {
   )
 }
 
-function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined; onDone: (notice?: string) => void }) {
+function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined; onDone: (notice?: string, warn?: boolean) => void }) {
   const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | 'cancel' | null>(null)
   const locked = contactLocked(j)
   const info = STATUS[j.status]

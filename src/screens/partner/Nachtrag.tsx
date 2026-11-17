@@ -27,7 +27,7 @@ const closes = (k: JobError['kind']) => k === 'closed' || k === 'change_open' ||
  * Fotos werden erst nach der Vorschau hochgeladen (jedes Foto zählt zur Grenze von 8 je Auftrag und ist dem Kunden sofort sichtbar);
  * schon hochgeladene Fotos bleiben bei einem Fehler erhalten und werden beim nächsten Senden wiederverwendet.
  */
-export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onClose: () => void; c: JobChange; onDone: (notice?: string) => void }) {
+export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onClose: () => void; c: JobChange; onDone: (notice?: string, warn?: boolean) => void }) {
   const fields = changeFields(c.service, c.inputs)
   const [draft, setDraft] = useState<Draft>(() => startDraft(fields, c.inputs))
   const [step, setStep] = useState<'form' | 'proof'>('form')
@@ -79,7 +79,7 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
       const kind = e instanceof JobError ? e.kind : 'unavailable'
       if (closes(kind)) {
         onClose()
-        onDone(jobErrorText[kind])
+        onDone(jobErrorText[kind], true)
       } else setError(text(e))
     } finally {
       running.current = false
@@ -125,12 +125,12 @@ export function NachtragSheet({ open, onClose, c, onDone }: { open: boolean; onC
           const k2 = e2 instanceof JobError ? e2.kind : 'unavailable'
           if (closes(k2)) {
             onClose()
-            onDone(jobErrorText[k2])
+            onDone(jobErrorText[k2], true)
           } else setError(text(e2))
         }
       } else if (closes(kind)) {
         onClose()
-        onDone(jobErrorText[kind])
+        onDone(jobErrorText[kind], true)
       } else if (kind === 'not_increasing' || kind === 'bad_input') {
         setStep('form')
         setPreview(null)

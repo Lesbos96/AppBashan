@@ -7,7 +7,7 @@ import { JobError, jobErrorText, retryable, stale } from '../../lib/jobs'
  * Bestätigung im Sheet für eine Aktion mit Folgen. Gesperrt, solange sie läuft (kein Doppelklick, kein Schließen).
  * Ist die Anzeige veraltet (Preis geändert, nicht mehr möglich), schließt das Sheet und `onDone` bekommt den Hinweis; sonst bleibt der Fehler im Sheet.
  */
-export function Bestaetigen({ open, onClose, title, label, action, onDone, children }: { open: boolean; onClose: () => void; title: string; label: string; action: () => Promise<void>; onDone: (notice?: string) => void; children?: ReactNode }) {
+export function Bestaetigen({ open, onClose, title, label, action, onDone, children }: { open: boolean; onClose: () => void; title: string; label: string; action: () => Promise<void>; onDone: (notice?: string, warn?: boolean) => void; children?: ReactNode }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<JobError | null>(null)
 
@@ -27,7 +27,7 @@ export function Bestaetigen({ open, onClose, title, label, action, onDone, child
       const err = e instanceof JobError ? e : new JobError('unavailable')
       if (stale(err.kind)) {
         onClose()
-        onDone(jobErrorText[err.kind])
+        onDone(jobErrorText[err.kind], true)
       } else setError(err)
     } finally {
       setBusy(false)

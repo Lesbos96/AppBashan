@@ -47,7 +47,7 @@ export function AbsageSheet({
   /** Der Termin hat begonnen (Datenbankuhr laut my_jobs): dann ist nur noch `scope_impossible` möglich; der Server entscheidet. */
   started: boolean
   receiptIds: string[]
-  onDone: (notice?: string) => void
+  onDone: (notice?: string, warn?: boolean) => void
 }) {
   const [reason, setReason] = useState<CancelReason>('scope_impossible')
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -85,9 +85,10 @@ export function AbsageSheet({
     onClose()
     if (touched) onDone()
   }
+  // Jede Meldung über leave() ist kein Erfolg (Fehler oder „Ergebnis unbekannt“): Warnart in Auftraege
   const leave = (notice: string) => {
     onClose()
-    onDone(notice)
+    onDone(notice, true)
   }
 
   // Der Grund gehört zur Vorschau: jede Änderung verwirft Vorschau, Auswahl und gezeigten Betrag

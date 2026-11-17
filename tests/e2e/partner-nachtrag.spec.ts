@@ -304,7 +304,7 @@ test('Schon offen (zweites Gerät, verlorene Antwort): 409 schließt, lädt neu 
   jobs.changes = [proposed('proposed')]
   await dialog(page).getByRole('button', { name: /Nachtrag über 810,00 € senden/ }).click()
   await expect(dialog(page)).toHaveCount(0)
-  await expect(page.getByRole('status').filter({ hasText: 'liegt schon ein Nachtrag vor' })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: 'liegt schon ein Nachtrag vor' })).toBeVisible()
   await expect(card(page)).toContainText('neuer Gesamtpreis 810,00 €')
   expect(sends(jobs)).toHaveLength(1)
 })

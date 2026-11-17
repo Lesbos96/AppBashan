@@ -372,7 +372,7 @@ const shots: Shot[] = [
       await page.getByRole('dialog').getByRole('radio', { name: /nicht durchführen/ }).check()
       await page.getByRole('dialog').getByRole('button', { name: 'Folgen prüfen' }).click()
       await page.getByRole('dialog').getByRole('button', { name: 'Absagen', exact: true }).click()
-      await expect(page.getByRole('status').filter({ hasText: 'Wir wissen nicht, ob die Absage angekommen ist' })).toBeVisible()
+      await expect(page.getByRole('alert').filter({ hasText: 'Wir wissen nicht, ob die Absage angekommen ist' })).toBeVisible()
     },
     wait: heading('Angenommen'),
   },
@@ -423,7 +423,16 @@ const shots: Shot[] = [
   },
   { name: 'status-payment-hold', open: { ...ACTIVE, status: 'payment_hold' }, wait: heading('Dokumente') },
   { name: 'status-rejected', open: { status: 'rejected' }, wait: heading('Transporte Huber GmbH') },
-  { name: 'status-suspended', open: { status: 'suspended' }, wait: heading('Transporte Huber GmbH') },
+  // Gesperrt mit aal2 (s9i7d-1): Statuskarte und Abrechnung, keine Dokumente
+  {
+    name: 'status-suspended',
+    open: { status: 'suspended', factors: [factor('v1', 'verified')], aal: 'aal2' },
+    wait: async (page) => {
+      await heading('Transporte Huber GmbH')(page)
+      await expect(page.getByRole('region', { name: 'Abrechnung' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Dokumente' })).toHaveCount(0)
+    },
+  },
 ]
 
 async function take(page: Page, testInfo: TestInfo, name: string) {
