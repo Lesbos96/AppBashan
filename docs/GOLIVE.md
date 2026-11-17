@@ -6,6 +6,8 @@ Quelle: `docs/OPEN_ISSUES.md` und `docs/ROADMAP.md` (S5b, S8a, S8b-1, S10). Ein 
 
 Dev-Projekt-Ref: `vcpbbzdyltvffvzjrzdi` (Name: „bekhanidrisov74-hub's Project“, laut `supabase/.temp/linked-project.json`). Jede Ref, die davon abweicht, ist nicht Dev.
 
+**Start als Web-App (ENTSCHEIDUNGEN Nr. 200 bis 202):** Gestartet wird die PWA im Web. Store-Apps (Capacitor, iOS und Android) und Live-Tracking sind keine Voraussetzung für den Start; die Store-Apps folgen spätestens 3 Monate danach, die Fahrer-App mit Live-Tracking danach. Die Punkte mit `capacitor://localhost` (10, 16, 20) gelten für den Store-Build, nicht für den Start. Zum Start zeigt die App ein festes Ankunftsfenster (Termin bis Termin + 30 Minuten).
+
 Reihenfolge: Abschnitt 1 bis 5.
 
 ## 1 · Projekt und Schlüssel

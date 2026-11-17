@@ -5,6 +5,7 @@ import { Button } from '../components/Button'
 import { StatusChip } from '../components/Controls'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
+import { arrivalText } from '../lib/arrival'
 import { CancelError, cancelErrorText, cancelRequest, feeText, previewCancel, snapshotStorno, timeline } from '../lib/cancel'
 import { terminStarted } from '../lib/jobs'
 import { states, titles } from '../lib/orders'
@@ -65,7 +66,8 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   const line = timeline(r.status)
   const live = r.status === 'accepted' || r.status === 'in_progress'
   const started = live && terminStarted(r.termin_at)
-  const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window] : undefined].filter(Boolean).join(' · ')
+  const arrival = arrivalText(r.termin_at)
+  const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window]?.replace(' Uhr', `${String.fromCharCode(160)}Uhr`) : undefined].filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
@@ -80,6 +82,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
           <StatusChip status={chip.chip}>{chip.label}</StatusChip>
         </span>
         {when && <p className="m-0 text-body">{when}</p>}
+        {!('end' in line) && arrival && <p className="m-0 text-subhead text-text-secondary">{arrival}</p>}
         {r.from_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.from_address}</p>}
         {r.to_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.to_address}</p>}
         <span className="flex items-center justify-between gap-3 border-t-[0.5px] border-separator pt-3">

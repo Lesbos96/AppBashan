@@ -22,8 +22,10 @@ Die Frage 1 vom 2026-11-17 (ui1, Texte zum Festangebot ohne Pauschale) ist beant
 
 Die Fragen 1 und 2 vom 2026-11-17 (rs1, Montage in Transport und Umzug; rls-Laufzeit) sind beantwortet (ENTSCHEIDUNGEN Nr. 197 und 198).
 
+Die Frage 1 vom 2026-11-17 (bl1, Belegplätze) ist beantwortet (ENTSCHEIDUNGEN Nr. 204).
+
 ## Offene Fragen
-1. **Belegplätze und angenommene Nachträge (bl1, ENTSCHEIDUNGEN Nr. 199).** Ein Beleg, der an einem angenommenen Nachtrag hängt, gilt seit 0073 als verbraucht: jeder weitere Nachtrag braucht mindestens einen neuen Beleg, und je Auftrag gibt es höchstens 8 Belege ohne Löschweg. Wenn eine Firma mehrere Nachträge annehmen lässt und alle 8 Plätze verbraucht sind, ist kein weiterer Nachtrag mehr möglich. **Empfehlung:** so lassen; die Grenze trifft in der Praxis kaum einen Auftrag (ein Nachtrag braucht ein Foto, selten mehr als zwei bis drei Nachträge je Auftrag). Alternative: mehrere Nachträge dürfen sich Belege teilen, dann entfällt die Regel „ein neuer Beleg je Nachtrag“ (S9i7-1) wieder. Ja = so lassen.
+Keine.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

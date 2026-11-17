@@ -3,6 +3,7 @@ import { Button } from '../../components/Button'
 import { StatusChip } from '../../components/Controls'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
+import { arrivalText } from '../../lib/arrival'
 import { JobError, jobErrorText, retryable, viennaTime } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import {
@@ -238,6 +239,7 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       </div>
       {places && <p className="m-0 text-body">{places}</p>}
       {(day || window) && <p className="m-0 text-body">{[day, window].filter(Boolean).join(', ')}</p>}
+      {!j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <p className="m-0 text-subhead text-text-secondary">{arrivalText(j.terminAt)}</p>}
       <Betraege j={j} />
       {j.underReview && (
         <p role="status" className="m-0 text-body">

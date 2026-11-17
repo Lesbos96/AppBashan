@@ -142,5 +142,5 @@ Partner-Portal und E-Mail-Benachrichtigungen sind Phase 1 (S9a ff.). Phase 2:
 - Admin-Oberfläche (Freigaben, Statuspflege, `price_config` und Gebührensatz versioniert bearbeiten)
 - Transportermiete und Vermieterbereich (Miete als Partner-Kategorie, `docs/S9_KONZEPT.md`, 5.3), Vermieter bestätigt Mietanfragen in der App
 - Automatische Sammelrechnung, SEPA, Zahlungsdienstleister (z. B. Stripe Connect; Rechnungs- und USt.-Logik vorher mit Steuerberatung klären), Push, pgAudit, Radius-Gebiete, Mehrfach-Mitglieder in der Oberfläche
-- Capacitor-Build für iOS und Android
+- Capacitor-Build für iOS und Android: spätestens 3 Monate nach dem Start als Web-App (Nr. 200); danach Fahrer-App mit Live-Tracking (Nr. 201)
 - Bewertungen, Verfügbarkeitskalender, weitere Städte
