@@ -1,0 +1,78 @@
+{
+  "schritt": "rs1",
+  "stufe": "R2",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 373
+  },
+  "sitzung": "f021678b-45eb-4d1d-b7e2-8a267ae8a8ce",
+  "berater": {
+    "advisor": 1,
+    "Explore": 1,
+    "advisor-report": 2,
+    "reviewer": 1
+  },
+  "hash": "a4749ea5472c09791ef87f07b19d47500497cc7e",
+  "stand": "7bef81ca00bebfb9904c67c543aedae9b55cb18c8b16929d0e9dc90393f051e2",
+  "mainVorher": "82817427483a237b465d17866d5d79128b351a6b",
+  "commits": 4,
+  "geaendert": {
+    "docs": 5,
+    "src": 8,
+    "tests/e2e": 3,
+    "andere": 2,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 17,
+      "exit": 0,
+      "tests": "2097 passed (2097)",
+      "sek": 41.3,
+      "hash": "5cdaded779890467ac2d889ee9d918ccd9105016",
+      "schritt": "rs1",
+      "log": "docs\\proof\\rs1\\017-check.log"
+    },
+    "rls": {
+      "nr": 15,
+      "exit": 0,
+      "tests": "393 passed (393)",
+      "sek": 1922,
+      "hash": "7d9ea4890100e3c9d35f51af14641e608d823670",
+      "schritt": "rj1",
+      "log": "docs\\proof\\rs1\\015-rls.log",
+      "uebernommen": "7d9ea4890100e3c9d35f51af14641e608d823670"
+    },
+    "e2e": {
+      "nr": 18,
+      "exit": 0,
+      "tests": "707 passed (10.9m)",
+      "sek": 654.3,
+      "hash": "5cdaded779890467ac2d889ee9d918ccd9105016",
+      "schritt": "rs1",
+      "log": "docs\\proof\\rs1\\018-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 18,
+    "rot": 7
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs/proof/rs1/rs1-abnahme-2.md",
+    "quelle": "tmp/proof/rs1-abnahme-2.md",
+    "sha256": "4f5e75b1d9e366b660d69cc1daf32916838b76cd2eab44a6b3873cd30572c948",
+    "runde": 2,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\rs1\\loesch-lauf.jsonl",
+    "docs\\proof\\rs1\\rs1-abnahme-1.md",
+    "docs\\proof\\rs1\\rs1-abnahme-2.md",
+    "docs\\proof\\rs1\\rs1-review.md"
+  ]
+}

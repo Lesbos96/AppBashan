@@ -1,9 +1,9 @@
 {
   "check": {
-    "abdruck": "7223acdc849a0a5c9c2fc564e7ef3f4198c325e8134726fe5b02d126b25de980",
-    "hash": "ff27e835b7b67467854cf47587ed326de389c4d1",
-    "schritt": "rj1",
-    "zeit": "2026-11-17T12:30:44.028Z"
+    "abdruck": "7bef81ca00bebfb9904c67c543aedae9b55cb18c8b16929d0e9dc90393f051e2",
+    "hash": "5cdaded779890467ac2d889ee9d918ccd9105016",
+    "schritt": "rs1",
+    "zeit": "2026-11-17T14:59:10.895Z"
   },
   "rls": {
     "abdruck": "3072e6d1c1de64af802c57a5d610db3663e32050038fde1e06f84c7c4ff3641e",
@@ -12,9 +12,9 @@
     "zeit": "2026-11-17T12:47:29.560Z"
   },
   "e2e": {
-    "abdruck": "61060be3369ba7f76bc97265d72157b60e79bbb4c871d33286dbdfd0cb6d46c4",
-    "hash": "ff27e835b7b67467854cf47587ed326de389c4d1",
-    "schritt": "rj1",
-    "zeit": "2026-11-17T12:32:19.135Z"
+    "abdruck": "da509477b3030bae8af6765f306127736b387b73e92be414ad56b5c40e05b5f4",
+    "hash": "5cdaded779890467ac2d889ee9d918ccd9105016",
+    "schritt": "rs1",
+    "zeit": "2026-11-17T14:59:52.940Z"
   }
 }
