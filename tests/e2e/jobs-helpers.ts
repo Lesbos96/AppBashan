@@ -376,7 +376,12 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
   await mockRpc(page, 'decline_listing', (body) => {
     s.declines.push(body)
     const a = s.declineAnswers.shift()
-    if (a) return new RpcFail(a.status, a.json)
+    if (a) {
+      // wie der Server: `offer_exists` heißt, dass die Firma ein gesendetes Angebot hat; nach dem Neuladen steht es in der Liste
+      const l = s.listings.find((x) => x.id === body.p_listing)
+      if (l && (a.json as { message?: unknown }).message === 'offer_exists') s.offers.push({ id: O1, base_revision_id: l.revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' })
+      return new RpcFail(a.status, a.json)
+    }
     s.listings = s.listings.filter((x) => x.id !== body.p_listing)
     return undefined
   })

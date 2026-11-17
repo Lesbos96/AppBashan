@@ -403,6 +403,38 @@ const shots: Shot[] = [
     wait: heading('Offene Anfragen'),
   },
   {
+    name: 'ablehnen-bestaetigung',
+    open: ACTIVE,
+    jobs: { listings: [fixed()] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Ablehnen' }).click()
+      await expect(page.getByRole('dialog').getByRole('button', { name: 'Ablehnen' })).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'ablehnen-angebot-offen',
+    open: ACTIVE,
+    jobs: { listings: [range()], declineAnswers: [{ status: 400, json: { code: 'P0001', message: 'offer_exists', details: null, hint: null } }] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Ablehnen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Ablehnen' }).click()
+      await expect(page.getByText('Zieh es zuerst zurück')).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
+    name: 'ablehnen-hinweis',
+    open: ACTIVE,
+    jobs: { listings: [fixed(), range()] },
+    steps: async (page) => {
+      await page.getByRole('article').first().getByRole('button', { name: 'Ablehnen' }).click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Ablehnen' }).click()
+      await expect(page.getByText('Du hast die Anfrage abgelehnt.')).toBeVisible()
+    },
+    wait: heading('Offene Anfragen'),
+  },
+  {
     name: 'meine-angebote',
     open: ACTIVE,
     jobs: {
