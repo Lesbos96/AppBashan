@@ -12,6 +12,7 @@ Stand 2026-11-17, nach Schritt rj1 (R3: Ablehnen ohne Doppelwirkung); davor dev1
 - Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung und GOLIVE 34 erledigt sind.
 
 ## Nächster Schritt
+0. Reset ist fällig (ENTSCHEIDUNGEN Nr. 195): der Volllauf `rls` am Ende von rj1 brauchte 1922 s (`tmp/proof/rj1/015-rls.log`, 393 Tests, EXIT=0), über der Grenze von 1200 s. rj1 hat nicht gelöscht (nicht im Umfang). Zuerst `npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe`, dann `loeschen` mit den Zahlen der Probe, im Schritt, der es ausdrücklich verlangt.
 1. Nach Wert: Belege-Migration S9i7-12 (OFFEN n12-1, R3) · Kunden-Oberfläche „Alle Angebote ablehnen“ (OFFEN rj1-1, R1) · Mailversand (GOLIVE 35, 36) · Turnstile · Produktivprojekt (vorher OFFEN sys2-1) · Hosting · Rechtstexte · Abnahme.
 2. Texte zum Festangebot ohne Pauschale nach Beks' Antwort auf BEKS Frage 1 (GOLIVE 32); `sweep.ts` auf Konten ohne gebundene Aufträge begrenzen, falls Beks es will.
 
