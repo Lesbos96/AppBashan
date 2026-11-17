@@ -1,0 +1,66 @@
+{
+  "schritt": "ui1",
+  "stufe": "R2",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 185
+  },
+  "sitzung": "b164fc9d-4018-453a-a55f-bc7d7ec27416",
+  "berater": {
+    "reviewer": 1
+  },
+  "hash": "f4a8da7ec258a4d91aa8c65086aef26ce089ee8e",
+  "stand": "3b15d38090d296de02d91972626907135193304d13f7697e0ecd78b518281506",
+  "mainVorher": "17a13c76fded8e065c3f21aca6542e1a99b8cb7c",
+  "commits": 2,
+  "geaendert": {
+    "docs": 3,
+    "src": 4,
+    "tests/e2e": 3,
+    "andere": 1,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 8,
+      "exit": 0,
+      "tests": "2077 passed (2077)",
+      "sek": 41.6,
+      "hash": "2685d65f085cca7280e3279da95e28d7510eb644",
+      "schritt": "ui1",
+      "log": "docs\\proof\\ui1\\008-check.log"
+    },
+    "rls": {
+      "nr": 22,
+      "exit": 0,
+      "tests": "391 passed (391)",
+      "sek": 2126.4,
+      "hash": "f06a1c50022f1d5349ffcdd1989c4568b1192535",
+      "schritt": "sys2",
+      "log": "docs\\proof\\ui1\\022-rls.log",
+      "uebernommen": "f06a1c50022f1d5349ffcdd1989c4568b1192535"
+    },
+    "e2e": {
+      "nr": 10,
+      "exit": 0,
+      "tests": "692 passed (12.2m)",
+      "sek": 733,
+      "hash": "2685d65f085cca7280e3279da95e28d7510eb644",
+      "schritt": "ui1",
+      "log": "docs\\proof\\ui1\\010-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 10,
+    "rot": 3
+  },
+  "migrationen": [],
+  "abnahme": null,
+  "kopien": [
+    "docs\\proof\\ui1\\loesch-lauf.jsonl",
+    "docs\\proof\\ui1\\ui1-review.md"
+  ]
+}
