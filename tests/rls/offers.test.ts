@@ -414,7 +414,7 @@ describe('Ablehnen, Zurückziehen, Ablauf', () => {
     ok(r['reject'])
     expect(r['R1 Status']).toBe('= declined')
     rows(r['R1 Angebote'], 2)
-    err(r['reject nochmal'], 'invalid_transition')
+    ok(r['reject nochmal']) // rj1 (0072): Wiederholung des Kunden nach Erfolg ist ok, ohne Wirkung (tests/rls/replay-ablehnen.test.ts)
     err(r['withdraw fremdes'], 'not_found')
     ok(r['withdraw a'])
     expect(r['R2 offered (b gültig)']).toBe('= offered')

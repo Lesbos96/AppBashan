@@ -7,6 +7,7 @@ import { formatEuro } from '../../lib/money'
 import {
   acceptListing,
   dayLabel,
+  declineListing,
   loadListings,
   loadMyOffers,
   loadPhotos,
@@ -103,7 +104,7 @@ function usePayout(cents: number | null): number | null {
 }
 
 function Karte({ l, offer, onDone }: { l: Listing; offer?: MyOffer; onDone: (notice?: string) => void }) {
-  const [sheet, setSheet] = useState<'accept' | 'offer' | null>(null)
+  const [sheet, setSheet] = useState<'accept' | 'offer' | 'decline' | null>(null)
   const day = dayLabel(l.preferredDate)
   const window = windowLabel(l.timeWindow)
   const scope = scopeLines(l.service, l.inputs)
@@ -158,6 +159,24 @@ function Karte({ l, offer, onDone }: { l: Listing; offer?: MyOffer; onDone: (not
         ) : (
           <Button onClick={() => setSheet('offer')}>Angebot abgeben</Button>
         ))}
+      {/* Mit offenem Angebot zuerst zurückziehen (der Server sagt `offer_exists`); ohne geladene Angebote entscheidet der Server */}
+      {!offer && (
+        <Button variant="tinted" onClick={() => setSheet('decline')}>
+          Ablehnen
+        </Button>
+      )}
+      <Bestaetigen
+        open={sheet === 'decline'}
+        onClose={() => setSheet(null)}
+        title="Anfrage ablehnen"
+        label="Ablehnen"
+        action={() => declineListing(l.id)}
+        onDone={(n) => onDone(n ?? 'Du hast die Anfrage abgelehnt.')}
+      >
+        <p className="m-0 text-subhead text-text-secondary">
+          Die Anfrage verschwindet aus deiner Liste. {l.totalCents !== null ? 'Du kannst sie danach nicht mehr annehmen.' : 'Du kannst danach kein Angebot mehr abgeben.'}
+        </p>
+      </Bestaetigen>
 
       {payout !== null && (
         <Bestaetigen open={sheet === 'accept'} onClose={() => setSheet(null)} title="Anfrage annehmen" label="Verbindlich annehmen" action={() => acceptListing(l, payout)} onDone={onDone}>

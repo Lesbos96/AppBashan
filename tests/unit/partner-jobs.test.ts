@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { JobError } from '../../src/lib/jobs'
-import { acceptListing, loadListings, loadMyOffers, parseEuro, payoutPreview, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
+import { JobError, jobErrorText, stale } from '../../src/lib/jobs'
+import { acceptListing, declineListing, loadListings, loadMyOffers, parseEuro, payoutPreview, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
 
 const invoke = vi.fn()
 const rpc = vi.fn()
@@ -213,6 +213,36 @@ describe('Angebot senden und zurückziehen', () => {
     expect(rpc).toHaveBeenCalledWith('withdraw_offer', { p_offer: ID })
     rpc.mockResolvedValue({ data: null, error: { message: 'invalid_transition' } })
     await expect(withdrawOffer(ID)).rejects.toMatchObject({ kind: 'taken' })
+  })
+})
+
+describe('Anfrage ablehnen', () => {
+  it('decline_listing bekommt nur die Listing-ID', async () => {
+    rpc.mockResolvedValue({ data: null, error: null })
+    await declineListing(ID)
+    expect(rpc).toHaveBeenCalledWith('decline_listing', { p_listing: ID })
+  })
+
+  it.each([
+    ['offer_exists', 'offer_open'],
+    ['invalid_transition', 'taken'],
+    ['not_found', 'taken'],
+    ['partner_not_active', 'gone'],
+    ['mfa_required', 'unauthorized'],
+    ['irgendwas', 'unavailable'],
+  ])('decline_listing %s wird %s', async (message, kind) => {
+    rpc.mockResolvedValue({ data: null, error: { message } })
+    await expect(declineListing(ID)).rejects.toMatchObject({ kind })
+  })
+
+  it('offer_open: eigener Text mit Handlung, die Anzeige gilt als veraltet', () => {
+    expect(jobErrorText.offer_open).toMatch(/zurück/)
+    expect(stale('offer_open')).toBe(true)
+  })
+
+  it('Netzfehler ist offline', async () => {
+    rpc.mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(declineListing(ID)).rejects.toMatchObject({ kind: 'offline' })
   })
 })
 

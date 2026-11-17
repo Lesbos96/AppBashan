@@ -18,6 +18,7 @@ export type JobErrorKind =
   | 'payout'
   | 'job_limit'
   | 'have_offer'
+  | 'offer_open'
   | 'offer_limit'
   | 'amount'
   | 'vat_rule'
@@ -56,6 +57,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   payout: 'Deine Auszahlung hat sich geändert. Prüfe sie und bestätige erneut.',
   job_limit: 'Du hast die höchste Zahl offener Aufträge erreicht. Schließe zuerst einen ab.',
   have_offer: 'Du hast für diese Anfrage schon ein Angebot abgegeben.',
+  offer_open: 'Du hast für diese Anfrage ein Angebot offen. Zieh es zuerst zurück.',
   offer_limit: 'Für diese Anfrage liegen schon so viele Angebote vor. Versuche es später noch einmal.',
   amount: 'Der Betrag liegt nicht im erlaubten Bereich. Prüfe deine Eingabe.',
   vat_rule: 'Für deine Firma fehlt eine Steuerangabe. Wende dich an den Support.',
@@ -90,7 +92,7 @@ const CODES: Record<string, JobErrorKind> = {
 }
 
 /** Wie lange ein Fehler die Anzeige veraltet: danach lädt der Auftrag neu. */
-export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'under_review' || k === 'taken' || k === 'payout' || k === 'have_offer'
+export const stale = (k: JobErrorKind) => k === 'changed' || k === 'closed' || k === 'gone' || k === 'window_closed' || k === 'under_review' || k === 'taken' || k === 'payout' || k === 'have_offer' || k === 'offer_open'
 export const retryable = (k: JobErrorKind) => k === 'offline' || k === 'retry' || k === 'unavailable'
 
 export const asKind = (code: unknown, codes: Record<string, JobErrorKind> = CODES): JobErrorKind => (typeof code === 'string' && Object.hasOwn(codes, code) ? codes[code] : undefined) ?? 'unavailable'

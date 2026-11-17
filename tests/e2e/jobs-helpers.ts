@@ -157,6 +157,8 @@ export type JobsState = {
   accepts: Record<string, unknown>[]
   sends: Record<string, unknown>[]
   withdraws: Record<string, unknown>[]
+  /** Aufrufe von `decline_listing` (rj1) */
+  declines: Record<string, unknown>[]
   photoCalls: Record<string, unknown>[]
   /** URLs der Abrufe von `job_listings` und `partner_offers` (Spaltenliste prüfen) */
   urls: string[]
@@ -164,6 +166,7 @@ export type JobsState = {
   acceptAnswers: Ans[]
   sendAnswers: Ans[]
   withdrawAnswers: Ans[]
+  declineAnswers: Ans[]
   /** Aufträge der Firma (`my_jobs`); Start und Abschluss ändern sie wie der Server */
   myJobs: JobRow[]
   jobReads: number
@@ -212,7 +215,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], feeExtra: 0, payoutFails: false, accepts: [], sends: [], withdraws: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], feeExtra: 0, payoutFails: false, accepts: [], sends: [], withdraws: [], declines: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], declineAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
   // Journal (s9i-7c1): wie PostgREST: Zeilen des Monats, Ausschnitt nach `Range`, Gesamtzahl im Kopf `content-range` (sichtbar für die App über expose-headers)
   await page.route('**/rest/v1/rpc/my_commissions**', (r) => {
     const o = pre(r)
@@ -368,6 +371,13 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
     const a = s.withdrawAnswers.shift()
     if (a) return new RpcFail(a.status, a.json)
     s.offers = s.offers.map((x) => (x.id === body.p_offer ? { ...x, status: 'withdrawn' as const } : x))
+    return undefined
+  })
+  await mockRpc(page, 'decline_listing', (body) => {
+    s.declines.push(body)
+    const a = s.declineAnswers.shift()
+    if (a) return new RpcFail(a.status, a.json)
+    s.listings = s.listings.filter((x) => x.id !== body.p_listing)
     return undefined
   })
   await page.route('**/functions/v1/job-photo', (r) => {

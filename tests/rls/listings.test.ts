@@ -254,7 +254,7 @@ describe('Ablehnen und Fristen', () => {
     err(r['anon'], '42501')
     expect(r['a lehnt ab']).toBe('ok')
     expect(r['Status bleibt']).toBe('= requested')
-    err(r['nochmal'], 'invalid_transition')
+    expect(r['nochmal']).toBe('ok') // rj1 (0072): Wiederholung der Firma nach Erfolg ist ok, ohne Wirkung (tests/rls/replay-ablehnen.test.ts)
     expect(r['b lehnt ab']).toBe('ok')
     expect(r['Status']).toBe('= unmatched')
     rows(r['Outbox'], 1)

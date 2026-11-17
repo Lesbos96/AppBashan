@@ -15,7 +15,7 @@ const when = (v: unknown): Date | null => {
   return d && !Number.isNaN(d.getTime()) ? d : null
 }
 
-// Fehlercodes des Servers (accept, send_offer, withdraw_offer) → Fehlerart. Alles, was „die Anfrage ist weg oder nicht mehr offen“ heißt, ist `taken`.
+// Fehlercodes des Servers (accept, send_offer, withdraw_offer, decline_listing) → Fehlerart. Alles, was „die Anfrage ist weg oder nicht mehr offen“ heißt, ist `taken`.
 const CODES: Record<string, JobErrorKind> = {
   already_taken: 'taken',
   request_closed: 'taken',
@@ -43,7 +43,7 @@ const CODES: Record<string, JobErrorKind> = {
 const own = <T>(map: Record<string, T>, key: unknown): T | undefined => (typeof key === 'string' && Object.hasOwn(map, key) ? map[key] : undefined)
 const kindOf = (code: unknown): JobErrorKind => own(CODES, code) ?? 'unavailable'
 
-async function rpc(fn: 'send_offer' | 'withdraw_offer', args: { p_listing: string; p_amount: number } | { p_offer: string }): Promise<void> {
+async function rpc(fn: 'send_offer' | 'withdraw_offer' | 'decline_listing', args: { p_listing: string; p_amount: number } | { p_offer: string } | { p_listing: string }): Promise<void> {
   try {
     const { error } = await supabase.rpc(fn, args as never)
     if (!error) return
@@ -203,6 +203,15 @@ export async function sendOffer(listingId: string, amountCents: number): Promise
 }
 
 export const withdrawOffer = (offerId: string) => rpc('withdraw_offer', { p_offer: offerId })
+
+/** Anfrage ablehnen. Hat die Firma dafür ein Angebot offen, sagt der Server `offer_exists`: dann zuerst zurückziehen (eigener Text, nicht „schon abgegeben“). */
+export async function declineListing(listingId: string): Promise<void> {
+  try {
+    await rpc('decline_listing', { p_listing: listingId })
+  } catch (e) {
+    throw e instanceof JobError && e.kind === 'have_offer' ? new JobError('offer_open') : e
+  }
+}
 
 /** Signierte Fotos (600 s, nicht speichern) eines Listings: nur Kopien, nie Originale. */
 export async function loadPhotos(listingId: string): Promise<string[]> {

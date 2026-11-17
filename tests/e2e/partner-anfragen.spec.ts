@@ -162,6 +162,45 @@ test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', { 
   expect(jobs.withdraws).toEqual([{ p_offer: O1 }])
 })
 
+test('Ablehnen: Bestätigung nennt die Folge, Doppelklick sendet einen Aufruf, danach Hinweis und Anfrage weg; Tastaturweg', { tag: '@breit' }, async ({ page }) => {
+  const errors = collectErrors(page)
+  const { jobs } = await openJobs(page, { listings: [fixed(), range()] })
+  await expect(page.getByRole('article')).toHaveCount(2)
+  const ablehnen = card(page).getByRole('button', { name: 'Ablehnen' })
+  await ablehnen.focus()
+  await page.keyboard.press('Enter')
+  await expect(dialog(page)).toContainText('Du kannst sie danach nicht mehr annehmen.')
+  await expect(dialog(page)).not.toContainText('Angebot')
+  await dialog(page).getByRole('button', { name: 'Ablehnen' }).dblclick()
+  await expect(page.getByText('Du hast die Anfrage abgelehnt.')).toBeVisible()
+  await expect(dialog(page)).toHaveCount(0)
+  expect(jobs.declines).toEqual([{ p_listing: L1 }])
+  await expect(page.getByRole('article')).toHaveCount(1)
+  await expect(card(page)).toContainText('500,00 €')
+  // Spanne: die Folge nennt das Angebot
+  await card(page).getByRole('button', { name: 'Ablehnen' }).click()
+  await expect(dialog(page)).toContainText('kein Angebot mehr abgeben')
+  await dialog(page).getByRole('button', { name: 'Doch nicht' }).click()
+  expect(jobs.declines).toHaveLength(1)
+  await noFee(page)
+  expect(real(errors)).toEqual([])
+})
+
+test('Ablehnen: mit offenem Angebot kein Knopf', { tag: '@breit' }, async ({ page }) => {
+  await openJobs(page, { listings: [range()], offers: [{ id: O1, base_revision_id: range().revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' }] })
+  await expect(card(page)).toContainText('Angebot gesendet')
+  await expect(card(page).getByRole('button', { name: 'Ablehnen' })).toHaveCount(0)
+})
+
+test('Ablehnen: sagt der Server `offer_exists`, steht der Hinweis „zuerst zurückziehen“ und die Liste lädt neu', { tag: '@breit' }, async ({ page }) => {
+  const { jobs } = await openJobs(page, { listings: [fixed()], declineAnswers: [{ status: 400, json: { code: 'P0001', message: 'offer_exists', details: null, hint: null } }] })
+  await card(page).getByRole('button', { name: 'Ablehnen' }).click()
+  await dialog(page).getByRole('button', { name: 'Ablehnen' }).click()
+  await expect(page.getByText('Zieh es zuerst zurück')).toBeVisible()
+  await expect(page.locator('body')).not.toContainText('offer_exists')
+  expect(jobs.declines).toHaveLength(1)
+})
+
 test('Fotos: erst auf Wunsch, nur Kopien vom Server, kein Download', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [fixed()] })
   expect(jobs.photoCalls).toEqual([])
