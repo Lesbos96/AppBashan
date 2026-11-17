@@ -1,7 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { price } from '../e2e/anfrage-helpers'
 import { mockAuth, signInWithCode } from '../e2e/auth-helpers'
-import { expect, mockRpc, reply, test } from '../e2e/backend'
+import { expect, mockRpc, reply, test, type RpcReturn } from '../e2e/backend'
 
 /*
  * Bildsicht für die Meldung „nicht stattgefunden“ und das Zurückziehen beim Kunden (s9k-1): Frage nach dem Abschluss der Firma,
@@ -27,9 +27,9 @@ const row = (over: object) => ({
   ...over,
 })
 
-type Shot = { name: string; row: object; canReport: boolean; region: string | null; open?: string; offers?: object[] }
+type Shot = { name: string; row: object; canReport: boolean; region: string | null; open?: string; offers?: RpcReturn<'my_request_offers'> }
 // rs1: Kunde mit zwei Festangeboten, „Alle Angebote ablehnen“ (Knopf und Sheet)
-const OFFERS = [
+const OFFERS: RpcReturn<'my_request_offers'> = [
   { offer_id: '2d0a3e5f-7f4c-4a9d-9c83-5e6f7a8b9c0d', amount_cents: 72345, valid_until: '2099-12-01T10:00:00Z', status: 'sent', company_name: 'Muster Transporte' },
   { offer_id: '1c9f2d4e-6e3b-4f8c-8b72-4d5e6f7a8b9c', amount_cents: 72000, valid_until: '2099-12-02T10:00:00Z', status: 'sent', company_name: 'Zweite Firma' },
 ]
