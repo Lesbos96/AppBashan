@@ -22,7 +22,8 @@ import { dayText } from './anfrage/format'
 
 const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, not_done_resolved_at, cancel_fee_waived, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const windows: Record<string, string> = { morning: '8 bis 11 Uhr', midday: '11 bis 14 Uhr', afternoon: '14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
+const NBSP = String.fromCharCode(160)
+const windows: Record<string, string> = { morning: `8 bis 11${NBSP}Uhr`, midday: `11 bis 14${NBSP}Uhr`, afternoon: `14 bis 18${NBSP}Uhr`, flexible: `ganzer Tag ab 8${NBSP}Uhr` }
 
 /** Die Karte der Aktion verschwindet: der Fokus geht beim Erscheinen des Hinweises auf ihn statt auf body (der Auftrag lädt neu, der Hinweis entsteht neu). */
 const focusOnMount = (el: HTMLElement | null) => el?.focus()
@@ -67,7 +68,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   const live = r.status === 'accepted' || r.status === 'in_progress'
   const started = live && terminStarted(r.termin_at)
   const arrival = arrivalText(r.termin_at)
-  const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window]?.replace(' Uhr', `${String.fromCharCode(160)}Uhr`) : undefined].filter(Boolean).join(' · ')
+  const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window] : undefined].filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
@@ -82,7 +83,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
           <StatusChip status={chip.chip}>{chip.label}</StatusChip>
         </span>
         {when && <p className="m-0 text-body">{when}</p>}
-        {!('end' in line) && arrival && <p className="m-0 text-subhead text-text-secondary">{arrival}</p>}
+        {live && arrival &&<p className="m-0 text-subhead text-text-secondary">{arrival}</p>}
         {r.from_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.from_address}</p>}
         {r.to_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.to_address}</p>}
         <span className="flex items-center justify-between gap-3 border-t-[0.5px] border-separator pt-3">

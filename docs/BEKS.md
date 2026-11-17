@@ -25,7 +25,7 @@ Die Fragen 1 und 2 vom 2026-11-17 (rs1, Montage in Transport und Umzug; rls-Lauf
 Die Frage 1 vom 2026-11-17 (bl1, Belegplätze) ist beantwortet (ENTSCHEIDUNGEN Nr. 204).
 
 ## Offene Fragen
-Keine.
+1. **Ankunftsfenster in der Bestätigung nach dem Senden (web1, ENTSCHEIDUNGEN Nr. 202).** Die Seite „Anfrage gesendet“ zeigt „Ankunft zwischen 8:00 und 8:30 Uhr“, obwohl der Partner Termin und Preis noch bestätigt (das Fenster beruht auf dem Wunschtermin, `termin_at` = Datum plus Beginn des Wunschfensters). Das Auftragsdetail zeigt es erst ab „Bestätigt“. **Empfehlung:** In der Bestätigung weglassen, bis der Partner angenommen hat (wirkt sonst wie eine Zusage). Alternative: bleibt, mit dem Zusatz „Wunsch“. Ja = weglassen.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

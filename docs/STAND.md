@@ -16,7 +16,7 @@ Stand 2026-11-17, nach Schritt web1 (R2: Start als Web-App, festes Ankunftsfenst
 2. Kleine Reste: OFFEN bl1-1 (Absage und verbrauchte Belege, Meldung bei erneut hochgeladenem Bild), bl1-2 und bl1-3 (Testlücken), rs1-2, rj1-3 (a), fh1-2 (Profilprüfung in `withdraw` und `complete_job`).
 
 ## Wartet auf Beks
-- Keine offene Frage in `docs/BEKS.md`.
+- BEKS Frage 1 (Ankunftsfenster schon in der Bestätigung nach dem Senden, vor der Annahme).
 - Einmal `/advisor off` und in einer neuen Session prüfen, dass kein Tool `advisor` mehr in der Liste steht (`docs/BEKS_EINRICHTUNG.md`).
 - Rechtstexte (auch die Sätze zum Festangebot, GOLIVE 33), Mail-Anbieter, ORS-Vertrag, Hosting, Turnstile-Konto, Produktivprojekt (`docs/GOLIVE.md`).
 

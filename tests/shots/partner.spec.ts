@@ -157,7 +157,7 @@ const shots: Shot[] = [
   {
     name: 'auftraege-liste',
     open: ACTIVE,
-    jobs: { myJobs: [job(), job({ assignment_id: A2, request_id: RQ2, service: 'transport', can_start: true, district: 21, to_district: null, time_window: 'afternoon' }), job({ assignment_id: A3, request_id: RQ3, status: 'in_progress', service: 'clearance', to_district: null })] },
+    jobs: { myJobs: [job(), job({ assignment_id: A2, request_id: RQ2, service: 'transport', can_start: true, district: 21, to_district: null, time_window: 'afternoon', termin_at: '2026-12-02T13:00:00+00:00' }), job({ assignment_id: A3, request_id: RQ3, status: 'in_progress', service: 'clearance', to_district: null })] },
     wait: heading('Angenommen'),
   },
   {
