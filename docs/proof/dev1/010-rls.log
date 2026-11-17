@@ -1,0 +1,538 @@
+Commit: 180c4a8b815e87761841f920bacc7b2b8fda8592
+Arbeitsbaum sauber: ja
+Befehl: npm run test:rls
+Argumente: []
+Schalter: []
+Start: 2026-11-17T08:13:44.883Z
+---
+
+> movenow@0.1.0 test:rls
+> dotenv -e .env.local -- vitest run --project rls --reporter=default --reporter=json --outputFile=tmp/reports/vitest-rls.json
+
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+ ✓ |rls| tests/rls/flow-live.test.ts (19 tests) 139279ms
+   ✓ W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (Termin vor 2 Stunden); Konstanten: Buchung, Pauschale, Angebot (6)
+     ✓ accept: Rechte, falscher Betrag; dann der Zuschlag von Firma a; Firma b bekommt 409 8739ms
+     ✓ start_job: fremde Firma und Kunde abgewiesen, Firma a startet; Auftrag läuft 1062ms
+     ✓ Beleg-Upload (photo-receipt): Rechte, Nicht-JPEG; echter Upload ergibt eine Zeile receipt/ready von Firma a 2895ms
+     ✓ Nachtrag: Vorschau T, Anlegen mit gezeigtem Betrag; Journal bleibt bei der Buchung 4027ms
+     ✓ Zustimmung des Kunden: Zeile change = unabhängig gerechnete Summe minus Buchung (auch splitChange); Kunde sieht den Betrag 3094ms
+     ✓ Abschluss: vorher keine Zeile in my_commissions, Kunde schließt ab, danach cancel-partner 404 und Zustand unverändert 3386ms
+   ✓ W2a Storno ohne Pauschale vor dem Termin (Termin in 14 Tagen) (1)
+     ✓ accept, job_contact (1 Zeile), cancel-partner unavailable: Gegenbuchung, Summe 0, job_contact gesperrt, eine Folgeanfrage ohne Listing für Firma a 4465ms
+   ✓ W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden) (1)
+     ✓ accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage 4186ms
+   ✓ W3 Storno mit Pauschale: Nachtrag abgelehnt, scope_impossible, Beleg (Termin vor 2 Stunden) (1)
+     ✓ accept, start, Beleg, Nachtrag, Kunde lehnt ab; Vorschau 6.900 / 5.865; Storno bucht genau eine Pauschale 7777ms
+   ✓ W4 Storno durch den Kunden vor dem Termin ohne Gebühr (Termin in 14 Tagen), Edge cancel-customer (1)
+     ✓ accept, Vorschau 0, falscher Betrag 409, Storno: Gegenbuchung, Summe 0, job_contact gesperrt (Nr. 154) 6361ms
+   ✓ W5 Angebot: Firma sendet, Kunde bestätigt über die Edge offer-confirm (1)
+     ✓ send_offer, Bestätigung mit falschem Betrag 409, dann 200: eine Buchung über den Angebotsbetrag 13186ms
+   ✓ W6 Meldung „nicht stattgefunden“ während des Auftrags (Z1 → Z2), W7 nach dem Abschluss der Firma (Z3 → Z4); s9k-1 (3)
+     ✓ W6: Frage offen (Server), Kunde meldet, die Firma ist gesperrt (Abschluss, Nachtrag) und sieht nur „in Prüfung“ 24136ms
+     ✓ W7: Firma schließt ab, der Kunde kann noch melden (Server-Signal), danach in Prüfung 23986ms
+   ✓ Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr unsichtbar, payment_hold (4)
+     ✓ Summe je Auftrag aus my_commissions UND aus journalCsv gleich und = Erwartung (W1 = T, W2A 0, W2B 0, W3 Pauschale 6.900, W4 0, W5 noch keine Zeile) 5689ms
+     ✓ Rechte: anon 42501; Kunde und aal1 mfa_required; fremde Firma sieht keine Zeile der Aufträge 347ms
+     ✓ Kunde und Dritte lesen keine Gebühr: commission_entries leer, Satz und Staffel nicht lesbar, Snapshot des Nachtrags ohne Gebührenfelder 661ms
+     ✓ payment_hold: Firma a (Testfirma dieses Laufs mit Journalzeilen) wird gesetzt, my_commissions liefert dieselben Zeilen und Summen 9633ms
+ ✓ |rls| tests/rls/partner-functions-live.test.ts (12 tests) 88229ms
+   ✓ cancel-partner live (Dev, echte Tokens) (7)
+     ✓ ohne Anmeldung 401; aal1 und Kunde 403 mfa_required 927ms
+     ✓ fremde Firma 404; pending, rejected, suspended 403 partner_not_active; nichts geschrieben 7705ms
+     ✓ Vorschau schreibt nichts: ohne Nachtrag keine Pauschale 7791ms
+     ✓ abweichender gezeigter Betrag: 409 amount_changed, nichts geschrieben 7272ms
+     ✓ zwei gleichzeitige Aufrufe und ein dritter nach verlorener Antwort: genau eine Wirkung, alle drei antworten 200 mit dem ersten Ergebnis (n12b) 5845ms
+     ✓ Geldpfad: Vorschau zeigt die Pauschale, der echte Aufruf bucht genau eine Gebührenzeile wie splitFee, der Kunde sieht nur den Betrag 5754ms
+     ✓ Nr. 148: vor dem Termin (J5, in 14 Tagen, Nachtrag abgelehnt) zeigt die Vorschau 0, ein Aufruf mit Belegen und 6.900 gibt 409, nichts geschrieben 7091ms
+   ✓ change-propose und change-decide live (Dev, echte Tokens) (5)
+     ✓ ohne Anmeldung 401; aal1, Kunde 403; fremde Firma 404; pending, rejected, suspended 403 1798ms
+     ✓ Vorschau: Betrag aus der Gebuchten-Version, nichts angelegt 6907ms
+     ✓ abweichender gezeigter Betrag: 409 amount_changed, nichts angelegt 7347ms
+     ✓ Anlegen mit gezeigtem Betrag: 200; zweiter Aufruf nach verlorener Antwort 200 mit derselben Antwort, genau ein offener Nachtrag 1614ms
+     ✓ change-decide: ohne Anmeldung 401; Partner und fremder Kunde 404; falscher Betrag 409; Annahme 200; Wiederholung 200 mit einer Journalzeile 4378ms
+ ✓ |rls| tests/rls/partners.test.ts (13 tests) 17850ms
+   ✓ Helfer (1)
+     ✓ Matrix: Firma in jedem Status × aal1/aal2 × Mitglied/Nichtmitglied 3556ms
+   ✓ register_partner (3)
+     ✓ erlaubt für Kunden, verweigert sonst, Eingaben geprüft, Rolle bleibt customer 706ms
+     ✓ Konto mit Firma in jedem Status: zweiter Aufruf already_member, keine zweite Firma 684ms
+     ✓ zwei parallele Aufrufe: genau eine Firma, der zweite already_member; aal1 sieht die eigene Firma, ändert aber nur mit aal2 2765ms
+   ✓ Statusmaschine (5)
+     ✓ Funktionen: alle gültigen Paare, Zustand zurückgelesen, genau ein Audit je Aufruf 710ms
+     ✓ Funktionen: verbotene Paare, Begründung, Umfang, Akteur, Rechte 734ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker getrennt, Marker an die Zeile gebunden 683ms
+     ✓ Löschen: eine freigegebene Testfirma samt USt.-Regel, Kategorien und Bezirken lässt sich nur mit Marker entfernen; danach auch das admin-Konto 654ms
+     ✓ Freigabe verlangt im Trigger Kategorie, Bezirk, Mitglied und USt.-Regel (Eigentümer-Weg) 677ms
+   ✓ RLS und Rechte (4)
+     ✓ Mitglied sieht nur die eigene Firma (aal1 und aal2), Kunde ohne Firma nichts, admin nur mit aal2, anon wird verweigert 732ms
+     ✓ Schreibrechte: Mitglied ändert nur Kontaktdaten (aal2, aktiver Status), service_role und authenticated haben kein DML 808ms
+     ✓ Rolle bleibt customer, auch nach der Freigabe; echte Clients: anon und Kunde ohne Firma 2515ms
+     ✓ N-5: aktiver Partner (aal2) liest weder Anfragen noch Fotos noch Dateien im Bucket request-photos 2344ms
+ ✓ |rls| tests/rls/uploads.test.ts (29 tests) 115118ms
+   ✓ Staging hochladen (storage.objects) (6)
+     ✓ erlaubt: der Eigentümer lädt in den eigenen Ordner ohne Anfrage, liest per signiertem Link; der Bucket ist privat 1327ms
+     ✓ verweigert: fremder Ordner (b lädt in den Ordner von a), anon 538ms
+     ✓ verweigert: falsche Pfadform (Großbuchstaben, andere Endung, ohne client_ref-Ordner, kein UUID, Pfadtrick) 1325ms
+     ✓ verweigert: fremder Nutzer liest, überschreibt, löscht, verschiebt nicht; anon bekommt nichts; die Datei bleibt unverändert 2509ms
+     ✓ erlaubt: der Eigentümer löscht sein Staging-Foto; verweigert: Überschreiben der eigenen Datei (kein UPDATE-Recht) 638ms
+     ✓ zu groß: der Bucket lehnt ab (413); falscher Typ: PNG, WebP, HEIC, Text (415) 1941ms
+   ✓ Übernahme beim Absenden (quote_save_request) (9)
+     ✓ erlaubt: eigene, frische Fotos werden atomar als request_photos übernommen; nur der Eigentümer liest sie 1400ms
+     ✓ doppelte IDs ergeben ein Foto; ohne Fotos geht es auch (Gegenfall) 799ms
+     ✓ verweigert: fremde Foto-ID (Datei von b) → photo_missing, keine Anfrage, keine Zeile 712ms
+     ✓ verweigert: Foto aus einem anderen eigenen Ordner und nie hochgeladene ID → photo_missing 731ms
+     ✓ verweigert: abgelaufenes Staging-Foto → photo_expired, nichts gespeichert; Gegenfall kurz vor Ablauf wird übernommen 2515ms
+     ✓ Grenze: 8 Fotos gehen, 9 → too_many_photos ohne Anfrage 2736ms
+     ✓ Wiederholung derselben client_ref liefert die vorhandene Anfrage und fügt keine Fotos hinzu 707ms
+     ✓ Handler: photoIds werden übernommen (200), fremde ID → 422 photo_missing, 9 → 422 too_many_photos, kein Array → 400, nichts gespeichert 10653ms
+     ✓ photo_staging_hours fehlt: Absenden (SQL) und Waisenliste scheitern mit setting_missing; mit Wert läuft beides (Positivkontrolle) 1860ms
+   ✓ Nach dem Absenden (7)
+     ✓ verweigert: Löschen einer nicht genannten Datei im Ordner mit Anfrage (nur die Anfrage-Bedingung schützt sie, keine Zeile) 894ms
+     ✓ verweigert: Löschen, Ersetzen und Verschieben der übernommenen Datei; sie bleibt unverändert 1370ms
+     ✓ verweigert (request_photos): Kunde und anon fügen weder ein noch ändern oder löschen sie (42501) 596ms
+     ✓ verweigert für service_role: Umhängen auf eine andere Anfrage, Ersetzen, Löschen (Rechte entzogen, 42501); Einfügen am Funktionspfad vorbei (Trigger) 553ms
+     ✓ Trigger auch für den Eigentümer: UPDATE (Umhängen, Ersetzen) und DELETE → photo_immutable, TRUNCATE verweigert (Fremdschlüssel); INSERT ohne Marker → photo_insert_forbidden 744ms
+     ✓ Kaskade: Löschen der Anfrage entfernt die Zeilen (Positivkontrolle der DELETE-Ausnahme) 2152ms
+   ✓ Waisenliste (2)
+     ✓ Waisen-Liste und Aufräumjob sind nur für service_role aufrufbar (verweigert für anon und Kunden) 712ms
+     ✓ Waisen-Liste: nur abgelaufene Dateien ohne Zeile (frisch und übernommen bleiben draußen) 18457ms
+   ✓ Aufräumen (1)
+     ✓ Aufräumen löscht abgelaufene, nicht übernommene Dateien (Objekt), übernommene und frische bleiben 17130ms
+   ✓ Staging-Kontingent und Pfad (0021) (4)
+     ✓ bis zur Grenze erlaubt, die 41. Datei verweigert (403); Löschen und Übernehmen geben Platz frei 22113ms
+     ✓ Insert in request_photos ohne storage_path: Trigger lehnt ab (photo_insert_forbidden), mit Marker ebenso 6793ms
+     ✓ kein Default mehr: die Spalte hat keinen Standardwert 4328ms
+     ✓ Zeilen-Bedingung (Alt-Pfad {uid}/{request_id}/…): Kunde löscht kein übernommenes Objekt und lädt nicht unter dessen Namen hoch 3475ms
+ ✓ |rls| tests/rls/quote-hardening.test.ts (44 tests) 88876ms
+   ✓ Haltefenster und Preisabgleich (8)
+     ✓ abgelaufenes Haltefenster: 409 price_changed mit neuer Version und neuem Snapshot, nichts gespeichert 4072ms
+     ✓ innerhalb von 30 Minuten: gespeichert mit der gezeigten Version 3730ms
+     ✓ künftige oder nie gültige Version: nie haltbar → 409 price_changed 6131ms
+     ✓ ersetzte Version ohne Einstellung price_hold_minutes: 500 setting_missing, nichts gespeichert 601ms
+     ✓ gleiche Version, anderer Betrag (z. B. Strecke): 409 price_changed mit dem berechneten Preis, keine Zeile 1996ms
+     ✓ Festpreis als Spanne gezeigt (total null) und Angebot statt Preis gezeigt: ebenfalls 409 2490ms
+     ✓ Positivkontrolle: exakt der gezeigte Betrag wird gespeichert 3065ms
+     ✓ Miete: gezeigter Betrag weicht ab → 409 price_changed, keine Mietanfrage (M-3) 1834ms
+   ✓ Bedingungen und Pflichtfelder (9)
+     ✓ falscher termsHash: 409 terms_changed mit den aktuellen Bedingungen, keine Zeile 617ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact: 400, keine Zeile 335ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.email: 400, keine Zeile 382ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.phone: 400, keine Zeile 355ms
+     ✓ fehlendes oder ungültiges Pflichtfeld contact.name: 400, keine Zeile 382ms
+     ✓ fehlendes oder ungültiges Pflichtfeld shown: 400, keine Zeile 357ms
+     ✓ fehlendes oder ungültiges Pflichtfeld termsHash: 400, keine Zeile 337ms
+     ✓ fehlendes oder ungültiges Pflichtfeld priceVersion: 400, keine Zeile 338ms
+     ✓ fehlendes oder ungültiges Pflichtfeld preferredDate: 400, keine Zeile 335ms
+   ✓ Adressprüfung und Bezirk (6)
+     ✓ Abholung außerhalb Wiens: 422 pickup_outside_vienna, keine Zeile 1232ms
+     ✓ manipulierte Koordinaten oder Client-postcode ändern das nicht (Graz mit Wiener Punkt, Wien mit Grazer Punkt, falsche PLZ) 3837ms
+     ✓ Punkt ohne Hausnummer (Straße): 422 address_imprecise; unbekannte Adresse: address_mismatch; ohne Punkt: address_point_required 5345ms
+     ✓ Ziel im Ausland: 422 offer_not_bookable; Ziel im Inland außerhalb Wiens ist buchbar 7697ms
+     ✓ Entrümpelung und Montage nutzen dieselbe Prüfung; gespeichert wird das kanonische Label 4079ms
+     ✓ Geocode-Cache: zweiter Aufruf mit demselben Label fragt den Anbieter nicht erneut 5334ms
+   ✓ Ausfälle und Limits: Abbruch ohne Zeile (4)
+     ✓ Geocoder fällt aus: 503 provider_unavailable 1155ms
+     ✓ Routing fällt aus: 503 provider_unavailable; keine Route: Angebot route_missing 5466ms
+     ✓ Geocode-Kontingent erschöpft: 429 rate_limited; Zähler fällt aus: 503 limiter_unavailable 1705ms
+     ✓ Routen-Kontingent erschöpft: 429 rate_limited 1408ms
+   ✓ Journal, Revision und Kontakt (2)
+     ✓ price_confirmed im Journal mit Betrag, Bedingungen-Hash, Version und Inhalts-Hash; Revision 1 trägt die Bedingungen; Kontakt gespeichert 4552ms
+     ✓ der Kunde liest die Antwort ohne Gebühr; fremde Kontakte sieht er nicht 5463ms
+   ✓ quote_save_request: eigene Prüfungen (10)
+     ✓ Kontaktformat zusätzlich in der Datenbank (Constraint): 23514 351ms
+   ✓ Rechte nach 0019 (4)
+     ✓ geocode_cache und geo_districts: anon und authenticated 42501, service_role liest (23 Bezirke) 608ms
+     ✓ price_version_hold und quote_district: anon und authenticated 42501, service_role darf 602ms
+     ✓ rental_bookings: service_role darf einfügen, aber weder ändern noch löschen (42501) 1940ms
+   ✓ Rohaufruf ohne Absender-Hilfe (1)
+     ✓ Wiederholung derselben clientRef nach 409 legt genau eine Zeile an 2930ms
+ ✓ |rls| tests/rls/booking-open.test.ts (10 tests) 8006ms
+   ✓ booking_open() (10)
+     ✓ keine Zeile → zu (fail closed) 661ms
+     ✓ 1 ab heute → offen 598ms
+     ✓ 1 mit künftigem Datum → noch zu 580ms
+     ✓ 0 ab heute → zu 637ms
+     ✓ künftige 1, danach 0 ab heute → zu (höchste Version entscheidet) 643ms
+     ✓ 1 ab heute, danach 0 → zu; danach wieder 1 → offen 1239ms
+     ✓ 1 ab heute, danach 0 mit künftigem Datum → sofort zu; danach 1 mit künftigem Datum → zu bis dahin 1385ms
+     ✓ Wert außerhalb 0/1 scheitert am Check 574ms
+stdout | tests/rls/storno-wettlauf.test.ts > Wettlauf beim Storno (ohne Gebühr) > doppelter Storno = ein Erfolg, ein Audit-Eintrag (Ziel: echte Funktionen)
+Wettlauf Ist-Werte: {"ziel":"echte Funktionen","kundeErfolge":1,"kundeAudit":1,"firmaErfolge":1,"firmaAudit":1}
+
+ ✓ |rls| tests/rls/storno-wettlauf.test.ts (1 test) 16526ms
+   ✓ Wettlauf beim Storno (ohne Gebühr) (1)
+     ✓ doppelter Storno = ein Erfolg, ein Audit-Eintrag (Ziel: echte Funktionen) 13226ms
+ ✓ |rls| tests/rls/quote.test.ts (17 tests) 70367ms
+   ✓ Anfrage anlegen (echte DB) (10)
+     ✓ manipulierter Client-Preis und Client-Strecke werden ignoriert; Anfrage gehört dem Token-Nutzer 3579ms
+     ✓ Frist und Termin rechnet die Datenbank: Annahmefrist 24 h bei weit entferntem Termin, Termin 00:00 Wiener Zeit 4911ms
+     ✓ Termin näher als accept_min_hours: 422 too_late, nichts gespeichert 2565ms
+     ✓ Punkte werden als (Länge, Breite) gespeichert, Adresse und Bezirk kommen vom geprüften Kandidaten 2656ms
+     ✓ Wien → Graz: Region, Kilometer und Preis kommen aus Strecke und PostGIS 3198ms
+     ✓ Negativtest: quote bucht nichts ins Journal, die Antwort enthält keine Gebühr 4176ms
+     ✓ Sonderfall: awaiting_offer, kein Preis, Revision ohne Beträge 2035ms
+     ✓ Entrümpelung (Spanne): awaiting_offer, Revision mit low/high ohne total; Montage mit README-Betrag 6334ms
+     ✓ Idempotenz: dieselbe clientRef ergibt genau eine Anfrage, auch bei paralleler Absendung 4726ms
+     ✓ ohne Token 401, mit fremdem Format 400 ohne Schreiben; Bearbeiten mit requestId gibt es nicht 601ms
+   ✓ Mietanfrage (echte DB) (3)
+     ✓ Cargo Van: 276,00 €, Kaution 500,00 € separat, Zeiten als Zeitpunkte (Wiener Zeit), keine Gebührenzeile 1655ms
+     ✓ Angebot eines Vermieters: Vermieter liest kein Journal, die Antwort nennt den Vermieter nicht 1907ms
+     ✓ nicht freigegebenes Angebot: 404; Idempotenz: dieselbe clientRef = eine Mietanfrage 2745ms
+   ✓ Rechte (Verweigerung exakt, Positivkontrolle) (3)
+     ✓ Schreib-Funktionen: anon und authenticated erhalten 42501, service_role darf 467ms
+     ✓ Staffel: Kunde und Vermieter sehen keine Staffel (nur Partner-Mitglieder, fee-schedule.test.ts), anon verweigert 2314ms
+     ✓ Kunde schreibt weder Spalten noch Anfragen; Zurückziehen nur über withdraw (Positivkontrolle) 2570ms
+   ✓ Nutzerlimit (echte Zähler) (1)
+     ✓ ab dem 7. Aufruf in einer Minute 429 17982ms
+ ✓ |rls| tests/rls/offers-concurrency.test.ts (1 test) 13321ms
+   ✓ Nebenläufigkeit der Festangebote (1)
+     ✓ 4 parallele Angebote = 3; zwei Bestätigungen = eine; Bestätigung gegen Firmensperre ohne Deadlock 12598ms
+ ✓ |rls| tests/rls/partner-mfa.test.ts (5 tests) 17967ms
+   ✓ aal2 mit echten Token (5)
+     ✓ Partner-Mitglied: Staffel und USt.-Satz nur mit aal2, Firmendaten schon mit aal1; Kunde mit aal2 ohne Firma liest nichts 3378ms
+     ✓ Admin: aal1 sieht keine Firmen, aal2 schon 9237ms
+     ✓ Partner-Mitglied: Kontakt ändern nur mit aal2, nur die drei Kontaktspalten, nicht nach Status rejected 4223ms
+ ✓ |rls| tests/rls/status.test.ts (16 tests) 28685ms
+   ✓ Status nur über Funktionen (7)
+     ✓ direktes Status-UPDATE: customer, partner, admin (aal1 und aal2), service_role und anon verweigert, Status unverändert 1092ms
+     ✓ Trigger gilt auch für den Eigentümer: Paar und Marker sind getrennte Prüfungen 593ms
+     ✓ INSERT: nur requested/awaiting_offer; eine Anfrage ohne Revision wird beim Commit verworfen 387ms
+     ✓ withdraw: Kunde ok (Ereignis mit Akteur), zweites Mal ok ohne zweites Ereignis (fh1, 0069), fremd not_found, anon 42501 2224ms
+     ✓ withdraw aus awaiting_offer ok; die Marker der Funktion bleiben nicht in der Sitzung stehen 930ms
+     ✓ Miete: nur requested → withdrawn, auch für den Eigentümer; ungültige Paare invalid_transition 905ms
+   ✓ Revisionen unveränderlich (5)
+     ✓ UPDATE, DELETE, TRUNCATE: auch der Eigentümer scheitert an revision_immutable; service_role hat kein Recht 750ms
+     ✓ INSERT: nur Revision 1 beim Absenden, Status passend zum Preis, Snapshot passend zu den Beträgen, Version veröffentlicht 633ms
+     ✓ Zeiger: einmalig, nur auf Revision 1 derselben Anfrage; Frist, Termin und Bezirk unveränderlich 993ms
+     ✓ service_role ändert nur den Zeiger: Adresse, Kunde, Strecke verweigert; Löschen verweigert (auch Eigentümer, nur Kaskade) 1122ms
+     ✓ Kontolöschung räumt Anfrage, Revision, Ereignisse und Kontakte per Kaskade (Positivkontrolle) 2728ms
+   ✓ status_events: nur anfügen, nur admin (aal2) liest (2)
+     ✓ UPDATE, DELETE, TRUNCATE: append_only; service_role und Kunde schreiben nicht 856ms
+     ✓ Lesen: Kunde und Partner nie, admin nur mit aal2 (Positivkontrolle) 2537ms
+   ✓ Lesen: Revisionen und Kontakte (2)
+     ✓ Kunde liest nur eigene Revisionen und Kontakte, fremde 0 Zeilen (Positivkontrolle eigene), admin und Partner nichts 4156ms
+     ✓ Kontakte und Revisionen: Kunde schreibt nicht; service_role fügt Kontakte nur ein (kein UPDATE/DELETE) 707ms
+ ✓ |rls| tests/rls/outbox.test.ts (5 tests) 4357ms
+   ✓ outbox_claim und outbox_mark (5)
+     ✓ Claims sind disjunkt, die Lease dauert 10 Minuten, der fünfte Versuch endet in failed, ok setzt sent 624ms
+     ✓ K1: eine Zeile mit fünf Versuchen und abgelaufener Lease wird vom Cron auf failed gesetzt, auch wenn sonst nichts zu senden ist 594ms
+     ✓ outbox_dispatch ist nur für den Eigentümer (Cron): service_role bekommt permission denied for function 644ms
+     ✓ Cron-Weg: der Job läuft als Eigentümer der Funktion und war zuletzt erfolgreich (nur lesen) 1679ms
+     ✓ K4: feste Fehlercodes (CHECK), unbekannter Text wird zu smtp_error, mark wirkt nur auf sending 815ms
+ ✓ |rls| tests/rls/sweep.test.ts (3 tests) 16299ms
+   ✓ sweepTestResidue findet Testfirmen an der Markierung (3)
+     ✓ Firma, deren Nutzer zuerst gelöscht wurde (kein Mitglied mehr), wird aufgeräumt 4378ms
+     ✓ Firma mit einem Mitglied außerhalb der Testkonten bleibt unberührt, auch mit Markierung 2521ms
+     ✓ Firma ohne Mitglied mit fremder Kontaktadresse bleibt unberührt 3147ms
+ ✓ |rls| tests/rls/journal-live.test.ts (8 tests) 22207ms
+   ✓ my_commissions für den Journal-Export (Dev, echte Tokens) (8)
+     ✓ Rechte: anon 42501; Kunde und aal1 mfa_required; Firma a sieht ihre Zeilen 381ms
+     ✓ fremde Firma sieht keine Zeile von Firma a; pending, rejected, suspended: kein Fehler, leer 391ms
+     ✓ Typ commission_row: genau die bekannten Spalten, keine Kundendaten (eine neue Spalte bricht den Test und braucht Prüfung) 608ms
+ ✓ |rls| tests/rls/change-orders-concurrency.test.ts (1 test) 14210ms
+   ✓ Nebenläufigkeit des Nachtrags (1)
+     ✓ zwei Vorschläge = einer; doppelte Annahme = eine Journalzeile; Annahme gegen Rückzug = genau ein Ergebnis 13492ms
+ ✓ |rls| tests/rls/cancellation.test.ts (5 tests) 4041ms
+   ✓ cancel_by_customer (T12) (1)
+     ✓ Stufen frei, 50 %, 100 %, waived: Basis, Gegenbuchung aller Zeilen, Gebührenzeile, Folgen 1240ms
+   ✓ cancel_by_customer: Nachtrag, Firma-Status, Prüfung (4)
+     ✓ angenommener Nachtrag: beide Zeilen gegengebucht (je mit eigener Revision), Gebühr auf den neuen Gesamtpreis; offener Nachtrag endet 753ms
+     ✓ Firma in payment_hold oder suspended: Storno gelingt; nach „nicht stattgefunden“ verweigert (under_review) 714ms
+     ✓ Kundenstorno nur bis Terminbeginn: kurz davor erlaubt (100 %), ab Terminbeginn too_late_use_report_not_done (S9h1-1) 685ms
+     ✓ Wertebereich der Stornoschlüssel: Prozent 0 bis 100, ganze Stunden und Tage (N1) 647ms
+ ✓ |rls| tests/rls/positiv.test.ts (6 tests) 6179ms
+   ✓ Positivzeilen-Register (6)
+     ✓ Welt angebot: jede Funktion liefert mit erlaubtem Akteur 794ms
+     ✓ Welt auftrag: jede Funktion liefert mit erlaubtem Akteur 1192ms
+     ✓ Welt verwaltung: jede Funktion liefert mit erlaubtem Akteur 1617ms
+     ✓ Welt betrieb: jede Funktion liefert mit erlaubtem Akteur 844ms
+     ✓ plpgsql_check: auf Dev verfügbar (nur lesen, nichts eingeschaltet) 880ms
+     ✓ Katalog: genau diese Funktionen und genau diese Rollen mit EXECUTE 850ms
+ ✓ |rls| tests/rls/partner-documents.test.ts (10 tests) 23173ms
+   ✓ Partner-Dokumente mit echten aal2-Token (10)
+     ✓ Zeile nur mit aal2; Upload mit aal1 scheitert (Objekt liegt nicht), mit aal2 auf dieselbe Zeile klappt (Objekt liegt) 972ms
+     ✓ JPEG ist erlaubt; ein zweiter Upload auf den belegten Pfad scheitert und lässt die Datei stehen 856ms
+     ✓ falscher Typ wird vom Server abgelehnt (Objekt liegt nicht); Erneut-Hochladen auf dieselbe Zeile mit JPEG klappt 495ms
+     ✓ über 10 MB wird vom Server abgelehnt (Objekt liegt nicht); eine kleine PDF auf dieselbe Zeile klappt 2433ms
+     ✓ freier Platz von A: B, ein Kunde mit aal2 und A mit aal1 können ihn nicht belegen, A mit aal2 schon 3149ms
+     ✓ Lesen: Firma A sieht mit aal2 ihre fünf Dateien, mit aal1 keine; Metadaten mit aal1 und aal2 955ms
+     ✓ Firma B: sieht, liest und beschreibt nichts von A; auch nicht über eine eigene Zeile 2347ms
+     ✓ Kunde ohne Firmenmitgliedschaft (auch mit echtem aal2): keine Zeile, kein Upload, keine Liste 1570ms
+     ✓ Admin gibt den Platz frei: die Datei im Bucket sperrt die ID (slot_taken), nach dem Entfernen der Datei klappt sie wieder (0026) 2491ms
+ ✓ |rls| tests/rls/job-photos-concurrency.test.ts (2 tests) 70731ms
+   ✓ Foto-Pipeline unter Last (2)
+     ✓ die letzten zwei Fotos gleichzeitig markiert: genau eine Verteilung (je Firma ein Listing, eine Mail), kein Deadlock 18134ms
+     ✓ zwei Belege gleichzeitig beim achten: genau einer gewinnt, danach acht Belege, der andere meldet receipt_limit 29500ms
+ ✓ |rls| tests/rls/partner-jobs.test.ts (4 tests) 2634ms
+   ✓ Sichtbarkeit vor dem Zuschlag (2)
+     ✓ Spaltenliste von job_listings ist exakt festgelegt; Partner lesen weder Anfrage noch Kontakt noch Kontaktfunktion (Fotos: job-photos.test.ts) 722ms
+     ✓ Staffel: Partner (aal2) lesen fee_schedules und fee_schedule_tiers, Kunde nichts; platform_settings zeigt dem Partner nur fee_vat_rate 611ms
+   ✓ Beträge des Clients (send_offer) (1)
+     ✓ nur ganze Cent als int: Nachkommastellen, bigint und Text erreichen die Funktion nie; 0, negativ und absurd hoch scheitern; es entsteht keine Zeile 664ms
+   ✓ Fremde Angebote und Firmenstatus (1)
+     ✓ Firma B liest, ändert und zieht Angebote von A nicht zurück; der Kunde liest die Tabelle nicht; payment_hold und suspended bieten nicht und sehen keine Listings 635ms
+ ✓ |rls| tests/rls/rls.test.ts (39 tests) 23884ms
+   ✓ Kunden sehen nur Eigenes (6)
+     ✓ Foto-Einträge und Dateien 442ms
+     ✓ kein Upload und kein Foto-Eintrag in fremde Anfragen 347ms
+     ✓ fremde Fotos lassen sich nicht löschen 468ms
+   ✓ Kunden setzen nur „zurückgezogen" (6)
+     ✓ eigene Anfrage zurückziehen, danach nicht wieder öffnen; die Wiederholung liefert den Status (fh1, 0069) 310ms
+   ✓ Vermieter und Fahrzeuge (4)
+     ✓ ändert nur eigene Fahrzeuge 405ms
+   ✓ Gebühren (4)
+     ✓ Kunden und anon lesen weder das Journal noch platform_settings 461ms
+     ✓ admin liest das Journal nur mit aal2 (Anmeldung per Passwort ist aal1: nichts); niemand schreibt es per API 351ms
+   ✓ price_config (5)
+     ✓ Kunde, Vermieter, anon und admin (aal1) schreiben nicht direkt (42501) 849ms
+     ✓ nur die Admin-Funktion (service_role, p_actor admin) legt an und ändert; Nicht-admin als p_actor wird verweigert 712ms
+     ✓ DB-Check: Werte unter 0 werden abgelehnt, 0 ist erlaubt 456ms
+   ✓ Rollen (4)
+     ✓ SECURITY DEFINER: Eigentümer postgres, fester search_path, EXECUTE für anon/authenticated nur laut Liste 1580ms
+ ✓ |rls| tests/rls/settings.test.ts (11 tests) 9995ms
+   ✓ veröffentlichte Preisversion ist unveränderlich (Trigger, auch gegen service_role) (2)
+     ✓ Änderungen jeder Art werden verweigert, die unveröffentlichte Version bleibt änderbar 679ms
+     ✓ über die API: authenticated und admin (aal1) verweigert (42501), service_role bekommt version_published 927ms
+   ✓ Admin-Funktionen: nur service_role bzw. Eigentümer, nur für Rolle admin (5)
+     ✓ anon ruft keine Admin-Funktion auf (42501) 371ms
+     ✓ customer ruft keine Admin-Funktion auf (42501) 372ms
+     ✓ admin ruft keine Admin-Funktion auf (42501) 378ms
+     ✓ admin_grant_role ist auch für service_role gesperrt; die anderen erreicht service_role (Gegenfall) 347ms
+     ✓ erlaubt: admin (p_actor) legt eine Konfigurationszeile in der unveröffentlichten Version an und das Journal hält es fest 752ms
+   ✓ Gebührensätze und Einstellungen (3)
+     ✓ Vorlauf, Unveränderlichkeit, Wertebereich 720ms
+     ✓ Schreiben über die API: admin (aal1) und Kunde verweigert (42501), keine Schreib-Grants 377ms
+     ✓ booking_terms: fünf Werte und termsHash, kein fee_*, für anon und Kunden 816ms
+   ✓ audit_log, Rollen, aal2-Admin (1)
+     ✓ audit_log nur anfügen; Lesen nur admin mit aal2; profiles.role nur mit Marker 799ms
+ ✓ |rls| tests/rls/account-deletion-concurrency.test.ts (1 test) 17969ms
+   ✓ Konto löschen gegen Meldung (s9k1-1) (1)
+     ✓ Meldung zuerst: die Löschung endet mit under_review; Löschung zuerst: die Meldung endet mit not_found 17196ms
+ ✓ |rls| tests/rls/accept-concurrency.test.ts (1 test) 12969ms
+   ✓ Nebenläufigkeit (1)
+     ✓ 10 parallele Annahmen = 1; Annahme gegen Rücknahme = genau eine 12249ms
+ ✓ |rls| tests/rls/job-photos.test.ts (14 tests) 11750ms
+   ✓ Verteilung wartet auf Fotos, Claim und Mark (2)
+     ✓ Wartebedingung, Claim mit Lease, Mark nur mit gültigem Versuch, Verteilung nach dem letzten Foto, Mail bei failed 672ms
+     ✓ Lease läuft ab: Versuch 2 und 3, ein überholter Versuch wird abgewiesen, danach failed (attempts_exhausted) und Verteilung 621ms
+   ✓ Zugriff auf Kopien (job_photo_list) (2)
+     ✓ Partner vor der Annahme nur Fotos, Kunde nur Belege; verweigert: aal1, fremdes Listing, fremder Kunde, Argumente, suspended, nach Frist 657ms
+     ✓ nach der Annahme Fotos und Belege (auch payment_hold), Belege nur mit Zuordnung, aal2, Limit 8; Zugriff endet nach 30 Tagen 1888ms
+   ✓ Direktzugriff, admin-photo, Aufräumen (2)
+     ✓ Konten (auch admin, aal2) ohne Zugriff auf job_photos und beide Buckets; admin_photo protokolliert; photo_purge nach Kriterien 658ms
+     ✓ Pfad der Kopie ist nur eine UUID mit .jpg: kein Ordner, kein Nutzer- oder Anfragebezug, nicht der Pfad des Originals (die signierte URL zeigt nur diesen Namen) 638ms
+   ✓ Abnahme S9d: Lücken (8)
+     ✓ M1: fehlt das Objekt einer ready-Zeile, liefern admin_photo und job_photo_list nur vorhandene Dateien (Original und Beleg bleiben erreichbar) 990ms
+     ✓ photo_purge nach Status: accepted bleibt, completed bleibt 30 Tage nach Zugriffsende und fällt danach, expired und unmatched fallen sofort, ein frischer Beleg bleibt 690ms
+     ✓ photo_purge Belege (0055): fallen 365 Tage nach dem Endstatus (auch withdrawn), davor und bei offenem Auftrag nicht; ohne receipt_retention_days setting_missing 680ms
+     ✓ job_photo_list: ein Listing außerhalb der Zuständigkeit (Bezirk) liefert nichts, obwohl es noch offen ist 637ms
+     ✓ photo_claim lässt zurückgezogene, abgelaufene und fristüberschrittene Anfragen aus, nimmt offene 672ms
+     ✓ photo_claim: viele fremde offene Fotos davor ändern das Ergebnis für die eigene Anfrage nicht (Reste auf Dev) 698ms
+     ✓ Mark nach dem Zurückziehen: Foto wird failed, aber keine Mail und keine Verteilung 643ms
+     ✓ Beleg-Tor: gesperrte Firma partner_not_active, abgeschlossener Auftrag request_closed 1603ms
+ ✓ |rls| tests/rls/partner-my-jobs.test.ts (4 tests) 2886ms
+   ✓ my_jobs(): Zuordnung, Firmenstatus, Zugriffsfenster (2)
+     ✓ Firma A sieht nur eigene Aufträge im Zugriffsfenster mit Beträgen aus dem Journal; B, aal1, Kunde, pending, rejected, anon nichts 794ms
+     ✓ payment_hold sieht bereits angenommene Aufträge, suspended nichts 669ms
+   ✓ Beträge nach einem Nachtrag (1)
+     ✓ ein offener oder abgelehnter Nachtrag ändert die Summen nicht, ein angenommener hebt sie auf Gesamtpreis und Gesamtauszahlung 678ms
+   ✓ Kontakt, Start und Abschluss (1)
+     ✓ job_contact schreibt je Aufruf eine Audit-Zeile; Start vor dem Termin abgelehnt, Abschluss nur aus in_progress; my_jobs folgt dem Status 742ms
+ ✓ |rls| tests/rls/auth-token-codes.test.ts (1 test) 11998ms
+   ✓ auth.getUser: Antworten auf ein Token (Messung) (1)
+     ✓ gültiges Token: kein Fehler; gefälscht: 403 bad_jwt → 401; gelöschtes Konto: Sitzung fehlt → 401; falscher Schlüssel: Störung → 500 11922ms
+ ✓ |rls| tests/rls/listings.test.ts (14 tests) 9888ms
+   ✓ Verteilung (distribute_request) (1)
+     ✓ Empfänger: aktive Firmen mit Kategorie und Bezirk, keine Selbstbuchung; sonst unmatched mit Outbox; zweiter Aufruf ohne Wirkung 670ms
+   ✓ Listing-Lesen (RLS) (1)
+     ✓ eigene Zeilen mit aal2 und Status active; verweigert: aal1, fremde Firma, Kunde, pending, nach Frist, Spalte request_id 673ms
+   ✓ Annahme (partner_accept) (4)
+     ✓ Erfolg: Status, Zuordnung, Listings, Journal, Ereignis, Outbox in einer Transaktion; verweigert: zweite Annahme, Revision, Auszahlung, Firmenstatus, fremdes Listing 718ms
+     ✓ Basis für die Edge Function accept: genau eine Zeile mit Revision, Festpreis, Satz und Versionen; fremde Firma not_found; ohne Festpreis offer_required 668ms
+     ✓ Zuständigkeit gilt bei der Annahme und beim Lesen (Abnahme H1): Scope entzogen → Listing unsichtbar, Annahme verweigert, keine Zuordnung 678ms
+     ✓ Frist (Cron noch nicht gelaufen), Limit offener Aufträge, pending-Firma 724ms
+   ✓ Ablehnen und Fristen (3)
+     ✓ decline_listing: eigene Zeile, letzte Ablehnung → unmatched mit Outbox; aal1, fremde, pending, geschlossen verweigert 716ms
+     ✓ expire_requests: nur abgelaufene requested/awaiting_offer; Listings geschlossen, Outbox, Ereignis; Annahme danach: expired 829ms
+     ✓ Zurückziehen schließt die Listings; direktes UPDATE auf den Status bleibt verweigert 671ms
+   ✓ Abwicklung (start_job, complete_job, job_contact, my_job_partner) (4)
+     ✓ start und complete: Akteur, Zeitpunkt, Zuordnung; Zuordnung endet mit completed 703ms
+     ✓ Kunde bestätigt „durchgeführt“ ab Termin auch aus accepted 771ms
+     ✓ job_contact: nur zugeordnet, aal2, protokolliert, bis partner_access_days nach Ende; my_job_partner für den Kunden 730ms
+     ✓ admin_contact: nur admin (p_actor), Begründung Pflicht, Audit; authenticated verweigert 659ms
+   ✓ Outbox und Zuordnung: Rechte (1)
+     ✓ Kunde und Partner lesen weder outbox noch fremde assignments; assignments nur Select; admin liest outbox 673ms
+ ✓ |rls| tests/rls/offers.test.ts (12 tests) 9014ms
+   ✓ Angebot senden (send_offer) (2)
+     ✓ Spanne und freier Betrag, Grenzen, höchstens 3 offene, eines je Partner, Frist, Rechte 956ms
+     ✓ fail closed: fehlender Schlüssel offer_max_cents; Frist abgelaufen; Angebot nach Ablauf des eigenen möglich 701ms
+   ✓ Rechte und Unveränderlichkeit (1)
+     ✓ Kunde sieht nur Firmenname, Betrag, Frist; keine Direktzugriffe; Angebote unveränderlich; Revision nur aus gültigem Angebot 793ms
+   ✓ Version des Angebots (s9p-1, Fable M2) (1)
+     ✓ Angebot erbt die beim Senden geltende Version: nach einem Versionswechsel gilt für alte Angebote die alte, für neue die neue; Version unveränderlich 858ms
+   ✓ Bestätigung (confirm_offer) (4)
+     ✓ Erfolg: Revision, Zeiger, Journal, Zuordnung, Listings, Ereignis, Audit, Outbox; ohne Gebühr im Snapshot; doppelt = einmal 750ms
+     ✓ Firma nicht aktiv: Angebot withdrawn mit Outbox, Antwort partner_not_active, T4b; letztes Angebot → awaiting_offer; Frist vorbei → expired 713ms
+     ✓ Limit offener Aufträge gilt auch bei der Bestätigung; Angebot bleibt gültig 728ms
+     ✓ fehlende USt.-Regel: Bestätigung bricht ab, nichts gebucht 673ms
+   ✓ Ablehnen, Zurückziehen, Ablauf (2)
+     ✓ reject_offers (T6), withdraw_offer (T4b), Rückzug des Kunden (T2), Eigentümer und Status geprüft 716ms
+     ✓ Cron expire_offers: abgelaufene Angebote → T4b (Frist läuft) bzw. T7 (Frist vorbei); gültiges Angebot hält den Status 699ms
+   ✓ admin_set_partner_status und Zuständigkeit (S9c-2, S9c-12) (2)
+     ✓ Sperre schließt Listings, zieht Angebote zurück, wendet T4b/T8 mit Outbox an 690ms
+     ✓ Listing außerhalb der Zuständigkeit zählt nicht als offen (T8); Ziel-Bezirk im Listing 733ms
+ ✓ |rls| tests/rls/journal.test.ts (6 tests) 8169ms
+   ✓ Provisionsjournal (6)
+     ✓ booking: Revisionsbetrag, Satz, Firmenstatus, Summen, einmalig je Auftrag, nur anfügen 1286ms
+     ✓ Gegenbuchungen: exakte Negation, nur booking, change und cancellation_fee, einmalig; Summe 0 1337ms
+     ✓ change: nur erhöhend, Differenz zur aktuellen Revision; cancellation_fee bis zum Gesamtpreis; Satz aus der booking-Zeile 1353ms
+     ✓ Revisionen: change nur aus einer change_order, Gegenbuchung nur mit derselben Revision, erneuter change nach correction 1545ms
+     ✓ Sätze: höchste Version bei gleichem Datum, künftige Versionen zählen nicht; private.current_fee() nennt Stufen und Version 1352ms
+     ✓ Lesen: eigene Firma mit aal2 (jeder Status) und admin mit aal2; sonst nichts; kein Schreibrecht; commission_book ohne Aufruf 1294ms
+ ✓ |rls| tests/rls/partner-admin.test.ts (10 tests) 6915ms
+   ✓ Admin-Funktionen: Rechte (4)
+     ✓ admin_set_partner_scope: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 657ms
+     ✓ admin_set_vat_rule: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 715ms
+     ✓ admin_set_partner_master: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 684ms
+     ✓ admin_remove_partner_document: nur service_role mit Admin als p_actor; Kunde, null, unbekannt, eigene Firma abgelehnt 677ms
+   ✓ admin_set_partner_scope (1)
+     ✓ ersetzt Kategorien und Bezirke, lehnt rental und leere Mengen bei active ab 687ms
+   ✓ admin_set_vat_rule (1)
+     ✓ nur standard_20, nicht rückdatiert, eine Regel je Tag 685ms
+   ✓ admin_set_partner_master (1)
+     ✓ Stammdaten nur über die Funktion, verified_at unverändert, Audit ohne Stripe-Konto 669ms
+   ✓ Dokumente (3)
+     ✓ Zeile, Upload, Limit, Lesen, Unveränderlichkeit 753ms
+     ✓ Firmenstatus, Upsert und Pfadvarianten beim Upload 703ms
+     ✓ Lesen, Unveränderlichkeit, Storage-Lesen 682ms
+ ✓ |rls| tests/rls/change-orders.test.ts (7 tests) 6750ms
+   ✓ Vorschlag (propose_change) (3)
+     ✓ Erfolg mit Zeile, Frist, Outbox; verweigert: aal1, Fremde, kein Beleg, Betrag, Basis, zweiter offener, Rechte; Kunde sieht keine Gebühr 798ms
+     ✓ Festangebot und Spanne: kein Nachtrag; Auftrag nicht angenommen; Firma suspended/payment_hold 1392ms
+     ✓ Revision: kein Einfügen oder Ändern außerhalb der Funktionen; Snapshot ohne Gebühr, Bedingungen unverändert 840ms
+   ✓ Entscheidung des Kunden (decide_change) (2)
+     ✓ Annahme: Zeiger, Journal (Summe = splitFee(neu), Satz der Buchung), Doppelklick, Gegenentscheidung; verweigert: Fremde, Betrag, Satz, Komponenten, Rechte 733ms
+     ✓ Ablehnung bucht nichts; danach neuer Vorschlag; Kette: zwei angenommene Nachträge ergeben splitFee(letzter Preis) 709ms
+   ✓ Rückzug, Ablauf, Auftragsende, Firma gesperrt (1)
+     ✓ Rückzug nur durch die vorschlagende Firma; Ablauf per expire_changes; Entscheidung nach Frist; Auftragsende schließt; Firma suspended: withdrawn 1415ms
+   ✓ Abnahme S9f (0041) (1)
+     ✓ p_accept NULL; Rückzug ohne decided_by und mit Audit; Ablauf trifft nur offene Nachträge (mit Audit); Annahme bei payment_hold; eingefrorener Satz nach Satzwechsel; System-Rückzug mit Audit und Mail 861ms
+ ✓ |rls| tests/rls/route.test.ts (15 tests) 7742ms
+   ✓ Zugriff nur für service_role (3)
+     ✓ anon: Tabellen und Funktionen mit 42501 verweigert 886ms
+     ✓ authenticated: Tabellen und Funktionen mit 42501 verweigert 724ms
+     ✓ service_role darf dieselben Aufrufe 1650ms
+   ✓ Löschung (route_cleanup, stündlicher Job) (1)
+     ✓ entfernt abgelaufene Cache-Zeilen und alte Zähler, lässt frische stehen 488ms
+   ✓ Grenzen (2)
+     ✓ fehlende Grenze bricht ab, statt „Wien" zu liefern 310ms
+   ✓ Zähler (4)
+     ✓ zählt parallele Aufrufe exakt 325ms
+     ✓ ein überschrittener Zähler lehnt ab und lässt die folgenden (globalen) unberührt 337ms
+ ✓ |rls| tests/rls/delete-account-live.test.ts (3 tests) 4654ms
+   ✓ delete-account live (Dev) (3)
+     ✓ ohne Bestätigung 400, mit offener Anfrage 409, Konto bleibt 2248ms
+     ✓ mit Bestätigung 200 { deleted: true }: Profil gelöscht, Auth-Konto anonym, Token danach wertlos 2185ms
+stdout | tests/rls/default-privileges.test.ts > Default-Privilegien (0070) > Katalogauszug der Funktionsrechte in public und private (Hash im Log, vor und nach 0070 gleich)
+Funktionsrechte public+private: 259 Zeilen, SHA-256 822ff1083212d26f0908c44f282ee31a91925bb27f36b74b3a294e669166ccef
+
+ ✓ |rls| tests/rls/default-privileges.test.ts (4 tests) 2659ms
+   ✓ Default-Privilegien (0070) (4)
+     ✓ der Weg der Migration läuft als postgres 665ms
+     ✓ eine neue Funktion in public ist ohne ausdrückliches GRANT für anon, authenticated und service_role nicht ausführbar 655ms
+     ✓ pg_default_acl: für postgres in public stehen keine Funktionsrechte für anon, authenticated, service_role 661ms
+     ✓ Katalogauszug der Funktionsrechte in public und private (Hash im Log, vor und nach 0070 gleich) 677ms
+ ✓ |rls| tests/rls/cancellation-partner-preview.test.ts (3 tests) 3210ms
+   ✓ Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_info (0059) (3)
+     ✓ Berechtigung der Pauschale nach dem letzten nicht zurückgezogenen Nachtrag 1567ms
+     ✓ Vorschau schreibt nichts: Status, Journal, Outbox, Audit und Revisionen bleiben gleich 800ms
+     ✓ my_cancel_info: nur der Kunde, nur nach Firmen-Storno, nur der Betrag der Pauschale 842ms
+ ✓ |rls| tests/rls/partner-my-job-changes.test.ts (4 tests) 2904ms
+   ✓ my_job_changes(): Zuordnung, Firmenstatus, Fenster, Spaltenliste (2)
+     ✓ A sieht Grundlage und Beleg-IDs des eigenen Auftrags; B, aal1, Kunde, pending, rejected, anon nicht; keine Personendaten, keine Gebühr 718ms
+     ✓ payment_hold sieht seine Aufträge, suspended nichts 707ms
+   ✓ my_job_changes(): Zustände des letzten Nachtrags (1)
+     ✓ offen, abgelehnt, neuer offener, angenommen: Zustand, Betrag, Eingaben der gültigen Revision 774ms
+   ✓ propose_change_basis: Prüfungen vor der Vorschau (Berater N1) (1)
+     ✓ Festangebot, Spanne und offener Nachtrag scheitern schon in der Grundlage 703ms
+ ✓ |rls| tests/rls/auth.test.ts (4 tests) 2863ms
+   ✓ Magic-Link-Mail: Code und Link (4)
+     ✓ der Code meldet an; das Profil entsteht erst jetzt, als Kunde 903ms
+     ✓ der Link (token_hash) meldet in jedem Browser an 685ms
+     ✓ falscher oder schon benutzter Code wird abgelehnt 820ms
+ ✓ |rls| tests/rls/report-flow.test.ts (3 tests) 2389ms
+   ✓ Z2 sperrt die Firma, my_report_info und my_jobs tragen das Signal (S9i3-1, S9i6b-3) (1)
+     ✓ Firma: kein Start, kein Abschluss, kein Nachtrag bei offener Meldung; Kunde: Signal je Zustand; Firma sieht nur ein Boolean 758ms
+   ✓ Konto löschen bei offener Meldung (M1) (2)
+     ✓ offene Meldung (Z2, Z4) sperrt mit under_review, nach der Entscheidung und ohne Meldung geht das Löschen 884ms
+     ✓ nach dem Löschen: report_not_done wirft not_found, die Meldung wird nicht gesetzt 745ms
+ ✓ |rls| tests/rls/account-deletion.test.ts (3 tests) 2304ms
+   ✓ delete_account (S9h-4) (2)
+     ✓ verweigert, löscht, anonymisiert; Journal, Ereignisse und Export bleiben gleich 789ms
+     ✓ Sperre: jeder offene Status verhindert das Löschen, jeder Endstatus nicht 758ms
+   ✓ photo_purge (S9h-4: Konto, Kette S9h2-1, Aufbewahrung S9d-6) (1)
+     ✓ Konto, Kette, Aufbewahrung, fehlende Einstellung 756ms
+stdout | tests/rls/public-default.test.ts > PUBLIC-Default für neue Funktionen (0071) > Katalogauszug der Funktionsrechte in public und private (Hash im Log, vor und nach 0071 gleich)
+Funktionsrechte public+private: 259 Zeilen, SHA-256 822ff1083212d26f0908c44f282ee31a91925bb27f36b74b3a294e669166ccef
+
+ ✓ |rls| tests/rls/public-default.test.ts (4 tests) 2445ms
+   ✓ PUBLIC-Default für neue Funktionen (0071) (4)
+     ✓ eine neue Funktion ohne jedes revoke ist in public und private für anon, authenticated und service_role nicht ausführbar 636ms
+     ✓ ein ausdrückliches GRANT nur für service_role öffnet genau diese Rolle (die Regel aus daten.md) 598ms
+     ✓ pg_default_acl: genau eine globale Zeile für Funktionen von postgres, ohne PUBLIC 599ms
+     ✓ Katalogauszug der Funktionsrechte in public und private (Hash im Log, vor und nach 0071 gleich) 610ms
+ ✓ |rls| tests/rls/cancellation-partner.test.ts (3 tests) 2348ms
+   ✓ cancel_by_partner (T13) und Weitervermittlung (T16) (3)
+     ✓ Gegenbuchung, Zuordnung, Zähler, Folgeanfrage mit Kopien und Ausschluss, Mails 803ms
+     ✓ scope_impossible: Pauschale nur mit Beleg nach abgelehntem Nachtrag, keine Weitervermittlung 773ms
+     ✓ ab Terminbeginn nur scope_impossible (S9h2-3, Beks), sonst too_late_for_reason 771ms
+ ✓ |rls| tests/rls/completion.test.ts (3 tests) 2165ms
+   ✓ report_not_done (Kunde meldet „hat nicht stattgefunden“) (1)
+     ✓ setzt nur den Zeitstempel (einmal), protokolliert; Frist, Eigentum, Status und Rechte verweigern mit Code 742ms
+   ✓ complete_due (Frage nach dem Termin und T15) (1)
+     ✓ T15 nur ohne Meldung und nach der Frist; Frage einmal je Auftrag und nur im Fenster; zweiter Lauf ohne Wirkung; nur service_role 721ms
+   ✓ Abrechnungsmonat (export_commissions, my_commissions) (1)
+     ✓ Monat (Europe/Vienna) aus erstem Endstatus und Buchungszeitpunkt; ohne Endstatus keine Zeile; Export nur admin über service_role; Partner nur eigene Firma mit aal2 701ms
+ ✓ |rls| tests/rls/job-contact-after-cancel.test.ts (2 tests) 1527ms
+   ✓ Kontakt und Fotos nach Storno durch die Firma (0060, 0065) (2)
+     ✓ ohne Pauschale sofort gesperrt, mit Pauschale im Fenster offen, nach Gegenbuchung und Fensterende gesperrt; Pauschale erst ab Termin 792ms
+     ✓ Storno durch den Kunden: ohne Pauschale sofort gesperrt (Nr. 154), mit Pauschale im Fenster offen und danach gesperrt 734ms
+ ✓ |rls| tests/rls/admin-correct.test.ts (2 tests) 1463ms
+   ✓ Belegfoto nach admin-Storno (0055) (1)
+     ✓ ein Storno aus einem alten completed schreibt ein neues Statusereignis: der Beleg bleibt 673ms
+   ✓ admin_correct (T14) und reported_jobs (1)
+     ✓ Liste, Verweigerungen, complete, Storno mit Gebühr, Pauschale negieren, Zuordnung, Zähler 789ms
+ ✓ |rls| tests/rls/replay-rest.test.ts (2 tests) 1655ms
+   ✓ Wiederholung nach Erfolg: withdraw, start_job, complete_job (1)
+     ✓ Wiederholung derselben Partei ist ok mit einer Wirkung; Fremde, andere Wege und aal1 behalten den Fehler 846ms
+   ✓ Wiederholung nach Erfolg: withdraw_offer, withdraw_change (1)
+     ✓ Wiederholung ist ok ohne zweite Wirkung; Angebote und Nachträge, die ein anderer Weg beendete, behalten invalid_transition 807ms
+ ✓ |rls| tests/rls/fee-schedule.test.ts (1 test) 1386ms
+   ✓ Provisionsstaffel: Lesen, Schreibsperre, Vorschau (1)
+     ✓ Mitglied jeder Firma (aal2) und admin lesen; aal1, Kunde, rental_provider, anon nicht; niemand schreibt; Zeilen unveränderlich 1385ms
+ ✓ |rls| tests/rls/accept-replay.test.ts (1 test) 1576ms
+   ✓ Annahme: Wiederholung nach verlorener Antwort (1)
+     ✓ gleiche Firma, gleiche Revision, gleiche Auszahlung: dieselbe assignmentId, je eine Zeile; sonst null 1575ms
+ ✓ |rls| tests/rls/replay.test.ts (1 test) 1054ms
+   ✓ Wiederholung des Stornos nach Erfolg (1)
+     ✓ zweiter Aufruf bucht nie ein zweites Mal; cancel_replay antwortet nur der eigenen Partei bei gleichem Betrag, Grund und gleichen Belegen 1053ms
+ ✓ |rls| tests/rls/partner-fee-read.test.ts (1 test) 863ms
+   ✓ Gebührensatz lesen (1)
+     ✓ Mitglied jeder Firma mit aal2 liest den Satz; aal1, Kunde, rental_provider, anon nicht; note und Schreiben verweigert 862ms
+ ✓ |rls| tests/rls/execute-entzug.test.ts (1 test) 679ms
+   ✓ EXECUTE-Entzug für service_role (N15, s9k1-3) (1)
+     ✓ service_role: 42501 bei allen zwölf; der Eigentümer erreicht den Rumpf (Geschäftsfehler, nie 42501) 677ms
+
+ Test Files  51 passed (51)
+      Tests  391 passed (391)
+   Start at  09:13:45
+   Duration  982.19s (tests 98%, import 2%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-rls.json
+
+---
+Dauer: 984.4 s
+EXIT=0

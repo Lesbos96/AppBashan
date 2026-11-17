@@ -1,0 +1,74 @@
+{
+  "schritt": "dev1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 247
+  },
+  "sitzung": "53098dbd-dbc1-4aff-83c8-b716423ac383",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 3
+  },
+  "hash": "7d49a9c37d387bb1e92a6261791b00bda41f1298",
+  "stand": "adc49a2cdea04812806ee4bf45dedb812ff4b8e4ca309265a60e6a42e874e398",
+  "mainVorher": "953708db559ea015bfb218174854155865b4f340",
+  "commits": 4,
+  "geaendert": {
+    "docs": 5,
+    "scripts": 2,
+    "tests/unit": 1
+  },
+  "laeufe": {
+    "check": {
+      "nr": 8,
+      "exit": 0,
+      "tests": "2088 passed (2088)",
+      "sek": 58.2,
+      "hash": "180c4a8b815e87761841f920bacc7b2b8fda8592",
+      "schritt": "dev1",
+      "log": "docs\\proof\\dev1\\008-check.log"
+    },
+    "rls": {
+      "nr": 10,
+      "exit": 0,
+      "tests": "391 passed (391)",
+      "sek": 984.4,
+      "hash": "180c4a8b815e87761841f920bacc7b2b8fda8592",
+      "schritt": "dev1",
+      "log": "docs\\proof\\dev1\\010-rls.log"
+    },
+    "e2e": {
+      "nr": 9,
+      "exit": 0,
+      "tests": "692 passed (11.4m)",
+      "sek": 682,
+      "hash": "180c4a8b815e87761841f920bacc7b2b8fda8592",
+      "schritt": "dev1",
+      "log": "docs\\proof\\dev1\\009-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 9,
+    "rot": 1
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs/proof/dev1/dev1-abnahme-1.md",
+    "quelle": "tmp/proof/dev1-abnahme-1.md",
+    "sha256": "670e8f8754d9ecfac56892bb306332504b1c6b468c8d363f3e4d8bf9a9ac7215",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\dev1\\loesch-freigabe-1.md",
+    "docs\\proof\\dev1\\loesch-freigabe-2.md",
+    "docs\\proof\\dev1\\loesch-lauf.jsonl",
+    "docs\\proof\\dev1\\dev1-abnahme-1.md",
+    "docs\\proof\\dev1\\dev1-plan.md"
+  ]
+}
