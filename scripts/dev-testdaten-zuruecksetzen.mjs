@@ -2,8 +2,8 @@
 //   npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe
 //   npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs loeschen <nutzer> <anfragen> <journal> <firmen> <kopien>   (Zahlen der Probe)
 // Eine Transaktion, ein CLI-Aufruf, `probe` und `loeschen` laufen mit demselben SQL-Text, nur das Schlusswort (rollback oder commit) unterscheidet sie.
-// Die Append-only-Sperren bleiben unverändert: nur im Replica-Fenster (set local, nur diese Transaktion) werden die Journalzeilen der Testanfragen gelöscht
-// und deren Revisionskopien (copied_from_revision_id) leer gesetzt; danach gilt wieder origin und die Kaskade der Konten läuft mit allen Triggern.
+// Die Append-only-Sperren bleiben unverändert: nur im Replica-Fenster (set local, nur diese Transaktion) werden die Journalzeilen der Testanfragen gelöscht;
+// danach gilt wieder origin und die Kaskade der Konten läuft mit allen Triggern.
 // Kein Fehlerfang: jeder Fehler rollt alles zurück. audit_log bleibt unberührt.
 import './dev-guard.mjs'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -16,8 +16,13 @@ if (!(modus === 'probe' && zahlen.length === 0) && !(loeschen && zahlen.length =
   console.error('Aufruf: probe | loeschen <nutzer> <anfragen> <journal> <firmen> <kopien>')
   process.exit(2)
 }
+if (!process.env.MV_LOESCH_LAUF) {
+  console.error('Nur über `npm run loesch` (Lösch-Gate).')
+  process.exit(2)
+}
 const alive = (pid) => { try { process.kill(pid, 0); return true } catch (e) { return e.code === 'EPERM' } }
-if (existsSync('tmp/proof/lauf.lock') && alive(JSON.parse(readFileSync('tmp/proof/lauf.lock', 'utf8')).pid)) {
+const sperre = existsSync('tmp/proof/lauf.lock') ? JSON.parse(readFileSync('tmp/proof/lauf.lock', 'utf8')) : {}
+if ([sperre.pid, sperre.kind].some((p) => Number.isInteger(p) && alive(p))) {
   console.error('Ein Testlauf ist aktiv (tmp/proof/lauf.lock): kein Zurücksetzen.')
   process.exit(2)
 }
@@ -46,7 +51,7 @@ create temp table tf on commit drop as ${FIRMEN};
 create temp table zahl (k text primary key, n bigint) on commit drop;
 do $reset$
 declare
-  n_u bigint; n_r bigint; n_j bigint; n_f bigint; n_c bigint; v bigint; w bigint; f record; f8 text := ${F8}; grenze timestamptz := now() - interval '15 minutes';
+  n_u bigint; n_r bigint; n_j bigint; n_f bigint; n_c bigint; v bigint; f record; f8 text := ${F8}; grenze timestamptz := now() - interval '15 minutes';
 begin
   select count(*) into n_u from tu;
   select count(*) into n_r from tr;
@@ -67,11 +72,9 @@ begin
   set local session_replication_role = replica;
   delete from public.commission_entries where request_id in (select id from tr);
   get diagnostics v = row_count;
-  update public.price_revisions set copied_from_revision_id = null where request_id in (select id from tr) and copied_from_revision_id is not null;
-  get diagnostics w = row_count;
   set local session_replication_role = origin;
   if current_setting('session_replication_role') <> 'origin' then raise exception 'session_replication_role nicht zurückgesetzt'; end if;
-  if v <> n_j or w <> n_c then raise exception 'Journal % von %, Kopien % von %', v, n_j, w, n_c; end if;
+  if v <> n_j then raise exception 'Journal % von %', v, n_j; end if;
   if exists (select 1 from public.commission_entries where reverses_entry_id is not null and reverses_entry_id not in (select id from public.commission_entries)) then raise exception 'Gegenbuchung ohne Ursprung'; end if;
 
   delete from auth.users where id in (select id from tu);
@@ -101,22 +104,38 @@ end $reset$;
 select k, n from zahl order by k;
 ${loeschen ? 'commit' : 'rollback'};`
 
-if (loeschen) {
-  const dir = 'tmp/dev1-sicherung'
-  mkdirSync(dir, { recursive: true })
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const sicherung = {
-    nutzer: ownerSql(`select id, email from auth.users where id in (${NUTZER})`),
-    anfragen: ownerSql(`select id from public.service_requests where customer_id in (${NUTZER})`),
-    journal: ownerSql(`select to_jsonb(c) as z from public.commission_entries c where request_id in (select id from public.service_requests where customer_id in (${NUTZER}))`),
-  }
-  writeFileSync(`${dir}/${stamp}.json`, JSON.stringify(sicherung))
-  console.log(`Sicherung: ${dir}/${stamp}.json (${sicherung.nutzer.length} Nutzer, ${sicherung.anfragen.length} Anfragen, ${sicherung.journal.length} Journalzeilen)`)
+// Sicherung in beiden Modi (die Probe belegt den Weg): nur Konto-ID und E-Mail, Anfrage-IDs, Journalzeilen der Testanfragen (seitenweise, die CLI-Ausgabe ist begrenzt).
+const dir = 'tmp/dev1-sicherung'
+mkdirSync(dir, { recursive: true })
+const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+const ANFRAGEN = `select s.id from public.service_requests s where s.customer_id in (${NUTZER})`
+const journal = []
+for (let seite = 0; ; seite++) {
+  const rest = ownerSql(`select to_jsonb(c) as z from public.commission_entries c where c.request_id in (${ANFRAGEN}) order by c.id limit 300 offset ${seite * 300}`)
+  journal.push(...rest.map((r) => r.z))
+  if (rest.length < 300) break
+}
+const sicherung = { nutzer: ownerSql(`select id, email from auth.users where id in (${NUTZER})`), anfragen: ownerSql(ANFRAGEN), journal }
+writeFileSync(`${dir}/${stamp}-${modus}.json`, JSON.stringify(sicherung))
+console.log(`Sicherung: ${dir}/${stamp}-${modus}.json (${sicherung.nutzer.length} Nutzer, ${sicherung.anfragen.length} Anfragen, ${journal.length} Journalzeilen)`)
+if (loeschen && [sicherung.nutzer.length, sicherung.anfragen.length, journal.length].join() !== zahlen.slice(0, 3).map(Number).join()) {
+  console.error('Sicherung weicht von den Zahlen der Probe ab: nichts gelöscht.')
+  process.exit(1)
 }
 
-const rows = ownerSql(sql)
-for (const r of rows) console.log(`LOESCH-ZAHL ${r.k}=${r.n}`)
+let rows = []
+let fehler = null
+try {
+  rows = ownerSql(sql)
+} catch (e) {
+  fehler = e
+}
 const aktiv = Number(ownerSql(`select count(*) as n from pg_trigger where tgname = 'append_only' and tgenabled = 'O' and tgrelid in ('public.commission_entries'::regclass, 'public.audit_log'::regclass)`)[0]?.n)
 console.log(`LOESCH-ZAHL appendOnlyAktiv=${aktiv}`)
+if (fehler) {
+  console.error(`Abgebrochen, alles zurückgerollt oder Ausgang unbekannt (dann eine Probe starten): ${String(fehler.message).slice(0, 400)}`)
+  process.exit(1)
+}
+for (const r of rows) console.log(`LOESCH-ZAHL ${r.k}=${r.n}`)
 console.log(loeschen ? 'Gelöscht (commit).' : 'Probe (rollback), nichts verändert.')
-if (aktiv !== 2) process.exit(1)
+if (aktiv !== 2 || rows.length !== 10) process.exit(1)

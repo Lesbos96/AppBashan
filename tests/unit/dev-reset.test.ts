@@ -24,16 +24,38 @@ describe('Dev-Reset der Testdaten: Auflagen', () => {
     expect(ab.indexOf('session_replication_role = origin')).toBeLessThan(ab.indexOf('delete from auth.users'))
     expect(ab).toMatch(/current_setting\('session_replication_role'\) <> 'origin'/)
   })
-  it('im Fenster nur commission_entries löschen und copied_from_revision_id der Testanfragen leeren', () => {
+  it('im Fenster genau eine Anweisung: das Journal der Testanfragen löschen', () => {
     const fenster = text.slice(text.indexOf('session_replication_role = replica'), text.indexOf('session_replication_role = origin'))
-    expect([...fenster.matchAll(/^\s*(delete from|update) (public\.\w+)/gm)].map((m) => `${m[1]} ${m[2]}`)).toEqual([
-      'delete from public.commission_entries',
-      'update public.price_revisions',
-    ])
+    expect([...fenster.matchAll(/^\s*(delete from|update|insert into|truncate) (public\.\w+)/gm)].map((m) => `${m[1]} ${m[2]}`)).toEqual(['delete from public.commission_entries'])
+    expect(fenster).toMatch(/request_id in \(select id from tr\)/)
   })
-  it('Probe endet mit rollback, Löschen mit commit; Löschen verlangt die Zahlen der Probe', () => {
-    expect(text).toMatch(/rollback/)
-    expect(text).toMatch(/commit/)
-    expect(text).toMatch(/Zahlen weichen von der Probe ab/)
+  it('Live-Konten nur mit Zusatz up, kein breiteres Muster', () => {
+    expect(text).toMatch(/like 'live-up-%@movenow\.test'/)
+    expect(text).not.toMatch(/like 'live-%/)
+  })
+  it('alle Abbruchbedingungen stehen vor dem Fenster', () => {
+    const fenster = text.indexOf('session_replication_role = replica')
+    for (const b of ['Abdeckungsfirma vorhanden', 'Journalzeile einer Nicht-Testfirma', 'Gegenbuchung außerhalb', "interval '15 minutes'", "'request-photos', 'job-photos', 'partner-documents'", 'nicht die Rolle customer', 'Mitglied einer Nicht-Testfirma', 'mehr als 1000', 'Zahlen weichen von der Probe ab']) {
+      expect(text.indexOf(b), b).toBeGreaterThan(-1)
+      expect(text.indexOf(b), b).toBeLessThan(fenster)
+    }
+  })
+  it('eine Transaktion, ein Aufruf; nur das Schlusswort hängt vom Modus ab', () => {
+    expect(text.match(/ownerSql\(sql\)/g)).toHaveLength(1)
+    expect(text.match(/`begin;/g)).toHaveLength(1)
+    expect(text.match(/\$\{loeschen \?/g)).toEqual(['${loeschen ?'])
+    expect(text).toMatch(/\$\{loeschen \? 'commit' : 'rollback'\};`/)
+  })
+  it('Sicherung in beiden Modi vor der Transaktion, Löschen bricht bei Abweichung ab', () => {
+    const sicherung = text.indexOf('writeFileSync(')
+    expect(sicherung).toBeGreaterThan(-1)
+    expect(sicherung).toBeLessThan(text.indexOf('ownerSql(sql)'))
+    expect(text).toMatch(/Sicherung weicht von den Zahlen der Probe ab/)
+  })
+  it('Start nur über das Gate, Sperre mit pid und kind, Kontrolle der Trigger auch bei Fehler, genau zehn Zahlen', () => {
+    expect(text).toMatch(/if \(!process\.env\.MV_LOESCH_LAUF\)/)
+    expect(text).toMatch(/\[sperre\.pid, sperre\.kind\]/)
+    expect(text.indexOf("tgname = 'append_only' and tgenabled = 'O'")).toBeLessThan(text.indexOf('if (fehler)'))
+    expect(text).toMatch(/rows\.length !== 10/)
   })
 })
