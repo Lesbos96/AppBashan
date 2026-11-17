@@ -307,6 +307,37 @@ describe('cancel_by_partner (T13) und Weitervermittlung (T16)', () => {
     val(r['S3 keine Pauschale'], '0')
   })
 
+  // bl1 (OFFEN rs1-1): die Oberfläche sagt der Firma bei jedem Festangebot „kein Nachtrag und keine Pauschale bei Absage“ (ENTSCHEIDUNGEN Nr. 196, geld.md: die
+  // Pauschale gibt es nur nach einem abgelehnten Nachtrag). Erwartung aus der Vorgabe, nicht aus dem Ist-Wert der Funktionen.
+  it('Festangebot (partner_offer) nach Terminbeginn: scope_impossible ohne Pauschale, auch mit Belegen; kein Nachtrag', () => {
+    const [F1] = [newId()]
+    const setup = `${BASE} ${accepted(F1, "now() - interval '2 hours'")} ${receipt(F1)}`
+    const noTrg = (sql: string) => `alter table public.price_revisions disable trigger user; ${sql}; alter table public.price_revisions enable trigger user`
+    const steps: Step[] = [
+      { name: 'Quelle Festangebot', sql: noTrg(`update public.price_revisions set source = 'partner_offer' where id = ${curRev(F1)}`) },
+      { name: 'Basis ohne Pauschale', as: 'service_role', sql: `=(select call_out_cents from ${basisOf(U.pa, 'aal2', F1, 'scope_impossible')})` },
+      { name: 'Nachtrag', as: 'service_role', sql: `perform public.propose_change('${U.pa}', 'aal2', '${F1}', ${curRev(F1)}, '{"hours":6}'::jsonb, 80000, ${RECEIPTS(F1)})` },
+      { name: 'Nachtragsgrundlage', as: 'service_role', sql: `perform * from public.propose_change_basis('${U.pa}', 'aal2', '${F1}')` },
+      { name: 'Pauschale mit Belegen', as: 'service_role', sql: cancelCall(U.pa, 'aal2', F1, 'scope_impossible', CALL_OUT, { photos: RECEIPTS(F1) }) },
+      { name: 'unverändert', sql: `=${status(F1)} || ':' || ${journal(F1)}` },
+      { name: 'Absage', as: 'service_role', sql: cancelCall(U.pa, 'aal2', F1, 'scope_impossible', 0) },
+      { name: 'Status', sql: `=${status(F1)}` },
+      { name: 'keine Pauschale', sql: `=${journal(F1, `kind = 'cancellation_fee'`)}` },
+      { name: 'Gebührensumme', sql: `=${feeSum(F1)}` },
+    ]
+    const r = probes(setup, steps)
+    expect(r['Quelle Festangebot']).toBe('ok')
+    val(r['Basis ohne Pauschale'], '0')
+    err(r['Nachtrag'], 'change_not_allowed')
+    err(r['Nachtragsgrundlage'], 'change_not_allowed')
+    err(r['Pauschale mit Belegen'], 'call_out_not_allowed')
+    val(r['unverändert'], 'accepted:1')
+    expect(r['Absage']).toBe('ok')
+    val(r['Status'], 'cancelled_by_partner')
+    val(r['keine Pauschale'], '0')
+    val(r['Gebührensumme'], '0')
+  })
+
   it('ab Terminbeginn nur scope_impossible (S9h2-3, Beks), sonst too_late_for_reason', () => {
     const [L1, L3, L4] = [newId(), newId(), newId()]
     const setup = `${BASE} ${accepted(L1, "now() - interval '2 hours'")} ${accepted(L3, "now() + interval '1 hour'")}

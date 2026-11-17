@@ -80,7 +80,7 @@ describe('Storno durch die Firma: Vorschau, Pauschale-Berechtigung, my_cancel_in
     const setup = `${BASE} ${accepted(E0, PAST)} ${accepted(E1)} ${declined(E1)} ${accepted(E2, PAST)} ${receipt(E2)} ${propose(E2, 80000, 6)}
       ${accepted(E3, PAST)} ${receipt(E3)} ${propose(E3, 80000, 6)} ${decide(E3, true, 80000, TOTAL)}
       ${accepted(E4, PAST)} ${declined(E4)} ${propose(E4, 80000, 7)} ${decide(E4, true, 80000, TOTAL)}`
-    const setup2 = `${BASE} ${accepted(E5, PAST)} ${receipt(E5)} ${propose(E5, 80000, 6)} ${decide(E5, true, 80000, TOTAL)} ${propose(E5, 90000, 8)} ${decide(E5, false, 90000, 80000)}
+    const setup2 = `${BASE} ${accepted(E5, PAST)} ${receipt(E5)} ${propose(E5, 80000, 6)} ${decide(E5, true, 80000, TOTAL)} ${receipt(E5)} ${propose(E5, 90000, 8)} ${decide(E5, false, 90000, 80000)}
       ${accepted(E6, PAST)} ${declined(E6)} ${propose(E6, 80000, 7)}
       ${accepted(E7, PAST)} ${declined(E7)} ${propose(E7, 80000, 7)}
       ${accepted(B1)} ${accepted(B2, "now() - interval '2 hours'")} update public.service_requests set not_done_reported_at = now() where id = '${B1}';`

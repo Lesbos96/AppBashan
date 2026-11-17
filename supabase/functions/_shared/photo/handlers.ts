@@ -84,11 +84,11 @@ export async function handlePublish(req: Request, deps: PublishDeps): Promise<Re
 // photo-receipt --------------------------------------------------------------------------------------------------------------
 export type ReceiptDeps = GetUser & {
   allowedOrigins: readonly string[]
-  /** Torprüfung vor dem Lesen des Bodys (aal2, aktive Zuordnung, Firma, Limit); wirft `DbError`. */
+  /** Torprüfung vor dem Lesen des Bodys (aal2, aktive Zuordnung, Firma; das Limit prüft erst `add` nach dem Dedupe); wirft `DbError`. */
   check(userId: string, aal: string, requestId: string): Promise<void>
   process: Processor
   upload(bytes: Uint8Array): Promise<string>
-  /** Legt die Zeile an und prüft das Tor erneut unter Sperre; liefert die Foto-ID. */
+  /** Prüft das Tor erneut unter Sperre, liefert bei gleichem Bild (Hash) die vorhandene Foto-ID (Wiederholung), sonst Limit und neue Zeile; liefert die Foto-ID. */
   add(userId: string, aal: string, requestId: string, path: string, sha256: string): Promise<string>
   log: Log
 }

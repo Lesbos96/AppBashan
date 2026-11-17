@@ -67,13 +67,14 @@ describe('Foto-Pipeline unter Last', () => {
       select private.set_request_status('${R}', 'accepted', '${U.pa}', 'partner');
       insert into public.assignments (request_id, partner_id) select '${R}', m.partner_id from public.partner_members m where m.user_id = '${U.pa}';
       insert into public.job_photos (request_id, kind, uploaded_partner_id, status, storage_path, sha256, decided_at)
-        select '${R}', 'receipt', m.partner_id, 'ready', gen_random_uuid() || '.jpg', repeat('b', 64), now() from public.partner_members m, generate_series(1, 7) where m.user_id = '${U.pa}';
+        select '${R}', 'receipt', m.partner_id, 'ready', gen_random_uuid() || '.jpg', repeat(to_hex(g), 64), now() from public.partner_members m, generate_series(1, 7) g where m.user_id = '${U.pa}';
       commit;`)
     const files = [`${uid()}.jpg`, `${uid()}.jpg`]
     ownerSql(`insert into storage.objects (bucket_id, name) values ('job-photos', '${files[0]}'), ('job-photos', '${files[1]}')`)
-    const add = (f: string) =>
-      `begin; ${startAt(7)} set local role service_role; select public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${f}', repeat('b', 64)); commit;`
-    const runs = await Promise.all(files.map((f) => ownerSqlAsync(add(f))))
+    // bl1: verschiedene Bilder (Hash a und b, die sieben vorhandenen tragen 1 bis 7); gleiche Hashes wären nach dem Dedupe keine zwei Belege
+    const add = (f: string, sha: string) =>
+      `begin; ${startAt(7)} set local role service_role; select public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${f}', repeat('${sha}', 64)); commit;`
+    const runs = await Promise.all(files.map((f, i) => ownerSqlAsync(add(f, i === 0 ? 'a' : 'b'))))
     const won = runs.filter((r) => 'rows' in r)
     const lost = runs.filter((r): r is { error: string } => 'error' in r)
     expect(won, JSON.stringify(runs)).toHaveLength(1)
@@ -81,6 +82,26 @@ describe('Foto-Pipeline unter Last', () => {
     expect(lost[0]?.error).toContain('receipt_limit')
     expect(Number((ownerSql(`select count(*) as n from public.job_photos where request_id = '${R}' and kind = 'receipt'`)[0] as { n: string }).n)).toBe(8)
     // die Objekte der Probe aus dem Bucket entfernen (Direktes Löschen schützt Supabase, der Schalter erlaubt es nur diesem Aufruf)
+    try {
+      ownerSql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where bucket_id = 'job-photos' and name in ('${files[0]}', '${files[1]}'); commit;`)
+    } catch {
+      console.warn('Objekte der Probe bleiben im Bucket; photo_purge entfernt sie als Waisen.')
+    }
+  }, 480_000)
+
+  it('zwei gleiche Belege (gleicher Hash) gleichzeitig: beide Aufrufe gelingen, genau eine Zeile (bl1, n12-1)', async () => {
+    const R = newId()
+    ownerSql(`begin; ${request(R)}
+      select private.set_request_status('${R}', 'accepted', '${U.pa}', 'partner');
+      insert into public.assignments (request_id, partner_id) select '${R}', m.partner_id from public.partner_members m where m.user_id = '${U.pa}';
+      commit;`)
+    const files = [`${uid()}.jpg`, `${uid()}.jpg`]
+    ownerSql(`insert into storage.objects (bucket_id, name) values ('job-photos', '${files[0]}'), ('job-photos', '${files[1]}')`)
+    const add = (f: string) =>
+      `begin; ${startAt(7)} set local role service_role; select public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${f}', repeat('e', 64)); commit;`
+    const runs = await Promise.all(files.map((f) => ownerSqlAsync(add(f))))
+    expect(runs.map((r) => ('error' in r ? r.error : 'ok')), JSON.stringify(runs)).toEqual(['ok', 'ok'])
+    expect(Number((ownerSql(`select count(*) as n from public.job_photos where request_id = '${R}' and kind = 'receipt'`)[0] as { n: string }).n)).toBe(1)
     try {
       ownerSql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where bucket_id = 'job-photos' and name in ('${files[0]}', '${files[1]}'); commit;`)
     } catch {

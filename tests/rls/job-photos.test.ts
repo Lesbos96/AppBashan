@@ -213,8 +213,15 @@ describe('Zugriff auf Kopien (job_photo_list)', () => {
       { name: 'Beleg ohne Datei', as: 'service_role', sql: `perform public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${PX}', repeat('b', 64))` },
       { name: 'Beleg anfügen', as: 'service_role', sql: `perform public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${PR}', repeat('b', 64))` },
       { name: 'Foto und Beleg', as: 'service_role', sql: `=(select count(*) from ${list})` },
+      // bl1 (n12-1): dieselbe Datei (gleicher Hash) nach verlorener Antwort noch einmal: dieselbe Id, keine zweite Zeile (die neue Datei hat keine Zeile, photo-cleanup entfernt sie)
+      { name: 'Beleg wiederholt', as: 'service_role', sql: `=(select public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${PX}', repeat('b', 64)) = (select j.id from public.job_photos j where j.request_id = '${R}' and j.kind = 'receipt' order by j.created_at, j.id limit 1))` },
+      { name: 'eine Belegzeile', sql: `=${count(`public.job_photos where request_id = '${R}' and kind = 'receipt'`)}` },
       { name: 'sieben Belege mehr', sql: receipt(R, 'a', 7).replace(/;$/, '') },
-      { name: 'Limit 8', as: 'service_role', sql: `perform public.photo_receipt_check('${U.pa}', 'aal2', '${R}')` },
+      // bl1: die Vorprüfung kennt keinen Hash und meldet das Limit nicht mehr; add prüft es nach dem Dedupe unter Sperre
+      { name: 'Vorprüfung bei 8', as: 'service_role', sql: `perform public.photo_receipt_check('${U.pa}', 'aal2', '${R}')` },
+      { name: 'Wiederholung bei 8', as: 'service_role', sql: `=(select public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${PX}', repeat('b', 64)) = (select j.id from public.job_photos j where j.request_id = '${R}' and j.kind = 'receipt' order by j.created_at, j.id limit 1))` },
+      { name: 'neues Bild bei 8', as: 'service_role', sql: `perform public.photo_receipt_add('${U.pa}', 'aal2', '${R}', '${PX}', repeat('c', 64))` },
+      { name: 'acht Belegzeilen', sql: `=${count(`public.job_photos where request_id = '${R}' and kind = 'receipt'`)}` },
       { name: 'Kunde sieht Belege', as: 'service_role', sql: `=(select count(*) from public.job_photo_list('${U.cust}', 'aal1', null, '${R}'))` },
       { name: 'b nach Annahme', as: 'service_role', sql: `perform * from public.job_photo_list('${U.pb}', 'aal2', ${LID(R, 'b')}, null)` },
       { name: 'payment_hold', sql: setSt('a', 'payment_hold') },
@@ -234,11 +241,16 @@ describe('Zugriff auf Kopien (job_photo_list)', () => {
     err(r['Beleg ohne Datei'], 'file_missing')
     expect(r['Beleg anfügen']).toBe('ok')
     rows(r['Foto und Beleg'], 2)
-    err(r['Limit 8'], 'receipt_limit')
+    expect(r['Beleg wiederholt']).toBe('= true')
+    rows(r['eine Belegzeile'], 1)
+    expect(r['Vorprüfung bei 8']).toBe('ok')
+    expect(r['Wiederholung bei 8']).toBe('= true')
+    err(r['neues Bild bei 8'], 'receipt_limit')
+    rows(r['acht Belegzeilen'], 8)
     rows(r['Kunde sieht Belege'], 8)
     err(r['b nach Annahme'], 'not_found')
     rows(r['payment_hold liest'], 9)
-    err(r['payment_hold lädt hoch'], 'receipt_limit') // das Limit (8 erreicht) kommt nach der Statusprüfung: payment_hold passt durch
+    expect(r['payment_hold lädt hoch']).toBe('ok') // die Vorprüfung meldet das Limit (8 erreicht) nicht mehr (bl1); payment_hold passt durch
     err(r['nach 30 Tagen'], 'not_found')
     err(r['Beleg ohne aktive Zuordnung'], 'not_found')
   })

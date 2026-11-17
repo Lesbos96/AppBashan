@@ -229,4 +229,34 @@ describe('Wiederholung nach Erfolg: reject_offers', () => {
     expect(r['R5 declined durch System']).toBe('ok')
     err(r['R5 Kunde'], 'invalid_transition')
   })
+
+  // bl1 (OFFEN rj1-2, Muster 0066:83): ein gelöschtes Konto mit noch gültigem Token (PostgREST kennt gelöschte Sitzungen nicht) bekommt weder ok bei der Wiederholung noch eine Wirkung
+  it('nach dem Löschen des Kontos: not_found bei Wiederholung und bei erstem Aufruf, keine Wirkung', () => {
+    const [R1, R2] = [newId(), newId()]
+    const setup = `${BASE} ${offerRequest(R1)} ${offerRequest(R2)} ${[R1, R2].map((q) => stash(q, 'a')).join(' ')}`
+    const rej = (name: string, req: string) => as(U.cust, 'aal1', name, `public.reject_offers('${req}')`)
+    const steps: Step[] = [
+      as(U.pa, 'aal2', 'R1 Angebot', `public.send_offer(${lid(R1, 'a')}, ${OFFER})`),
+      as(U.pa, 'aal2', 'R2 Angebot', `public.send_offer(${lid(R2, 'a')}, ${OFFER})`),
+      rej('R1 reject', R1),
+      // delete_account verweigert Konten mit offener Anfrage (open_requests): der Zustand „gelöscht“ ist hier das Profil mit deleted_at (so liest ihn auch 0066:83)
+      { name: 'löschen', sql: `update public.profiles set deleted_at = now() where id = '${U.cust}'` },
+      backdate(R2, 1),
+      { name: 'R1 Zustand vorher', sql: snap(R1) },
+      { name: 'R2 Zustand vorher', sql: snap(R2) },
+      rej('R1 Wiederholung nach Löschung', R1),
+      rej('R2 reject nach Löschung', R2),
+      { name: 'R1 Zustand nachher', sql: snap(R1) },
+      { name: 'R2 Zustand nachher', sql: snap(R2) },
+    ]
+    const r = probes(setup, steps)
+    expect(r['R1 Angebot']).toBe('ok')
+    expect(r['R2 Angebot']).toBe('ok')
+    expect(r['R1 reject']).toBe('ok')
+    expect(r['löschen']).toBe('ok')
+    err(r['R1 Wiederholung nach Löschung'], 'not_found')
+    err(r['R2 reject nach Löschung'], 'not_found')
+    expect(r['R1 Zustand nachher']).toBe(r['R1 Zustand vorher'])
+    expect(r['R2 Zustand nachher']).toBe(r['R2 Zustand vorher'])
+  })
 })

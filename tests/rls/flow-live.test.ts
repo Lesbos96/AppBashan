@@ -204,9 +204,14 @@ describe('W1 Hauptweg: Zuschlag, Start, Beleg, Nachtrag, Zustimmung, Abschluss (
     const notJpeg = await upload(pa.jwt2, W1, new TextEncoder().encode('kein bild'))
     expect(notJpeg, JSON.stringify(notJpeg)).toMatchObject({ status: 422, body: { error: 'not_jpeg' } })
     expect(photosOf(W1)).toHaveLength(0)
-    const ok = await upload(pa.jwt2, W1)
+    const jpg = await new Image(16, 16).fill(Image.rgbToColor(40 + ctx.receipts.length * 50, 120, 200)).encodeJPEG({ quality: 80 })
+    const ok = await upload(pa.jwt2, W1, jpg)
     expect(ok.status, JSON.stringify(ok)).toBe(200)
     ctx.receipts.push(String(ok.body.id))
+    // bl1 (n12-1): dieselbe Datei noch einmal (verlorene Antwort): dieselbe Id, keine zweite Zeile
+    const again = await upload(pa.jwt2, W1, jpg)
+    expect(again, JSON.stringify(again)).toMatchObject({ status: 200, body: { id: ok.body.id } })
+    expect(photosOf(W1)).toHaveLength(1)
     const row = ownerSql(`select kind, status, uploaded_partner_id::text as p, (select count(*) from storage.objects o where o.bucket_id = 'job-photos' and o.name = j.storage_path) as obj from public.job_photos j where id = '${ok.body.id}'`)[0]
     expect(row).toMatchObject({ kind: 'receipt', status: 'ready', p: partnerA })
     expect(Number(row?.obj)).toBe(1)
@@ -286,6 +291,10 @@ describe('W2b Storno ohne Pauschale nach dem Start (Termin vor 2 Stunden)', () =
   live('accept, start, unavailable nach dem Termin 409, scope_impossible ohne Beleg: Summe 0, job_contact gesperrt, keine Folgeanfrage', async () => {
     expect((await fn('accept', pa.jwt2, { listingId: listingOf(W2B, partnerA), revisionId: rev1(W2B), shownPayoutCents: BOOKED.payout })).status).toBe(200)
     expect((await pa.aal2.rpc('start_job', { p_request: W2B })).error).toBeNull()
+    // bl1 (OFFEN rs1-3): der Cron `complete-due` (alle 5 Minuten) legt für eine Anfrage nach dem Termin die Outbox-Zeile `completion_ask` an, wann immer er läuft.
+    // Der Test stellt diesen Zustand selbst her und prüft, dass er da ist, statt auf den Cron zu treffen: danach ist `complete_due()` wirkungslos (`on conflict do nothing`).
+    ownerSql('select public.complete_due()')
+    expect(snap(W2B).outbox.completion_ask, 'completion_ask nach complete_due').toBe(1)
     const run = step('W2B', '1 accept, start_job', W2B)
     expect(run.status).toBe('in_progress')
     expect(await fn('cancel-partner', pa.jwt2, { requestId: W2B, reason: 'unavailable', shownCallOutCents: 0 })).toEqual({ status: 409, body: { error: 'too_late_for_reason' } })

@@ -152,8 +152,41 @@ describe('my_job_changes(): Zustände des letzten Nachtrags', () => {
     expect(r['offen']).toBe(base(2, 5, BOOKED, 'submit', 'proposed|80000|true|false|1'))
     expect(r['abgelehnt']).toBe(base(2, 5, BOOKED, 'submit', 'declined|80000|true|true|1'))
     expect(r['neuer offener']).toBe(base(2, 5, BOOKED, 'submit', 'proposed|90000|true|false|1'))
-    expect(r['angenommen']).toBe(base(3, 6, 90000, 'change_order', 'accepted|90000|true|true|1'))
+    // bl1 (S9i7-1): der Beleg des angenommenen Nachtrags ist verbraucht und fehlt in receipt_ids
+    expect(r['angenommen']).toBe(base(3, 6, 90000, 'change_order', 'accepted|90000|true|true|0'))
     rowsOf(r['b sieht nichts'], 0)
+  })
+
+  it('bl1: receipt_ids ohne Belege angenommener Nachträge; abgelehnter und abgelaufener Nachtrag verbrauchen nichts; beendete Zuordnung liefert keine Zeile (S9i7-3)', () => {
+    const [R, R2, RE] = [newId(), newId(), newId()]
+    const first = (req: string) => `array(select id from public.job_photos where request_id = '${req}' and kind = 'receipt' and uploaded_partner_id = ${P('a')} order by id limit 1)`
+    const one = (req: string, total: number) => `public.propose_change('${U.pa}', 'aal2', '${req}', ${CUR(req)}, '{"service":"move","crew":2,"hours":6}'::jsonb, ${total}, ${first(req)})`
+    const setup = `${BASE('a', 'b')} ${accepted(R, 'a', U.pa)} ${accepted(R2, 'a', U.pa)} ${accepted(RE, 'a', U.pa)} ${receipt(R, 'a', 2)} ${receipt(R2, 'a')} ${receipt(RE, 'a')}
+      update public.assignments set ended_at = now() - interval '1 day', ended_reason = 'completed' where request_id = '${RE}'`
+    const cnt = (req: string) => `=(select cardinality(receipt_ids) from public.my_job_changes() where request_id = '${req}')`
+    const r = probes(setup, [
+      as('vor dem Nachtrag', U.pa, cnt(R)),
+      svc('N1 mit einem Beleg', one(R, 80000)),
+      as('offen verbraucht nichts', U.pa, cnt(R)),
+      svc('N1 angenommen', decide(R, true)),
+      as('angenommen verbraucht', U.pa, cnt(R)),
+      svc('M1', one(R2, 80000)),
+      svc('M1 abgelehnt', decide(R2, false)),
+      as('abgelehnt verbraucht nichts', U.pa, cnt(R2)),
+      svc('M2', one(R2, 90000)),
+      { name: 'M2 läuft ab', sql: noTrg(`update public.price_revisions set valid_until = now() - interval '1 minute' where id = ${OPEN(R2)}`) },
+      { name: 'Ablauf buchen', sql: 'perform public.expire_changes()' },
+      as('abgelaufen verbraucht nichts', U.pa, cnt(R2)),
+      as('beendet im Fenster', U.pa, `=(select count(*) from public.my_job_changes() where request_id = '${RE}')`),
+      as('aktive Aufträge', U.pa, `=(select count(*) from public.my_job_changes() where request_id in ('${R}', '${R2}'))`),
+    ])
+    expect(r['vor dem Nachtrag']).toBe('= 2')
+    expect(r['offen verbraucht nichts']).toBe('= 2')
+    expect(r['angenommen verbraucht']).toBe('= 1')
+    expect(r['abgelehnt verbraucht nichts']).toBe('= 1')
+    expect(r['abgelaufen verbraucht nichts']).toBe('= 1')
+    rowsOf(r['beendet im Fenster'], 0)
+    rowsOf(r['aktive Aufträge'], 2)
   })
 })
 

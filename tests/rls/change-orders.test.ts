@@ -146,6 +146,28 @@ describe('Vorschlag (propose_change)', () => {
     rows(r['Audit'], 1)
   })
 
+  it('bl1 (S9i7-1): ein neuer Beleg je Nachtrag; Belege eines angenommenen Nachtrags sind verbraucht, die eines abgelehnten nicht', () => {
+    const [R, R2] = [newId(), newId()]
+    const setup = `${BASE} ${accepted(R)} ${accepted(R2)} ${receipt(R, 'a', 2)} ${receipt(R2, 'a')}`
+    const steps: Step[] = [
+      svc('N1 mit einem Beleg', propose(R, { photos: PH(R, 'a', 1) })),
+      named('N1 angenommen', { as: 'service_role', sql: `perform ${decide(R)}` }),
+      svc('N2 nur mit dem verbrauchten Beleg', propose(R, { total: 90000, photos: PH(R, 'a', 1) })),
+      svc('N2 mit verbrauchtem und neuem Beleg', propose(R, { total: 90000, photos: PH(R, 'a', 2) })),
+      svc('M1 mit einem Beleg', propose(R2, { photos: PH(R2, 'a', 1) })),
+      named('M1 abgelehnt', { as: 'service_role', sql: `perform ${decide(R2, { accept: false, shown: 0 })}` }),
+      svc('M2 mit demselben Beleg', propose(R2, { total: 90000, photos: PH(R2, 'a', 1) })),
+    ]
+    const r = probes(setup, steps)
+    ok(r['N1 mit einem Beleg'])
+    ok(r['N1 angenommen'])
+    err(r['N2 nur mit dem verbrauchten Beleg'], 'receipt_required')
+    ok(r['N2 mit verbrauchtem und neuem Beleg'])
+    ok(r['M1 mit einem Beleg'])
+    ok(r['M1 abgelehnt'])
+    ok(r['M2 mit demselben Beleg'])
+  })
+
   it('Festangebot und Spanne: kein Nachtrag; Auftrag nicht angenommen; Firma suspended/payment_hold', () => {
     const [R, R2, R3] = [newId(), newId(), newId()]
     const setup = `${BASE} ${accepted(R)} ${accepted(R2)} ${accepted(R3)} ${receipt(R, 'a')} ${receipt(R2, 'a')} ${receipt(R3, 'a')}`
@@ -288,7 +310,8 @@ describe('Entscheidung des Kunden (decide_change)', () => {
 
   it('Ablehnung bucht nichts; danach neuer Vorschlag; Kette: zwei angenommene Nachträge ergeben splitFee(letzter Preis)', () => {
     const R = newId()
-    const setup = `${BASE} ${accepted(R)} ${receipt(R, 'a')} select ${propose(R)};`
+    // bl1 (S9i7-1): der dritte Vorschlag folgt auf einen angenommenen Nachtrag und braucht einen neuen Beleg: darum zwei Belege (der erste Vorschlag und der neue Vorschlag nutzen den ersten)
+    const setup = `${BASE} ${accepted(R)} ${receipt(R, 'a', 2)} select ${propose(R)};`
     const s90 = RT.split(90000)
     const steps: Step[] = [
       named('Ablehnung', { as: 'service_role', sql: `=${decide(R, { accept: false })}` }),
@@ -300,7 +323,7 @@ describe('Entscheidung des Kunden (decide_change)', () => {
       named('neues n', { sql: `=(select n from public.price_revisions where id = ${OPEN(R)})` }),
       named('Annahme zweiter Vorschlag', { as: 'service_role', sql: `=${decide(R)}` }),
       named('Zeiger auf n 3', { sql: `=(select n from public.price_revisions where id = (select current_revision from public.service_requests where id = '${R}'))` }),
-      svc('dritter Vorschlag auf Basis des Nachtrags', propose(R, { total: 90000 })),
+      svc('dritter Vorschlag auf Basis des Nachtrags', propose(R, { total: 90000, photos: PH(R, 'a', 2) })),
       named('Annahme dritter', { as: 'service_role', sql: `=${decide(R, { total: 90000, prior: 80000 })}` }),
       named('Zeiger auf n 4', { sql: `=(select n from public.price_revisions where id = (select current_revision from public.service_requests where id = '${R}'))` }),
       named('Kette: Summe Gebühr', { sql: `=(select sum(fee_cents) from public.commission_entries where request_id = '${R}')` }),
