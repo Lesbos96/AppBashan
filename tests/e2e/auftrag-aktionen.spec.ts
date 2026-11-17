@@ -136,6 +136,7 @@ test.describe('Angebote', { tag: '@breit' }, () => {
     await expect(page.getByText('Muster Transporte').first()).toBeVisible()
     await expect(page.getByText('Zweite Firma')).toBeVisible()
     await expect(page.getByText(/Gültig bis/)).toHaveCount(2)
+    expect(await page.getByText(/Gültig bis/).first().textContent(), 'rj1-3: „um“ und Uhrzeit mit geschütztem Leerzeichen').toMatch(new RegExp(`um${String.fromCharCode(160)}\\d{2}:\\d{2}`))
     await noFee(page)
     await page.getByRole('button', { name: 'Angebot von Muster Transporte annehmen' }).focus()
     await page.keyboard.press('Enter')

@@ -68,6 +68,7 @@ test('Preisgrundlage nicht geladen (changes leer): keine Zeile zum Festangebot, 
   await startCheck(page, 'unavailable')
   await expect(dialog(page)).toContainText('Der Kunde muss nichts zahlen')
   await expect(dialog(page)).not.toContainText('keinen Nachtrag')
+  await expect(dialog(page), 'ohne Preisgrundlage sagt die Maske keine Weitervermittlung zu').not.toContainText('Weitervermittlung')
 })
 
 test('Storno durch den Kunden ohne Pauschale: Kontakt gesperrt (Nr. 154)', async ({ page }) => {

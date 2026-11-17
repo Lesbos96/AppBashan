@@ -123,6 +123,9 @@ async function rpc(fn: 'complete_job' | 'report_not_done' | 'withdraw' | 'reject
 const pos = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/** Datum und Uhrzeit in Wiener Zeit, „um“ und die Uhrzeit bleiben in einer Zeile (geschütztes Leerzeichen, rj1-3). */
+export const viennaTime = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' }).replace(' um ', ` um${String.fromCharCode(160)}`)
+
 // Angebote -----------------------------------------------------------------------------------------------------------------
 export type Offer = { id: string; amountCents: number; validUntil: Date; company: string }
 

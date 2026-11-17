@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { ErrorState, Loading } from '../../components/States'
-import { type Offer, confirmOffer, loadOffers, rejectOffers } from '../../lib/jobs'
+import { type Offer, confirmOffer, loadOffers, rejectOffers, viennaTime } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import { useLoad } from '../../lib/prices'
 import { Bestaetigen } from './Bestaetigen'
-
-const until = (d: Date) => d.toLocaleString('de-AT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna' }).replace(' um ', ' um ')
 
 /** Festangebote der Partner: Firma, Betrag, Frist. Der Kunde bestätigt genau den gezeigten Betrag. */
 export function Angebote({ id, onDone }: { id: string; onDone: (notice?: string) => void }) {
@@ -28,7 +26,7 @@ export function Angebote({ id, onDone }: { id: string; onDone: (notice?: string)
             <span className="text-body break-words">{o.company}</span>
             <span className="whitespace-nowrap text-headline tabular-nums">{formatEuro(o.amountCents)}</span>
           </span>
-          <span className="text-subhead text-text-secondary">Gültig bis {until(o.validUntil)}</span>
+          <span className="text-subhead text-text-secondary">Gültig bis {viennaTime(o.validUntil)}</span>
           <Button variant="tinted" aria-label={`Angebot von ${o.company} annehmen`} onClick={() => setPick(o)}>
             Annehmen
           </Button>

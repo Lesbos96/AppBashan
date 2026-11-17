@@ -174,7 +174,7 @@ test.describe('Serverantworten beim Angebot', { tag: '@breit' }, () => {
 test('Angebot zurückziehen: Bestätigung, dann Status „Zurückgezogen“', { tag: '@breit' }, async ({ page }) => {
   const { jobs } = await openJobs(page, { listings: [range()], offers: [{ id: O1, base_revision_id: range().revision_id, amount_cents: 70050, status: 'sent', valid_until: '2026-12-03T10:00:00Z' }] })
   await expect(card(page)).toContainText('Angebot gesendet')
-  expect(await card(page).textContent(), 'rj1-3: „um“ und Uhrzeit mit geschütztem Leerzeichen').toMatch(/um \d{2}:\d{2}/)
+  expect(await card(page).textContent(), 'rj1-3: „um“ und Uhrzeit mit geschütztem Leerzeichen').toMatch(new RegExp(`um${String.fromCharCode(160)}\\d{2}:\\d{2}`))
   await expect(card(page).getByRole('button', { name: 'Angebot abgeben' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Zurückziehen' }).click()
   await dialog(page).getByRole('button', { name: 'Angebot zurückziehen' }).click()

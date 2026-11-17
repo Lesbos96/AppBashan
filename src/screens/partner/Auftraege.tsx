@@ -3,7 +3,7 @@ import { Button } from '../../components/Button'
 import { StatusChip } from '../../components/Controls'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
-import { JobError, jobErrorText, retryable } from '../../lib/jobs'
+import { JobError, jobErrorText, retryable, viennaTime } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import {
   dayLabel,
@@ -15,7 +15,6 @@ import {
   startJob,
   contactLocked,
   telHref,
-  viennaTime,
   windowLabel,
   type Contact,
   type Job,
@@ -262,7 +261,7 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       )}
       {!locked && <Kontakt j={j} />}
       {j.ended && <p className="m-0 text-footnote text-text-secondary">{locked ? 'Kontakt und Adresse sind gesperrt, weil keine Pauschale anfällt.' : 'Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.'}</p>}
-      {!j.ended && !j.underReview && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} fixedOffer={change?.source === 'partner_offer'} onDone={onDone} />}
+      {!j.ended && !j.underReview && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} fixedOffer={change ? change.source === 'partner_offer' : undefined} onDone={onDone} />}
 
       <Bestaetigen open={sheet === 'start'} onClose={() => setSheet(null)} title="Auftrag starten" label="Auftrag starten" action={() => startJob(j.requestId)} onDone={onDone}>
         <p className="m-0 text-subhead text-text-secondary">Der Auftrag läuft danach. Abschließen kannst du ihn, wenn alles erledigt ist.</p>

@@ -16,12 +16,12 @@ import {
   scopeLines,
   sendOffer,
   serviceLabel,
-  viennaTime,
   windowLabel,
   withdrawOffer,
   type Listing,
   type MyOffer,
 } from '../../lib/partnerJobs'
+import { viennaTime } from '../../lib/jobs'
 import { useLoad } from '../../lib/prices'
 import { Bestaetigen } from '../auftrag/Bestaetigen'
 
