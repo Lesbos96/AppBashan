@@ -1,6 +1,6 @@
 # MoveNow · Stand
 
-Stand 2026-11-16, nach Schritt sys2 (PUBLIC-Default und Härtung der Schutzskripte; davor sys1, fh1, s9i-7d, n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-17, nach Schritt ui1 (Oberflächen-Reste, R2: Hinweis in zwei Arten, Sheet-Fuß gemessen, Shot gesperrte Firma, staffelFee-Test, rls-Dauer gemessen); davor sys2 (PUBLIC-Default und Härtung der Schutzskripte; davor sys1, fh1, s9i-7d, n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung). Datenbank Dev: 71 Migrationen, lokal = remote bis `20261116160000` (0071), 17 Edge Functions deployt (alle `verify_jwt` aus). Nächste Migration 0072.
@@ -14,9 +14,10 @@ Stand 2026-11-16, nach Schritt sys2 (PUBLIC-Default und Härtung der Schutzskrip
 
 ## Nächster Schritt
 1. Nach Wert: Belege-Migration S9i7-12 (OFFEN n12-1, R3) · Mailversand (GOLIVE 35, 36) · Turnstile · Produktivprojekt (vorher OFFEN sys2-1) · Hosting · Rechtstexte · Abnahme.
-2. `decline_listing` mit Replay-Block (OFFEN n12-2); Texte zum Festangebot ohne Pauschale (GOLIVE 32); rls-Wanduhr kürzen (fh1-6).
+2. `decline_listing` und `reject_offers` mit Replay-Block und Oberfläche als ein R3-Schritt (OFFEN n12-2 + S9i6-5); Texte zum Festangebot ohne Pauschale nach Beks' Antwort auf BEKS Frage 1 (GOLIVE 32); Dev-Testdaten zurücksetzen und rls-Wanduhr neu messen (OFFEN fh1-6).
 
 ## Wartet auf Beks
+- BEKS Frage 1 (Texte zum Festangebot ohne Pauschale, mit Empfehlung).
 - Einmal `/advisor off` und in einer neuen Session prüfen, dass kein Tool `advisor` mehr in der Liste steht (`docs/BEKS_EINRICHTUNG.md`).
 - Rechtstexte, Mail-Anbieter, ORS-Vertrag, Hosting, Turnstile-Konto, Produktivprojekt (`docs/GOLIVE.md`).
 
