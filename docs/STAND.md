@@ -2,9 +2,10 @@
 
 Stand 2026-11-18, nach Schritt ui2 (R2: Ankunftsfenster = gewähltes Zeitfenster, Bildsicht-Reste); davor web1, bl1 (R3: Belege-Migration 0073, rj1-2, rs1-1, rs1-3); rs1, rj1, dev1, ui1, sys2 (davor sys1, fh1, s9i-7d, n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
-## Zwischenstand mail1 (Branch `mail1`, nicht gemergt) – weiter bei Punkt 4 (Push 0075, Deploy, Live-Test)
-- Fertig: Migration 0074 auf Dev (Freigabe 1), Brevo-Sender `_shared/jobs/brevo.ts`, `outbox-send` ohne nodemailer, Handler (en_route, report_new, `.test`-Schutz), `set_en_route`, UI Firma und Kunde, Tests (check grün, e2e gezielt grün, shots 390 gesehen), `scripts/setup-outbox.mjs` (im Lösch-Register).
-- Offen: Migration 0075 (`outbox_is_due`, Freigabe 2 liegt, `Urteil: frei`) ist NICHT gepusht: die Supabase-CLI meldet `DbConfigLoadError … failed to parse environment file: .env.local` (Beks prüfen). Danach: `npm run db:push`, `en-route.test.ts` grün (roter Lauf 011 liegt), `outbox-send` deployen, Lösch-Freigabe für `setup-outbox.mjs`, Probe-Mail, `shots:all`, Abnahme, Volläufe.
+## Zwischenstand mail1 (Branch `mail1`, nicht gemergt) – weiter bei der Probe-Mail
+- Fertig und auf Dev: Migrationen 0074 (`set_en_route`, `en_route_eta`, `my_jobs`, Betreiber als Outbox-Empfänger, Wiederholungs-Abstand) und 0075 (`outbox_is_due`, Verfall `expired`); `outbox-send` über Brevo (`_shared/jobs/brevo.ts`, Dev-Schalter `DEV_MAIL_GUARD`, Verfall von „Unterwegs“, Anbieter-Diagnose in der Antwort) deployt; UI Firma und Kunde; check, e2e gezielt, shots 390 grün.
+- Blockiert: Die Probe-Mail geht nicht raus, Brevo antwortet 401 `unauthorized` (BEKS Frage 1). Vault leer, Cron aus. Danach: `npm run loesch -- scripts/setup-outbox.mjs` erneut (Lösch-Freigabe 2 gilt für den Hash), Probe belegen.
+- Danach im selben Schritt: `shots:all` (1280 px), Abnahme R3 (`advisor-report`, Pflichtdateien), Volläufe `check`, `e2e`, `rls` nacheinander, `flow-live`, Doku fertigstellen (OFFEN mail1-1 eintragen ist erledigt), `bericht`, `fertig`. `en-route.test.ts` hat Rot (Lauf 019) und Grün (Lauf 020) mit der Endfassung.
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Alle Angebote ablehnen, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung). Datenbank Dev: 73 Migrationen, lokal = remote bis `20261117190247` (0073), 17 Edge Functions deployt (alle `verify_jwt` aus). Nächste Migration 0074.

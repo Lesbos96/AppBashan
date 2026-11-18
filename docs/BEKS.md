@@ -27,7 +27,7 @@ Die Frage 1 vom 2026-11-17 (bl1, Belegplätze) ist beantwortet (ENTSCHEIDUNGEN N
 Die Frage 1 vom 2026-11-17 (web1, Ankunftsfenster in der Bestätigung) ist beantwortet (ENTSCHEIDUNGEN Nr. 206).
 
 ## Offene Fragen
-Keine.
+1. **Brevo lehnt den API-Schlüssel ab (mail1, Stand 2026-11-18):** Die Probe-Mail an `MAIL_BETREIBER` scheitert mit HTTP 401 `unauthorized`. Bitte in Brevo prüfen: (a) `BREVO_API_KEY` ist ein API-Schlüssel (Schlüssel für die API v3, beginnt mit `xkeysib-`), kein SMTP-Schlüssel (`xsmtpsib-`); (b) unter Sicherheit → „Autorisierte IP-Adressen“ ist die Einschränkung aus oder die Adresse der Edge Functions freigegeben (die Adressen wechseln, GOLIVE 42); (c) das Konto ist aktiviert und `MAIL_FROM` ein bestätigter Absender (GOLIVE 43). Dann den Schlüssel neu setzen (`BREVO_API_KEY`, nur du) und `/schritt mail1 Fortsetzung` starten. Antwort im Chat: „erledigt“.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
