@@ -4,7 +4,7 @@ Stand 2026-11-18, nach Schritt ui2 (R2: Ankunftsfenster = gewähltes Zeitfenster
 
 ## Zwischenstand mail1 (Branch `mail1`, nicht gemergt) – weiter bei der Probe-Mail
 - Fertig und auf Dev: Migrationen 0074 (`set_en_route`, `en_route_eta`, `my_jobs`, Betreiber als Outbox-Empfänger, Wiederholungs-Abstand) und 0075 (`outbox_is_due`, Verfall `expired`); `outbox-send` über Brevo (`_shared/jobs/brevo.ts`, Dev-Schalter `DEV_MAIL_GUARD`, Verfall von „Unterwegs“, Anbieter-Diagnose in der Antwort) deployt; UI Firma und Kunde; check, e2e gezielt, shots 390 grün.
-- Blockiert: Die Probe-Mail geht nicht raus, Brevo antwortet 401 `unauthorized` (BEKS Frage 1). Vault leer, Cron aus. Danach: `npm run loesch -- scripts/setup-outbox.mjs` erneut (Lösch-Freigabe 2 gilt für den Hash), Probe belegen.
+- Blockiert: Die Probe-Mail geht nicht raus, Brevo antwortet 401 `unauthorized` (BEKS Frage 1); auch mit dem neu gesetzten Schlüssel (Lauf 2026-11-18 22:52 UTC, danach nicht wiederholt). Vault leer, Cron aus. Danach: `npm run loesch -- scripts/setup-outbox.mjs` erneut (Lösch-Freigabe 2 gilt für den Hash), Probe belegen.
 - Danach im selben Schritt: `shots:all` (1280 px), Abnahme R3 (`advisor-report`, Pflichtdateien), Volläufe `check`, `e2e`, `rls` nacheinander, `flow-live`, Doku fertigstellen (OFFEN mail1-1 eintragen ist erledigt), `bericht`, `fertig`. `en-route.test.ts` hat Rot (Lauf 019) und Grün (Lauf 020) mit der Endfassung.
 
 ## Wo wir stehen
