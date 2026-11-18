@@ -67,7 +67,7 @@ const OV = { districts: 'array[17, 18]::smallint[]' }
 const BASE = `${insertUsers(USERS)} ${grantAdmin(U.adm)} ${firm(U.pa, 'a', 'active', U.adm, OV)} ${firm(U.pb, 'b', 'active', U.adm, OV)} ${firm(U.pc, 'c', 'active', U.adm, OV)}`
 
 export const R = {
-  o1: newId(), o2: newId(), o3: newId(), o4: newId(), o5: newId(), o6: newId(), q0: newId(), j1: newId(), j2: newId(), j3: newId(), j4: newId(), j5: newId(),
+  o1: newId(), o2: newId(), o3: newId(), o4: newId(), o5: newId(), o6: newId(), q0: newId(), j1: newId(), j2: newId(), j3: newId(), j4: newId(), j5: newId(), j6: newId(),
   c1: newId(), c2: newId(), c3: newId(), f1: newId(), f2: newId(),
 }
 const DOC = newId()
@@ -146,7 +146,8 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
     ${req(R.q0, 'fixed')} ${dist(R.q0)}
     ${accepted(c, R.j1, ago('2 hours'))} ${accepted(c, R.j2, ago('2 hours'), 'b')} ${accepted(c, R.j3, ago('2 hours'), 'b')}
     ${accepted(c, R.j4)} ${receipt(R.j4)} ${accepted(c, R.j5)} ${receipt(R.j5)} select ${proposeSql(R.j5)}; ${keep('r_j5', `select id from public.price_revisions where request_id = '${R.j5}' and source = 'change_order' and status = 'proposed'`)}
-    ${accepted(c, R.c1, later('5 days'), 'b')} ${accepted(c, R.c2, later('5 days'))} ${accepted(c, R.c3, ago('2 hours'), 'b')}`,
+    ${accepted(c, R.c1, later('5 days'), 'b')} ${accepted(c, R.c2, later('5 days'))} ${accepted(c, R.c3, ago('2 hours'), 'b')}
+    ${accepted(c, R.j6, 'now()')}`,
   verwaltung: () => `${BASE}
     ${register(U.pn, 'n')}
     ${asUser(U.pa, 'aal2', `insert into public.partner_documents (id, kind) values ('${DOC}', 'other');`)}
@@ -169,7 +170,7 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
 export const NIE_AUSNAHME = [
   'partner_accept', 'partner_accept_basis', 'partner_accept_replay', 'cancel_replay', 'propose_change_replay', 'confirm_offer', 'confirm_offer_basis', 'decide_change', 'decide_change_basis', 'propose_change', 'propose_change_basis',
   'cancel_by_customer', 'cancel_by_customer_basis', 'cancel_by_partner', 'cancel_by_partner_basis', 'admin_correct', 'admin_correct_basis', 'send_offer',
-  'payout_preview', 'my_cancel_info', 'my_commissions', 'export_commissions', 'my_jobs', 'my_job_changes', 'my_request_offers', 'quote_save_request', 'start_job', 'complete_job',
+  'payout_preview', 'my_cancel_info', 'my_commissions', 'export_commissions', 'my_jobs', 'my_job_changes', 'my_request_offers', 'quote_save_request', 'start_job', 'set_en_route', 'complete_job',
   'job_contact', 'register_partner', 'admin_approve_partner', 'admin_set_partner_status', 'admin_grant_role',
 ] as const satisfies readonly Name[] // ein Tippfehler oder eine entfernte Funktion ist ein Typfehler (check)
 type NieAusnahme = (typeof NIE_AUSNAHME)[number]
@@ -239,7 +240,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   my_jobs: {
     ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,
     spalten: {
-      accepted_at: 'timestamptz', assignment_id: 'uuid', can_start: 'bool', district: 'int2', ended_at: 'timestamptz', ended_reason: 'enum', listing_id: 'uuid', payout_cents: 'int8',
+      accepted_at: 'timestamptz', assignment_id: 'uuid', can_en_route: 'bool', can_start: 'bool', district: 'int2', en_route_eta: 'timestamptz', ended_at: 'timestamptz', ended_reason: 'enum', listing_id: 'uuid', payout_cents: 'int8',
       preferred_date: 'date', request_id: 'uuid', service: 'enum', status: 'enum', termin_at: 'timestamptz', time_window: 'text', to_district: 'int2', total_cents: 'int8', under_review: 'bool',
     },
     aufruf: () => 'public.my_jobs()',
@@ -260,6 +261,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: () => `public.job_contact('${R.j1}')`,
   },
   start_job: { ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.start_job('${R.j1}')` },
+  set_en_route: { ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'wert', typ: 'timestamptz', aufruf: () => `public.set_en_route('${R.j6}', 30)` },
   report_not_done: { ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.report_not_done('${R.j2}')` },
   reported_jobs: {
     ...admin2, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,

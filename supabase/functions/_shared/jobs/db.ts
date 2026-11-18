@@ -104,7 +104,7 @@ export const contactDb =(db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
   },
 })
 
-export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'completionDays'> => ({
+export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'requestCustomerEmail' | 'completionDays'> => ({
   // geltender Wert von completion_days (Wiener Datum, höchste Version); fehlt er: setting_missing, nie ein Standardwert
   async completionDays() {
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })
@@ -118,7 +118,7 @@ export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerE
   },
   async claim(limit) {
     const rows = must(await db.rpc('outbox_claim', { p_limit: limit }))
-    return rows.map((r) => ({ id: Number(r.id), kind: r.kind, recipientKind: r.recipient_kind, recipientId: r.recipient_id, partnerEmail: r.partner_email }))
+    return rows.map((r) => ({ id: Number(r.id), kind: r.kind, recipientKind: r.recipient_kind, recipientId: r.recipient_id, requestId: r.request_id, partnerEmail: r.partner_email }))
   },
   async mark(id, ok, error) {
     const { error: e } = await db.rpc('outbox_mark', { p_id: id, p_ok: ok, p_error: error as never })
@@ -126,6 +126,13 @@ export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerE
   },
   async customerEmail(userId) {
     const { data } = await db.auth.admin.getUserById(userId)
+    return data.user?.email ?? null
+  },
+  async requestCustomerEmail(requestId) {
+    const rows = must(await db.from('service_requests').select('customer_id').eq('id', requestId).limit(1))
+    const customer = rows[0]?.customer_id
+    if (!customer) return null
+    const { data } = await db.auth.admin.getUserById(customer)
     return data.user?.email ?? null
   },
 })

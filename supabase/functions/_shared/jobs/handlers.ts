@@ -3,6 +3,7 @@
 import { type FeeTier, splitFee } from '../pricing/index.ts'
 import { TOKEN_FORM } from '../auth.ts'
 import { corsHeaders, json, readLimited } from '../http.ts'
+import { type Mail, MailError } from './brevo.ts'
 
 /** Fehler der Datenbank-Funktionen: `code` ist die Meldung der Exception (z. B. `already_taken`). */
 export class DbError extends Error {
@@ -220,17 +221,22 @@ export async function handleAdminContact(req: Request, deps: ContactDeps): Promi
 }
 
 // outbox-send ----------------------------------------------------------------------------------------------------------------
-export type OutboxRow = { id: number; kind: string; recipientKind: string; recipientId: string; partnerEmail: string | null }
-export type Mail = { to: string; subject: string; text: string }
+export type { Mail }
+/** `recipientId` ist nur beim Betreiber (`recipientKind` operator) leer; `requestId` nur dort bedeutsam (Prüfung des Kunden der Anfrage). */
+export type OutboxRow = { id: number; kind: string; recipientKind: string; recipientId: string | null; requestId: string | null; partnerEmail: string | null }
 export type OutboxDeps = {
   secret: string
   claim(limit: number): Promise<OutboxRow[]>
   mark(id: number, ok: boolean, error: string | null): Promise<void>
   customerEmail(userId: string): Promise<string | null>
+  /** Adresse des Kunden der Anfrage (für die Betreiber-Mail: Meldungen zu Testkonten werden nicht versendet). */
+  requestCustomerEmail(requestId: string): Promise<string | null>
   /** `completion_days` aus den Einstellungen (S9g-7); nur für completion_ask abgefragt. */
   completionDays(): Promise<number>
-  /** `null`: kein Versand eingerichtet (SMTP, MAIL_FROM); der Handler antwortet nach der Prüfung des Aufrufers mit 503 und fasst die Outbox nicht an. */
+  /** `null`: kein Versand eingerichtet (BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER); der Handler antwortet nach der Prüfung des Aufrufers mit 503 und fasst die Outbox nicht an. */
   send: ((mail: Mail) => Promise<void>) | null
+  /** Adresse des Betreibers (MAIL_BETREIBER). */
+  operatorEmail: string
   appUrl: string
   log: Log
 }
@@ -256,7 +262,14 @@ const TEXTS: Record<string, { subject: string; text: (url: string, days: number)
   request_reissued: { subject: 'Wir suchen einen neuen Partner für deinen Auftrag', text: (u) => `Dein Partner hat den Auftrag abgesagt. Wir haben deine Anfrage zum gleichen Preis neu an passende Partner gesendet. Du kannst sie unter Aufträge kostenlos zurückziehen oder nach einer neuen Annahme kostenlos stornieren: ${u}` },
   completion_auto: { subject: 'Dein Auftrag gilt als durchgeführt', text: (u) => `Zu diesem Auftrag ist keine Meldung eingegangen, deshalb gilt er als durchgeführt. Alle Angaben findest du unter Aufträge: ${u}` },
   photo_failed: { subject: 'Ein Foto deiner Anfrage ließ sich nicht verarbeiten', text: (u) => `Mindestens ein Foto konnte nicht verarbeitet werden. Ziehe die Anfrage zurück und sende sie mit neuen Fotos erneut: ${u}` },
+  en_route: { subject: 'Dein Partner ist unterwegs', text: (u) => `Dein Partner hat sich auf den Weg gemacht. Die voraussichtliche Ankunftszeit siehst du unter Aufträge: ${u}` },
+  // an den Betreiber (Nr. 175): kein Auftrag, kein Name, kein Link; die Prüfung läuft über das Admin-Skript
+  report_new: { subject: 'Neue Meldung: Auftrag nicht stattgefunden', text: () => 'Ein Kunde hat gemeldet, dass ein Auftrag nicht stattgefunden hat. Bitte binnen 3 Werktagen in reported_jobs prüfen.' },
 }
+
+// Endungen, die es nie als echte Adresse gibt (RFC 2606, 6761): Test- und Entwicklungskonten. An sie geht keine Mail, die Zeile gilt als erledigt.
+const RESERVED = /\.(test|invalid|example|localhost)$/i
+export const isReservedAddress = (email: string): boolean => RESERVED.test(email.split('@').pop() ?? '')
 
 // Zeitkonstanter Vergleich über SHA-256 beider Werte.
 export async function sameSecret(a: string, b: string): Promise<boolean> {
@@ -267,12 +280,12 @@ export async function sameSecret(a: string, b: string): Promise<boolean> {
   return d === 0
 }
 
-// Fehler werden auf feste Codes abgebildet: SMTP-Meldungen enthalten Empfängeradressen und gehören weder ins Log noch in die Outbox.
+// Fehler werden auf feste Codes abgebildet: Meldungen des Anbieters können Empfängeradressen enthalten und gehören weder ins Log noch in die Outbox.
+// Die Namen `smtp_*` stehen im CHECK der Outbox (0036) und gelten unverändert für Brevo: rejected = der Anbieter lehnt ab, temp = später erneut.
 function safeCode(e: unknown): string {
+  if (e instanceof MailError) return e.permanent ? 'smtp_rejected' : 'smtp_temp'
   const msg = e instanceof Error ? e.message : ''
   if (msg === 'unknown_kind' || msg === 'no_recipient' || msg === 'setting_missing') return msg
-  const rc = (e as { responseCode?: unknown } | null)?.responseCode
-  if (typeof rc === 'number') return rc >= 500 ? 'smtp_rejected' : 'smtp_temp'
   return 'smtp_error'
 }
 
@@ -285,6 +298,7 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   if (!send || !deps.appUrl) return json(503, { error: 'mail_not_configured' }) // erst nach der Prüfung des Aufrufers (u5-1); die Zeilen bleiben pending
   let sent = 0
   let failed = 0
+  let skipped = 0
   // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
   // Gegenbuchung (die Zeile bleibt `sending`, nach der Lease holt sie der nächste Lauf erneut). Ein Fehler bei einer Zeile stoppt den Lauf nicht.
   const mark = async (id: number, ok: boolean, error: string | null) => {
@@ -297,8 +311,19 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   for (const row of await deps.claim(25)) {
     try {
       const t = TEXTS[row.kind]
-      const to = row.recipientKind === 'partner' ? row.partnerEmail : await deps.customerEmail(row.recipientId)
+      const to =
+        row.recipientKind === 'partner' ? row.partnerEmail
+        : row.recipientKind === 'operator' ? deps.operatorEmail
+        : row.recipientId ? await deps.customerEmail(row.recipientId) : null
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
+      // Test- und Entwicklungskonten (Endung .test …) bekommen nie eine Mail; die Meldung an den Betreiber gilt nur für echte Kunden
+      const customer = row.recipientKind === 'operator' && row.requestId ? await deps.requestCustomerEmail(row.requestId) : to
+      if (!customer || isReservedAddress(to) || isReservedAddress(customer)) {
+        skipped++
+        deps.log({ event: 'outbox_skipped', id: row.id, kind: row.kind })
+        await mark(row.id, true, null)
+        continue
+      }
       await send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
     } catch (e) {
       failed++
@@ -310,5 +335,5 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
     sent++
     await mark(row.id, true, null)
   }
-  return json(200, { sent, failed })
+  return json(200, { sent, failed, skipped })
 }

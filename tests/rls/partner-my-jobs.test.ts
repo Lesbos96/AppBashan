@@ -69,7 +69,7 @@ const err = (v: string | undefined, part: string) => expect(v?.includes(part), `
 const rowsOf = (v: string | undefined, n: number) => expect(v, String(v)).toBe(`= ${n}`)
 
 const COLUMNS =
-  'TABLE(assignment_id uuid, request_id uuid, listing_id uuid, status request_status, termin_at timestamp with time zone, accepted_at timestamp with time zone, ended_at timestamp with time zone, ended_reason assignment_end, district smallint, to_district smallint, service service_type, preferred_date date, time_window text, total_cents bigint, payout_cents bigint, can_start boolean, under_review boolean)'
+  'TABLE(assignment_id uuid, request_id uuid, listing_id uuid, status request_status, termin_at timestamp with time zone, accepted_at timestamp with time zone, ended_at timestamp with time zone, ended_reason assignment_end, district smallint, to_district smallint, service service_type, preferred_date date, time_window text, total_cents bigint, payout_cents bigint, can_start boolean, under_review boolean, en_route_eta timestamp with time zone, can_en_route boolean)'
 const lineOf = (where: string) =>
   `=(select string_agg(status::text || ':' || can_start::text || ':' || coalesce(total_cents::text, '-') || ':' || coalesce(payout_cents::text, '-') || ':' || (ended_at is not null)::text, ',' order by termin_at, request_id) from public.my_jobs() where ${where})`
 

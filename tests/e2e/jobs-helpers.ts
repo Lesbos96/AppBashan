@@ -52,6 +52,8 @@ export type JobRow = {
   payout_cents: number | null
   can_start: boolean
   under_review: boolean
+  en_route_eta: string | null
+  can_en_route: boolean
 }
 export const A1 = '6b5e7f80-1c2d-4e3f-a01b-0c9d8e7f6a5b'
 export const A2 = '7c6f8091-2d3e-4f40-b12c-1d0e9f8a7b6c'
@@ -76,6 +78,8 @@ export const job = (over: Partial<JobRow> = {}): JobRow => ({
   payout_cents: 61065,
   can_start: false,
   under_review: false,
+  en_route_eta: null,
+  can_en_route: false,
   ...over,
 })
 /** Antwort von `job_contact`: erfundene Platzhalterdaten */
@@ -176,6 +180,9 @@ export type JobsState = {
   completes: string[]
   contacts: string[]
   startAnswers: Ans[]
+  /** „Unterwegs“ (mail1): Aufträge und Minuten je Aufruf von `set_en_route`; der Mock rechnet die Ankunftszeit ab `termin_at`, wie der Server ab `now()` */
+  enRoutes: { request: string; minutes: number }[]
+  enRouteAnswers: Ans[]
   completeAnswers: Ans[]
   contactAnswers: Ans[]
   /** Preisgrundlagen und Nachträge (`my_job_changes`); `change-propose` und `withdraw_change` ändern sie wie der Server */
@@ -215,7 +222,7 @@ const pre = (r: Route) => (r.request().method() === 'OPTIONS' ? r.fulfill({ stat
 
 export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promise<JobsState> {
   // Tiefe Kopie: die Antwort-Warteschlangen dürfen nicht über Tests hinweg geteilt werden (die Shot-Tabelle ist ein Modulwert, den jeder Lauf eines Workers wiederverwendet)
-  const s: JobsState = { listings: [], offers: [], feeExtra: 0, payoutFails: false, accepts: [], sends: [], withdraws: [], declines: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], declineAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
+  const s: JobsState = { listings: [], offers: [], feeExtra: 0, payoutFails: false, accepts: [], sends: [], withdraws: [], declines: [], photoCalls: [], urls: [], acceptAnswers: [], sendAnswers: [], withdrawAnswers: [], declineAnswers: [], listStatus: [], listingReads: 0, offerReads: 0, payoutReads: 0, myJobs: [], jobReads: 0, jobStatus: [], starts: [], completes: [], contacts: [], startAnswers: [], enRoutes: [], enRouteAnswers: [], completeAnswers: [], contactAnswers: [], changes: [], changeReads: 0, changeStatus: [], serverTotal: 81000, proposals: [], previewAnswers: [], proposeAnswers: [], receipts: [], receiptAnswers: [], withdrawnChanges: [], withdrawChangeAnswers: [], callOut: 6900, cancels: [], cancelPreviewAnswers: [], cancelAnswers: [], commissions: [], journalCalls: [], journalAnswers: [], ...structuredClone(init) }
   // Journal (s9i-7c1): wie PostgREST: Zeilen des Monats, Ausschnitt nach `Range`, Gesamtzahl im Kopf `content-range` (sichtbar für die App über expose-headers)
   await page.route('**/rest/v1/rpc/my_commissions**', (r) => {
     const o = pre(r)
@@ -358,6 +365,17 @@ export async function mockJobs(page: Page, init: Partial<JobsState> = {}): Promi
   await act('start_job', s.starts, s.startAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'in_progress' as const, can_start: false } : j))), undefined)
   await act('complete_job', s.completes, s.completeAnswers, (id) => (s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, status: 'completed' as const, ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' as const } : j))), undefined)
   await act('job_contact', s.contacts, s.contactAnswers, () => undefined, [CONTACT])
+  // Unterwegs: einmal je Auftrag; eine Wiederholung liefert dieselbe Zeit (wie der Server)
+  await mockRpc(page, 'set_en_route', (args) => {
+    const { p_request: id, p_minutes: minutes } = args as { p_request: string; p_minutes: number }
+    s.enRoutes.push({ request: id, minutes })
+    const a = s.enRouteAnswers.shift()
+    if (a) return new RpcFail(a.status, a.json)
+    const row = s.myJobs.find((j) => j.request_id === id)
+    const eta = row?.en_route_eta ?? new Date(Date.parse(row?.termin_at ?? '') + minutes * 60_000).toISOString()
+    s.myJobs = s.myJobs.map((j) => (j.request_id === id ? { ...j, en_route_eta: eta, can_en_route: false } : j))
+    return eta
+  })
   await mockRpc(page, 'send_offer', (body) => {
     s.sends.push(body)
     const a = s.sendAnswers.shift()

@@ -1,10 +1,10 @@
-// Edge Function `outbox-send`: versendet wartende Mails der Outbox (S9c). Aufruf nur mit dem Header x-outbox-secret (pg_net aus
-// public.outbox_dispatch). Secrets: SECRET_KEY, OUTBOX_SECRET, SMTP_URL (smtps://nutzer:passwort@host:465), MAIL_FROM, APP_URL.
-// Ohne OUTBOX_SECRET oder ohne gültigen Header antwortet jeder Aufruf mit 401. Ohne SMTP_URL, MAIL_FROM oder APP_URL antwortet ein berechtigter Aufruf mit
-// 503 und die Zeilen bleiben pending (der Anbieter ist noch nicht gewählt).
+// Edge Function `outbox-send`: versendet wartende Mails der Outbox über die Brevo-API (S9c, mail1). Aufruf nur mit dem Header x-outbox-secret
+// (pg_net aus public.outbox_dispatch). Secrets: SECRET_KEY, OUTBOX_SECRET, BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER, APP_URL.
+// Ohne OUTBOX_SECRET oder ohne gültigen Header antwortet jeder Aufruf mit 401. Fehlt BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER oder APP_URL,
+// antwortet ein berechtigter Aufruf mit 503 und die Zeilen bleiben pending.
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import nodemailer from 'npm:nodemailer@6.9.16'
 import type { Database } from '../_shared/database.types.ts'
+import { brevoSender } from '../_shared/jobs/brevo.ts'
 import { outboxDb } from '../_shared/jobs/db.ts'
 import { handleOutbox } from '../_shared/jobs/handlers.ts'
 
@@ -15,9 +15,9 @@ const env = (name: string): string => {
 }
 
 const db = createClient<Database>(env('SUPABASE_URL'), env('SECRET_KEY'), { auth: { persistSession: false } })
-const smtpUrl = Deno.env.get('SMTP_URL')
-const transport = smtpUrl ? nodemailer.createTransport(smtpUrl) : null
+const apiKey = Deno.env.get('BREVO_API_KEY') ?? ''
 const from = Deno.env.get('MAIL_FROM') ?? ''
+const operatorEmail = Deno.env.get('MAIL_BETREIBER') ?? ''
 const appUrl = Deno.env.get('APP_URL') ?? ''
 
 // Der Handler prüft den Aufrufer zuerst (ohne OUTBOX_SECRET: jeder Aufruf 401), dann ob der Versand eingerichtet ist (`send` null: 503).
@@ -26,7 +26,8 @@ Deno.serve((req) =>
     ...outboxDb(db),
     secret: Deno.env.get('OUTBOX_SECRET') ?? '',
     appUrl,
-    send: transport && from && appUrl ? async (m) => void (await transport.sendMail({ from, to: m.to, subject: m.subject, text: m.text })) : null,
+    operatorEmail,
+    send: apiKey && from && operatorEmail && appUrl ? brevoSender({ apiKey, from }) : null,
     log: (e) => console.log(JSON.stringify(e)),
   }),
 )

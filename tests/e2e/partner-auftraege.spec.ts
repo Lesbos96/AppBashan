@@ -90,6 +90,42 @@ test('Start vor dem Termin: Knopf gesperrt mit Hinweis auf den Beginn in Wiener 
   expect(jobs.starts).toEqual([])
 })
 
+test('Unterwegs: Knopf nur wenn der Server es erlaubt; Auswahl 15/30/45/60, Bestätigung sendet Auftrag und Minuten, die Ankunftszeit des Servers erscheint, der Knopf verschwindet', { tag: '@breit' }, async ({ page }) => {
+  const errors = collectErrors(page)
+  const { jobs } = await open(page, { myJobs: [job({ can_en_route: true })] })
+  await expect(angenommen(page)).toBeVisible()
+  await card(page).getByRole('button', { name: 'Unterwegs' }).click()
+  const d = dialog(page)
+  await expect(d).toContainText('Der Kunde bekommt eine Mail und sieht deine Ankunftszeit.')
+  const group = d.getByRole('radiogroup', { name: 'Ankunft in' })
+  await expect(group.getByRole('radio')).toHaveCount(4)
+  await expect(group.getByRole('radio', { name: /30/ })).toBeChecked()
+  await group.getByText(/^45/).click()
+  expect(jobs.enRoutes, 'erst die Bestätigung sendet').toEqual([])
+  await d.getByRole('button', { name: 'Kunde benachrichtigen' }).click()
+  expect(jobs.enRoutes).toEqual([{ request: RQ1, minutes: 45 }])
+  // Termin 08:00 Wiener Zeit + 45 Minuten
+  await expect(card(page)).toContainText(/Du bist unterwegs, Ankunft ca\.\s8:45\sUhr/)
+  await expect(card(page).getByRole('button', { name: 'Unterwegs' })).toHaveCount(0)
+  await noFee(page)
+  expect(real(errors)).toEqual([])
+})
+
+test('Unterwegs: ohne Erlaubnis des Servers (anderer Tag, schon gemeldet) kein Knopf; Fehler „nur am Tag des Termins“ hat einen eigenen Text', { tag: '@breit' }, async ({ page }) => {
+  const { jobs } = await open(page, { myJobs: [job({ can_en_route: false })] })
+  await expect(angenommen(page)).toBeVisible()
+  await expect(card(page).getByRole('button', { name: 'Unterwegs' })).toHaveCount(0)
+  expect(jobs.enRoutes).toEqual([])
+})
+
+test('Unterwegs: Fehlerantwort zeigt einen verständlichen Text, nie den Servercode', { tag: '@breit' }, async ({ page }) => {
+  await open(page, { myJobs: [job({ can_en_route: true })], enRouteAnswers: [pgErr('wrong_day')] })
+  await card(page).getByRole('button', { name: 'Unterwegs' }).click()
+  await dialog(page).getByRole('button', { name: 'Kunde benachrichtigen' }).click()
+  await expect(dialog(page)).toContainText('Unterwegs kannst du nur am Tag des Termins melden.')
+  await expect(page.locator('body')).not.toContainText(/wrong_day|P0001/)
+})
+
 for (const status of ['accepted', 'in_progress'] as const) {
   test(`Kunde hat „nicht stattgefunden“ gemeldet (${status}): nur der Hinweis, kein Start, Abschluss, Absage, Nachtrag (S9i6b-3)`, { tag: '@breit' }, async ({ page }) => {
     await open(page, { myJobs: [job({ status, can_start: false, under_review: true })] })

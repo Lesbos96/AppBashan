@@ -1,6 +1,7 @@
 // Handler von accept, admin-contact und outbox-send (S9c) mit Fakes. Die Gebühr rechnet allein splitFee; Kundenantworten kommen hier nicht vor.
 import { describe, expect, it } from 'vitest'
 import { splitFee } from '@pricing'
+import { MailError } from '../../supabase/functions/_shared/jobs/brevo.ts'
 import { type AcceptDeps, DbError, handleAccept, handleAdminContact, handleOutbox, type OutboxRow } from '../../supabase/functions/_shared/jobs/handlers.ts'
 
 const L = '11111111-1111-4111-8111-111111111111'
@@ -136,9 +137,9 @@ describe('admin-contact', () => {
 
 describe('outbox-send', () => {
   const rows: OutboxRow[] = [
-    { id: 1, kind: 'request_accepted', recipientKind: 'customer', recipientId: 'c1', partnerEmail: null },
-    { id: 2, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p1', partnerEmail: 'firma@movenow.test' },
-    { id: 3, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p2', partnerEmail: null },
+    { id: 1, kind: 'request_accepted', recipientKind: 'customer', recipientId: 'c1', requestId: null, partnerEmail: null },
+    { id: 2, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p1', requestId: null, partnerEmail: 'firma@example.com' },
+    { id: 3, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p2', requestId: null, partnerEmail: null },
   ]
   const mk = () => {
     const marks: [number, boolean][] = []
@@ -150,9 +151,11 @@ describe('outbox-send', () => {
         secret: 'geheim',
         claim: async () => rows,
         mark: async (id: number, ok: boolean) => { marks.push([id, ok]) },
-        customerEmail: async () => 'kunde@movenow.test',
+        customerEmail: async () => 'kunde@example.com',
+        requestCustomerEmail: async () => 'kunde@example.com',
         completionDays: async () => 7,
         send: async (m: { to: string; subject: string; text: string }) => { sent.push(m) },
+        operatorEmail: 'betreiber@example.com',
         appUrl: 'https://app.movenow.test',
         log: () => {},
       },
@@ -163,24 +166,24 @@ describe('outbox-send', () => {
     expect((await handleOutbox(new Request('https://x.test', { method: 'POST' }), d)).status).toBe(401)
     expect((await handleOutbox(new Request('https://x.test', { method: 'POST', headers: { 'x-outbox-secret': 'falsch!' } }), d)).status).toBe(401)
     const res = await handleOutbox(new Request('https://x.test', { method: 'POST', headers: { 'x-outbox-secret': 'geheim' } }), d)
-    expect(await res.json()).toEqual({ sent: 2, failed: 1 })
+    expect(await res.json()).toEqual({ sent: 2, failed: 1, skipped: 0 })
     expect(marks).toEqual([[1, true], [2, true], [3, false]])
-    expect(sent.map((m) => m.to)).toEqual(['kunde@movenow.test', 'firma@movenow.test'])
+    expect(sent.map((m) => m.to)).toEqual(['kunde@example.com', 'firma@example.com'])
     expect(sent.every((m) => !/gebühr|provision|15 ?%/i.test(m.subject + m.text))).toBe(true)
   })
 
-  it('SMTP-Fehler: nur feste Codes in Log und Outbox, nie die Adresse aus der Fehlermeldung', async () => {
+  it('Anbieterfehler: nur feste Codes in Log und Outbox, nie die Adresse aus der Fehlermeldung', async () => {
     const { d, marks } = mk()
     const logs: Record<string, unknown>[] = []
     const errs: string[] = []
-    const reject = Object.assign(new Error('550 <kunde@movenow.test> Recipient address rejected'), { responseCode: 550 })
+    const reject = new MailError(true)
     const res = await handleOutbox(new Request('https://x.test', { method: 'POST', headers: { 'x-outbox-secret': 'geheim' } }), {
       ...d,
       send: async () => { throw reject },
       log: (e) => logs.push(e),
       mark: async (id, ok, error) => { marks.push([id, ok]); if (error) errs.push(error) },
     })
-    expect(await res.json()).toEqual({ sent: 0, failed: 3 })
+    expect(await res.json()).toEqual({ sent: 0, failed: 3, skipped: 0 })
     expect(errs).toEqual(['smtp_rejected', 'smtp_rejected', 'no_recipient'])
     expect(JSON.stringify(logs) + errs.join()).not.toContain('@')
   })

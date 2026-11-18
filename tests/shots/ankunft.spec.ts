@@ -32,9 +32,10 @@ const take = async (page: import('@playwright/test').Page, testInfo: TestInfo, n
   await page.screenshot({ path: `tmp/shots/${testInfo.project.name}/kunde-ankunft-${name}.png`, fullPage: true })
 }
 
-for (const [name, time_window, text] of [['detail', 'morning', TEXT], ['flexibel', 'flexible', /Die Firma nennt dir die genaue Uhrzeit\./]] as const) {
+// „Unterwegs“ (mail1): die Zeit des Servers, Dezember = Wiener Zeit UTC+1, also 07:40 Uhr UTC = 8:40 Uhr
+for (const [name, time_window, text, en_route_eta] of [['detail', 'morning', TEXT, null], ['flexibel', 'flexible', /Die Firma nennt dir die genaue Uhrzeit\./, null], ['unterwegs', 'morning', /Die Firma ist unterwegs, Ankunft ca\.\s8:40\sUhr/, '2099-12-15T07:40:00Z']] as const) {
 test(`Kunde Ankunft Auftragsdetail ${name}`, async ({ page }, testInfo) => {
-  const data = { ...row, time_window }
+  const data = { ...row, time_window, en_route_eta }
   await page.route('**/rest/v1/service_requests**', (r) => reply(r, (r.request().headers()['accept'] ?? '').includes('vnd.pgrst.object') ? data : [data]))
   await mockRpc(page, 'my_report_info', [{ can_report: false, report_until: null }])
   await mockRpc(page, 'my_request_offers', [])

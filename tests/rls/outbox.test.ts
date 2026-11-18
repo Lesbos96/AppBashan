@@ -51,6 +51,33 @@ describe('outbox_claim und outbox_mark', () => {
     expect(r['mark ok setzt sent_at']).toBe('= true')
   })
 
+  it('mail1: eine fehlgeschlagene Zeile wird erst nach 15 Min. × 4^(Versuche − 1) erneut geholt; ein Fehlversuch behält claimed_at, Erfolg und Ende löschen es', () => {
+    const claimed = (key: string) => `=(select claimed_at is not null from public.outbox where dedupe_key = 'o36:${key}')`
+    const steps: Step[] = [
+      svc('claim', `=(select count(*) from public.outbox_claim(50))`),
+      ...['g', 'h', 'i', 'j', 'k', 'l'].map((k): Step => ({ name: k, sql: st(k) })),
+      { name: 'neu 1 Min.', sql: `=${one('n', "status || ':' || attempts")}` },
+      svc('mark Fehlversuch', `perform public.outbox_mark(${id('m')}, false, 'smtp_temp')`),
+      { name: 'm behält claimed_at', sql: claimed('m') },
+      svc('mark ok', `perform public.outbox_mark(${id('q')}, true, null)`),
+      { name: 'q ohne claimed_at', sql: claimed('q') },
+      svc('mark fünfter Fehlversuch', `perform public.outbox_mark(${id('r')}, false, 'smtp_temp')`),
+      { name: 'r failed', sql: st('r') },
+      { name: 'r ohne claimed_at', sql: claimed('r') },
+    ]
+    const setup = `${ISOLATE} ${row('g', 'pending', 1, '14 minutes')} ${row('h', 'pending', 1, '16 minutes')} ${row('i', 'pending', 2, '59 minutes')} ${row('j', 'pending', 2, '61 minutes')}
+      ${row('k', 'pending', 4, '15 hours')} ${row('l', 'pending', 4, '17 hours')} ${row('n')} ${row('m', 'sending', 1, '1 minute')} ${row('q', 'sending', 1, '1 minute')} ${row('r', 'sending', 5, '1 minute')}`
+    const r = probes(setup, steps)
+    rows(r['claim'], 4) // h, j, l und die neue Zeile n; g, i, k warten noch
+    expect([r['g'], r['i'], r['k']]).toEqual(['= pending:1:', '= pending:2:', '= pending:4:'])
+    expect([r['h'], r['j'], r['l']]).toEqual(['= sending:2:', '= sending:3:', '= sending:5:'])
+    expect(r['neu 1 Min.']).toBe('= sending:1')
+    expect(r['m behält claimed_at']).toBe('= true')
+    expect(r['q ohne claimed_at']).toBe('= false')
+    expect(r['r failed']).toBe('= failed:5:smtp_temp')
+    expect(r['r ohne claimed_at']).toBe('= false')
+  })
+
   it('K1: eine Zeile mit fünf Versuchen und abgelaufener Lease wird vom Cron auf failed gesetzt, auch wenn sonst nichts zu senden ist', () => {
     const r = probes(`${ISOLATE} ${row('e', 'sending', 5, '11 minutes')} ${row('f', 'sending', 5, '5 minutes')}`, [
       { name: 'dispatch', sql: `perform public.outbox_dispatch()` },

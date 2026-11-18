@@ -34,6 +34,8 @@ export type JobErrorKind =
   | 'late_reason'
   | 'no_call_out'
   | 'receipt_missing'
+  // Partner, Unterwegs (mail1, src/lib/partnerJobs.ts)
+  | 'wrong_day'
   // Partner, Journal (s9i-7c1, src/lib/partnerJournal.ts)
   | 'period'
 
@@ -71,6 +73,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Vor Ort anders als gebucht“ möglich.',
   no_call_out: 'Für diese Absage gibt es keine Pauschale mehr.',
   receipt_missing: 'Für die Pauschale brauchst du mindestens ein gültiges Belegfoto zu diesem Auftrag.',
+  wrong_day: 'Unterwegs kannst du nur am Tag des Termins melden.',
   period: 'Wähle einen Monat im Format JJJJ-MM.',
 }
 

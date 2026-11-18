@@ -282,16 +282,18 @@ describe('outbox-send photo_failed', () => {
     const sent: { to: string; subject: string; text: string }[] = []
     const res = await handleOutbox(post('https://x.test/outbox', '{}', { 'x-outbox-secret': 'o' }), {
       secret: 'o',
-      claim: async () => [{ id: 1, kind: 'photo_failed', recipientKind: 'customer', recipientId: 'u', partnerEmail: null }],
+      claim: async () => [{ id: 1, kind: 'photo_failed', recipientKind: 'customer', recipientId: 'u', requestId: null, partnerEmail: null }],
       mark: async () => {},
-      customerEmail: async () => 'kunde@example.test',
+      customerEmail: async () => 'kunde@example.com',
+      requestCustomerEmail: async () => 'kunde@example.com',
       completionDays: async () => 7,
       send: async (m) => void sent.push(m),
+      operatorEmail: 'betreiber@example.com',
       appUrl: 'https://app.test',
       log: () => {},
     })
-    expect(await res.json()).toEqual({ sent: 1, failed: 0 })
-    expect(sent[0]?.to).toBe('kunde@example.test')
+    expect(await res.json()).toEqual({ sent: 1, failed: 0, skipped: 0 })
+    expect(sent[0]?.to).toBe('kunde@example.com')
     expect(sent[0]?.text).toContain('https://app.test')
     expect(`${sent[0]?.subject} ${sent[0]?.text}`).not.toMatch(/15|Gebühr|Provision/)
   })

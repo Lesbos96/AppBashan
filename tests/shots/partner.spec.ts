@@ -202,6 +202,19 @@ const shots: Shot[] = [
     },
     wait: heading('Angenommen'),
   },
+  // „Unterwegs“ (mail1): Knopf neben „Auftrag starten“, Sheet mit der Auswahl, danach die Ankunftszeit des Servers
+  { name: 'auftraege-unterwegs-knopf', open: ACTIVE, jobs: { myJobs: [job({ can_en_route: true })] }, wait: heading('Angenommen') },
+  {
+    name: 'auftraege-unterwegs-sheet',
+    open: ACTIVE,
+    jobs: { myJobs: [job({ can_en_route: true })] },
+    steps: async (page) => {
+      await page.getByRole('button', { name: 'Unterwegs' }).click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+    },
+    wait: heading('Angenommen'),
+  },
+  { name: 'auftraege-unterwegs-gemeldet', open: ACTIVE, jobs: { myJobs: [job({ en_route_eta: '2026-12-02T07:40:00+00:00' })] }, wait: heading('Angenommen') },
   {
     name: 'auftraege-abschluss-sheet',
     open: ACTIVE,

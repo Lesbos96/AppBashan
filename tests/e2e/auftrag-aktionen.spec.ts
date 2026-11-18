@@ -32,6 +32,10 @@ type State = {
   change: unknown | null
   terms?: unknown
   waived?: boolean
+  /** Zeitfenster der Anfrage (Standard „morning“) */
+  timeWindow?: string
+  /** „Unterwegs“ der Firma: Ankunftszeit laut Server */
+  enRoute?: string | null
   calls: { name: string; body: unknown }[]
   answers: Record<string, Answer[]>
   /** Statuswechsel nach einer erfolgreichen Antwort */
@@ -56,7 +60,8 @@ async function mock(page: Page, s: State) {
     status: s.status,
     preferred_date: '2026-12-15',
     termin_at: s.termin,
-    time_window: 'morning',
+    time_window: s.timeWindow ?? 'morning',
+    en_route_eta: s.enRoute ?? null,
     not_done_reported_at: s.reported,
     cancel_fee_waived: s.waived ?? false,
     from_address: 'Neubaugasse 12, 1070 Wien',
@@ -121,6 +126,41 @@ async function open(page: Page, done = false) {
 
 const noFee = (page: Page) => expect(page.locator('body')).not.toContainText(/Plattform|Provision|15 ?%|MoveNow-Gebühr/)
 const body = (s: State, name: string) => s.calls.filter((c) => c.name === name).map((c) => c.body)
+
+test.describe('Ankunft', { tag: '@breit' }, () => {
+  const NBSP = String.fromCharCode(160)
+  const ankunft = (page: Page) => page.getByText(/^Die Firma ist unterwegs/)
+
+  test('angenommen mit Fenster: „Ankunft zwischen 8 und 11 Uhr“, noch kein „unterwegs“', async ({ page }) => {
+    await mock(page, state())
+    await open(page)
+    await expect(page.getByText(`Ankunft zwischen 8 und 11${NBSP}Uhr`)).toBeVisible()
+    await expect(ankunft(page)).toHaveCount(0)
+  })
+
+  test('Flexibel: nur der Hinweis, kein Fenster (web1-5)', async ({ page }) => {
+    await mock(page, state({ timeWindow: 'flexible' }))
+    await open(page)
+    await expect(page.getByText('Die Firma nennt dir die genaue Uhrzeit.')).toBeVisible()
+    await expect(page.getByText(/Ankunft zwischen/)).toHaveCount(0)
+  })
+
+  test('Unterwegs: „Die Firma ist unterwegs, Ankunft ca. 8:40 Uhr“ in Wiener Zeit, ohne führende Null, nur solange angenommen', async ({ page }) => {
+    const errors = collectErrors(page)
+    await mock(page, state({ enRoute: '2099-12-15T07:40:00Z' })) // Dezember: Wien = UTC+1
+    await open(page)
+    await expect(ankunft(page)).toHaveText(`Die Firma ist unterwegs, Ankunft ca.${NBSP}8:40${NBSP}Uhr`)
+    await noFee(page)
+    expect(errors.filter((e) => !e.startsWith('Failed to load resource'))).toEqual([])
+  })
+
+  test('Unterwegs nach dem Start steht nicht mehr da', async ({ page }) => {
+    await mock(page, state({ status: 'in_progress', enRoute: '2099-12-15T07:40:00Z' }))
+    await open(page)
+    await expect(page.getByRole('heading', { name: /Umzug/ })).toBeVisible()
+    await expect(ankunft(page)).toHaveCount(0)
+  })
+})
 
 test.describe('Angebote', { tag: '@breit' }, () => {
   const offered = () => state({ status: 'offered', offers: [offer(), offer({ offer_id: REV, company_name: 'Zweite Firma', amount_cents: 72000 }), offer({ offer_id: OTHER_PHOTO, status: 'confirmed' })], after: { 'offer-confirm': { status: 'accepted', offers: [] } } })

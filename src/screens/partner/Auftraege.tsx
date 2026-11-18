@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
-import { StatusChip } from '../../components/Controls'
+import { Segmented, StatusChip } from '../../components/Controls'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
-import { arrivalText } from '../../lib/arrival'
+import { arrivalText, enRouteText } from '../../lib/arrival'
 import { JobError, jobErrorText, retryable, viennaTime } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import {
   dayLabel,
+  ENROUTE_MINUTES,
   finishJob,
   loadContact,
   loadJobs,
   mailHref,
   serviceLabel,
+  setEnRoute,
   startJob,
   contactLocked,
   telHref,
@@ -213,7 +215,8 @@ function Betraege({ j }: { j: Job }) {
 }
 
 function Auftrag({ j, change, notice, onDone }: { j: Job; change: JobChange | undefined; notice: { text: string; warn: boolean } | null; onDone: (notice?: string, warn?: boolean) => void }) {
-  const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | 'cancel' | null>(null)
+  const [sheet, setSheet] = useState<'enroute' | 'start' | 'finish' | 'change' | 'withdraw' | 'cancel' | null>(null)
+  const [minutes, setMinutes] = useState('30')
   const locked = contactLocked(j)
   const info = STATUS[j.status]
   const day = dayLabel(j.preferredDate)
@@ -234,6 +237,7 @@ function Auftrag({ j, change, notice, onDone }: { j: Job; change: JobChange | un
       {places && <p className="m-0 text-body">{places}</p>}
       {(day || window) && <p className="m-0 text-body">{[day, window].filter(Boolean).join(', ')}</p>}
       {!j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <p className="m-0 text-subhead text-text-secondary">{arrivalText(j.timeWindow, 'firma')}</p>}
+      {!j.ended && j.status === 'accepted' && j.enRouteEta && <p className="m-0 text-subhead font-semibold">{enRouteText(j.enRouteEta, 'firma')}</p>}
       {notice && (
         <p role={notice.warn ? 'alert' : 'status'} className={`m-0 rounded-grouped-list bg-background p-3 text-body ${notice.warn ? 'border border-destructive text-destructive' : 'text-text'}`}>
           {notice.text}
@@ -247,6 +251,11 @@ function Auftrag({ j, change, notice, onDone }: { j: Job; change: JobChange | un
       )}
       {j.status === 'accepted' && !j.ended && !j.underReview && (
         <>
+          {j.canEnRoute && (
+            <Button variant="tinted" onClick={() => setSheet('enroute')}>
+              Unterwegs
+            </Button>
+          )}
           <Button disabled={!j.canStart} onClick={() => setSheet('start')}>
             Auftrag starten
           </Button>
@@ -264,6 +273,10 @@ function Auftrag({ j, change, notice, onDone }: { j: Job; change: JobChange | un
       {j.ended && <p className="m-0 text-footnote text-text-secondary">{locked ? 'Kontakt und Adresse sind gesperrt, weil keine Pauschale anfällt.' : 'Kontakt und Adresse bleiben nach dem Ende nur kurze Zeit sichtbar.'}</p>}
       {!j.ended && !j.underReview && <AbsageSheet open={sheet === 'cancel'} onClose={() => setSheet(null)} requestId={j.requestId} started={j.canStart || j.status === 'in_progress'} receiptIds={change?.receiptIds ?? []} fixedOffer={change ? change.source === 'partner_offer' : undefined} onDone={onDone} />}
 
+      <Bestaetigen open={sheet === 'enroute'} onClose={() => setSheet(null)} title="Unterwegs" label="Kunde benachrichtigen" action={() => setEnRoute(j.requestId, Number(minutes) as (typeof ENROUTE_MINUTES)[number])} onDone={onDone}>
+        <p className="m-0 text-subhead text-text-secondary">Der Kunde bekommt eine Mail und sieht deine Ankunftszeit. Das geht einmal je Auftrag. Verspätest du dich, rufst du ihn an.</p>
+        <Segmented label="Ankunft in" options={ENROUTE_MINUTES.map((m) => ({ value: String(m), label: `${m}${NBSP}Min.` }))} value={minutes} onChange={setMinutes} />
+      </Bestaetigen>
       <Bestaetigen open={sheet === 'start'} onClose={() => setSheet(null)} title="Auftrag starten" label="Auftrag starten" action={() => startJob(j.requestId)} onDone={onDone}>
         <p className="m-0 text-subhead text-text-secondary">Der Auftrag läuft danach. Abschließen kannst du ihn, wenn alles erledigt ist.</p>
       </Bestaetigen>

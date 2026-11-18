@@ -482,7 +482,7 @@ export type Database = {
           id: number
           kind: string
           last_error: string | null
-          recipient_id: string
+          recipient_id: string | null
           recipient_kind: string
           request_id: string | null
           sent_at: string | null
@@ -496,7 +496,7 @@ export type Database = {
           id?: never
           kind: string
           last_error?: string | null
-          recipient_id: string
+          recipient_id?: string | null
           recipient_kind: string
           request_id?: string | null
           sent_at?: string | null
@@ -510,7 +510,7 @@ export type Database = {
           id?: never
           kind?: string
           last_error?: string | null
-          recipient_id?: string
+          recipient_id?: string | null
           recipient_kind?: string
           request_id?: string | null
           sent_at?: string | null
@@ -1331,6 +1331,7 @@ export type Database = {
           customer_id: string
           description: string | null
           district: number
+          en_route_eta: string | null
           from_address: string | null
           from_point: unknown
           id: string
@@ -1358,6 +1359,7 @@ export type Database = {
           customer_id: string
           description?: string | null
           district: number
+          en_route_eta?: string | null
           from_address?: string | null
           from_point?: unknown
           id?: string
@@ -1385,6 +1387,7 @@ export type Database = {
           customer_id?: string
           description?: string | null
           district?: number
+          en_route_eta?: string | null
           from_address?: string | null
           from_point?: unknown
           id?: string
@@ -1843,8 +1846,10 @@ export type Database = {
         Returns: {
           accepted_at: string
           assignment_id: string
+          can_en_route: boolean
           can_start: boolean
           district: number
+          en_route_eta: string
           ended_at: string
           ended_reason: Database["public"]["Enums"]["assignment_end"]
           listing_id: string
@@ -2153,6 +2158,10 @@ export type Database = {
       }
       send_offer: {
         Args: { p_amount: number; p_listing: string }
+        Returns: string
+      }
+      set_en_route: {
+        Args: { p_minutes: number; p_request: string }
         Returns: string
       }
       start_job: { Args: { p_request: string }; Returns: undefined }

@@ -241,6 +241,10 @@ export type Job = {
   canStart: boolean
   /** Der Kunde hat „nicht stattgefunden“ gemeldet, die Prüfung läuft (nur diese Tatsache, kein Zeitpunkt, kein Text): Start, Abschluss, Nachtrag und Absage sind gesperrt */
   underReview: boolean
+  /** „Unterwegs“ gemeldet: Ankunftszeit laut Server (einmal je Auftrag) */
+  enRouteEta: Date | null
+  /** Entscheidung der Datenbank: angenommen, am Termintag (Wien), noch nicht unterwegs gemeldet, nicht gestartet */
+  canEnRoute: boolean
 }
 const district = (v: unknown): number | null => (int(v) && v >= 1 && v <= 23 ? v : null)
 const cents = (v: unknown): number | null => (int(v) && v >= 0 ? v : null)
@@ -252,7 +256,8 @@ export async function loadJobs(): Promise<Job[]> {
   return (Array.isArray(data) ? data : []).flatMap((r): Job[] => {
     const termin = when(r.termin_at)
     const ended = r.ended_at === null ? false : when(r.ended_at) !== null
-    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean' || typeof r.under_review !== 'boolean' || (r.ended_at !== null && !ended)) return []
+    const eta = r.en_route_eta === null ? null : when(r.en_route_eta)
+    if (!UUID.test(r.assignment_id) || !UUID.test(r.request_id) || !JOB_STATUS.includes(r.status) || !SERVICES.includes(r.service) || !termin || typeof r.can_start !== 'boolean' || typeof r.under_review !== 'boolean' || typeof r.can_en_route !== 'boolean' || (r.en_route_eta !== null && !eta) || (r.ended_at !== null && !ended)) return []
     return [
       {
         id: r.assignment_id,
@@ -269,6 +274,8 @@ export async function loadJobs(): Promise<Job[]> {
         payoutCents: cents(r.payout_cents),
         canStart: r.can_start,
         underReview: r.under_review,
+        enRouteEta: eta,
+        canEnRoute: r.can_en_route,
       },
     ]
   })
@@ -283,11 +290,13 @@ const JOB_CODES: Record<string, JobErrorKind> = {
   not_assigned: 'gone',
   partner_not_active: 'gone',
   mfa_required: 'unauthorized',
+  wrong_day: 'wrong_day',
+  invalid_minutes: 'bad_input',
 }
 
-async function jobCall<T>(fn: 'start_job' | 'complete_job' | 'job_contact', requestId: string): Promise<T> {
+async function jobCall<T>(fn: 'start_job' | 'complete_job' | 'job_contact' | 'set_en_route', requestId: string, extra: { p_minutes?: number } = {}): Promise<T> {
   try {
-    const { data, error } = await supabase.rpc(fn, { p_request: requestId })
+    const { data, error } = await supabase.rpc(fn, { p_request: requestId, ...extra } as never)
     if (!error) return data as T
     throw new JobError(own(JOB_CODES, error.message) ?? 'unavailable')
   } catch (e) {
@@ -299,6 +308,9 @@ async function jobCall<T>(fn: 'start_job' | 'complete_job' | 'job_contact', requ
 /** Die Datenbank prüft Termin (`too_early`), Status und Zuordnung; die App sendet nur die Auftrags-ID. */
 export const startJob = (requestId: string): Promise<void> => jobCall('start_job', requestId)
 export const finishJob = (requestId: string): Promise<void> => jobCall('complete_job', requestId)
+/** „Unterwegs“: Ankunft in 15, 30, 45 oder 60 Minuten. Die Datenbank rechnet die Zeit und prüft Tag, Status und Zuordnung; eine Wiederholung ist wirkungslos. */
+export const ENROUTE_MINUTES = [15, 30, 45, 60] as const
+export const setEnRoute = (requestId: string, minutes: (typeof ENROUTE_MINUTES)[number]): Promise<void> => jobCall('set_en_route', requestId, { p_minutes: minutes })
 
 /** Kontakt und Adresse sind nach jedem Storno ohne Pauschale gesperrt, durch die Firma oder den Kunden (Migration 0065); die Datenbank entscheidet, die Anzeige folgt ihrem Betrag. */
 export const contactLocked = (j: Pick<Job, 'status' | 'totalCents'>): boolean =>

@@ -5,7 +5,7 @@ import { Button } from '../components/Button'
 import { StatusChip } from '../components/Controls'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
-import { arrivalText } from '../lib/arrival'
+import { arrivalText, enRouteText } from '../lib/arrival'
 import { CancelError, cancelErrorText, cancelRequest, feeText, previewCancel, snapshotStorno, timeline } from '../lib/cancel'
 import { terminStarted } from '../lib/jobs'
 import { states, titles } from '../lib/orders'
@@ -20,7 +20,7 @@ import { Termin } from './auftrag/Termin'
 import { Zurueckziehen } from './auftrag/Zurueckziehen'
 import { dayText } from './anfrage/format'
 
-const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, not_done_resolved_at, cancel_fee_waived, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
+const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, not_done_resolved_at, cancel_fee_waived, en_route_eta, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const NBSP = String.fromCharCode(160)
 const windows: Record<string, string> = { morning: `8 bis 11${NBSP}Uhr`, midday: `11 bis 14${NBSP}Uhr`, afternoon: `14 bis 18${NBSP}Uhr`, flexible: `ganzer Tag ab 8${NBSP}Uhr` }
@@ -84,6 +84,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
         </span>
         {when && <p className="m-0 text-body">{when}</p>}
         {live && arrival &&<p className="m-0 text-subhead text-text-secondary">{arrival}</p>}
+        {r.status === 'accepted' && r.en_route_eta && <p className="m-0 text-body font-semibold">{enRouteText(new Date(r.en_route_eta), 'kunde')}</p>}
         {r.from_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.from_address}</p>}
         {r.to_address && <p className="m-0 text-subhead break-words text-text-secondary">{r.to_address}</p>}
         <span className="flex items-center justify-between gap-3 border-t-[0.5px] border-separator pt-3">

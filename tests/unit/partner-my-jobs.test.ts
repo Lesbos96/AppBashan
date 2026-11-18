@@ -25,6 +25,8 @@ const row = (over: Record<string, unknown> = {}) => ({
   payout_cents: 58617,
   can_start: false,
   under_review: false,
+  en_route_eta: null,
+  can_en_route: false,
   ...over,
 })
 
@@ -39,6 +41,14 @@ describe('loadJobs', () => {
     expect(rpc).toHaveBeenCalledWith('my_jobs')
     expect(j).toMatchObject({ id: A, requestId: R, status: 'accepted', ended: false, district: 3, toDistrict: 10, service: 'move', preferredDate: '2026-12-02', timeWindow: 'morning', totalCents: 68961, payoutCents: 58617, canStart: false, underReview: false })
     expect(j!.terminAt.toISOString()).toBe('2026-12-02T07:00:00.000Z')
+  })
+
+  it('Unterwegs: Ankunftszeit und Erlaubnis kommen vom Server (mail1)', async () => {
+    rpc.mockResolvedValue({ data: [row({ can_en_route: true }), row({ en_route_eta: '2026-12-02T07:40:00+00:00' })], error: null })
+    const [a, b] = await loadJobs()
+    expect(a).toMatchObject({ canEnRoute: true, enRouteEta: null })
+    expect(b).toMatchObject({ canEnRoute: false })
+    expect(b!.enRouteEta?.toISOString()).toBe('2026-12-02T07:40:00.000Z')
   })
 
   it('Prüfung nach der Kundenmeldung: underReview ist wahr', async () => {
@@ -61,6 +71,8 @@ describe('loadJobs', () => {
     ['can_start kein boolean', { can_start: 'true' }],
     ['under_review kein boolean', { under_review: 'true' }],
     ['Ende kein Datum', { ended_at: 'gestern' }],
+    ['can_en_route kein boolean', { can_en_route: 'true' }],
+    ['en_route_eta kein Datum', { en_route_eta: 'bald' }],
   ])('%s: Zeile entfällt', async (_n, over) => {
     rpc.mockResolvedValue({ data: [row(over), row()], error: null })
     expect(await loadJobs()).toHaveLength(1)
