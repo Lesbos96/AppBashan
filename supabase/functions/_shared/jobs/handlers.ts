@@ -304,6 +304,8 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   let failed = 0
   let skipped = 0
   let expired = 0
+  // Diagnose des Anbieters: Zähler je „Status:Kürzel“ der Fehler (nie Adresse, nie Text), steht in der Antwort für den berechtigten Aufrufer und im Log
+  const provider: Record<string, number> = {}
   // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
   // Gegenbuchung (die Zeile bleibt `sending`, nach der Lease holt sie der nächste Lauf erneut). Ein Fehler bei einer Zeile stoppt den Lauf nicht.
   const mark = async (id: number, ok: boolean, error: string | null) => {
@@ -342,12 +344,16 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
     } catch (e) {
       failed++
       const code = safeCode(e)
-      deps.log({ event: 'outbox_failed', id: row.id, kind: row.kind, code })
+      if (e instanceof MailError) {
+        const key = `${e.status ?? 'netz'}:${e.code ?? '-'}`
+        provider[key] = (provider[key] ?? 0) + 1
+        deps.log({ event: 'outbox_failed', id: row.id, kind: row.kind, code, status: e.status, provider: e.code })
+      } else deps.log({ event: 'outbox_failed', id: row.id, kind: row.kind, code })
       await mark(row.id, false, code)
       continue
     }
     sent++
     await mark(row.id, true, null)
   }
-  return json(200, { sent, failed, skipped, expired })
+  return json(200, { sent, failed, skipped, expired, ...(Object.keys(provider).length > 0 ? { provider } : {}) })
 }

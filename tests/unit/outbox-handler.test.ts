@@ -82,7 +82,7 @@ describe('outbox-send Markieren (K3)', () => {
   it('Versand scheitert und auch mark(false) scheitert: der Lauf zählt es als Fehler und verarbeitet die nächste Zeile', async () => {
     const d = deps(rows(2), {
       send: async (m) => {
-        if (m.to === 'p1@example.com') throw new MailError(true)
+        if (m.to === 'p1@example.com') throw new MailError(true, 400, 'invalid_parameter')
         d.sent.push(m.to)
       },
       mark: async (id, ok, error) => {
@@ -92,10 +92,11 @@ describe('outbox-send Markieren (K3)', () => {
     })
     const res = await call(d)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ sent: 1, failed: 1, skipped: 0, expired: 0 })
+    expect(await res.json()).toEqual({ sent: 1, failed: 1, skipped: 0, expired: 0, provider: { '400:invalid_parameter': 1 } })
     expect(d.sent).toEqual(['p2@example.com'])
     expect(d.marks).toEqual([[1, false, 'smtp_rejected'], [2, true, null]])
     expect(d.logs.map((l) => l.event)).toEqual(['outbox_failed', 'outbox_mark_failed'])
+    expect(d.logs[0]).toEqual({ event: 'outbox_failed', id: 1, kind: 'listing_new', code: 'smtp_rejected', status: 400, provider: 'invalid_parameter' })
     expect(JSON.stringify(d.logs)).not.toContain('example.com')
   })
 })
@@ -104,12 +105,13 @@ describe('outbox-send Fehlercodes des Anbieters (mail1)', () => {
   it('abgelehnt (4xx) → smtp_rejected, vorübergehend (5xx, 429, Netz) → smtp_temp, alles andere → smtp_error; nie ein Text des Anbieters', async () => {
     const d = deps([mk('listing_new', 'partner', { id: 1, partnerEmail: 'a@example.com' }), mk('listing_new', 'partner', { id: 2, partnerEmail: 'b@example.com' }), mk('listing_new', 'partner', { id: 3, partnerEmail: 'c@example.com' })], {
       send: async (m) => {
-        if (m.to.startsWith('a')) throw new MailError(true)
-        if (m.to.startsWith('b')) throw new MailError(false)
+        if (m.to.startsWith('a')) throw new MailError(true, 401, 'unauthorized')
+        if (m.to.startsWith('b')) throw new MailError(false) // Netz oder Zeitüberschreitung: kein Status
         throw new Error('Brevo: Adresse c@example.com ungültig')
       },
     })
-    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0 })
+    // Diagnose in der Antwort: Zähler je „Status:Kürzel“, nie Adresse oder Text; ein fremder Fehler (smtp_error) erscheint dort nicht
+    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0, provider: { '401:unauthorized': 1, 'netz:-': 1 } })
     expect(d.marks).toEqual([[1, false, 'smtp_rejected'], [2, false, 'smtp_temp'], [3, false, 'smtp_error']])
     expect(JSON.stringify(d.logs)).not.toContain('example.com')
   })

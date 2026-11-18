@@ -22,6 +22,19 @@ describe('brevoSender', () => {
     expect(seen?.init.signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('Status und Kürzel der Antwort stehen im Fehler (Diagnose), nie der Text und nie ein Wert, der kein Kürzel ist', async () => {
+    const fail = (status: number, body: string) => sender(async () => new Response(body, { status }))(mail).catch((e: unknown) => e as MailError)
+    const a = await fail(401, '{"code":"unauthorized","message":"Key not found for kunde@example.com"}')
+    expect([a.status, a.code, a.permanent, a.message]).toEqual([401, 'unauthorized', true, 'mail_failed'])
+    expect(JSON.stringify([a.status, a.code, a.message])).not.toContain('example.com')
+    expect((await fail(400, '{"code":"kunde@example.com"}')).code).toBeNull()
+    expect((await fail(400, '{"code":"Unauthorized Key"}')).code).toBeNull()
+    expect((await fail(503, 'kein JSON')).code).toBeNull()
+    expect((await fail(503, 'kein JSON')).status).toBe(503)
+    const net = await sender(async () => { throw new TypeError('fetch failed') })(mail).catch((e: unknown) => e as MailError)
+    expect([net.status, net.code, net.permanent]).toEqual([null, null, false])
+  })
+
   it('4xx (außer 429) ist eine dauerhafte Ablehnung, 429, 5xx und Netzfehler sind vorübergehend; keine Meldung enthält die Adresse', async () => {
     const outcome = async (p: Promise<void>) => p.then(() => 'ok', (e) => (e instanceof MailError ? (e.permanent ? 'permanent' : 'temporär') : 'anders') + ':' + (e as Error).message)
     expect(await outcome(status(400)(mail))).toBe('permanent:mail_failed')

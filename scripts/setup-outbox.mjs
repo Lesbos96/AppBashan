@@ -1,15 +1,22 @@
-// Einmal-Einrichtung des Mailversands auf Dev (mail1; über dotenv-cli, gibt nie einen Wert aus; nur Dev, wegen APP_URL auf localhost):
+// Einmal-Einrichtung des Mailversands auf Dev (mail1; nur über `npm run loesch -- scripts/setup-outbox.mjs`, gibt nie einen Wert aus; nur Dev, wegen APP_URL auf localhost):
+// 0. Prüfung: wartet eine fällige Outbox-Zeile an eine Adresse ohne reservierte Endung (.test …), bricht das Skript ab, bevor etwas geändert wird.
 // 1. OUTBOX_SECRET erzeugen und, falls in .env.local noch nicht vorhanden, dort anhängen (die Datei wird nicht gelesen).
-// 2. OUTBOX_SECRET, APP_URL und den Dev-Schalter DEV_MAIL_GUARD=1 als Function-Secrets setzen, outbox-send deployen. BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER setzt Beks, sie werden hier nie angefasst.
-// 3. Probe: eine Zeile für den Betreiber ohne Anfrage anlegen und outbox-send aufrufen, bis die Outbox leer ist. Altzeilen der Testkonten (Endung .test)
-//    werden dabei als erledigt markiert, nichts davon geht an Brevo; die Probe-Zeile geht als echte Mail an MAIL_BETREIBER.
-// 4. Zuletzt Secret und URL im Vault ablegen: erst damit läuft der Cron-Lauf `outbox-dispatch` (jede Minute) gegen die Function mit Schutz.
-// Produktion richtet GOLIVE 35 ein (eigene APP_URL, Produktivprojekt), nicht dieses Skript.
-// Aufruf: npm run setup:outbox
+// 2. OUTBOX_SECRET, APP_URL und den Dev-Schalter DEV_MAIL_GUARD=1 als Function-Secrets setzen, outbox-send deployen. BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER setzt Beks,
+//    sie werden hier nie angefasst.
+// 3. Probe: frühere Probe-Zeilen verwerfen, eine neue Zeile für den Betreiber ohne Anfrage anlegen und outbox-send aufrufen, bis die Outbox leer ist. Altzeilen der
+//    Testkonten (Endung .test) werden dank DEV_MAIL_GUARD übersprungen, nichts davon geht an Brevo; die Probe-Zeile geht als genau eine echte Mail an MAIL_BETREIBER.
+// 4. Zuletzt, nur wenn genau eine Mail gesendet wurde, Secret und URL im Vault ablegen: erst damit läuft der Cron-Lauf `outbox-dispatch` (jede Minute) gegen die
+//    Function mit Schutz. Bei einem Fehler der Probe steht die Anbieter-Diagnose (HTTP-Status und Brevo-Kürzel, nie ein Text) in der Ausgabe.
+// Produktion richtet GOLIVE 35 ein (eigene APP_URL, Produktivprojekt, kein DEV_MAIL_GUARD), nicht dieses Skript.
 import './dev-guard.mjs'
 import { execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync } from 'node:fs'
+
+if (!process.env.MV_LOESCH_LAUF) {
+  console.error('ABBRUCH: Dieses Skript läuft nur über das Lösch-Gate: npm run loesch -- scripts/setup-outbox.mjs. Keine DB-Aktion.')
+  process.exit(2)
+}
 
 const APP_URL = 'http://localhost:5173'
 
@@ -24,27 +31,54 @@ const supabase = (...args) => {
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-if (!url) throw new Error('NEXT_PUBLIC_SUPABASE_URL fehlt (über npm run setup:outbox starten).')
+if (!url) throw new Error('NEXT_PUBLIC_SUPABASE_URL fehlt (über npm run loesch starten).')
 let secret = process.env.OUTBOX_SECRET
-if (!secret) {
-  secret = randomBytes(32).toString('hex')
-  appendFileSync('.env.local', `\nOUTBOX_SECRET=${secret}\n`)
-  console.log('OUTBOX_SECRET erzeugt und an .env.local angehängt.')
-}
+const neu = !secret
+if (neu) secret = randomBytes(32).toString('hex')
 if (!/^[0-9a-f]{64}$/.test(secret)) throw new Error('OUTBOX_SECRET hat nicht das erwartete Format (64 Hexzeichen).')
 
 const functionUrl = `${url.replace(/\/$/, '')}/functions/v1/outbox-send`
 if (!/^https:\/\/[a-z0-9.-]+\/functions\/v1\/outbox-send$/.test(functionUrl)) throw new Error('Die Projekt-URL hat nicht das erwartete Format.')
 
+// 0. Der Schutz kennt nur reservierte Endungen: eine fällige Zeile an eine andere Adresse (Kunde über das Konto, Firma über contact_email) ginge als echte Mail hinaus.
+supabase(
+  'db',
+  'query',
+  '--linked',
+  `do $$ begin
+     if exists (
+       select 1 from public.outbox o
+       left join auth.users u on o.recipient_kind = 'customer' and u.id = o.recipient_id
+       left join public.partners p on o.recipient_kind = 'partner' and p.id = o.recipient_id
+       where private.outbox_is_due(o)
+         and ((o.recipient_kind = 'customer' and u.email !~* '[.](test|invalid|example|localhost)$')
+           or (o.recipient_kind = 'partner' and p.contact_email !~* '[.](test|invalid|example|localhost)$'))
+     ) then raise exception 'echte_adresse_wartet'; end if;
+   end $$;`,
+)
+
+if (neu) {
+  appendFileSync('.env.local', `\nOUTBOX_SECRET=${secret}\n`)
+  console.log('OUTBOX_SECRET erzeugt und an .env.local angehängt.')
+}
+
 // DEV_MAIL_GUARD=1: nur auf Dev; Testadressen (.test …) und Betreiber-Meldungen zu Testkonten werden nicht versendet. Produktion setzt es nie (GOLIVE 35).
 supabase('secrets', 'set', `OUTBOX_SECRET=${secret}`, `APP_URL=${APP_URL}`, 'DEV_MAIL_GUARD=1')
 supabase('functions', 'deploy', 'outbox-send', '--use-api')
 
-// Probe-Zeile: Empfänger Betreiber, keine Anfrage (also kein Kunde, der geprüft würde); der Schlüssel ist je Lauf neu.
-supabase('db', 'query', '--linked', `select private.outbox_put('report_new', 'operator', null, null, 'probe:' || now()::text);`)
+// Probe-Zeile: Empfänger Betreiber, keine Anfrage (also kein Kunde, der geprüft würde); der Schlüssel ist je Lauf neu. Eine frühere, nicht gesendete Probe-Zeile
+// wird vorher verworfen (sie ginge sonst nach dem Wiederholungs-Abstand ein zweites Mal als Mail hinaus und die Zählung „genau eine“ stimmte nicht).
+supabase(
+  'db',
+  'query',
+  '--linked',
+  `update public.outbox set status = 'failed', last_error = 'expired', claimed_at = null where dedupe_key like 'probe:%' and status in ('pending', 'sending');
+   select private.outbox_put('report_new', 'operator', null, null, 'probe:' || now()::text);`,
+)
 
 // Aufrufe, bis ein Lauf weniger als 25 Zeilen anfasst (die Function holt je Aufruf höchstens 25). Antwort 401: Secret weicht ab, 503: Brevo-Secrets fehlen.
 const total = { sent: 0, failed: 0, skipped: 0, expired: 0 }
+const provider = {}
 let done = false
 for (let i = 0; i < 80 && !done; i++) {
   if (i > 0) await new Promise((r) => setTimeout(r, 500))
@@ -55,15 +89,20 @@ for (let i = 0; i < 80 && !done; i++) {
   }
   const body = await res.json()
   for (const k of Object.keys(total)) total[k] += Number(body[k]) || 0
+  // nur Zähler je „Status:Kürzel“ (die Function liefert nie Adresse oder Text)
+  for (const [k, v] of Object.entries(body.provider ?? {})) if (/^(\d{3}|netz):[a-z_-]{1,40}$/.test(k)) provider[k] = (provider[k] ?? 0) + (Number(v) || 0)
   done = Number(body.sent) + Number(body.failed) + Number(body.skipped) + Number(body.expired) < 25
 }
+const zahlen = { gesendet: total.sent, fehler: total.failed, uebersprungen: total.skipped, verfallen: total.expired }
+for (const [k, v] of Object.entries(zahlen)) console.log(`LOESCH-ZAHL ${k}=${v}`)
+console.log(`Probe: ${total.sent} gesendet, ${total.failed} mit Fehler (später erneut), ${total.skipped} übersprungen (Testadressen), ${total.expired} verfallen.`)
+if (Object.keys(provider).length > 0) console.log(`Anbieter-Diagnose (Status:Kürzel=Anzahl): ${Object.entries(provider).map(([k, v]) => `${k}=${v}`).join(', ')}`)
 if (!done) {
   console.error('Die Outbox war nach 80 Aufrufen nicht leer. Vault bleibt unverändert, der Cron-Lauf ist nicht scharf.')
   process.exit(1)
 }
-console.log(`Probe: ${total.sent} gesendet, ${total.failed} mit Fehler (später erneut), ${total.skipped} übersprungen (Testadressen), ${total.expired} verfallen.`)
-if (total.sent < 1) {
-  console.error('Die Probe-Mail an den Betreiber ging nicht raus. Vault bleibt unverändert, der Cron-Lauf ist nicht scharf.')
+if (total.sent !== 1) {
+  console.error(`Erwartet ist genau eine gesendete Mail (die Probe), gesendet wurden ${total.sent}. Vault bleibt unverändert, der Cron-Lauf ist nicht scharf.`)
   process.exit(1)
 }
 

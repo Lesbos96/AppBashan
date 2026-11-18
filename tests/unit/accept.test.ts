@@ -185,7 +185,7 @@ describe('outbox-send', () => {
       log: (e) => logs.push(e),
       mark: async (id, ok, error) => { marks.push([id, ok]); if (error) errs.push(error) },
     })
-    expect(await res.json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0 })
+    expect(await res.json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0, provider: { 'netz:-': 2 } })
     expect(errs).toEqual(['smtp_rejected', 'smtp_rejected', 'no_recipient'])
     expect(JSON.stringify(logs) + errs.join()).not.toContain('@')
   })

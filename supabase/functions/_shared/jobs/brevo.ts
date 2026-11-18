@@ -1,9 +1,14 @@
 // Mailversand über die Brevo-API (Transaktionsmail, reiner Text). Der Anbieter ist hier gekapselt: outbox-send kennt nur `send(mail)`.
-// Fehler tragen weder Empfänger noch Antworttext des Anbieters, nur `permanent` (4xx außer 429: der Anbieter lehnt die Mail ab).
+// Fehler tragen weder Empfänger noch den Antworttext des Anbieters: nur `permanent` (4xx außer 429: der Anbieter lehnt die Mail ab), den HTTP-Status
+// und das Kürzel `code` aus der Antwort (nur wenn es wie ein Kürzel aussieht, z. B. `unauthorized`), zur Diagnose (Konto, Absender, Schlüssel).
 export type Mail = { to: string; subject: string; text: string }
 
 export class MailError extends Error {
-  constructor(readonly permanent: boolean) {
+  constructor(
+    readonly permanent: boolean,
+    readonly status: number | null = null,
+    readonly code: string | null = null,
+  ) {
     super('mail_failed')
   }
 }
@@ -11,6 +16,7 @@ export class MailError extends Error {
 const ENDPOINT = 'https://api.brevo.com/v3/smtp/email'
 // 5 s je Mail: Der Handler versendet bis zu 25 Zeilen nacheinander und muss unter der Laufzeitgrenze der Function bleiben.
 const TIMEOUT_MS = 5000
+const CODE = /^[a-z_]{1,40}$/
 
 export function brevoSender(o: { apiKey: string; from: string; fetch?: typeof fetch }): (mail: Mail) => Promise<void> {
   const call = o.fetch ?? fetch
@@ -30,7 +36,8 @@ export function brevoSender(o: { apiKey: string; from: string; fetch?: typeof fe
       await res.body?.cancel()
       return
     }
-    await res.body?.cancel()
-    throw new MailError(res.status >= 400 && res.status < 500 && res.status !== 429)
+    const raw = (await res.json().catch(() => null)) as { code?: unknown } | null
+    const code = typeof raw?.code === 'string' && CODE.test(raw.code) ? raw.code : null
+    throw new MailError(res.status >= 400 && res.status < 500 && res.status !== 429, res.status, code)
   }
 }
