@@ -1,10 +1,10 @@
 # MoveNow · Stand
 
-Stand 2026-11-17, nach Schritt web1 (R2: Start als Web-App, festes Ankunftsfenster); davor bl1 (R3: Belege-Migration 0073, rj1-2, rs1-1, rs1-3); rs1, rj1, dev1, ui1, sys2 (davor sys1, fh1, s9i-7d, n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-18, nach Schritt ui2 (R2: Ankunftsfenster = gewähltes Zeitfenster, Bildsicht-Reste); davor web1, bl1 (R3: Belege-Migration 0073, rj1-2, rs1-1, rs1-3); rs1, rj1, dev1, ui1, sys2 (davor sys1, fh1, s9i-7d, n12b mit 0068, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Alle Angebote ablehnen, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung). Datenbank Dev: 73 Migrationen, lokal = remote bis `20261117190247` (0073), 17 Edge Functions deployt (alle `verify_jwt` aus). Nächste Migration 0074.
-- web1 (Nr. 200 bis 204): Start als Web-App; Store-Apps (Capacitor) spätestens 3 Monate nach dem Start, Fahrer-App mit Live-Tracking danach (OFFEN web1-2). Kunde (Bestätigung, Auftragsdetail) und Firma (Auftragskarte) sehen „Ankunft zwischen 9:00 und 9:30 Uhr“ (`src/lib/arrival.ts`: `termin_at` bis +30 Minuten, Wien). Status „unterwegs“ mit Mail an den Kunden kommt mit dem Mailversand (OFFEN web1-1).
+- web1 (Nr. 200 bis 204): Start als Web-App; Store-Apps (Capacitor) spätestens 3 Monate nach dem Start, Fahrer-App mit Live-Tracking danach (OFFEN web1-2). Kunde (Auftragsdetail) und Firma (Auftragskarte) sehen ab `accepted` das gewählte Zeitfenster („Ankunft zwischen 8 und 11 Uhr“, `src/lib/arrival.ts`, Nr. 205); „Flexibel“ zeigt nur einen Hinweis; die Bestätigung nach dem Senden zeigt kein Fenster (Nr. 206). Festes 30-Minuten-Fenster der Firma: OFFEN ui2-1. Status „unterwegs“ mit Mail an den Kunden kommt mit dem Mailversand (OFFEN web1-1).
 - bl1 (0073, ENTSCHEIDUNGEN Nr. 199): `photo_receipt_add` idempotent über `sha256` (Wiederholung nach verlorener Antwort liefert dieselbe Id), Limit 8 erst in `add`; ein Beleg eines angenommenen Nachtrags ist verbraucht (`propose_change` braucht mindestens einen neuen, `my_job_changes.receipt_ids` liefert nur neue); `my_job_changes` nur für aktive Zuordnungen; `reject_offers` behandelt ein gelöschtes Konto als `not_found`. Deployt: `photo-receipt`, `job-photo`, `photo-publish`, `admin-photo` (nur Kommentar in `_shared/photo/handlers.ts`). Neue rls-Tests: Festangebot ohne Pauschale (rs1-1), `flow-live` stellt `completion_ask` selbst her (rs1-3, Wettlauf behoben), Dedupe live.
 - BEKS 1 und 2 aus rs1 sind beantwortet (Nr. 197: Montage bleibt ohne den Satz; Nr. 198: rls-Grenze 1200 s bleibt, kein Mess-Schritt, solange rls unter 1500 s liegt). bl1 maß 1581 s (OFFEN fh1-6).
 - Dev-Reset (dev1): `npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe`, dann `loeschen` mit den Zahlen der Probe, nur auf Anforderung (Nr. 195: über 300 Konten oder 500 Firmen).
@@ -13,10 +13,9 @@ Stand 2026-11-17, nach Schritt web1 (R2: Start als Web-App, festes Ankunftsfenst
 
 ## Nächster Schritt
 1. Nach Wert: Mailversand (GOLIVE 35, 36; mit „unterwegs“, OFFEN web1-1) · Turnstile · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Abnahme · Rate-Limit `photo-receipt` (S9d-4, Pflicht vor dem Öffnen der Buchung).
-2. Kleine Reste: OFFEN bl1-1 (Absage und verbrauchte Belege, Meldung bei erneut hochgeladenem Bild), bl1-2 und bl1-3 (Testlücken), rs1-2, rj1-3 (a), fh1-2 (Profilprüfung in `withdraw` und `complete_job`).
+2. Kleine Reste: OFFEN bl1-1 (Absage und verbrauchte Belege, Meldung bei erneut hochgeladenem Bild), bl1-2 und bl1-3 (Testlücken), rj1-3 (a), fh1-2 (Profilprüfung in `withdraw` und `complete_job`).
 
 ## Wartet auf Beks
-- BEKS Frage 1 (Ankunftsfenster schon in der Bestätigung nach dem Senden, vor der Annahme).
 - Einmal `/advisor off` und in einer neuen Session prüfen, dass kein Tool `advisor` mehr in der Liste steht (`docs/BEKS_EINRICHTUNG.md`).
 - Rechtstexte (auch die Sätze zum Festangebot, GOLIVE 33), Mail-Anbieter, ORS-Vertrag, Hosting, Turnstile-Konto, Produktivprojekt (`docs/GOLIVE.md`).
 

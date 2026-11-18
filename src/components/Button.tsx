@@ -15,7 +15,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`press w-full px-5 disabled:opacity-40 ${variants[variant]} ${className}`}
+      className={`press w-full px-5 disabled:opacity-60 ${variants[variant]} ${className}`}
       {...props}
     />
   )

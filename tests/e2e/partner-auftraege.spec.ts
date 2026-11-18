@@ -27,6 +27,7 @@ test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebü
   await expect(c).toContainText('Abholung in Bezirk 3, Ziel in Bezirk 10')
   await expect(c).toContainText('2. Dezember')
   await expect(c).toContainText('Vormittag')
+  await expect(c).toContainText(/Ankunft zwischen 8 und 11\sUhr/)
   await expect(c).toContainText('Preis für den Kunden')
   await expect(c).toContainText('689,61 €')
   await expect(c).toContainText('Du erhältst')
@@ -35,6 +36,13 @@ test('Liste: Status, Termin, Bezirke und Beträge kommen vom Server; keine Gebü
   for (const v of [CONTACT.name, CONTACT.phone, CONTACT.email, CONTACT.from_address, CONTACT.to_address, RQ1]) expect(html, `„${v}“ darf nicht im DOM stehen`).not.toContain(v)
   await noFee(page)
   expect(real(errors)).toEqual([])
+})
+
+test('Flexibel: kein Fenster, Hinweis zur Abstimmung; beendete Aufträge zeigen keine Ankunftszeile (web1-5)', { tag: '@breit' }, async ({ page }) => {
+  await open(page, { myJobs: [job({ time_window: 'flexible' }), job({ assignment_id: A2, request_id: RQ2, status: 'completed', ended_at: '2026-12-02T12:00:00+00:00', ended_reason: 'completed' })] })
+  await expect(card(page)).toContainText('Kunde ist flexibel – Uhrzeit mit dem Kunden abstimmen.')
+  await expect(card(page)).not.toContainText('Ankunft zwischen')
+  await expect(page.getByText(/Ankunft zwischen|Kunde ist flexibel/)).toHaveCount(1)
 })
 
 test('Kontakt und Adresse erst nach Antippen: vorher kein Abruf und nichts im DOM, nachher im Sheet, nach dem Schließen wieder weg; jeder Abruf zählt', { tag: '@breit' }, async ({ page }) => {

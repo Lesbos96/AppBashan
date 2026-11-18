@@ -67,7 +67,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   const line = timeline(r.status)
   const live = r.status === 'accepted' || r.status === 'in_progress'
   const started = live && terminStarted(r.termin_at)
-  const arrival = arrivalText(r.termin_at)
+  const arrival = arrivalText(r.time_window, 'kunde')
   const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window] : undefined].filter(Boolean).join(' · ')
 
   return (

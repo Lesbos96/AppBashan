@@ -2,10 +2,7 @@ import { Link, Navigate } from 'react-router'
 import { ActionBar } from '../../components/Bars'
 import { StatusChip } from '../../components/Controls'
 import { Icon } from '../../components/Icon'
-import { arrivalText } from '../../lib/arrival'
 import { type Path, readSent, services } from '../../lib/draft'
-import { useLoad } from '../../lib/prices'
-import { supabase } from '../../lib/supabase'
 import { parseSnapshot, priceLabel, shownLabel } from '../../lib/quote'
 import { shortDayText } from './format'
 
@@ -14,10 +11,7 @@ const icons = { transport: 'sofa', umzug: 'boxes', entruempelung: 'basket', mont
 /** Bestätigung nach dem Senden. Der Preis steht hier nur, wenn `quote` ihn geliefert hat; bei Angebotspflicht gibt es keinen. */
 export function Gesendet({ path }: { path: Path }) {
   const sent = readSent()
-  // Der Server legt `termin_at` fest; die Anzeige liest es von dort, rechnet nichts selbst. Ohne Antwort entfällt die Zeile.
-  const [termin] = useLoad(async () => (sent ? (await supabase.from('service_requests').select('termin_at').eq('id', sent.id).maybeSingle()).data?.termin_at ?? null : null))
   if (!sent || sent.path !== path) return <Navigate to="/auftraege" replace />
-  const arrival = termin.status === 'ready' ? arrivalText(termin.data) : null
   const snapshot = parseSnapshot(sent.snapshot)
   const price = snapshot?.kind === 'price' ? priceLabel(snapshot) : null
   const awaiting = sent.status === 'awaiting_offer'
@@ -57,7 +51,6 @@ export function Gesendet({ path }: { path: Path }) {
             <span className="flex min-w-0 flex-col">
               <span className="text-headline text-text">{services[path].title}</span>
               <span className="text-subhead break-words text-text-secondary">{[shortDayText(sent.date), sent.route].filter(Boolean).join(' · ')}</span>
-              {arrival && <span className="text-subhead text-text-secondary">{arrival}</span>}
             </span>
           </span>
           <span aria-hidden="true" className="h-[0.5px] bg-separator" />

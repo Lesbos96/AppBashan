@@ -130,9 +130,10 @@ function useJobs(reloadKey: number): [Loaded, (quiet: boolean) => void] {
 export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
   const [jobs, load] = useJobs(reloadKey)
   // Zwei Arten: Aktion erfolgreich (ruhig) oder Fehler bzw. Ergebnis unbekannt (Warnart, neu laden und prüfen)
-  const [notice, setNotice] = useState<{ text: string; warn: boolean } | null>(null)
-  const done = (n?: string, warn = false) => {
-    setNotice(n ? { text: n, warn } : null)
+  // Der Hinweis steht am Auftrag, auf den er sich bezieht.
+  const [notice, setNotice] = useState<{ id: string; text: string; warn: boolean } | null>(null)
+  const done = (id: string, n?: string, warn = false) => {
+    setNotice(n ? { id, text: n, warn } : null)
     load(true)
   }
   if (jobs.status === 'loading') return <Loading label="Aufträge laden" />
@@ -141,20 +142,13 @@ export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
   const over = jobs.data.filter((j) => j.ended)
   return (
     <>
-      {notice && (
-        <div className="px-5 pb-4">
-          <p role={notice.warn ? 'alert' : 'status'} className={`m-0 rounded-grouped-list bg-surface p-4 text-body shadow-card ${notice.warn ? 'border border-destructive text-destructive' : ''}`}>
-            {notice.text}
-          </p>
-        </div>
-      )}
       {live.length > 0 && (
         <section aria-labelledby="angenommen" className="flex flex-col gap-3 px-5 pb-4">
           <h2 id="angenommen" className="m-0 text-headline">
             Angenommen
           </h2>
           {live.map((j) => (
-            <Auftrag key={j.id} j={j} change={jobs.changes.get(j.requestId)} onDone={done} />
+            <Auftrag key={j.id} j={j} change={jobs.changes.get(j.requestId)} notice={notice?.id === j.id ? notice : null} onDone={(n, w) => done(j.id, n, w)} />
           ))}
         </section>
       )}
@@ -164,7 +158,7 @@ export function PartnerAuftraege({ reloadKey = 0 }: { reloadKey?: number }) {
             Beendet
           </h2>
           {over.map((j) => (
-            <Auftrag key={j.id} j={j} change={undefined} onDone={done} />
+            <Auftrag key={j.id} j={j} change={undefined} notice={notice?.id === j.id ? notice : null} onDone={(n, w) => done(j.id, n, w)} />
           ))}
         </section>
       )}
@@ -218,7 +212,7 @@ function Betraege({ j }: { j: Job }) {
   )
 }
 
-function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined; onDone: (notice?: string, warn?: boolean) => void }) {
+function Auftrag({ j, change, notice, onDone }: { j: Job; change: JobChange | undefined; notice: { text: string; warn: boolean } | null; onDone: (notice?: string, warn?: boolean) => void }) {
   const [sheet, setSheet] = useState<'start' | 'finish' | 'change' | 'withdraw' | 'cancel' | null>(null)
   const locked = contactLocked(j)
   const info = STATUS[j.status]
@@ -239,7 +233,12 @@ function Auftrag({ j, change, onDone }: { j: Job; change: JobChange | undefined;
       </div>
       {places && <p className="m-0 text-body">{places}</p>}
       {(day || window) && <p className="m-0 text-body">{[day, window].filter(Boolean).join(', ')}</p>}
-      {!j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <p className="m-0 text-subhead text-text-secondary">{arrivalText(j.terminAt)}</p>}
+      {!j.ended && (j.status === 'accepted' || j.status === 'in_progress') && <p className="m-0 text-subhead text-text-secondary">{arrivalText(j.timeWindow, 'firma')}</p>}
+      {notice && (
+        <p role={notice.warn ? 'alert' : 'status'} className={`m-0 rounded-grouped-list bg-background p-3 text-body ${notice.warn ? 'border border-destructive text-destructive' : 'text-text'}`}>
+          {notice.text}
+        </p>
+      )}
       <Betraege j={j} />
       {j.underReview && (
         <p role="status" className="m-0 text-body">

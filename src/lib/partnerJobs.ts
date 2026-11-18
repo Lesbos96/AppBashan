@@ -174,8 +174,6 @@ export function dayLabel(iso: string | null): string | null {
   return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
-/** Zeitpunkte immer in Wiener Zeit, unabhängig von der Zeitzone des Geräts. */
-
 // Eingabe des Angebots -----------------------------------------------------------------------------------------------------
 /** Euro-Eingabe (Komma oder Punkt, höchstens zwei Nachkommastellen, kein Tausenderpunkt) → ganze Cent; sonst `null`. Kein Float. */
 export function parseEuro(input: string): number | null {

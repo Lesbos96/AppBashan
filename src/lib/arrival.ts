@@ -1,12 +1,10 @@
 const NBSP = String.fromCharCode(160)
-const WINDOW_MS = 30 * 60 * 1000
 
-const clock = new Intl.DateTimeFormat('de-AT', { hour: 'numeric', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Vienna' })
+const RANGE: Record<string, [number, number]> = { morning: [8, 11], midday: [11, 14], afternoon: [14, 18] }
 
-/** Festes Ankunftsfenster: `termin_at` bis `termin_at` + 30 Minuten, Wiener Zeit. `null`, wenn der Termin fehlt oder unlesbar ist. */
-export function arrivalText(terminAt: Date | string | null | undefined): string | null {
-  const start = terminAt instanceof Date ? terminAt : terminAt ? new Date(terminAt) : null
-  if (!start || Number.isNaN(start.getTime())) return null
-  const t = (d: Date) => clock.format(d)
-  return `Ankunft zwischen ${t(start)} und ${t(new Date(start.getTime() + WINDOW_MS))}${NBSP}Uhr`
+/** Ankunftsfenster = das vom Kunden gewählte und von der Firma angenommene Zeitfenster. „Flexibel“ hat keins: nur ein Hinweis, je nach Seite. `null` bei unbekanntem oder fehlendem Fenster. */
+export function arrivalText(timeWindow: string | null | undefined, side: 'kunde' | 'firma'): string | null {
+  if (timeWindow === 'flexible') return side === 'kunde' ? 'Die Firma nennt dir die genaue Uhrzeit.' : 'Kunde ist flexibel – Uhrzeit mit dem Kunden abstimmen.'
+  const r = timeWindow ? RANGE[timeWindow] : undefined
+  return r ? `Ankunft zwischen ${r[0]} und ${r[1]}${NBSP}Uhr` : null
 }

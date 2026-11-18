@@ -96,7 +96,7 @@ export function Sheet({ open, onClose, title, detents = [0.6, 0.92], locked = fa
         dragElastic={0.05}
         onDragEnd={(_, info) => release(info.velocity.y)}
         style={{ y, height }}
-        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-(--content-max-width) flex-col rounded-t-sheet-top border-t-[0.5px] border-text/20 bg-background text-text shadow-sheet"
+        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-(--content-max-width) flex-col rounded-t-sheet-top border-t-[0.5px] border-text/30 bg-background text-text shadow-sheet"
       >
         <div onPointerDown={(e) => controls.start(e)} className="-mb-5 flex h-11 shrink-0 cursor-grab touch-none items-start justify-center pt-1.5">
           <span className="h-[5px] w-9 rounded-[3px] bg-text/20" />
