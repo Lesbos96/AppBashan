@@ -153,6 +153,32 @@ describe('Outbox: fällige Zeilen (0075)', () => {
   })
 })
 
+// Verfall (0075): outbox-send markiert eine veraltete „Unterwegs“-Mail mit dem Code expired; die Zeile ist sofort endgültig failed, ohne claimed_at.
+describe('Outbox: Verfall (expired, 0075)', () => {
+  const sending = (key: string, attempts: number) =>
+    `insert into public.outbox (kind, recipient_kind, recipient_id, dedupe_key, status, attempts, claimed_at)
+       values ('en_route', 'customer', gen_random_uuid(), 'exp:${key}', 'sending', ${attempts}, now() - interval '1 minute');
+     select set_config('app.exp_${key}', (select id::text from public.outbox where dedupe_key = 'exp:${key}'), true);`
+  const state = (key: string) => `=(select status || ':' || attempts || ':' || coalesce(last_error, '') || ':' || (claimed_at is not null)::text from public.outbox where dedupe_key = 'exp:${key}')`
+  const mark = (key: string, error: string) => `perform public.outbox_mark(current_setting('app.exp_${key}')::bigint, false, '${error}')`
+  it('expired macht die Zeile sofort endgültig; ein anderer Fehlschlag bleibt pending mit claimed_at; Text als Code wird smtp_error', () => {
+    const r = probes(`${sending('a', 1)} ${sending('b', 1)} ${sending('c', 1)}`, [
+      { name: 'expired', as: 'service_role', sql: mark('a', 'expired') },
+      { name: 'a', sql: state('a') },
+      { name: 'temp', as: 'service_role', sql: mark('b', 'smtp_temp') },
+      { name: 'b', sql: state('b') },
+      { name: 'Freitext', as: 'service_role', sql: mark('c', 'expired für kunde@example.com') },
+      { name: 'c', sql: state('c') },
+      { name: 'Code per UPDATE erlaubt', sql: `update public.outbox set last_error = 'expired' where dedupe_key = 'exp:b'` },
+    ])
+    expect(r['expired']).toBe('ok')
+    expect(r['a']).toBe('= failed:1:expired:false')
+    expect(r['b']).toBe('= pending:1:smtp_temp:true')
+    expect(r['c']).toBe('= pending:1:smtp_error:true')
+    expect(r['Code per UPDATE erlaubt']).toBe('ok')
+  })
+})
+
 describe('report_not_done: Mail an den Betreiber', () => {
   it('die Meldung legt genau eine Outbox-Zeile für den Betreiber an (ohne Empfänger-ID), eine Wiederholung keine zweite', () => {
     const R = newId()

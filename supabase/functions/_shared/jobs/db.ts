@@ -104,7 +104,13 @@ export const contactDb =(db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
   },
 })
 
-export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'requestCustomerEmail' | 'completionDays'> => ({
+export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'requestCustomerEmail' | 'enRouteExpired' | 'completionDays'> => ({
+  // Die Ankunftszeit ist erreicht (oder fehlt): „Dein Partner ist unterwegs“ wäre veraltet. Ein Lesefehler wirft und zählt als Versuch.
+  async enRouteExpired(requestId) {
+    const rows = must(await db.from('service_requests').select('en_route_eta').eq('id', requestId).limit(1))
+    const eta = rows[0]?.en_route_eta
+    return !eta || Date.parse(eta) <= Date.now()
+  },
   // geltender Wert von completion_days (Wiener Datum, höchste Version); fehlt er: setting_missing, nie ein Standardwert
   async completionDays() {
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' })

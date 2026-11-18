@@ -22,9 +22,11 @@ function deps(claimed: OutboxRow[], over: Partial<OutboxDeps> = {}): OutboxDeps 
     mark: async (id, ok, error) => void marks.push([id, ok, error]),
     customerEmail: async () => null,
     requestCustomerEmail: async () => 'kunde@example.com',
+    enRouteExpired: async () => false,
     completionDays: async () => 7,
     send: async (m) => void sent.push(m.to),
     operatorEmail: 'betreiber@example.com',
+    devGuard: true, // wie auf Dev; die Fälle ohne Schalter setzen es ausdrücklich auf false
     appUrl: 'https://app.test',
     log: (e) => void logs.push(e),
     ...over,
@@ -70,7 +72,7 @@ describe('outbox-send Markieren (K3)', () => {
       },
     })
     const res = await call(d)
-    expect(await res.json()).toEqual({ sent: 2, failed: 0, skipped: 0 })
+    expect(await res.json()).toEqual({ sent: 2, failed: 0, skipped: 0, expired: 0 })
     expect(d.sent).toEqual(['p1@example.com', 'p2@example.com'])
     expect(d.marks).toEqual([[1, true, null], [2, true, null]]) // keine Gegenbuchung (false) für die versendete Mail
     expect(d.logs.map((l) => l.event)).toContain('outbox_mark_failed')
@@ -90,7 +92,7 @@ describe('outbox-send Markieren (K3)', () => {
     })
     const res = await call(d)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ sent: 1, failed: 1, skipped: 0 })
+    expect(await res.json()).toEqual({ sent: 1, failed: 1, skipped: 0, expired: 0 })
     expect(d.sent).toEqual(['p2@example.com'])
     expect(d.marks).toEqual([[1, false, 'smtp_rejected'], [2, true, null]])
     expect(d.logs.map((l) => l.event)).toEqual(['outbox_failed', 'outbox_mark_failed'])
@@ -107,7 +109,7 @@ describe('outbox-send Fehlercodes des Anbieters (mail1)', () => {
         throw new Error('Brevo: Adresse c@example.com ungültig')
       },
     })
-    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 3, skipped: 0 })
+    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0 })
     expect(d.marks).toEqual([[1, false, 'smtp_rejected'], [2, false, 'smtp_temp'], [3, false, 'smtp_error']])
     expect(JSON.stringify(d.logs)).not.toContain('example.com')
   })
@@ -117,7 +119,7 @@ describe('outbox-send Testadressen (mail1)', () => {
   it('Endungen .test, .invalid, .example, .localhost (auch groß, mit Subdomain) werden nicht gesendet, gelten als erledigt, ohne Adresse im Log', async () => {
     const mails = ['a@movenow.test', 'b@MoveNow.TEST', 'c@mail.movenow.test', 'd@x.invalid', 'e@x.example', 'f@host.localhost']
     const d = deps(mails.map((m, i) => mk('listing_new', 'partner', { id: i + 1, partnerEmail: m })))
-    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 0, skipped: 6 })
+    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 0, skipped: 6, expired: 0 })
     expect(d.sent).toEqual([])
     expect(d.marks.map(([id, ok, error]) => [id, ok, error])).toEqual(mails.map((_, i) => [i + 1, true, null]))
     expect(d.logs.map((l) => l.event)).toEqual(Array(6).fill('outbox_skipped'))
@@ -129,8 +131,44 @@ describe('outbox-send Testadressen (mail1)', () => {
       [mk('listing_new', 'partner', { id: 1, partnerEmail: 'a@test.example.com' }), mk('listing_new', 'partner', { id: 2, partnerEmail: 'b@example.com' }), mk('request_accepted', 'customer', { id: 3 })],
       { customerEmail: async () => 'k@movenow.test' },
     )
-    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 1 })
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 1, expired: 0 })
     expect(d.sent).toEqual(['a@test.example.com', 'b@example.com'])
+  })
+})
+
+describe('outbox-send ohne Dev-Schalter (Produktion, mail1)', () => {
+  it('Adressen mit Testendung und Meldungen zu Testkonten werden normal versendet, der Kunde der Anfrage wird nicht einmal gefragt', async () => {
+    const mails = ['a@movenow.test', 'd@x.invalid', 'f@host.localhost']
+    const d = deps(
+      [...mails.map((m, i) => mk('listing_new', 'partner', { id: i + 1, partnerEmail: m })), mk('report_new', 'operator', { id: 4, requestId: 'r1' })],
+      { devGuard: false, requestCustomerEmail: async () => { throw new Error('darf ohne Schalter nicht gefragt werden') } },
+    )
+    expect(await (await call(d)).json()).toEqual({ sent: 4, failed: 0, skipped: 0, expired: 0 })
+    expect(d.sent).toEqual([...mails, 'betreiber@example.com'])
+    expect(d.logs).toEqual([])
+  })
+})
+
+describe('outbox-send „Unterwegs“ verfällt (mail1)', () => {
+  it('nach der Ankunftszeit nicht mehr senden: die Zeile wird endgültig als expired markiert, die übrigen laufen weiter; vorher wird gesendet', async () => {
+    const asked: string[] = []
+    const d = deps(
+      [mk('en_route', 'customer', { id: 1, requestId: 'alt' }), mk('en_route', 'customer', { id: 2, requestId: 'neu' }), mk('request_accepted', 'customer', { id: 3, requestId: 'alt' })],
+      { customerEmail: async () => 'kunde@example.com', enRouteExpired: async (r) => (asked.push(r), r === 'alt') },
+    )
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 0, expired: 1 })
+    expect(d.marks).toEqual([[1, false, 'expired'], [2, true, null], [3, true, null]])
+    expect(asked).toEqual(['alt', 'neu']) // nur en_route fragt, andere Arten nie
+    expect(d.sent).toEqual(['kunde@example.com', 'kunde@example.com'])
+    expect(d.logs.map((l) => l.event)).toEqual(['outbox_expired'])
+  })
+
+  it('der Verfall gilt auch ohne Dev-Schalter; ein Lesefehler zählt als Versuch (smtp_error), nicht als Verfall', async () => {
+    const d = deps([mk('en_route', 'customer', { id: 1, requestId: 'r' })], { devGuard: false, customerEmail: async () => 'k@example.com', enRouteExpired: async () => true })
+    expect(await (await call(d)).json()).toEqual({ sent: 0, failed: 0, skipped: 0, expired: 1 })
+    const err = deps([mk('en_route', 'customer', { id: 1, requestId: 'r' })], { customerEmail: async () => 'k@example.com', enRouteExpired: async () => { throw new Error('db down') } })
+    expect(await (await call(err)).json()).toEqual({ sent: 0, failed: 1, skipped: 0, expired: 0 })
+    expect(err.marks).toEqual([[1, false, 'smtp_error']])
   })
 })
 
@@ -144,7 +182,7 @@ describe('outbox-send Betreiber (mail1, Nr. 175)', () => {
 
   it('report_new geht an MAIL_BETREIBER, ohne Auftrag, Namen, Beträge oder Link', async () => {
     const { out, res } = await mails([mk('report_new', 'operator', { requestId: 'r1' })])
-    expect(res).toEqual({ sent: 1, failed: 0, skipped: 0 })
+    expect(res).toEqual({ sent: 1, failed: 0, skipped: 0, expired: 0 })
     expect(out).toHaveLength(1)
     expect(out[0]?.to).toBe('betreiber@example.com')
     expect(body(out[0])).toContain('reported_jobs')
@@ -153,17 +191,17 @@ describe('outbox-send Betreiber (mail1, Nr. 175)', () => {
 
   it('Meldung zu einem Testkonto oder einem Konto ohne Adresse wird übersprungen, eine Zeile ohne Anfrage (Probe) gesendet', async () => {
     const test = await mails([mk('report_new', 'operator', { requestId: 'r1' })], { requestCustomerEmail: async () => 'k@movenow.test' })
-    expect(test.res).toEqual({ sent: 0, failed: 0, skipped: 1 })
+    expect(test.res).toEqual({ sent: 0, failed: 0, skipped: 1, expired: 0 })
     expect(test.out).toEqual([])
     const none = await mails([mk('report_new', 'operator', { requestId: 'r1' })], { requestCustomerEmail: async () => null })
-    expect(none.res).toEqual({ sent: 0, failed: 0, skipped: 1 })
+    expect(none.res).toEqual({ sent: 0, failed: 0, skipped: 1, expired: 0 })
     const probe = await mails([mk('report_new', 'operator', { requestId: null })], { requestCustomerEmail: async () => { throw new Error('darf nicht gefragt werden') } })
-    expect(probe.res).toEqual({ sent: 1, failed: 0, skipped: 0 })
+    expect(probe.res).toEqual({ sent: 1, failed: 0, skipped: 0, expired: 0 })
   })
 
   it('ohne MAIL_BETREIBER: no_recipient statt Versand an eine leere Adresse', async () => {
     const { res, d, out } = await mails([mk('report_new', 'operator')], { operatorEmail: '' })
-    expect(res).toEqual({ sent: 0, failed: 1, skipped: 0 })
+    expect(res).toEqual({ sent: 0, failed: 1, skipped: 0, expired: 0 })
     expect(out).toEqual([])
     expect(d.marks).toEqual([[1, false, 'no_recipient']])
   })
@@ -182,7 +220,7 @@ describe('outbox-send Abschluss (S9g)', () => {
     const mails: Mail[] = []
     const claimed: OutboxRow[] = ['completion_ask', 'completion_auto'].map((kind, i) => mk(kind, 'customer', { id: i + 1 }))
     const d = deps(claimed, { customerEmail: async () => 'kunde@example.com', send: async (m) => void mails.push(m) })
-    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 0 })
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 0, expired: 0 })
     expect(mails.map((m) => m.subject)).toEqual(['Hat dein Auftrag stattgefunden?', 'Dein Auftrag gilt als durchgeführt'])
     for (const m of mails) expect(m.subject + m.text).not.toMatch(/Gebühr|Provision|15 ?%/i)
   })
@@ -200,7 +238,7 @@ describe('outbox-send Abschluss (S9g)', () => {
     const mails: Mail[] = []
     const claimed: OutboxRow[] = [mk('completion_ask', 'customer', { id: 1 }), mk('request_cancelled', 'partner', { id: 2, recipientId: 'p', partnerEmail: 'p@example.com' })]
     const d = deps(claimed, { customerEmail: async () => 'kunde@example.com', completionDays: async () => 3, send: async (m) => void mails.push(m) })
-    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 0 })
+    expect(await (await call(d)).json()).toEqual({ sent: 2, failed: 0, skipped: 0, expired: 0 })
     expect(mails[0]?.text).toContain('3 Tage nach dem Termin')
     expect(mails[0]?.text).not.toContain('7 Tage')
     expect(mails[1]?.to).toBe('p@example.com')
@@ -214,7 +252,7 @@ describe('outbox-send Abschluss (S9g)', () => {
     const mails: Mail[] = []
     const claimed: OutboxRow[] = ['partner_cancelled', 'request_reissued', 'partner_cancelled_fee'].map((kind, i) => mk(kind, 'customer', { id: i + 1 }))
     const d = deps(claimed, { customerEmail: async () => 'kunde@example.com', send: async (m) => void mails.push(m) })
-    expect(await (await call(d)).json()).toEqual({ sent: 3, failed: 0, skipped: 0 })
+    expect(await (await call(d)).json()).toEqual({ sent: 3, failed: 0, skipped: 0, expired: 0 })
     expect(mails.map((m) => m.to)).toEqual(Array(3).fill('kunde@example.com'))
     expect(mails[2]?.text).toContain('Anfahrtspauschale')
     expect(mails[1]?.text).toContain('kostenlos')

@@ -1,5 +1,6 @@
 // Edge Function `outbox-send`: versendet wartende Mails der Outbox über die Brevo-API (S9c, mail1). Aufruf nur mit dem Header x-outbox-secret
 // (pg_net aus public.outbox_dispatch). Secrets: SECRET_KEY, OUTBOX_SECRET, BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER, APP_URL.
+// Nur auf Dev: DEV_MAIL_GUARD=1 (ausdrücklicher Schalter; in Produktion nie setzen) lässt Adressen mit Testendung und Betreiber-Meldungen zu Testkonten aus.
 // Ohne OUTBOX_SECRET oder ohne gültigen Header antwortet jeder Aufruf mit 401. Fehlt BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER oder APP_URL,
 // antwortet ein berechtigter Aufruf mit 503 und die Zeilen bleiben pending.
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -27,6 +28,7 @@ Deno.serve((req) =>
     secret: Deno.env.get('OUTBOX_SECRET') ?? '',
     appUrl,
     operatorEmail,
+    devGuard: Deno.env.get('DEV_MAIL_GUARD') === '1',
     send: apiKey && from && operatorEmail && appUrl ? brevoSender({ apiKey, from }) : null,
     log: (e) => console.log(JSON.stringify(e)),
   }),

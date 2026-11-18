@@ -288,11 +288,13 @@ describe('outbox-send photo_failed', () => {
       requestCustomerEmail: async () => 'kunde@example.com',
       completionDays: async () => 7,
       send: async (m) => void sent.push(m),
+      enRouteExpired: async () => false,
       operatorEmail: 'betreiber@example.com',
+      devGuard: false,
       appUrl: 'https://app.test',
       log: () => {},
     })
-    expect(await res.json()).toEqual({ sent: 1, failed: 0, skipped: 0 })
+    expect(await res.json()).toEqual({ sent: 1, failed: 0, skipped: 0, expired: 0 })
     expect(sent[0]?.to).toBe('kunde@example.com')
     expect(sent[0]?.text).toContain('https://app.test')
     expect(`${sent[0]?.subject} ${sent[0]?.text}`).not.toMatch(/15|Gebühr|Provision/)

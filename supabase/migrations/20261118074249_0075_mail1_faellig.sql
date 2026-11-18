@@ -1,4 +1,4 @@
--- 0075 mail1: Abnahme 0074, N1. Eine Definition, wann eine Outbox-Zeile fällig ist: outbox_claim holt nur fällige Zeilen, und der Cron ruft die Function nur auf,
+-- 0075 mail1: (1) Verfall von „Unterwegs“-Mails (Fehlercode expired), (2) Abnahme 0074, N1: Eine Definition, wann eine Outbox-Zeile fällig ist: outbox_claim holt nur fällige Zeilen, und der Cron ruft die Function nur auf,
 -- wenn eine fällig ist (bisher rief er sie auch auf, solange eine Zeile im Wiederholungs-Abstand von bis zu 16 Stunden oder in der Lease wartete: leere Aufrufe).
 -- Fällig: weniger als 5 Versuche und entweder `pending` (neu, ohne claimed_at oder nach 15 Min. × 4^(Versuche − 1) seit dem letzten Versuch)
 -- oder `sending` mit abgelaufener Lease (10 Minuten). Hilfsfunktion nur für Funktionen des Eigentümers (outbox_claim, outbox_dispatch): kein Grant.
@@ -29,6 +29,27 @@ begin
   select u.id, u.kind, u.recipient_kind, u.recipient_id, u.request_id, p.contact_email
   from u left join public.partners p on u.recipient_kind = 'partner' and p.id = u.recipient_id;
 end
+$$;
+
+-- Verfall: Eine Mail „Dein Partner ist unterwegs“ ist nach der Ankunftszeit veraltet. outbox-send markiert sie mit dem Code `expired`; die Zeile ist sofort endgültig
+-- `failed` (ohne weitere Versuche, ohne claimed_at). Alle anderen Fehlercodes bleiben wie in 0074 (pending bis zum fünften Versuch).
+alter table public.outbox drop constraint outbox_last_error_code;
+alter table public.outbox add constraint outbox_last_error_code
+  check (last_error is null or last_error in ('smtp_rejected', 'smtp_temp', 'smtp_error', 'unknown_kind', 'no_recipient', 'lease_expired', 'expired'));
+
+create or replace function public.outbox_mark(p_id bigint, p_ok boolean, p_error text) returns void
+language sql security definer set search_path = ''
+as $$
+  update public.outbox o set
+    status = case when p_ok then 'sent' when p_error = 'expired' or o.attempts >= 5 then 'failed' else 'pending' end,
+    sent_at = case when p_ok then now() end,
+    claimed_at = case when p_ok or p_error = 'expired' or o.attempts >= 5 then null else o.claimed_at end,
+    last_error = case
+      when p_ok then null
+      when p_error in ('smtp_rejected', 'smtp_temp', 'smtp_error', 'unknown_kind', 'no_recipient', 'expired') then p_error
+      else 'smtp_error'
+    end
+  where o.id = p_id and o.status = 'sending'
 $$;
 
 create or replace function public.outbox_dispatch() returns void

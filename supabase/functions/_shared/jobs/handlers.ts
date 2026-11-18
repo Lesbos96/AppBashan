@@ -229,14 +229,18 @@ export type OutboxDeps = {
   claim(limit: number): Promise<OutboxRow[]>
   mark(id: number, ok: boolean, error: string | null): Promise<void>
   customerEmail(userId: string): Promise<string | null>
-  /** Adresse des Kunden der Anfrage (für die Betreiber-Mail: Meldungen zu Testkonten werden nicht versendet). */
+  /** Adresse des Kunden der Anfrage (nur mit `devGuard`: die Betreiber-Mail zu einem Testkonto wird nicht versendet). */
   requestCustomerEmail(requestId: string): Promise<string | null>
+  /** Die Ankunftszeit der Anfrage („Unterwegs“) ist erreicht: die Mail „Dein Partner ist unterwegs“ wäre nur noch veraltet. */
+  enRouteExpired(requestId: string): Promise<boolean>
   /** `completion_days` aus den Einstellungen (S9g-7); nur für completion_ask abgefragt. */
   completionDays(): Promise<number>
   /** `null`: kein Versand eingerichtet (BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER); der Handler antwortet nach der Prüfung des Aufrufers mit 503 und fasst die Outbox nicht an. */
   send: ((mail: Mail) => Promise<void>) | null
   /** Adresse des Betreibers (MAIL_BETREIBER). */
   operatorEmail: string
+  /** Ausdrücklicher Dev-Schalter (Secret DEV_MAIL_GUARD=1, nur auf Dev): Adressen mit Testendung bekommen nie eine Mail. Ohne Schalter (Produktion) aus. */
+  devGuard: boolean
   appUrl: string
   log: Log
 }
@@ -267,7 +271,7 @@ const TEXTS: Record<string, { subject: string; text: (url: string, days: number)
   report_new: { subject: 'Neue Meldung: Auftrag nicht stattgefunden', text: () => 'Ein Kunde hat gemeldet, dass ein Auftrag nicht stattgefunden hat. Bitte binnen 3 Werktagen in reported_jobs prüfen.' },
 }
 
-// Endungen, die es nie als echte Adresse gibt (RFC 2606, 6761): Test- und Entwicklungskonten. An sie geht keine Mail, die Zeile gilt als erledigt.
+// Endungen, die es nie als echte Adresse gibt (RFC 2606, 6761): Test- und Entwicklungskonten. Mit dem Dev-Schalter geht an sie keine Mail, die Zeile gilt als erledigt.
 const RESERVED = /\.(test|invalid|example|localhost)$/i
 export const isReservedAddress = (email: string): boolean => RESERVED.test(email.split('@').pop() ?? '')
 
@@ -299,6 +303,7 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   let sent = 0
   let failed = 0
   let skipped = 0
+  let expired = 0
   // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
   // Gegenbuchung (die Zeile bleibt `sending`, nach der Lease holt sie der nächste Lauf erneut). Ein Fehler bei einer Zeile stoppt den Lauf nicht.
   const mark = async (id: number, ok: boolean, error: string | null) => {
@@ -316,13 +321,22 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
         : row.recipientKind === 'operator' ? deps.operatorEmail
         : row.recipientId ? await deps.customerEmail(row.recipientId) : null
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
-      // Test- und Entwicklungskonten (Endung .test …) bekommen nie eine Mail; die Meldung an den Betreiber gilt nur für echte Kunden
-      const customer = row.recipientKind === 'operator' && row.requestId ? await deps.requestCustomerEmail(row.requestId) : to
-      if (!customer || isReservedAddress(to) || isReservedAddress(customer)) {
-        skipped++
-        deps.log({ event: 'outbox_skipped', id: row.id, kind: row.kind })
-        await mark(row.id, true, null)
+      // „Unterwegs“ nach der Ankunftszeit nicht mehr senden: die Zeile ist endgültig verfallen (failed, expired)
+      if (row.kind === 'en_route' && row.requestId && (await deps.enRouteExpired(row.requestId))) {
+        expired++
+        deps.log({ event: 'outbox_expired', id: row.id, kind: row.kind })
+        await mark(row.id, false, 'expired')
         continue
+      }
+      // Nur mit Dev-Schalter: Test- und Entwicklungskonten (Endung .test …) bekommen nie eine Mail; die Meldung an den Betreiber gilt nur für echte Kunden
+      if (deps.devGuard) {
+        const customer = row.recipientKind === 'operator' && row.requestId ? await deps.requestCustomerEmail(row.requestId) : to
+        if (!customer || isReservedAddress(to) || isReservedAddress(customer)) {
+          skipped++
+          deps.log({ event: 'outbox_skipped', id: row.id, kind: row.kind })
+          await mark(row.id, true, null)
+          continue
+        }
       }
       await send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
     } catch (e) {
@@ -335,5 +349,5 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
     sent++
     await mark(row.id, true, null)
   }
-  return json(200, { sent, failed, skipped })
+  return json(200, { sent, failed, skipped, expired })
 }

@@ -1,6 +1,6 @@
 // Einmal-Einrichtung des Mailversands auf Dev (mail1; über dotenv-cli, gibt nie einen Wert aus; nur Dev, wegen APP_URL auf localhost):
 // 1. OUTBOX_SECRET erzeugen und, falls in .env.local noch nicht vorhanden, dort anhängen (die Datei wird nicht gelesen).
-// 2. OUTBOX_SECRET und APP_URL als Function-Secrets setzen, outbox-send deployen. BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER setzt Beks, sie werden hier nie angefasst.
+// 2. OUTBOX_SECRET, APP_URL und den Dev-Schalter DEV_MAIL_GUARD=1 als Function-Secrets setzen, outbox-send deployen. BREVO_API_KEY, MAIL_FROM, MAIL_BETREIBER setzt Beks, sie werden hier nie angefasst.
 // 3. Probe: eine Zeile für den Betreiber ohne Anfrage anlegen und outbox-send aufrufen, bis die Outbox leer ist. Altzeilen der Testkonten (Endung .test)
 //    werden dabei als erledigt markiert, nichts davon geht an Brevo; die Probe-Zeile geht als echte Mail an MAIL_BETREIBER.
 // 4. Zuletzt Secret und URL im Vault ablegen: erst damit läuft der Cron-Lauf `outbox-dispatch` (jede Minute) gegen die Function mit Schutz.
@@ -36,14 +36,15 @@ if (!/^[0-9a-f]{64}$/.test(secret)) throw new Error('OUTBOX_SECRET hat nicht das
 const functionUrl = `${url.replace(/\/$/, '')}/functions/v1/outbox-send`
 if (!/^https:\/\/[a-z0-9.-]+\/functions\/v1\/outbox-send$/.test(functionUrl)) throw new Error('Die Projekt-URL hat nicht das erwartete Format.')
 
-supabase('secrets', 'set', `OUTBOX_SECRET=${secret}`, `APP_URL=${APP_URL}`)
+// DEV_MAIL_GUARD=1: nur auf Dev; Testadressen (.test …) und Betreiber-Meldungen zu Testkonten werden nicht versendet. Produktion setzt es nie (GOLIVE 35).
+supabase('secrets', 'set', `OUTBOX_SECRET=${secret}`, `APP_URL=${APP_URL}`, 'DEV_MAIL_GUARD=1')
 supabase('functions', 'deploy', 'outbox-send', '--use-api')
 
 // Probe-Zeile: Empfänger Betreiber, keine Anfrage (also kein Kunde, der geprüft würde); der Schlüssel ist je Lauf neu.
 supabase('db', 'query', '--linked', `select private.outbox_put('report_new', 'operator', null, null, 'probe:' || now()::text);`)
 
 // Aufrufe, bis ein Lauf weniger als 25 Zeilen anfasst (die Function holt je Aufruf höchstens 25). Antwort 401: Secret weicht ab, 503: Brevo-Secrets fehlen.
-const total = { sent: 0, failed: 0, skipped: 0 }
+const total = { sent: 0, failed: 0, skipped: 0, expired: 0 }
 let done = false
 for (let i = 0; i < 80 && !done; i++) {
   if (i > 0) await new Promise((r) => setTimeout(r, 500))
@@ -54,13 +55,13 @@ for (let i = 0; i < 80 && !done; i++) {
   }
   const body = await res.json()
   for (const k of Object.keys(total)) total[k] += Number(body[k]) || 0
-  done = Number(body.sent) + Number(body.failed) + Number(body.skipped) < 25
+  done = Number(body.sent) + Number(body.failed) + Number(body.skipped) + Number(body.expired) < 25
 }
 if (!done) {
   console.error('Die Outbox war nach 80 Aufrufen nicht leer. Vault bleibt unverändert, der Cron-Lauf ist nicht scharf.')
   process.exit(1)
 }
-console.log(`Probe: ${total.sent} gesendet, ${total.failed} mit Fehler (später erneut), ${total.skipped} übersprungen (Testadressen).`)
+console.log(`Probe: ${total.sent} gesendet, ${total.failed} mit Fehler (später erneut), ${total.skipped} übersprungen (Testadressen), ${total.expired} verfallen.`)
 if (total.sent < 1) {
   console.error('Die Probe-Mail an den Betreiber ging nicht raus. Vault bleibt unverändert, der Cron-Lauf ist nicht scharf.')
   process.exit(1)

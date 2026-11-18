@@ -155,7 +155,9 @@ describe('outbox-send', () => {
         requestCustomerEmail: async () => 'kunde@example.com',
         completionDays: async () => 7,
         send: async (m: { to: string; subject: string; text: string }) => { sent.push(m) },
+        enRouteExpired: async () => false,
         operatorEmail: 'betreiber@example.com',
+        devGuard: false,
         appUrl: 'https://app.movenow.test',
         log: () => {},
       },
@@ -166,7 +168,7 @@ describe('outbox-send', () => {
     expect((await handleOutbox(new Request('https://x.test', { method: 'POST' }), d)).status).toBe(401)
     expect((await handleOutbox(new Request('https://x.test', { method: 'POST', headers: { 'x-outbox-secret': 'falsch!' } }), d)).status).toBe(401)
     const res = await handleOutbox(new Request('https://x.test', { method: 'POST', headers: { 'x-outbox-secret': 'geheim' } }), d)
-    expect(await res.json()).toEqual({ sent: 2, failed: 1, skipped: 0 })
+    expect(await res.json()).toEqual({ sent: 2, failed: 1, skipped: 0, expired: 0 })
     expect(marks).toEqual([[1, true], [2, true], [3, false]])
     expect(sent.map((m) => m.to)).toEqual(['kunde@example.com', 'firma@example.com'])
     expect(sent.every((m) => !/gebühr|provision|15 ?%/i.test(m.subject + m.text))).toBe(true)
@@ -183,7 +185,7 @@ describe('outbox-send', () => {
       log: (e) => logs.push(e),
       mark: async (id, ok, error) => { marks.push([id, ok]); if (error) errs.push(error) },
     })
-    expect(await res.json()).toEqual({ sent: 0, failed: 3, skipped: 0 })
+    expect(await res.json()).toEqual({ sent: 0, failed: 3, skipped: 0, expired: 0 })
     expect(errs).toEqual(['smtp_rejected', 'smtp_rejected', 'no_recipient'])
     expect(JSON.stringify(logs) + errs.join()).not.toContain('@')
   })
