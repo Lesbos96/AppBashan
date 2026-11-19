@@ -34,7 +34,7 @@ export function CaptchaHost() {
           : 'pointer-events-none fixed top-0 left-0 m-0 block size-px overflow-hidden border-0 bg-transparent p-0 opacity-0'
       }
     >
-      {open && <p className="m-0 text-center text-body text-text-secondary">Kurze Sicherheitsprüfung, damit nur Menschen anfragen können.</p>}
+      {open && <p className="m-0 text-balance text-center text-body text-text-secondary">Kurze Sicherheitsprüfung, damit nur Menschen anfragen können.</p>}
       <div ref={attachCaptchaHost} />
       {open && (
         <Button variant="plain" onClick={cancelCaptcha}>

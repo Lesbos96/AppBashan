@@ -32,14 +32,13 @@ Die Frage 1 vom 2026-11-19 (mail1, Empfängeradresse der Firma) ist beantwortet 
 
 Die Frage 1 vom 2026-11-19 (mail2, Altersgrenze für Mails nach langem Brevo-Ausfall) ist beantwortet (ENTSCHEIDUNGEN Nr. 215).
 
-## Zuerst: Einrichtung für ts1 (Turnstile auf Dev), drei Mini-Schritte von Beks
-ts1 steht, bis diese Schritte erledigt sind. Danach `/schritt ts1` mit dem Wort „Fortsetzung“ starten. Die Cloudflare-Testschlüssel („Always passes“) stehen auf der Seite https://developers.cloudflare.com/turnstile/troubleshooting/testing/ (Site Key und Secret Key; kein echtes Konto nötig). Das Secret steht nur in diesen drei Orten, nie im Chat oder in Dateien des Repos.
-1. In `.env.local` zwei Zeilen ergänzen: `NEXT_PUBLIC_TURNSTILE_SITE_KEY=` mit dem Site Key „Always passes“ und `TURNSTILE_SECRET_KEY=` mit dem Secret Key „Always passes“ (die Namen stehen in `.env.example`). Prüfen mit `npm run env:check` (zeigt nur Namen).
-2. Supabase-Dashboard, Dev-Projekt: Edge Functions → Secrets → neues Secret `TURNSTILE_SECRET_KEY` mit demselben Secret-Wert.
-3. Supabase-Dashboard, Dev-Projekt: Authentication → Attack Protection (bzw. Sign In / Providers → Bot and Abuse Protection) → „Enable CAPTCHA protection“ einschalten, Anbieter „Cloudflare Turnstile“, Secret dasselbe wie in Schritt 1, speichern. Folge: Die lokale App meldet auf Dev erst mit dem neuen Stand von ts1 wieder an; die Test- und Live-Skripte senden schon das Dummy-Token.
+Die Frage 1 vom 2026-11-19 (ts1, Turnstile Site Key in `daten.md`) ist beantwortet (ENTSCHEIDUNGEN Nr. 216).
+
+## Zuerst: Auth-Captcha auf Dev wirkt noch nicht (ts1), ein Mini-Schritt von Beks
+Stand 2026-11-19: Die Function `route` verlangt das Token und läuft (deployt, Secret steht). Die Anmeldung dagegen verlangt auf Dev noch keins: Eine Passwort-Anmeldung und `signInWithOtp` ohne Token kommen ohne `captcha_failed` durch (Messung: unbekannter Nutzer ergibt `invalid_credentials`, die Adresse wird geprüft statt das Token). Das Dashboard-Captcha ist also nicht scharf, oder es ist im falschen Projekt gesetzt. Bitte im **Dev-Projekt** (Ref `vcpbbzdyltvffvzjrzdi`) prüfen: Authentication → Attack Protection (bzw. Sign In / Providers → Bot and Abuse Protection) → „Enable CAPTCHA protection“ ist **an**, Anbieter **Cloudflare Turnstile**, Secret ist der „Always passes“-Wert, **Save** gedrückt (das Feld meldet sonst „unsaved changes“). Danach `/schritt ts1 Fortsetzung`; ts1 wiederholt dann `captcha-live` und läuft bis zum Bericht weiter.
 
 ## Offene Fragen
-1. **Darf der Satz in `.claude/rules/daten.md` erweitert werden (ts1, Stand 2026-11-19)?** Dort steht heute: in der App nur Variablen mit `NEXT_PUBLIC_`-Präfix, „und davon nur URL und Publishable Key“. ts1 fügt `NEXT_PUBLIC_TURNSTILE_SITE_KEY` hinzu (der Site Key ist öffentlich wie der Publishable Key; Ihr Auftrag nannte die Variable ausdrücklich). Die Regel selbst ändert nur Beks. Empfehlung: den Satz so ändern: „… davon nur URL, Publishable Key und der Turnstile Site Key.“ Antwort im Chat: „1 ja“ (dann ändert Beks die Zeile) oder „1 nein“ (dann wird die Variable in ts1 wieder entfernt).
+1. **Genügt GOLIVE 18 (Captcha am Anmeldeweg) für die offene Partner-Registrierung (GOLIVE 26, ts1, Stand 2026-11-19)?** `register_partner` und die Dokument-Uploads laufen nur mit Konto; ein Konto entsteht nur über die Anmeldung, die seit ts1 das Captcha trägt. Rate-Limit und Dokumentgrenzen fehlen weiter. Empfehlung: ja, Punkt 26 auf die Rate-Limit- und Upload-Grenzen verengen (kein eigenes Captcha am Formular). Antwort im Chat: „1 ja“ oder „1 nein“ (dann bekommt das Formular ein eigenes Token, eigener Schritt).
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

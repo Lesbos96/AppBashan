@@ -22,7 +22,7 @@ const codeStep = (mock?: AuthMock, submit = false) => async (page: Page) => {
 }
 
 // Wächst mit jedem Screen ab S3. `onboarded: false` startet wie beim ersten Besuch.
-const routes: { name: string; path: string; onboarded?: false; mock?: { routeStatus?: number }; expectedError?: RegExp; sheet?: true; fit?: false; ready?: (page: Page) => Promise<unknown>; steps?: (page: Page) => Promise<unknown> }[] = [
+const routes: { name: string; path: string; onboarded?: false; mock?: { routeStatus?: number; captcha?: 'interactive' }; expectedError?: RegExp; sheet?: true; fit?: false; ready?: (page: Page) => Promise<unknown>; steps?: (page: Page) => Promise<unknown> }[] = [
   { name: 'start', path: '/' },
   { name: 'willkommen-1', path: '/willkommen', onboarded: false },
   {
@@ -49,6 +49,16 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
   { name: 'anmelden-code-falsch', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: { status: 403, code: 'otp_expired' } }, true) },
   { name: 'anmelden-zu-viele', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: { status: 429, code: 'over_request_rate_limit' } }, true) },
   { name: 'anmelden-offline', path: '/anmelden', expectedError: failed, steps: codeStep({ verify: 'offline' }, true) },
+  {
+    name: 'anmelden-captcha',
+    path: '/anmelden',
+    steps: async (page) => {
+      await mockAuth(page, { captcha: 'interactive' })
+      await page.getByLabel('E-Mail').fill(EMAIL)
+      await page.getByRole('button', { name: 'Code senden' }).click()
+      await expect(page.locator('dialog[open][aria-label="Sicherheitsprüfung"]').getByRole('button', { name: 'Ich bin ein Mensch' })).toBeVisible()
+    },
+  },
   { name: 'anmelden-link', path: `/anmelden#token_hash=${HASH}&type=email`, steps: (page) => mockAuth(page) },
   {
     name: 'anmelden-link-abgelaufen',
@@ -143,6 +153,21 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
       await sheet.getByLabel(/Straße, Hausnummer/).fill('Neubaugasse 12, 1070 Wien')
       await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
       await expect(sheet.getByRole('button', { name: 'Neubaugasse 12, 1070 Wien' })).toBeVisible()
+    },
+  },
+  {
+    name: 'umzug-captcha',
+    path: '/umzug',
+    mock: { captcha: 'interactive' },
+    fit: false,
+    sheet: true,
+    steps: async (page) => {
+      await page.getByRole('button', { name: /^Abholung/ }).click()
+      const sheet = page.locator('dialog[open]:not([aria-label="Sicherheitsprüfung"])')
+      await sheet.getByRole('switch', { name: /Routenberechnung/ }).click()
+      await sheet.getByLabel(/Straße, Hausnummer/).fill('Neubaugasse 12, 1070 Wien')
+      await sheet.getByRole('button', { name: 'Adresse suchen' }).click()
+      await expect(page.locator('dialog[open][aria-label="Sicherheitsprüfung"]').getByRole('button', { name: 'Ich bin ein Mensch' })).toBeVisible()
     },
   },
   {
