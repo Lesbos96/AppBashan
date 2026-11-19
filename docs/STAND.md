@@ -1,13 +1,12 @@
 # MoveNow · Stand
 
-Stand 2026-11-19, ts1 läuft (Zwischenstand, Branch `ts1`); davor mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-19, nach Schritt ts1 (R3: Turnstile an `route` und an der Anmeldung, Dev mit Cloudflare-Testschlüsseln); davor mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
-## ts1 läuft: weiter nach Beks' Dashboard-Prüfung
-- Gebaut und committet: Server (`_shared/turnstile.ts`, `route/handler.ts`, `route/index.ts`: Captcha nach der Eingabeprüfung, vor dem Zähler; 403 `captcha_failed`, 503 `captcha_unavailable`), Client (`lib/turnstile.ts`, `CaptchaHost` in der Shell, `auth.ts`, `route.ts`), Testhelfer (Dummy-Token in `tests/support/db.ts` mit neuem Pin, `rls.test.ts`, `route.test.ts`, vier Skripte), Unit- und e2e-Tests grün (`captcha.spec.ts`), Screens `anmelden-captcha` und `umzug-captcha` bei 390 und 1280 (Reviewer: keine hohen oder mittleren Funde, `tmp/proof/ts1-review.md`). Plan und Auflagen: `tmp/proof/ts1-plan.md`.
-- Dev: `route` v17 und `quote` v104 deployt (Secret `TURNSTILE_SECRET_KEY` steht). `tests/rls/captcha-live.test.ts`: Teil `route` grün, Teil Auth **rot**: Dev verlangt bei Passwort-Anmeldung und `signInWithOtp` noch kein Token (Lauf 017; Messprobe: `invalid_credentials` statt `captcha_failed`). Das Dashboard-Captcha ist dort nicht scharf: `docs/BEKS.md` (ein Mini-Schritt).
-- Erledigt: Lösch-Freigabe der vier Skripte (`docs/freigaben/ts1-loesch-freigabe-1.md`, frei, hoch 0), Abnahme Runde 1 (`tmp/proof/ts1-abnahme-1.md`, hoch 0; Doku-Funde M1, M4 und Niedriges eingearbeitet). Probe: Dev-Testsecret nimmt auch ein anderes Token an (200).
-- Danach: `/schritt ts1 Fortsetzung`, bindende Auflagen der Abnahme: (1) `captcha-live` grün, unverändert, bei scharfem Auth-Captcha; (2) Status und Code von Auth bei fehlendem Token je für Passwort und Mail im Wortlaut messen, kein Konto des Auth-Tests bleibt; (3) Durchgang im Browser gegen Dev mit dem Test-Site-Key (Code anfordern, Adresse suchen, Konsole leer); (4) Volläufe nacheinander `check`, `e2e`, `rls`; dann `bericht`, `fertig`. Ändert die Fortsetzung `auth.ts`, `turnstile.ts`, `route.ts`, `CaptchaHost.tsx`, `config.toml` oder `captcha-live.test.ts`: Abnahme Runde 2.
-- Doku fertig: GOLIVE 13, 18, 26 (angepasst), 49 bis 52 (neu), OFFEN ts1-1 und mail2-1 (h), (i), ENTSCHEIDUNGEN 215 und 216, `.claude/rules/daten.md` nennt den Site Key. Nach dem Merge sind andere Branches bei rls/Live rot, bis sie auf `ts1` rebasen.
+## Turnstile (ts1, ENTSCHEIDUNGEN 216, Plan und Auflagen `tmp/proof/ts1-plan.md`)
+- Die Function `route` verlangt im Body `captcha` und prüft es bei Cloudflare (nach der Eingabeprüfung, vor dem Zähler): fehlend oder abgelehnt 403 `captcha_failed`, Cloudflare nicht erreichbar 503 `captcha_unavailable`. Die Anmeldung (`signInWithOtp`) trägt `captchaToken` über die eingebaute Captcha-Funktion von Supabase; `verifyOtp` und Sitzungserneuerung brauchen keins. Ein globales Widget (`CaptchaHost` in der Shell, `src/lib/turnstile.ts`) holt je Aufruf ein frisches Token; die Karte „Kurze Sicherheitsprüfung“ erscheint nur, wenn Cloudflare eine Eingabe verlangt.
+- Dev: `route` v17, `quote` v104 deployt; Secret `TURNSTILE_SECRET_KEY`, Auth-Captcha an (Cloudflare-Testschlüssel „Always passes“; `.env.local` hat `NEXT_PUBLIC_TURNSTILE_SITE_KEY`). Gemessen: Passwort-Anmeldung und Mail-Anforderung ohne Token 400 `captcha_failed`; das Testsecret nimmt jedes Token an, „abgelehntes Token → 403“ beweisen nur die Unit-Tests. Echtes Cloudflare-Skript im Browser gegen Dev: Code anfordern und Adresssuche gehen im unsichtbaren Weg.
+- Abnahmen: Lösch-Freigabe der vier Skripte (`docs/freigaben/ts1-loesch-freigabe-1.md`; sie laufen mit dem neuen Hash erst nach grünem `rls`), Abnahme Runden 1 und 2 (`tmp/proof/ts1-abnahme-*.md`, hoch 0), Bildsicht `tmp/proof/ts1-review.md`.
+- Offen: OFFEN ts1-1 (Garbage-Tokens, Probe mit erzwungener Eingabe, `golive-check` mit Dummy-Proben, weitere Auth-Einstiege). Produktion: GOLIVE 13, 18, 49 bis 52 (echte Schlüssel, nie die Testwerte; Dummy-Token muss dort scheitern). Andere Branches sind bei rls und Live-Skripten rot, bis sie auf `ts1` rebasen (Dev verlangt Captcha-Token bei Passwort- und Mail-Anmeldung).
 
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Alle Angebote ablehnen, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung, „Unterwegs“). Datenbank Dev: 76 Migrationen, lokal = remote bis `20261119031957` (0076), 17 Edge Functions deployt (alle `verify_jwt` aus). Nächste Migration 0077.
@@ -15,11 +14,11 @@ Stand 2026-11-19, ts1 läuft (Zwischenstand, Branch `ts1`); davor mail2 (R3: Mai
 - Dev-Betrieb: Cron `outbox-dispatch` scharf, Secrets `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_BETREIBER`, `APP_URL`, `OUTBOX_SECRET`, `DEV_MAIL_GUARD=1` stehen (der Schalter gehört nie in Produktion). Dev-Reset (dev1): `npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe`, dann `loeschen`, nur auf Anforderung (Nr. 195). Jede neue Funktion braucht ein `grant execute` nur für ihren Aufrufer (`daten.md`). Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung, GOLIVE 34 und die Rest-Punkte von GOLIVE 46 bis 48 erledigt sind.
 
 ## Nächster Schritt
-1. ts1 abschließen (siehe oben). Danach: GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Rate-Limit `photo-receipt` (S9d-4).
+1. GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Rate-Limit `photo-receipt` (S9d-4).
 2. Kleine Reste: OFFEN ts1-1, mail2-1, mail1-1, mail1-5, ui2-2 bis ui2-5, bl1-1 bis bl1-3, rj1-3, fh1-2.
 
 ## Wartet auf Beks
-- Dashboard Dev: Auth-Captcha prüfen (BEKS „Zuerst“); BEKS Frage 1 (genügt GOLIVE 18 für die Partner-Registrierung?). Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
+- BEKS Frage 1 (genügt GOLIVE 18 für die Partner-Registrierung, GOLIVE 26?). Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
 - Rechtstexte (GOLIVE 33, 51), Brevo-Produktivkonto und Domain (GOLIVE 42 bis 45), ORS-Vertrag, Hosting, Turnstile-Konto (GOLIVE 49), Produktivprojekt; einmal `/advisor off` (`docs/BEKS_EINRICHTUNG.md`).
 
 ## Hinweise, die jede Session braucht

@@ -34,8 +34,7 @@ Die Frage 1 vom 2026-11-19 (mail2, Altersgrenze für Mails nach langem Brevo-Aus
 
 Die Frage 1 vom 2026-11-19 (ts1, Turnstile Site Key in `daten.md`) ist beantwortet (ENTSCHEIDUNGEN Nr. 216).
 
-## Zuerst: Auth-Captcha auf Dev wirkt noch nicht (ts1), ein Mini-Schritt von Beks
-Stand 2026-11-19: Die Function `route` verlangt das Token und läuft (deployt, Secret steht). Die Anmeldung dagegen verlangt auf Dev noch keins: Eine Passwort-Anmeldung und `signInWithOtp` ohne Token kommen ohne `captcha_failed` durch (Messung: unbekannter Nutzer ergibt `invalid_credentials`, die Adresse wird geprüft statt das Token). Das Dashboard-Captcha ist also nicht scharf, oder es ist im falschen Projekt gesetzt. Bitte im **Dev-Projekt** (Ref `vcpbbzdyltvffvzjrzdi`) prüfen: Authentication → Attack Protection (bzw. Sign In / Providers → Bot and Abuse Protection) → „Enable CAPTCHA protection“ ist **an**, Anbieter **Cloudflare Turnstile**, Secret ist der „Always passes“-Wert, **Save** gedrückt (das Feld meldet sonst „unsaved changes“). Danach `/schritt ts1 Fortsetzung`; ts1 wiederholt dann `captcha-live` und läuft bis zum Bericht weiter.
+Die Einrichtung von Turnstile auf Dev (ts1: `.env.local`, Function-Secret, Auth-Captcha) ist erledigt und gemessen (Passwort-Anmeldung und Mail-Anforderung ohne Token: 400 `captcha_failed`).
 
 ## Offene Fragen
 1. **Genügt GOLIVE 18 (Captcha am Anmeldeweg) für die offene Partner-Registrierung (GOLIVE 26, ts1, Stand 2026-11-19)?** `register_partner` und die Dokument-Uploads laufen nur mit Konto; ein Konto entsteht nur über die Anmeldung, die seit ts1 das Captcha trägt. Rate-Limit und Dokumentgrenzen fehlen weiter. Empfehlung: ja, Punkt 26 auf die Rate-Limit- und Upload-Grenzen verengen (kein eigenes Captcha am Formular). Antwort im Chat: „1 ja“ oder „1 nein“ (dann bekommt das Formular ein eigenes Token, eigener Schritt).
