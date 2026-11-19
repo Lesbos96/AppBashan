@@ -26,8 +26,10 @@ Die Frage 1 vom 2026-11-17 (bl1, Belegplätze) ist beantwortet (ENTSCHEIDUNGEN N
 
 Die Frage 1 vom 2026-11-17 (web1, Ankunftsfenster in der Bestätigung) ist beantwortet (ENTSCHEIDUNGEN Nr. 206).
 
+Die Frage 1 vom 2026-11-18 (mail1, Brevo-Schlüssel) ist erledigt: Beks hat Schlüssel und IP-Sperre in Brevo gerichtet, die Probe-Mail wurde am 2026-11-19 angenommen (Ablauf in `docs/STAND.md`).
+
 ## Offene Fragen
-1. **Brevo lehnt den API-Schlüssel ab (mail1, Stand 2026-11-18):** Die Probe-Mail an `MAIL_BETREIBER` scheitert mit HTTP 401 `unauthorized`. Bitte in Brevo prüfen: (a) `BREVO_API_KEY` ist ein API-Schlüssel (Schlüssel für die API v3, beginnt mit `xkeysib-`), kein SMTP-Schlüssel (`xsmtpsib-`); (b) unter Sicherheit → „Autorisierte IP-Adressen“ ist die Einschränkung aus oder die Adresse der Edge Functions freigegeben (die Adressen wechseln, GOLIVE 42); (c) das Konto ist aktiviert und `MAIL_FROM` ein bestätigter Absender (GOLIVE 43). Dann den Schlüssel neu setzen (`BREVO_API_KEY`, nur du) und `/schritt mail1 Fortsetzung` starten. Der Schlüssel wurde am 2026-11-18 neu gesetzt, der Lauf um 22:52 UTC scheiterte wieder mit 401 `unauthorized`: Bitte nicht nur den Schlüssel tauschen, sondern in Brevo (SMTP & API → API-Schlüssel) prüfen, dass der Schlüssel dort „aktiv“ steht und beim Einfügen kein Leerzeichen oder Zeilenumbruch mitkam. Ob der Schlüssel zu `MAIL_FROM` passt, kann nur Brevo sagen. Antwort im Chat: „erledigt“.
+1. **An welche Adresse gehen Mails an Firmen (mail1, Stand 2026-11-19)?** Heute an `contact_email` der Firma, die jedes Mitglied selbst ändern kann; ihr Besitz wird nicht geprüft. Eine freigeschaltete Firma könnte so MoveNow-Mails an fremde Adressen auslösen (OFFEN mail1-3). Empfehlung: Versand an die Anmeldeadresse des Kontos (bestätigt über den Magic-Link) statt an `contact_email`; `contact_email` bleibt als Kontaktangabe. Alternative: `contact_email` erst nach Bestätigung per Link verwenden (mehr Aufwand). Antwort im Chat: „1 Anmeldeadresse“ oder „1 Bestätigung“.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
