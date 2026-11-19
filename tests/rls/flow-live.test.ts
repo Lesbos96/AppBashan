@@ -126,7 +126,7 @@ beforeAll(async () => {
   const past = "now() - interval '2 hours'"
   const future = "now() + interval '14 days'"
   const D21 = { districts: 'array[21]::smallint[]' }
-  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} ${job(W4, future)} ${ranged(W5)} ${job(W6, past)} ${job(W7, past)} commit;`)
+  ownerSql(`begin; ${firm(pa.id, 'a', 'active', adm, D21)} ${firm(pb.id, 'b', 'active', adm, D21)} ${job(W1, past)} ${job(W2A, future)} ${job(W2B, past)} ${job(W3, past)} ${job(W4, future)} ${ranged(W5)} ${job(W6, "now() - interval '5 minutes'")} ${job(W7, past)} commit;`) // W6: Termin heute (Wiener Tag) für set_en_route, nicht 2 Stunden zurück (kurz nach Mitternacht wäre das gestern)
   partnerA = partnerOf(pa.id)
 }, 600_000)
 
@@ -411,6 +411,9 @@ describe('W6 Meldung „nicht stattgefunden“ während des Auftrags (Z1 → Z2)
 
   live('W6: Frage offen (Server), Kunde meldet, die Firma ist gesperrt (Abschluss, Nachtrag) und sieht nur „in Prüfung“', async () => {
     await accept(W6)
+    const eta = await pa.aal2.rpc('set_en_route', { p_request: W6, p_minutes: 15 }) // mail1: Ereignis „Unterwegs“, Zeile in der Outbox
+    expect(eta.error).toBeNull()
+    expect(new Date(String(eta.data)).getTime()).toBeGreaterThan(Date.now())
     expect((await pa.aal2.rpc('start_job', { p_request: W6 })).error).toBeNull()
     expect(await info(W6)).toMatchObject({ can_report: true })
     expect((await info(W6))?.report_until).toBeTruthy()
@@ -424,6 +427,18 @@ describe('W6 Meldung „nicht stattgefunden“ während des Auftrags (Z1 → Z2)
     expect(await jobOf(W6)).toMatchObject({ under_review: true, status: 'in_progress', can_start: false })
     expect(snap(W6)).toEqual(s)
     expect((await cust.db.rpc('complete_job', { p_request: W6 })).error?.message).toBe('invalid_transition')
+    // mail1, Live-Beleg der Kette Ereignis → Outbox → Cron → outbox-send: Der Cron holt die Zeilen „en_route“ und „report_new“. Kunde und Konten sind Testkonten
+    // (.test, Auth-API) und der Dev-Schutz überspringt sie: Endzustand erledigt, ein Versuch, kein Fehlercode. Das setzt voraus, dass die Adresse und (bei „Unterwegs“)
+    // die Ankunftszeit mit dem Secret Key gelesen wurden; ein Lesefehler ließe die Zeile wartend mit Fehlercode zurück.
+    const rows = async () => ownerSql(`select kind, status, attempts, coalesce(last_error, '-') as err from public.outbox where request_id = '${W6}' and kind in ('en_route', 'report_new') order by kind`)
+      .map((r) => ({ kind: String(r.kind), status: String(r.status), attempts: Number(r.attempts), err: String(r.err) }))
+    let outbox = await rows()
+    for (let i = 0; i < 24 && (outbox.length < 2 || outbox.some((r) => r.status !== 'sent')); i++) {
+      await new Promise((res) => setTimeout(res, 5000))
+      outbox = await rows()
+    }
+    ist(`W6 | Outbox durch den Cron (en_route, report_new) | ${JSON.stringify(outbox)}`)
+    expect(outbox).toEqual([{ kind: 'en_route', status: 'sent', attempts: 1, err: '-' }, { kind: 'report_new', status: 'sent', attempts: 1, err: '-' }])
   })
 
   live('W7: Firma schließt ab, der Kunde kann noch melden (Server-Signal), danach in Prüfung', async () => {
