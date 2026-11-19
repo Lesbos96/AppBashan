@@ -70,7 +70,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   bad_input: 'Prüfe deine Angaben. Mit diesen Werten geht es nicht.',
   receipt_limit: 'Zu diesem Auftrag gibt es schon die höchste Zahl an Belegfotos (8).',
   bad_photo: 'Dieses Foto lässt sich nicht verwenden. Nimm ein anderes JPEG, PNG oder WebP.',
-  rate_limited: 'Es wurden gerade zu viele Fotos hochgeladen. Warte etwas und versuche es dann noch einmal.',
+  rate_limited: 'Gerade sind zu viele Fotos unterwegs. Warte etwas und versuche es dann noch einmal.',
   under_review: 'Für diesen Auftrag läuft eine Prüfung. Das geht gerade nicht.',
   late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Vor Ort anders als gebucht“ möglich.',
   no_call_out: 'Für diese Absage gibt es keine Pauschale mehr.',
@@ -94,6 +94,7 @@ const CODES: Record<string, JobErrorKind> = {
   under_review: 'under_review',
   retry: 'retry',
   unauthorized: 'unauthorized',
+  rate_limited: 'rate_limited',
 }
 
 /** Wie lange ein Fehler die Anzeige veraltet: danach lädt der Auftrag neu. */

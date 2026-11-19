@@ -9,7 +9,7 @@ import { Image } from 'imagescript'
 import '../../scripts/dev-guard.mjs'
 import { splitChange, splitFee, type FeeTier } from '@pricing'
 import { journalCsv } from '../../supabase/functions/_shared/commission/csv.ts'
-import { RECEIPT_LIMITS } from '../../supabase/functions/_shared/photo/handlers.ts'
+import { JOB_PHOTO_LIMITS, RECEIPT_LIMITS } from '../../supabase/functions/_shared/photo/handlers.ts'
 import { moveInputs } from '../support/quote.ts'
 import { anon, deleteUsers, env, makeUser, type TestUser } from '../support/db.ts'
 import { currentFee } from '../support/fee.ts'
@@ -575,5 +575,36 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     expect(objectsSince(t1)).toBe(0)
     expect(objectsSince(t0)).toBe(0)
     ist(`W5 | Beleg-Limit | ${passed} Aufrufe durchgelassen (422), Minuten-Zähler griff ${minuteHits} mal; Aufruf ${passed + 1} und gültiges JPEG: 429, Belegzeilen ${rowsBefore} -> ${photosOf(W5).length}, neue Objekte 0`)
+  }, 300_000)
+
+  // rl2 (OFFEN rl1-1): Zähler an job-photo, Konto je Minute (JOB_PHOTO_LIMITS), Eimer getrennt von photo-receipt. Der Kunde von W1 (Belege vorhanden) ruft ohne Pause auf, bis 429 kommt;
+  // jede andere Antwort als 200 oder 429 bricht ab. Unabhängig von der Startsekunde: feste Fenster, ein Fenster mit 61 Aufrufen entsteht spätestens im zweiten (Obergrenze 200 Aufrufe).
+  // 429 ohne Wirkung: Antwort genau { error }, keine URL; die Gegenprobe mit dem Konto von Firma a (anderer Zähler) liefert direkt danach wieder 200 mit URL.
+  live('job-photo Limit: Kunde ruft bis zur Grenze auf (200 mit URL), dann 429 ohne URL; anderes Konto bleibt unberührt (200 mit URL)', async () => {
+    const urls = (r: { body: unknown }) => (Array.isArray(r.body) ? (r.body as { url?: unknown }[]).filter((p) => typeof p.url === 'string' && p.url.startsWith('https://')).length : 0)
+    const raw = async (jwt: string, body: unknown): Promise<{ status: number; body: unknown }> => {
+      const res = await fetch(`${env('NEXT_PUBLIC_SUPABASE_URL')}/functions/v1/job-photo`, { method: 'POST', headers: hdr(jwt, { 'content-type': 'application/json' }), body: JSON.stringify(body) })
+      return { status: res.status, body: await res.json().catch(() => null) }
+    }
+    const first = await raw(cust.jwt, { requestId: W1 })
+    expect(first.status, JSON.stringify(first)).toBe(200)
+    expect(urls(first), 'Positivkontrolle: mindestens eine URL').toBeGreaterThan(0)
+    let ok = 1
+    let limited: { status: number; body: unknown } | null = null
+    for (let i = 0; i < 200 && !limited; i++) {
+      const r = await raw(cust.jwt, { requestId: W1 })
+      if (r.status === 429) limited = r
+      else {
+        expect(r.status, JSON.stringify(r)).toBe(200)
+        ok++
+      }
+    }
+    expect(limited, `kein 429 nach ${ok} Aufrufen`).not.toBeNull()
+    expect(limited).toEqual({ status: 429, body: { error: 'rate_limited' } })
+    expect(ok).toBeLessThanOrEqual(2 * JOB_PHOTO_LIMITS.userMinute) // höchstens zwei Fenster
+    const other = await raw(pa.jwt2, { listingId: listingOf(W1, partnerA) })
+    expect(other.status, JSON.stringify(other)).toBe(200)
+    expect(urls(other), 'Gegenprobe: URL für das andere Konto').toBeGreaterThan(0)
+    ist(`W1 | job-photo-Limit | Kunde: ${ok} Aufrufe 200 mit URL, dann 429 {error:rate_limited} ohne URL; Firma a danach 200 mit ${urls(other)} URL`)
   }, 300_000)
 })

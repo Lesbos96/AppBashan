@@ -137,6 +137,14 @@ describe('Nachtrag', () => {
     expect(await loadReceipts(ID, [ID])).toEqual(['https://x.test/a.jpg'])
     expect(invoke).toHaveBeenCalledWith('job-photo', { body: { requestId: ID } })
   })
+
+  it('Belege (rl2): 429 rate_limited ist die Fehlerart rate_limited, ein einziger Aufruf; 503 limiter_unavailable bleibt unavailable', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(429, { error: 'rate_limited' }) })
+    await expect(loadReceipts(ID, [ID])).rejects.toMatchObject({ kind: 'rate_limited' })
+    expect(invoke).toHaveBeenCalledTimes(1)
+    invoke.mockResolvedValue({ data: null, error: http(503, { error: 'limiter_unavailable' }) })
+    await expect(loadReceipts(ID, [ID])).rejects.toMatchObject({ kind: 'unavailable' })
+  })
 })
 
 describe('Termin', () => {

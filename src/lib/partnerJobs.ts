@@ -38,6 +38,7 @@ const CODES: Record<string, JobErrorKind> = {
   amount_out_of_range: 'amount',
   vat_rule_missing: 'vat_rule',
   retry: 'retry',
+  rate_limited: 'rate_limited',
 }
 // Nachschlagen nur in eigenen Schlüsseln (kein `constructor`, `toString` aus der Prototypkette)
 const own = <T>(map: Record<string, T>, key: unknown): T | undefined => (typeof key === 'string' && Object.hasOwn(map, key) ? map[key] : undefined)

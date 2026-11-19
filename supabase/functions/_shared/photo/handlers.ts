@@ -107,12 +107,14 @@ export type ReceiptDeps = GetUser & {
   log: Log
 }
 
-async function take(deps: ReceiptDeps, checks: RateCheck[]): Promise<void> {
+type Limiter = Pick<ReceiptDeps, 'takeTokens' | 'log'>
+
+async function take(deps: Limiter, checks: RateCheck[], event = 'photo_receipt_limiter'): Promise<void> {
   let allowed: boolean
   try {
     allowed = await deps.takeTokens(checks)
   } catch {
-    deps.log({ event: 'photo_receipt_limiter', code: 'limiter_unavailable' }) // fester Text, nie Eimer, Konto oder Fehlermeldung
+    deps.log({ event, code: 'limiter_unavailable' }) // fester Text, nie Eimer, Konto oder Fehlermeldung
     throw new HttpError(503, 'limiter_unavailable') // fail closed
   }
   if (!allowed) throw new HttpError(429, 'rate_limited')
@@ -158,8 +160,20 @@ export async function handleReceipt(req: Request, deps: ReceiptDeps): Promise<Re
 
 // job-photo ------------------------------------------------------------------------------------------------------------------
 export type PhotoLink = { id: string; kind: string; url: string }
+/**
+ * Grenze für `job-photo` (rl2, OFFEN rl1-1): Konto je Minute, feste UTC-Fenster wie bei `photo-receipt`. Die App ruft je Ansicht einmal auf (Anfragen.tsx auf Klick,
+ * Nachtrag.tsx beim Öffnen); 60 lassen Blättern durch mehrere Anfragen zu. Jeder Aufruf mit gültigem Token zählt (auch ungültige Eingabe und fremde ID), der Zähler
+ * steht vor Body und Datenbank. Eigener Eimer: Ansehen verbraucht nie das Upload-Budget. Kein Tages- und kein Auftragszähler: der Pfad liest nur, und ein Tages-429
+ * sperrte bis 00:00 UTC.
+ * ponytail: feste Fenster erlauben an der Minutengrenze bis zu 120; mit echten Zahlen prüfen (OFFEN rl2-1).
+ */
+export const JOB_PHOTO_LIMITS = { userMinute: 60 } as const
+
 export type JobPhotoDeps = GetUser & {
   allowedOrigins: readonly string[]
+  hmac(text: string): Promise<string>
+  /** Zähler wie bei `route` (`take_rate_tokens`): `false`, sobald er sein Maximum überschreitet; wirft, wenn er ausfällt. */
+  takeTokens(checks: RateCheck[]): Promise<boolean>
   /** Genau eines von beiden: Listing (Partner) oder Anfrage (Kunde). Liefert signierte URLs ohne Pfad; wirft `DbError`. */
   photos(userId: string, aal: string, target: { listingId: string } | { requestId: string }): Promise<PhotoLink[]>
   log: Log
@@ -175,6 +189,7 @@ export async function handleJobPhoto(req: Request, deps: JobPhotoDeps): Promise<
     const a = await authed(req, deps, origin, false)
     if (a.res) return a.res
     const user = a.user
+    await take(deps, [{ bucket: `jobphoto:min:${await deps.hmac(`user|${user.id}`)}`, max: JOB_PHOTO_LIMITS.userMinute, window_seconds: MINUTE }], 'job_photo_limiter')
     const { listingId, requestId } = ((await body(req)) ?? {}) as Record<string, unknown>
     const ok = (v: unknown): v is string => typeof v === 'string' && UUID.test(v)
     if (ok(listingId) === ok(requestId) || (listingId !== undefined && !ok(listingId)) || (requestId !== undefined && !ok(requestId))) {

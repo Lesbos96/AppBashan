@@ -1,7 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { JobError, jobErrorText, stale } from '../../src/lib/jobs'
-import { acceptListing, declineListing, loadListings, loadMyOffers, parseEuro, payoutPreview, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
+import { acceptListing, declineListing, loadListings, loadMyOffers, loadPhotos, parseEuro, payoutPreview, scopeLines, sendOffer, withdrawOffer } from '../../src/lib/partnerJobs'
 
 const invoke = vi.fn()
 const rpc = vi.fn()
@@ -114,6 +114,20 @@ describe('Listings lesen', () => {
   it('Lesefehler wird geworfen', async () => {
     result = { data: null, error: { message: 'x' } }
     await expect(loadListings()).rejects.toBeTruthy()
+  })
+})
+
+describe('Fotos der Anfrage (rl2): Zähler der Function job-photo', () => {
+  it('429 rate_limited ist die Fehlerart rate_limited, ein einziger Aufruf (keine automatische Wiederholung), Text ohne „hochgeladen“', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(429, { error: 'rate_limited' }) })
+    await expect(loadPhotos(ID)).rejects.toMatchObject({ kind: 'rate_limited' })
+    expect(invoke).toHaveBeenCalledTimes(1)
+    expect(jobErrorText.rate_limited).not.toMatch(/hochgeladen/)
+  })
+
+  it('503 limiter_unavailable bleibt „unavailable“ (Wiederholung nur auf Klick)', async () => {
+    invoke.mockResolvedValue({ data: null, error: http(503, { error: 'limiter_unavailable' }) })
+    await expect(loadPhotos(ID)).rejects.toMatchObject({ kind: 'unavailable' })
   })
 })
 

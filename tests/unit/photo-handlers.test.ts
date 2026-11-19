@@ -7,6 +7,7 @@ import {
   handleJobPhoto,
   handlePublish,
   handleReceipt,
+  JOB_PHOTO_LIMITS,
   RECEIPT_LIMITS,
   type AdminPhotoDeps,
   type JobPhotoDeps,
@@ -304,14 +305,22 @@ describe('photo-receipt Rate-Limit', () => {
 })
 
 // job-photo -----------------------------------------------------------------------------------------------------------------
-function jobDeps(over: Partial<JobPhotoDeps> = {}): JobPhotoDeps & { seen: unknown[] } {
+function jobDeps(over: Partial<JobPhotoDeps> = {}): JobPhotoDeps & { seen: unknown[]; calls: string[]; taken: RateCheck[][]; logs: unknown[] } {
   const seen: unknown[] = []
+  const calls: string[] = []
+  const taken: RateCheck[][] = []
+  const logs: unknown[] = []
   return {
     seen,
+    calls,
+    taken,
+    logs,
     allowedOrigins: [],
     getUser: async () => ({ id: 'u1', aal: 'aal2' }),
-    photos: async (...a) => (seen.push(a), [{ id: 'p1', kind: 'request', url: 'https://signed.test/a?token=1' }]),
-    log: () => {},
+    hmac: async (t) => `h(${t})`,
+    takeTokens: async (c) => (calls.push('take'), taken.push(c), true),
+    photos: async (...a) => (calls.push('photos'), seen.push(a), [{ id: 'p1', kind: 'request', url: 'https://signed.test/a?token=1' }]),
+    log: (e) => void logs.push(e),
     ...over,
   }
 }
@@ -344,6 +353,69 @@ describe('job-photo', () => {
     const res = await handleJobPhoto(jp({ listingId: J }), jobDeps({ photos: async () => Promise.reject(new DbError('not_found')) }))
     expect(res.status).toBe(404)
     expect(await res.json()).toEqual({ error: 'not_found' })
+  })
+})
+
+// job-photo: Rate-Limit (rl2, OFFEN rl1-1) -----------------------------------------------------------------------------------
+describe('job-photo Rate-Limit', () => {
+  const ORIGIN = 'https://app.test'
+  const withOrigin = { authorization: 'Bearer t', origin: ORIGIN }
+
+  it('ein Aufruf des Zählers vor der Datenbank: Konto je Minute, eigener Eimer jobphoto:min (nie receipt:min) nur als Hash, Grenze aus JOB_PHOTO_LIMITS', async () => {
+    const d = jobDeps()
+    expect((await handleJobPhoto(jp({ listingId: J }), d)).status).toBe(200)
+    expect(d.calls).toEqual(['take', 'photos'])
+    expect(d.taken).toEqual([[{ bucket: 'jobphoto:min:h(user|u1)', max: JOB_PHOTO_LIMITS.userMinute, window_seconds: 60 }]])
+    expect(JOB_PHOTO_LIMITS).toEqual({ userMinute: 60 })
+  })
+
+  it('Überschreitung: 429 rate_limited mit CORS-Kopf, Body nicht gelesen, photos nicht aufgerufen, kein Log', async () => {
+    const d = jobDeps({ allowedOrigins: [ORIGIN], takeTokens: async (c) => (d.calls.push('take'), d.taken.push(c), false) })
+    const req = jp({ listingId: J }, withOrigin)
+    const res = await handleJobPhoto(req, d)
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: 'rate_limited' })
+    expect(res.headers.get('access-control-allow-origin')).toBe(ORIGIN)
+    expect(req.bodyUsed).toBe(false)
+    expect(d.calls).toEqual(['take'])
+    expect(d.logs).toEqual([])
+  })
+
+  it('Zähler fällt aus: 503 limiter_unavailable (fail closed) mit CORS-Kopf, festes Log ohne Eimer, Konto und Fehlermeldung, Body nicht gelesen, photos nicht aufgerufen', async () => {
+    const d = jobDeps({ allowedOrigins: [ORIGIN], takeTokens: async () => Promise.reject(new Error(`secret ${J} h(user|u1)`)) })
+    const req = jp({ listingId: J }, withOrigin)
+    const res = await handleJobPhoto(req, d)
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ error: 'limiter_unavailable' })
+    expect(res.headers.get('access-control-allow-origin')).toBe(ORIGIN)
+    expect(req.bodyUsed).toBe(false)
+    expect(d.calls).toEqual([])
+    expect(d.logs).toEqual([{ event: 'job_photo_limiter', code: 'limiter_unavailable' }])
+  })
+
+  it('jeder Aufruf mit gültigem Token zählt: ungültige Eingabe (400) und fremde ID (404) verbrauchen den Zähler; ohne Token (401) nicht', async () => {
+    const d = jobDeps({ photos: async () => Promise.reject(new DbError('not_found')) })
+    expect((await handleJobPhoto(jp({}), d)).status).toBe(400)
+    expect((await handleJobPhoto(jp({ listingId: J }), d)).status).toBe(404)
+    expect(d.taken).toHaveLength(2)
+    expect((await handleJobPhoto(jp({ listingId: J }, {}), d)).status).toBe(401)
+    expect(d.taken).toHaveLength(2)
+  })
+
+  it('Zähler je Konto: der Eimer folgt der Konto-ID aus dem Token, nie der Eingabe', async () => {
+    const d = jobDeps({ getUser: async () => ({ id: 'u2', aal: 'aal1' }) })
+    await handleJobPhoto(jp({ requestId: R }), d)
+    expect(d.taken[0]?.[0]?.bucket).toBe('jobphoto:min:h(user|u2)')
+  })
+
+  it('nach der Grenze zählt take_rate_tokens weiter: 60 Aufrufe 200, der 61. ist 429 ohne photos (Zähler wie 0008)', async () => {
+    const c = counting()
+    const d = jobDeps({ takeTokens: c.take })
+    const statuses: number[] = []
+    for (let i = 0; i <= JOB_PHOTO_LIMITS.userMinute; i++) statuses.push((await handleJobPhoto(jp({ listingId: J }), d)).status)
+    expect(statuses.filter((s) => s === 200)).toHaveLength(JOB_PHOTO_LIMITS.userMinute)
+    expect(statuses.at(-1)).toBe(429)
+    expect(d.seen).toHaveLength(JOB_PHOTO_LIMITS.userMinute)
   })
 })
 
