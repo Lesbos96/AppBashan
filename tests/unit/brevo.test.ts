@@ -23,7 +23,15 @@ describe('brevoSender', () => {
   })
 
   it('Status und Kürzel der Antwort stehen im Fehler (Diagnose), nie der Text und nie ein Wert, der kein Kürzel ist', async () => {
-    const fail = (status: number, body: string) => sender(async () => new Response(body, { status }))(mail).catch((e: unknown) => e as MailError)
+    const thrown = async (send: () => Promise<void>): Promise<MailError> => {
+      try {
+        await send()
+      } catch (e) {
+        return e as MailError
+      }
+      throw new Error('kein Fehler geworfen')
+    }
+    const fail = (status: number, body: string) => thrown(() => sender(async () => new Response(body, { status }))(mail))
     const a = await fail(401, '{"code":"unauthorized","message":"Key not found for kunde@example.com"}')
     expect([a.status, a.code, a.permanent, a.message]).toEqual([401, 'unauthorized', true, 'mail_failed'])
     expect(JSON.stringify([a.status, a.code, a.message])).not.toContain('example.com')
@@ -31,7 +39,7 @@ describe('brevoSender', () => {
     expect((await fail(400, '{"code":"Unauthorized Key"}')).code).toBeNull()
     expect((await fail(503, 'kein JSON')).code).toBeNull()
     expect((await fail(503, 'kein JSON')).status).toBe(503)
-    const net = await sender(async () => { throw new TypeError('fetch failed') })(mail).catch((e: unknown) => e as MailError)
+    const net = await thrown(() => sender(async () => { throw new TypeError('fetch failed') })(mail))
     expect([net.status, net.code, net.permanent]).toEqual([null, null, false])
   })
 
