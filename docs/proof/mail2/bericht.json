@@ -1,0 +1,86 @@
+{
+  "schritt": "mail2",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 320
+  },
+  "sitzung": "31f8c9c0-2c81-44d0-a8f3-cc396bc67f9d",
+  "berater": {
+    "Explore": 1,
+    "advisor": 1,
+    "advisor-report": 4
+  },
+  "hash": "c3ad880ae9c3ee2cc8b96461c4f7cf600bab659a",
+  "stand": "e25de3c854b5d8f101e8f857244cf5e0a4b4ee09f2ff0563c7a3fcb59e903b35",
+  "mainVorher": "f77543bb2d9f78793553d954e63ca48e118cabbb",
+  "commits": 5,
+  "geaendert": {
+    "docs": 6,
+    "andere": 2,
+    "scripts": 3,
+    "supabase/functions": 3,
+    "supabase/migrations": 1,
+    "tests/rls": 1,
+    "tests/unit": 4
+  },
+  "laeufe": {
+    "check": {
+      "nr": 14,
+      "exit": 0,
+      "tests": "2135 passed (2135)",
+      "sek": 48.3,
+      "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
+      "schritt": "mail2",
+      "log": "docs\\proof\\mail2\\014-check.log"
+    },
+    "rls": {
+      "nr": 17,
+      "exit": 0,
+      "tests": "407 passed (407)",
+      "sek": 1315.7,
+      "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
+      "schritt": "mail2",
+      "log": "docs\\proof\\mail2\\017-rls.log"
+    },
+    "e2e": {
+      "nr": 15,
+      "exit": 0,
+      "tests": "723 passed (11.5m)",
+      "sek": 689.2,
+      "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
+      "schritt": "mail2",
+      "log": "docs\\proof\\mail2\\015-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 17,
+    "rot": 4
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261119031957_0076_mail2_konto_empfaenger.sql",
+      "sha256": "02f20d6be94bc750a82252e27cc41b71ee5ae55980836c9679d383220fbbcc67"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs/proof/mail2/mail2-abnahme-2.md",
+    "quelle": "tmp/proof/mail2-abnahme-2.md",
+    "sha256": "4989c55403e3a48d07c16f7c327ab7d77b804ba4413d99637d4df2be00551e30",
+    "runde": 2,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\mail2\\db-antrag-1.json",
+    "docs\\proof\\mail2\\db-freigabe-1.md",
+    "docs\\proof\\mail2\\loesch-freigabe-1.md",
+    "docs\\proof\\mail2\\loesch-lauf.jsonl",
+    "docs\\proof\\mail2\\mail2-abnahme-1.md",
+    "docs\\proof\\mail2\\mail2-abnahme-2.md",
+    "docs\\proof\\mail2\\mail2-plan.md"
+  ]
+}
