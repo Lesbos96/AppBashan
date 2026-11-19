@@ -1,6 +1,6 @@
 # MoveNow · Fragen an Beks
 
-Stand 2026-11-17. Antworte im Chat mit den Nummern, zum Beispiel „1 ja, 2 nein, 3 ja“. Beantwortete Fragen werden hier gelöscht und in `docs/ENTSCHEIDUNGEN.md` eingetragen. Höchstens 15 Fragen; Weiteres steht in `docs/OFFEN.md`.
+Stand 2026-11-19. Antworte im Chat mit den Nummern, zum Beispiel „1 ja, 2 nein, 3 ja“. Beantwortete Fragen werden hier gelöscht und in `docs/ENTSCHEIDUNGEN.md` eingetragen. Höchstens 15 Fragen; Weiteres steht in `docs/OFFEN.md`.
 
 Die 15 Fragen vom 2026-11-14 sind beantwortet (ENTSCHEIDUNGEN Nr. 148 bis 162); ihre Folgearbeiten stehen in `docs/OFFEN.md`.
 
@@ -29,7 +29,7 @@ Die Frage 1 vom 2026-11-17 (web1, Ankunftsfenster in der Bestätigung) ist beant
 Die Frage 1 vom 2026-11-18 (mail1, Brevo-Schlüssel) ist erledigt: Beks hat Schlüssel und IP-Sperre in Brevo gerichtet, die Probe-Mail wurde am 2026-11-19 angenommen (Ablauf in `docs/STAND.md`).
 
 ## Offene Fragen
-1. **An welche Adresse gehen Mails an Firmen (mail1, Stand 2026-11-19)?** Heute an `contact_email` der Firma, die jedes Mitglied selbst ändern kann; ihr Besitz wird nicht geprüft. Eine freigeschaltete Firma könnte so MoveNow-Mails an fremde Adressen auslösen (OFFEN mail1-3). Empfehlung: Versand an die Anmeldeadresse des Kontos (bestätigt über den Magic-Link) statt an `contact_email`; `contact_email` bleibt als Kontaktangabe. Alternative: `contact_email` erst nach Bestätigung per Link verwenden (mehr Aufwand). Antwort im Chat: „1 Anmeldeadresse“ oder „1 Bestätigung“.
+1. **An welche Adresse gehen Mails an Firmen (mail1, Stand 2026-11-19)?** Heute an `contact_email` der Firma, die jedes Mitglied selbst ändern kann; ihr Besitz wird nicht geprüft. Eine freigeschaltete Firma könnte so MoveNow-Mails an fremde Adressen auslösen (OFFEN mail1-3). Empfehlung: Versand an die Anmeldeadresse des Kontos (bestätigt über den Magic-Link) statt an `contact_email`; `contact_email` bleibt als Kontaktangabe. Offen dabei: Eine Firma kann mehrere Mitglieder haben (`0023:40-47`), also auch: an welches Mitglied (alle oder nur der Inhaber)? Alternative: `contact_email` erst nach Bestätigung per Link verwenden (mehr Aufwand). Antwort im Chat: „1 Anmeldeadresse“ oder „1 Bestätigung“.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
