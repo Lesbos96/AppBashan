@@ -27,6 +27,8 @@ const select = (q) => rp.select(q)
 const q1 = (s) => `'${s.replaceAll("'", "''")}'`
 
 const BUCKET = 'request-photos'
+// Dummy-Token von Cloudflare: Mit dem Turnstile-Testsecret (Dev) gilt jedes Token als gültig.
+const CAPTCHA = 'XXXX.DUMMY.TOKEN.XXXX'
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL
 const PUB = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 const mkClient = (key) => createClient(URL_, key, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -64,7 +66,7 @@ const newUser = async (tag) => {
   const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true })
   if (error) throw error
   const db = mkClient(PUB)
-  const s = await db.auth.signInWithPassword({ email, password })
+  const s = await db.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA } })
   if (s.error) throw s.error
   return { id: data.user.id, db, jwt: s.data.session.access_token }
 }
@@ -555,7 +557,7 @@ async function liveProbe() {
     console.log(`${good ? 'OK    ' : 'FEHLER'} [Live] ${label}: ${got} (erwartet ${want})`)
   }
   // Adresse wie in der App: Kandidat der Function route (die Prüfung in quote verlangt Label und Punkt des Anbieters).
-  const geo = await fetch(`${URL_}/functions/v1/route`, { method: 'POST', headers: { 'content-type': 'application/json', apikey: PUB, authorization: `Bearer ${A.jwt}` }, body: JSON.stringify({ mode: 'geocode', q: 'Stephansplatz 1, Wien' }) })
+  const geo = await fetch(`${URL_}/functions/v1/route`, { method: 'POST', headers: { 'content-type': 'application/json', apikey: PUB, authorization: `Bearer ${A.jwt}` }, body: JSON.stringify({ mode: 'geocode', q: 'Stephansplatz 1, Wien', captcha: CAPTCHA }) })
   const cand = (await geo.json()).candidates?.[0]
   if (!cand) throw new Error('Live-Probe: route lieferte keinen Kandidaten')
   const move = (ref, photoIds) => ({

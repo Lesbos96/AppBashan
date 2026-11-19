@@ -30,8 +30,16 @@ Die Frage 1 vom 2026-11-18 (mail1, Brevo-Schlüssel) ist erledigt: Beks hat Schl
 
 Die Frage 1 vom 2026-11-19 (mail1, Empfängeradresse der Firma) ist beantwortet (ENTSCHEIDUNGEN Nr. 214).
 
+Die Frage 1 vom 2026-11-19 (mail2, Altersgrenze für Mails nach langem Brevo-Ausfall) ist beantwortet (ENTSCHEIDUNGEN Nr. 215).
+
+## Zuerst: Einrichtung für ts1 (Turnstile auf Dev), drei Mini-Schritte von Beks
+ts1 steht, bis diese Schritte erledigt sind. Danach `/schritt ts1` mit dem Wort „Fortsetzung“ starten. Die Cloudflare-Testschlüssel („Always passes“) stehen auf der Seite https://developers.cloudflare.com/turnstile/troubleshooting/testing/ (Site Key und Secret Key; kein echtes Konto nötig). Das Secret steht nur in diesen drei Orten, nie im Chat oder in Dateien des Repos.
+1. In `.env.local` zwei Zeilen ergänzen: `NEXT_PUBLIC_TURNSTILE_SITE_KEY=` mit dem Site Key „Always passes“ und `TURNSTILE_SECRET_KEY=` mit dem Secret Key „Always passes“ (die Namen stehen in `.env.example`). Prüfen mit `npm run env:check` (zeigt nur Namen).
+2. Supabase-Dashboard, Dev-Projekt: Edge Functions → Secrets → neues Secret `TURNSTILE_SECRET_KEY` mit demselben Secret-Wert.
+3. Supabase-Dashboard, Dev-Projekt: Authentication → Attack Protection (bzw. Sign In / Providers → Bot and Abuse Protection) → „Enable CAPTCHA protection“ einschalten, Anbieter „Cloudflare Turnstile“, Secret dasselbe wie in Schritt 1, speichern. Folge: Die lokale App meldet auf Dev erst mit dem neuen Stand von ts1 wieder an; die Test- und Live-Skripte senden schon das Dummy-Token.
+
 ## Offene Fragen
-1. **Wie alt darf eine Mail sein, wenn Brevo nach einem langen Ausfall wieder annimmt (mail2, Stand 2026-11-19)?** Bei einem Kontofehler von Brevo (Schlüssel, Sperre, Kontingent, Rate-Limit) warten die Mails ohne Versuchsgrenze; nach dem Ausfall gehen alle gesammelt hinaus, auch sehr alte („Dein Partner schlägt einen Nachtrag vor“ nach Tagen). Nur „Unterwegs“ verfällt (Nr. 211). Empfehlung: eine Altersgrenze von 48 Stunden für alle Mails außer Meldungen an den Betreiber; ältere Zeilen werden `failed` mit dem Code `expired` (Migration und Test, kleiner R3-Schritt). Alternative: keine Grenze (heute). Antwort im Chat: „1 48 Stunden“, „1 andere Zahl“ oder „1 keine Grenze“.
+1. **Darf der Satz in `.claude/rules/daten.md` erweitert werden (ts1, Stand 2026-11-19)?** Dort steht heute: in der App nur Variablen mit `NEXT_PUBLIC_`-Präfix, „und davon nur URL und Publishable Key“. ts1 fügt `NEXT_PUBLIC_TURNSTILE_SITE_KEY` hinzu (der Site Key ist öffentlich wie der Publishable Key; Ihr Auftrag nannte die Variable ausdrücklich). Die Regel selbst ändert nur Beks. Empfehlung: den Satz so ändern: „… davon nur URL, Publishable Key und der Turnstile Site Key.“ Antwort im Chat: „1 ja“ (dann ändert Beks die Zeile) oder „1 nein“ (dann wird die Variable in ts1 wieder entfernt).
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

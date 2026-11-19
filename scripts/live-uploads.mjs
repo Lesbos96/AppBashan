@@ -17,6 +17,8 @@ const opts = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient(url, process.env.SUPABASE_SECRET_KEY, opts)
 const anon = createClient(url, pub, opts)
 const BUCKET = 'request-photos'
+// Dummy-Token von Cloudflare: Mit dem Turnstile-Testsecret (Dev) gilt jedes Token als gültig.
+const CAPTCHA = 'XXXX.DUMMY.TOKEN.XXXX'
 const JPEG = { contentType: 'image/jpeg' }
 const CONTACT = { name: 'Test', phone: '+43 660 1234567', email: 'test@movenow.test' }
 
@@ -34,7 +36,7 @@ async function newUser(tag) {
   if (error) throw error
   users.push(data.user.id)
   const db = createClient(url, pub, opts)
-  const { data: session, error: se } = await db.auth.signInWithPassword({ email, password })
+  const { data: session, error: se } = await db.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA } })
   if (se) throw se
   return { id: data.user.id, db, jwt: session.session.access_token }
 }
@@ -170,7 +172,7 @@ try {
   check(!gps.error && !stored.includes('GPS') && !stored.includes('Exif'), 'gespeicherte Datei enthält weder GPS noch Exif', `${stored.length} Bytes`)
 
   // 5. Absenden: deployte Function quote übernimmt die genannte Datei (p1), nicht p2 und nicht gps
-  const geo = await fetch(`${url}/functions/v1/route`, { method: 'POST', headers: { 'content-type': 'application/json', apikey: pub, authorization: `Bearer ${a.jwt}` }, body: JSON.stringify({ mode: 'geocode', q: 'Stephansplatz 1, Wien' }) })
+  const geo = await fetch(`${url}/functions/v1/route`, { method: 'POST', headers: { 'content-type': 'application/json', apikey: pub, authorization: `Bearer ${a.jwt}` }, body: JSON.stringify({ mode: 'geocode', q: 'Stephansplatz 1, Wien', captcha: CAPTCHA }) })
   const place = (await geo.json()).candidates?.[0]
   check(!!place, 'route liefert eine Adresse für den Test')
   const sent = await quote(a, ref, [p1.id], place)

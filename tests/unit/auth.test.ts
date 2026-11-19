@@ -9,8 +9,12 @@ const auth = vi.hoisted(() => ({
 vi.mock('../../src/lib/supabase', () => ({ supabase: { auth } }))
 const clearAllPhotos = vi.hoisted(() => vi.fn())
 vi.mock('../../src/lib/photos', () => ({ clearAllPhotos }))
+// Das Widget gibt es im Unit-Test nicht: nur `getCaptchaToken` ist ersetzt, `CaptchaError` bleibt die echte Klasse.
+const getCaptchaToken = vi.hoisted(() => vi.fn())
+vi.mock('../../src/lib/turnstile', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../src/lib/turnstile')>()), getCaptchaToken }))
 
 import { AuthRetryableFetchError } from '@supabase/supabase-js'
+import { CaptchaError } from '../../src/lib/turnstile.ts'
 import { AuthError, digitsOnly, rememberNext, requestSignIn, safeNext, signInWithApple, signOut, takeNext, verifyCode, verifyLink } from '../../src/lib/auth.ts'
 
 describe('Abmelden (s9i-4)', () => {
@@ -36,6 +40,8 @@ describe('Abmelden (s9i-4)', () => {
 beforeEach(() => {
   vi.stubGlobal('window', { location: { origin: 'https://app.test' } })
   for (const fn of Object.values(auth)) fn.mockReset().mockResolvedValue({ error: null })
+  let n = 0
+  getCaptchaToken.mockReset().mockImplementation(async () => `cap-${++n}`)
 })
 
 const kind = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => (e instanceof AuthError ? e.kind : 'other'))
@@ -43,12 +49,40 @@ const kind = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => (
 describe('Anmeldung per E-Mail-Link und Code', () => {
   it('requestSignIn: Mail mit Rückkehr auf /anmelden, Konto entsteht erst jetzt', async () => {
     await requestSignIn('  kunde@example.at ')
-    expect(auth.signInWithOtp).toHaveBeenCalledWith({ email: 'kunde@example.at', options: { shouldCreateUser: true, emailRedirectTo: 'https://app.test/anmelden' } })
+    expect(auth.signInWithOtp).toHaveBeenCalledWith({ email: 'kunde@example.at', options: { shouldCreateUser: true, emailRedirectTo: 'https://app.test/anmelden', captchaToken: 'cap-1' } })
   })
 
-  it('ungültige Adresse wird nicht gesendet', async () => {
+  it('ungültige Adresse wird nicht gesendet und verbraucht keine Prüfung', async () => {
     expect(await kind(requestSignIn('kein-at'))).toBe('invalid_email')
     expect(auth.signInWithOtp).not.toHaveBeenCalled()
+    expect(getCaptchaToken).not.toHaveBeenCalled()
+  })
+
+  it('jede Anforderung (auch „erneut senden“) holt ein eigenes Token', async () => {
+    await requestSignIn('a@b.at')
+    await requestSignIn('a@b.at')
+    expect(auth.signInWithOtp.mock.calls.map((c) => (c[0] as { options: { captchaToken: string } }).options.captchaToken)).toEqual(['cap-1', 'cap-2'])
+  })
+
+  it('Captcha: Fehler der Prüfung vor der Anfrage, ohne Aufruf bei Auth', async () => {
+    getCaptchaToken.mockRejectedValueOnce(new CaptchaError('offline'))
+    expect(await kind(requestSignIn('a@b.at'))).toBe('offline')
+    getCaptchaToken.mockRejectedValueOnce(new CaptchaError('failed'))
+    expect(await kind(requestSignIn('a@b.at'))).toBe('captcha')
+    getCaptchaToken.mockRejectedValueOnce(new CaptchaError('unavailable'))
+    expect(await kind(requestSignIn('a@b.at'))).toBe('unavailable')
+    getCaptchaToken.mockRejectedValueOnce(new Error('unerwartet'))
+    expect(await kind(requestSignIn('a@b.at'))).toBe('unavailable')
+    expect(auth.signInWithOtp).not.toHaveBeenCalled()
+  })
+
+  it('Captcha: abgelehntes Token (captcha_failed) heißt captcha, nie unavailable; kein Wiederholversuch', async () => {
+    for (const status of [400, 422]) {
+      auth.signInWithOtp.mockResolvedValueOnce({ error: { status, code: 'captcha_failed' } })
+      expect(await kind(requestSignIn('a@b.at'))).toBe('captcha')
+    }
+    expect(auth.signInWithOtp).toHaveBeenCalledTimes(2)
+    expect(getCaptchaToken).toHaveBeenCalledTimes(2)
   })
 
   it('Fehler des Dienstes: 429 → rate_limited, sonst unavailable', async () => {

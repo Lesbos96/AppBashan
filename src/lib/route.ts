@@ -1,13 +1,14 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { isRouteResult } from './routeResult'
 import { supabase } from './supabase'
+import { CaptchaError, getCaptchaToken } from './turnstile'
 import type { Candidate, Point, RouteResult } from '../../supabase/functions/_shared/route/facts.ts'
 
 export type { Candidate, Point, RouteResult }
 
 /** Fehlerarten für die Oberfläche; die Function nennt nur Statuscodes, die UI braucht nur diese Unterscheidung. */
 export class RouteError extends Error {
-  constructor(readonly kind: 'network' | 'rate_limited' | 'unavailable') {
+  constructor(readonly kind: 'network' | 'rate_limited' | 'unavailable' | 'captcha') {
     super(kind)
   }
 }
@@ -16,14 +17,24 @@ const messages = {
   network: 'Keine Verbindung. Prüfe dein Netz und versuche es erneut.',
   rate_limited: 'Gerade sind zu viele Anfragen unterwegs. Versuche es in einer Minute erneut.',
   unavailable: 'Die Routenberechnung ist gerade nicht erreichbar. Versuche es später erneut.',
+  captcha: 'Die Sicherheitsprüfung hat nicht geklappt. Versuche es noch einmal.',
 }
 
 export const routeErrorText = (e: unknown) => messages[e instanceof RouteError ? e.kind : 'unavailable']
 
+/** Jeder Aufruf trägt ein frisches Turnstile-Token (einmalig verwendbar); die Function prüft es vor dem Zähler. */
+async function captcha(): Promise<string> {
+  try {
+    return await getCaptchaToken()
+  } catch (e) {
+    throw new RouteError(e instanceof CaptchaError ? (e.kind === 'offline' ? 'network' : e.kind === 'failed' ? 'captcha' : 'unavailable') : 'unavailable')
+  }
+}
+
 async function call(body: Record<string, unknown>): Promise<unknown> {
-  const { data, error } = await supabase.functions.invoke('route', { body })
+  const { data, error } = await supabase.functions.invoke('route', { body: { ...body, captcha: await captcha() } })
   if (error) {
-    if (error instanceof FunctionsHttpError) throw new RouteError(error.context.status === 429 ? 'rate_limited' : 'unavailable')
+    if (error instanceof FunctionsHttpError) throw new RouteError(error.context.status === 429 ? 'rate_limited' : error.context.status === 403 ? 'captcha' : 'unavailable')
     throw new RouteError(error instanceof FunctionsFetchError ? 'network' : 'unavailable')
   }
   return data

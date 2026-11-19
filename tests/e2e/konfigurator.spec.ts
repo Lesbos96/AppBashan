@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import type { Page } from '@playwright/test'
 import { expect, test } from './backend'
+import { mockCaptcha } from './captcha-helpers'
 import { collectErrors } from './console'
 import { addPhotos, clickTimes, fillUmzugBeispiel, mockRoute, setAddress } from './konfigurator-helpers'
 
@@ -122,6 +123,7 @@ for (const status of [429, 500]) {
 }
 
 test('Funktion nicht erreichbar bei der Suche: Fehlermeldung statt Treffer', async ({ page }) => {
+  await mockCaptcha(page)
   await page.route('**/functions/v1/route', (r) => r.abort())
   await page.goto('/transport')
   await page.getByRole('button', { name: /^Abholung/ }).click()

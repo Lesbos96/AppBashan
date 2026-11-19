@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { mockCaptcha, type CaptchaMode } from './captcha-helpers'
 
 // FESTE BEISPIELANTWORT für `route`: Sie stammt aus keiner echten Berechnung und sagt nichts über echte Kilometer.
 // Die Edge Function ist noch nicht live getestet (OPEN_ISSUES „S5b"); alle Tests und Screenshots laufen gegen diese Fixture.
@@ -23,16 +24,22 @@ const candidates: Record<string, object> = {
   Kärntner: { label: 'Kärntner Straße, 1010 Wien', lat: 48.205, lon: 16.37, postcode: '1010', country: 'AT', layer: 'street', street: 'Kärntner Straße', housenumber: null, locality: 'Wien' },
 }
 
-type Mock = { routeStatus?: number; calls?: { geocode: number; route: number } }
+type Mock = { routeStatus?: number; calls?: { geocode: number; route: number }; captcha?: CaptchaMode; tokens?: string[]; geocodeStatus?: number }
 
-/** Fängt `route` ab (auch die CORS-Vorabfrage) und zählt die Aufrufe. Mit `routeStatus` antwortet der Modus „route" mit diesem Fehlercode. */
+/**
+ * Fängt `route` ab (auch die CORS-Vorabfrage) und zählt die Aufrufe. Mit `routeStatus` antwortet der Modus „route" mit diesem Fehlercode,
+ * mit `geocodeStatus` die Adresssuche. `tokens` sammelt die Captcha-Tokens der Aufrufe; `captcha` bestimmt das Verhalten des Turnstile-Stubs.
+ */
 export async function mockRoute(page: Page, mock: Mock = {}) {
   const calls = mock.calls ?? { geocode: 0, route: 0 }
+  await mockCaptcha(page, mock.captcha)
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST, OPTIONS' }
   await page.route('**/functions/v1/route', async (r) => {
     if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors })
-    const body = r.request().postDataJSON() as { mode: 'geocode' | 'route'; q?: string }
+    const body = r.request().postDataJSON() as { mode: 'geocode' | 'route'; q?: string; captcha?: string }
     calls[body.mode]++
+    mock.tokens?.push(String(body.captcha))
+    if (body.mode === 'geocode' && mock.geocodeStatus) return r.fulfill({ status: mock.geocodeStatus, headers: cors, json: { error: 'captcha_failed' } })
     if (body.mode === 'geocode') {
       const hit = Object.entries(candidates).find(([k]) => body.q?.includes(k))
       return r.fulfill({ status: 200, headers: cors, json: { candidates: hit ? [hit[1]] : [] } })

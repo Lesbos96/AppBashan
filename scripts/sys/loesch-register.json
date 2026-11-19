@@ -27,7 +27,7 @@
     "scripts/redproof-lib.mjs": { "grund": "Bibliothek der Redproof-Läufe; das Muster trifft nur Hash-Aufrufe, Löschen läuft in den Registerskripten", "sha256": "4773ddbec520b771bdb5e99a143df50538d3a93c2d999b0787d8850f6e0a9440" },
     "scripts/redproof-migrations.mjs": { "grund": "Offline-Analyse der Migrationsdateien (Hash), keine Datenbank", "sha256": "a5792d28ad7b33a68da8f06d413c361117240fdbdd6743ea3f00fcb2902521ee" },
     "scripts/redproof-soll.mjs": { "grund": "liest Dev (Snapshot), schreibt nur lokale Dateien", "sha256": "801e6ed3388c5b97a65b9157944741630fa652b5c1eefbb2feb23887bf435050" },
-    "tests/support/db.ts": { "grund": "Test-Fixture: löscht nur die im Test selbst angelegten Konten (deleteUsers)", "sha256": "c60da712ada0eb951bc58fd2490d2efd59432a7498907754e9af9dd91a1746fe" },
+    "tests/support/db.ts": { "grund": "Test-Fixture: löscht nur die im Test selbst angelegten Konten (deleteUsers)", "sha256": "c77d7926f5f7226f49e343e618f4e5c20448678455c662101e00be8ad544fab5" },
     "tests/support/dev-guard-setup.ts": { "grund": "bindet nur den Dev-Guard ein", "sha256": "dca2e87043d5651273664e6abbaafa333ca730e6dedeb435e4d7de8072f2abd1" },
     "tests/support/owner.ts": { "grund": "führt das SQL des Aufräumens aus (Argumentliste ohne Shell, --linked, Fehler werden geworfen); die Löschbedingung steht in sweep.ts und marker.ts (Fable, Lösch-Freigabe 1, M3)", "sha256": "4510b9ec958c045c5ca33c4587198bc6967bbce56e95da8c379b065a3dc89bbd" },
     "tests/support/partner.ts": { "grund": "Test-Fixture: löscht nur Firmen und Nutzer mit selbst erzeugten IDs; die Löschbedingung der Reste liegt in marker.ts und sweep.ts", "sha256": "2556324e61c9c36758e5388b706c18d13c2ff4604ceca02a30ac572058de51f6" },

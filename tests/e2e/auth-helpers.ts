@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { mockCaptcha, type CaptchaMode } from './captcha-helpers'
 
 export const EMAIL = 'kunde@movenow.test'
 export const CODE = '12345678'
@@ -15,6 +16,8 @@ export const makeSession = (aal: 'aal1' | 'aal2' = 'aal1', factors: object[] = [
 })
 
 export type AuthMock = {
+  /** Verhalten des Turnstile-Stubs (Standard: sofort ein Token). */
+  captcha?: CaptchaMode
   /** Token der Anmeldung per Mail-Code oder Link; Standard aal1, ein Test mit schon bestätigtem Faktor kann aal2 setzen. */
   aal?: 'aal1' | 'aal2'
   /** Faktoren des Kontos in der Antwort der Anmeldung (`user.factors`). */
@@ -26,11 +29,12 @@ export type AuthMock = {
 }
 
 // Das Testprotokoll: nur Pfad und Methode, nie Body oder Header (dort stehen Code und Token).
-export type AuthCalls = { otp: number; verify: number; logout: number; verifyBodies: string[] }
+export type AuthCalls = { otp: number; verify: number; logout: number; verifyBodies: string[]; otpBodies: string[] }
 
 /** Fängt alle Aufrufe an die Auth-API ab (keine echten Mails). `RAW_SUPABASE_TEXT` darf nie in der Oberfläche stehen. */
 export async function mockAuth(page: Page, mock: AuthMock = {}): Promise<AuthCalls> {
-  const calls: AuthCalls = { otp: 0, verify: 0, logout: 0, verifyBodies: [] }
+  const calls: AuthCalls = { otp: 0, verify: 0, logout: 0, verifyBodies: [], otpBodies: [] }
+  await mockCaptcha(page, mock.captcha)
   const reply = (route: Parameters<Parameters<Page['route']>[1]>[0], r: NonNullable<AuthMock['otp']>, ok: object) =>
     r === 'offline'
       ? route.abort('failed')
@@ -39,6 +43,7 @@ export async function mockAuth(page: Page, mock: AuthMock = {}): Promise<AuthCal
         : route.fulfill({ status: r.status, json: { code: r.status, error_code: r.code, msg: 'RAW_SUPABASE_TEXT' } })
   await page.route('**/auth/v1/otp**', (route) => {
     calls.otp++
+    calls.otpBodies.push(route.request().postData() ?? '')
     return reply(route, mock.otp ?? { status: 200 }, {})
   })
   await page.route('**/auth/v1/verify**', (route) => {

@@ -2,6 +2,12 @@
 
 Stand 2026-11-19, nach Schritt mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076); davor mail1 (0074, 0075), ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2 (davor sys1, fh1, s9i-7d, n12b, n12, n15, u5, st1). Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
+## ts1 läuft (Zwischenstand, Branch `ts1`): weiter bei Beks' Mini-Schritten
+- Gebaut: Server (`_shared/turnstile.ts`, `route/handler.ts`, `route/index.ts`: Captcha vor dem Zähler, 403/503), Client (`lib/turnstile.ts`, `CaptchaHost` in der Shell, `auth.ts`, `route.ts`), Testhelfer (Dummy-Token in `tests/support/db.ts` mit neuem Pin, `rls.test.ts`, `route.test.ts`, vier Skripte), Unit- und e2e-Tests grün (`captcha.spec.ts`), roter Lauf von `tests/rls/captcha-live.test.ts` liegt vor (`tmp/proof/ts1/runs.jsonl` Nr. 16). Plan und Auflagen: `tmp/proof/ts1-plan.md`.
+- Wartet auf Beks: `docs/BEKS.md` (drei Mini-Schritte: `.env.local`, Function-Secret, Auth-Dashboard; Frage 1 zu `daten.md`). Fortsetzung: `/schritt ts1 Fortsetzung`.
+- Danach: `route` und `quote` deployen (Secret muss stehen), `captcha-live` grün (dieselbe Datei), Lösch-Freigabe der vier geänderten Skripte (`live-test`, `live-uploads`, `live-quote-app`, `redproof-s9a4`) per `advisor-report` und `loesch -- uebernehme`, Abnahme (advisor-report), `shots` 390/1280 mit `reviewer`, Doku (GOLIVE 13/18/26, ENTSCHEIDUNGEN, OFFEN inkl. Mutations-Rot `no_recipient`), Volläufe nacheinander, `bericht`, `fertig`.
+- Nach dem Merge: andere Branches sind bei rls/Live rot, bis sie auf `ts1` rebasen (Dev verlangt Captcha-Token bei Passwort- und Mail-Anmeldung).
+
 ## Wo wir stehen
 - Phase 1 ist bis s9k-1 gebaut und auf `main`: Kunde (Anfrage, Angebote, Alle Angebote ablehnen, Nachtrag, Storno, Zurückziehen, Meldung „nicht stattgefunden“, Konto löschen) und Partner (Registrierung, MFA, Anfragen, Aufträge, Nachtrag, Absage, Abrechnung, „Unterwegs“). Datenbank Dev: 76 Migrationen, lokal = remote bis `20261119031957` (0076), 17 Edge Functions deployt (alle `verify_jwt` aus). Nächste Migration 0077.
 - Mail (mail1, mail2; ENTSCHEIDUNGEN 207 bis 214): `outbox-send` verschickt über die Brevo-HTTP-API einfache deutsche Textmails mit Link in die App (keine Beträge, keine Kontaktdaten), mindestens einmal. Wiederholungs-Abstand 15 Min. × 4^(n−1), nach fünf Versuchen `failed`.

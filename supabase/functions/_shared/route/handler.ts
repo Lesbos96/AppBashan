@@ -4,16 +4,20 @@ import { clientIp, corsHeaders, json, readLimited } from '../http.ts'
 import { computeRouteFacts, type RouteDeps } from './compute.ts'
 import { HttpError, canonicalLabel, parseGeocode, parseRoute } from './facts.ts'
 import { ProviderError } from './provider.ts'
+import { TurnstileError } from '../turnstile.ts'
 
 export type RateCheck = { bucket: string; max: number; window_seconds: number }
 export type HandlerDeps = RouteDeps & {
   publishableKey: string
   allowedOrigins: string[]
   takeTokens(checks: RateCheck[]): Promise<boolean>
+  /** `true` gültig, `false` abgelehnt; wirft, wenn die Prüfung selbst scheitert (Cloudflare nicht erreichbar, Secret falsch). */
+  verifyCaptcha(token: string): Promise<boolean>
   log(entry: { mode: string; status: number; ms: number; code?: string }): void
 }
 
 const MAX_BODY_BYTES = 4096
+const MAX_CAPTCHA_CHARS = 2048 // Obergrenze eines Turnstile-Tokens laut Cloudflare
 const MINUTE = 60
 const DAY = 86400
 // Je Modus: pro IP und global. Global bleibt unter dem Kontingent des ORS-Plans (Directions 2000/Tag, Geocode 1000/Tag, je ca. 80 %).
@@ -51,6 +55,18 @@ export async function handleRoute(req: Request, deps: HandlerDeps): Promise<Resp
     mode = kind
     // Eingaben vor dem Zähler prüfen: ungültige Anfragen verbrauchen kein Kontingent des Anbieters.
     const input = kind === 'geocode' ? parseGeocode(body) : parseRoute(body)
+
+    // Captcha vor dem Zähler: Aufrufe ohne gültiges Token verbrauchen weder das IP-Limit noch das globale Kontingent des Anbieters. Ein Token gilt einmal.
+    const captcha = (body as { captcha?: unknown }).captcha
+    if (typeof captcha !== 'string' || captcha.length === 0 || captcha.length > MAX_CAPTCHA_CHARS) throw new HttpError(403, 'captcha_failed')
+    let human: boolean
+    try {
+      human = await deps.verifyCaptcha(captcha)
+    } catch (e) {
+      // Geloggt wird nur der Bezeichner aus unserem eigenen Fehlertyp, nie die Meldung (Secret, Token). Fail closed.
+      return finish(503, { error: 'captcha_unavailable' }, e instanceof TurnstileError ? `captcha_unavailable:${e.code}` : 'captcha_unavailable')
+    }
+    if (!human) throw new HttpError(403, 'captcha_failed')
 
     const ip = clientIp(req)
     const ipBucket = await deps.hmac(`ip|${ip}`)

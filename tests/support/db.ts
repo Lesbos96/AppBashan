@@ -15,6 +15,9 @@ export const client = (key: string): Db => createClient<Database>(env('NEXT_PUBL
 export const service = client(env('SUPABASE_SECRET_KEY'))
 export const anon = client(env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'))
 
+/** Dummy-Token von Cloudflare: Mit dem Turnstile-Testsecret (Dev) gilt jedes Token als gültig. Im Produktivprojekt scheitert es (gewollt). */
+export const CAPTCHA_TEST_TOKEN = 'XXXX.DUMMY.TOKEN.XXXX'
+
 /** Gepaced wegen der Auth-Rate-Limits. */
 export const pause = () => new Promise((resolve) => setTimeout(resolve, 400))
 export const run = Date.now().toString(36)
@@ -35,7 +38,7 @@ export async function makeUser(tag: string): Promise<TestUser> {
   created.push(data.user.id)
   await pause()
   const db = client(env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'))
-  const signIn = await db.auth.signInWithPassword({ email, password })
+  const signIn = await db.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA_TEST_TOKEN } })
   if (signIn.error) throw signIn.error
   await pause()
   return { id: data.user.id, db, jwt: signIn.data.session.access_token }

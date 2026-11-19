@@ -57,9 +57,9 @@ async function loadTariffs() {
   return Object.fromEntries(rows.data.filter((r) => r.unit !== 'ref').map((r) => [r.key, Number(r.value)]))
 }
 
-/** Streckenaufruf wie `route()` der App. */
+/** Streckenaufruf wie `route()` der App. Dummy-Token von Cloudflare: Mit dem Turnstile-Testsecret (Dev) gilt jedes Token als gültig. */
 async function appRoute(from, to, returnTrip) {
-  const { data, error } = await app.functions.invoke('route', { body: { mode: 'route', from, to, returnTrip } })
+  const { data, error } = await app.functions.invoke('route', { body: { mode: 'route', from, to, returnTrip, captcha: 'XXXX.DUMMY.TOKEN.XXXX' } })
   if (error) throw new Error('route fehlgeschlagen')
   return data
 }

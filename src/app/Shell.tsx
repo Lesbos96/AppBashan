@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useIsPresent, type Variants } from 'motion/rea
 import { useEffect, useState, type ReactNode } from 'react'
 import { ScrollRestoration, useMatches, useNavigationType, useOutlet } from 'react-router'
 import { TabBar } from '../components/Bars'
+import { CaptchaHost } from '../components/CaptchaHost'
 import { spring } from '../lib/motion'
 import { useOnline } from '../lib/online'
 
@@ -108,6 +109,7 @@ export function Shell() {
       </AnimatePresence>
       {handle.bar !== false && <TabBar tabs={tabs} />}
       <ScrollRestoration />
+      <CaptchaHost />
     </div>
   )
 }

@@ -15,12 +15,19 @@ vi.mock('../../src/lib/supabase', () => ({
   supabase: { from: (t: string) => chain(tables[t]), functions: { invoke: (...a: unknown[]) => invoke(...a) } },
 }))
 
+// Das Widget gibt es im Unit-Test nicht: nur `getCaptchaToken` ist ersetzt, `CaptchaError` bleibt die echte Klasse.
+const getCaptchaToken = vi.fn()
+vi.mock('../../src/lib/turnstile', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../src/lib/turnstile')>()), getCaptchaToken: (...a: unknown[]) => getCaptchaToken(...a) }))
+
 const { loadPrices } = await import('../../src/lib/prices')
 const { RouteError, geocode, route, routeErrorText } = await import('../../src/lib/route')
+const { CaptchaError } = await import('../../src/lib/turnstile')
 const { finishOnboarding, hasOnboarded } = await import('../../src/lib/onboarding')
 
 beforeEach(() => {
   invoke.mockReset()
+  let n = 0
+  getCaptchaToken.mockReset().mockImplementation(async () => `cap-${++n}`)
   tables = {}
 })
 afterEach(() => vi.unstubAllGlobals())
@@ -74,13 +81,26 @@ describe('Routendienst aus der App (route.ts)', () => {
   const ok = { region: 'austria', outsideKm: 186.5, driveHours: 2.4, distanceKm: 196.1, totalKm: 392.2, geometry: [[16.37, 48.2], [15.44, 47.07]] }
   const http = (status: number) => new FunctionsHttpError(new Response('{}', { status }))
 
-  it('geocode sendet nur Modus und Text und filtert unvollständige Kandidaten', async () => {
+  it('geocode sendet nur Modus, Text und Captcha-Token und filtert unvollständige Kandidaten', async () => {
     invoke.mockResolvedValue({
       data: { candidates: [{ label: 'Stephansplatz 1, 1010 Wien', lat: 48.2, lon: 16.37 }, { label: 'ohne Punkt' }, { lat: 1, lon: 2 }, { label: 'NaN', lat: Number.NaN, lon: 1 }, null] },
       error: null,
     })
     await expect(geocode('Stephansplatz 1')).resolves.toEqual([{ label: 'Stephansplatz 1, 1010 Wien', lat: 48.2, lon: 16.37 }])
-    expect(invoke).toHaveBeenCalledWith('route', { body: { mode: 'geocode', q: 'Stephansplatz 1' } })
+    expect(invoke).toHaveBeenCalledWith('route', { body: { mode: 'geocode', q: 'Stephansplatz 1', captcha: 'cap-1' } })
+  })
+
+  it('jeder Aufruf trägt ein eigenes Token; Fehler der Prüfung vor dem Aufruf der Function', async () => {
+    invoke.mockResolvedValue({ data: { candidates: [] }, error: null })
+    await geocode('Ring 1')
+    await geocode('Ring 2')
+    expect(invoke.mock.calls.map((c) => (c[1] as { body: { captcha: string } }).body.captcha)).toEqual(['cap-1', 'cap-2'])
+    invoke.mockClear()
+    for (const [thrown, kind] of [[new CaptchaError('offline'), 'network'], [new CaptchaError('failed'), 'captcha'], [new CaptchaError('unavailable'), 'unavailable'], [new Error('x'), 'unavailable']] as const) {
+      getCaptchaToken.mockRejectedValueOnce(thrown)
+      await expect(geocode('Ring 1')).rejects.toMatchObject({ kind })
+    }
+    expect(invoke).not.toHaveBeenCalled()
   })
 
   it('geocode ohne Kandidatenliste ist ein Fehler', async () => {
@@ -93,13 +113,14 @@ describe('Routendienst aus der App (route.ts)', () => {
   it('route liefert nur eine geprüfte Antwort', async () => {
     invoke.mockResolvedValue({ data: ok, error: null })
     await expect(route({ lat: 48.2, lon: 16.37 }, { lat: 47.07, lon: 15.44 }, true)).resolves.toEqual(ok)
-    expect(invoke).toHaveBeenCalledWith('route', { body: { mode: 'route', from: { lat: 48.2, lon: 16.37 }, to: { lat: 47.07, lon: 15.44 }, returnTrip: true } })
+    expect(invoke).toHaveBeenCalledWith('route', { body: { mode: 'route', from: { lat: 48.2, lon: 16.37 }, to: { lat: 47.07, lon: 15.44 }, returnTrip: true, captcha: 'cap-1' } })
     invoke.mockResolvedValue({ data: { ...ok, outsideKm: -1 }, error: null })
     await expect(route({ lat: 1, lon: 1 }, { lat: 1, lon: 1 }, false)).rejects.toMatchObject({ kind: 'unavailable' })
   })
 
   it.each([
     ['429', http(429), 'rate_limited'],
+    ['403 (Token abgelehnt)', http(403), 'captcha'],
     ['500', http(500), 'unavailable'],
     ['422 (keine Route)', http(422), 'unavailable'],
     ['kein Netz', new FunctionsFetchError(new TypeError('Failed to fetch')), 'network'],
@@ -112,6 +133,7 @@ describe('Routendienst aus der App (route.ts)', () => {
   it('Fehlertext je Art, fremde Fehler als „nicht erreichbar“', () => {
     expect(routeErrorText(new RouteError('network'))).toMatch(/^Keine Verbindung/)
     expect(routeErrorText(new RouteError('rate_limited'))).toMatch(/zu viele Anfragen/)
+    expect(routeErrorText(new RouteError('captcha'))).toMatch(/Sicherheitsprüfung/)
     expect(routeErrorText(new Error('x'))).toBe(routeErrorText(new RouteError('unavailable')))
     expect(routeErrorText(undefined)).toMatch(/nicht erreichbar/)
   })

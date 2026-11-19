@@ -4,6 +4,7 @@ import { deriveRoute, HttpError, parseGeocode, parseRoute, simplifyLine, type Ge
 import { handleRoute, type HandlerDeps, type RateCheck } from '../../supabase/functions/_shared/route/handler.ts'
 import { hmacHex } from '../../supabase/functions/_shared/route/hmac.ts'
 import { orsProvider, ProviderError } from '../../supabase/functions/_shared/route/provider.ts'
+import { TurnstileError } from '../../supabase/functions/_shared/turnstile.ts'
 
 const A = { lat: 48.2086, lon: 16.3731 }
 const B = { lat: 47.0707, lon: 15.4395 }
@@ -87,6 +88,7 @@ function makeDeps(over: Partial<HandlerDeps> = {}) {
     publishableKey: 'pk',
     allowedOrigins: ['http://localhost:5173'],
     takeTokens: async () => true,
+    verifyCaptcha: async () => true,
     log: (e) => void logs.push(e),
     ...over,
   }
@@ -137,8 +139,9 @@ describe('computeRouteFacts', () => {
   })
 })
 
+// Objekt-Bodies tragen standardmäßig ein Captcha-Token (die Prüfung ist in den Handler-Tests gemockt); `captcha: undefined` lässt es weg.
 const post = (body: unknown, headers: Record<string, string> = { apikey: 'pk' }) =>
-  new Request('http://x/route', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body), headers })
+  new Request('http://x/route', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify({ captcha: 'tok', ...(body as object) }), headers })
 
 describe('Handler', () => {
   it('verlangt POST und den apikey', async () => {
@@ -162,7 +165,7 @@ describe('Handler', () => {
     const streamed = new Request('http://x/route', { method: 'POST', body: stream, headers: { apikey: 'pk' }, duplex: 'half' } as RequestInit)
     expect((await handleRoute(streamed, deps)).status).toBe(413)
     // Gültige Streams werden angenommen, auch wenn ein Multi-Byte-Zeichen („ü“ = 2 Byte) über die Chunk-Grenze reicht.
-    const bytes = new TextEncoder().encode(JSON.stringify({ mode: 'geocode', q: 'Mödling' }))
+    const bytes = new TextEncoder().encode(JSON.stringify({ mode: 'geocode', q: 'Mödling', captcha: 'tok' }))
     const split = bytes.indexOf(0xc3) + 1
     const chunked = new ReadableStream<Uint8Array>({
       start(c) {
@@ -248,6 +251,79 @@ describe('Handler', () => {
     for (const l of logs as Record<string, unknown>[]) expect(Object.keys(l).every((k) => ['mode', 'status', 'ms', 'code'].includes(k))).toBe(true)
     const all = JSON.stringify(logs)
     for (const s of ['Geheimstraße', '203.0.113.7', '48.2086', '16.3731']) expect(all).not.toContain(s)
+  })
+
+  describe('Captcha (Turnstile)', () => {
+    const untouched = (m: ReturnType<typeof makeDeps>, takeTokens: ReturnType<typeof vi.fn>) => {
+      expect(takeTokens).not.toHaveBeenCalled()
+      expect(m.geocode).not.toHaveBeenCalled()
+      expect(m.route).not.toHaveBeenCalled()
+      expect(m.store.size).toBe(0)
+    }
+
+    it('fehlendes, leeres, falsch getyptes oder zu langes Token: 403 ohne Wirkung', async () => {
+      const takeTokens = vi.fn<(checks: RateCheck[]) => Promise<boolean>>(async () => true)
+      const verifyCaptcha = vi.fn(async () => true)
+      const m = makeDeps({ takeTokens, verifyCaptcha })
+      for (const captcha of [undefined, '', 5, null, ['a'], 'x'.repeat(2049)]) {
+        const res = await handleRoute(post({ mode: 'route', from: A, to: B, captcha }), m.deps)
+        expect(res.status).toBe(403)
+        expect(await res.json()).toEqual({ error: 'captcha_failed' })
+      }
+      expect(verifyCaptcha).not.toHaveBeenCalled()
+      untouched(m, takeTokens)
+    })
+
+    it('von Cloudflare abgelehntes Token: 403 ohne Wirkung', async () => {
+      const takeTokens = vi.fn<(checks: RateCheck[]) => Promise<boolean>>(async () => true)
+      const verifyCaptcha = vi.fn(async () => false)
+      const m = makeDeps({ takeTokens, verifyCaptcha })
+      const res = await handleRoute(post({ mode: 'geocode', q: 'Ring 1' }), m.deps)
+      expect(res.status).toBe(403)
+      expect(await res.json()).toEqual({ error: 'captcha_failed' })
+      expect(verifyCaptcha).toHaveBeenCalledWith('tok')
+      untouched(m, takeTokens)
+    })
+
+    it('Ausfall der Prüfung: 503 (fail closed), geloggt nur der Cloudflare-Code', async () => {
+      const takeTokens = vi.fn<(checks: RateCheck[]) => Promise<boolean>>(async () => true)
+      const m = makeDeps({ takeTokens, verifyCaptcha: async () => Promise.reject(new TurnstileError('internal-error')) })
+      const res = await handleRoute(post({ mode: 'geocode', q: 'Ring 1' }), m.deps)
+      expect(res.status).toBe(503)
+      expect(await res.json()).toEqual({ error: 'captcha_unavailable' })
+      expect(m.logs.at(-1)).toMatchObject({ status: 503, code: 'captcha_unavailable:internal-error' })
+      untouched(m, takeTokens)
+      const other = makeDeps({ verifyCaptcha: async () => Promise.reject(new Error('Secret abc: kaputt')) })
+      expect((await handleRoute(post({ mode: 'geocode', q: 'Ring 1' }), other.deps)).status).toBe(503)
+      expect(JSON.stringify(other.logs)).not.toContain('abc')
+    })
+
+    it('ungültige Eingaben scheitern vor der Prüfung (kein Siteverify-Aufruf)', async () => {
+      const verifyCaptcha = vi.fn(async () => true)
+      const { deps } = makeDeps({ verifyCaptcha })
+      expect((await handleRoute(post({ mode: 'x' }), deps)).status).toBe(400)
+      expect((await handleRoute(post({ mode: 'geocode', q: 'a' }), deps)).status).toBe(400)
+      expect(verifyCaptcha).not.toHaveBeenCalled()
+    })
+
+    it('gültiges Token: Prüfung vor dem Zähler, je Anfrage genau einmal; Token steht nie im Log', async () => {
+      const order: string[] = []
+      const verifyCaptcha = vi.fn(async () => (order.push('captcha'), true))
+      const takeTokens = vi.fn(async () => (order.push('rate'), true))
+      const { deps, logs } = makeDeps({ verifyCaptcha, takeTokens })
+      expect((await handleRoute(post({ mode: 'route', from: A, to: B, captcha: 'geheimes-token' }), deps)).status).toBe(200)
+      expect((await handleRoute(post({ mode: 'geocode', q: 'Ring 1', captcha: 'zweites' }), deps)).status).toBe(200)
+      expect(order).toEqual(['captcha', 'rate', 'captcha', 'rate'])
+      expect(verifyCaptcha.mock.calls).toEqual([['geheimes-token'], ['zweites']])
+      expect(JSON.stringify(logs)).not.toContain('geheimes-token')
+    })
+
+    it('Token mit 2048 Zeichen plus 200 Zeichen Adresse bleibt unter dem Body-Limit', async () => {
+      const { deps } = makeDeps()
+      const body = JSON.stringify({ mode: 'geocode', q: 'ä'.repeat(200), captcha: 'x'.repeat(2048) })
+      expect(new TextEncoder().encode(body).length).toBeLessThan(4096)
+      expect((await handleRoute(new Request('http://x/route', { method: 'POST', body, headers: { apikey: 'pk' } }), deps)).status).toBe(200)
+    })
   })
 })
 

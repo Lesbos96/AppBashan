@@ -4,7 +4,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
-import { makeRequest } from '../support/db.ts'
+import { CAPTCHA_TEST_TOKEN, makeRequest } from '../support/db.ts'
 import { ownerGrantRole, ownerSql } from '../support/owner.ts'
 type Db = SupabaseClient<Database>
 
@@ -36,7 +36,7 @@ async function makeUser(tag: string): Promise<{ id: string; db: Db }> {
   created.push(data.user.id)
   await pause()
   const db = client(publishableKey)
-  const signIn = await db.auth.signInWithPassword({ email, password })
+  const signIn = await db.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA_TEST_TOKEN } })
   if (signIn.error) throw signIn.error
   await pause()
   return { id: data.user.id, db }

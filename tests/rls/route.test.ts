@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Database } from '../../supabase/functions/_shared/database.types.ts'
 import { deriveRoute, lineGeoJson, type ProviderRoute } from '../../supabase/functions/_shared/route/facts.ts'
+import { CAPTCHA_TEST_TOKEN } from '../support/db.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -30,7 +31,7 @@ beforeAll(async () => {
   userId = data.user.id
   await pause()
   customer = client(env('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'))
-  const signIn = await customer.auth.signInWithPassword({ email, password })
+  const signIn = await customer.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA_TEST_TOKEN } })
   if (signIn.error) throw signIn.error
   await pause()
 })

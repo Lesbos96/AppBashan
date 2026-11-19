@@ -10,6 +10,8 @@ const pub = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 const service = createClient(url, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } })
 const quoteUrl = `${url}/functions/v1/quote`
 const routeUrl = `${url}/functions/v1/route`
+// Dummy-Token von Cloudflare: Mit dem Turnstile-Testsecret (Dev) gilt jedes Token als gültig.
+const CAPTCHA = 'XXXX.DUMMY.TOKEN.XXXX'
 const ALLOWED = 'http://localhost:5173'
 const EVIL = 'https://evil.example'
 
@@ -51,7 +53,7 @@ async function newUser() {
   const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true })
   if (error) throw error
   const app = createClient(url, pub, { auth: { persistSession: false } })
-  const { error: se } = await app.auth.signInWithPassword({ email, password })
+  const { error: se } = await app.auth.signInWithPassword({ email, password, options: { captchaToken: CAPTCHA } })
   if (se) throw se
   const jwt = (await app.auth.getSession()).data.session.access_token
   users.push(data.user.id)
@@ -110,7 +112,7 @@ try {
   await nextMinute()
   const codes = []
   for (let i = 1; i <= 12; i++) {
-    const r = await post(routeUrl, { apikey: pub, 'x-forwarded-for': `10.0.${i}.${i}` }, { mode: 'route', from: { lat: 48.208164, lon: 16.373477 }, to: { lat: 48.1854, lon: 16.3126 }, returnTrip: true })
+    const r = await post(routeUrl, { apikey: pub, 'x-forwarded-for': `10.0.${i}.${i}` }, { mode: 'route', from: { lat: 48.208164, lon: 16.373477 }, to: { lat: 48.1854, lon: 16.3126 }, returnTrip: true, captcha: CAPTCHA })
     codes.push(r.status)
   }
   check(codes.slice(0, 10).every((c) => c === 200) && codes.slice(10).every((c) => c === 429), 'R1: 10 × 200, dann 429 (wechselnder Header umgeht das Limit nicht)', codes.join(' '))

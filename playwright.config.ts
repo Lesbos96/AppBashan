@@ -36,7 +36,7 @@ export default defineConfig({
     timeout: 180_000,
     // Tests laufen nur gegen die Mock-Schicht (tests/e2e/backend.ts): Platzhalter statt echter Werte, `.invalid` löst nie auf.
     // Umgebungsvariablen gehen in Vite vor `.env*`-Dateien und werden beim Build eingesetzt.
-    env: { NODE_ENV: 'development', NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter' },
+    env: { NODE_ENV: 'development', NEXT_PUBLIC_SUPABASE_URL: 'https://e2e.supabase.invalid', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_platzhalter', NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'e2e-site-key-platzhalter' },
   },
   projects: [
     // Handy (Breite der Referenz) und Desktop; Screenshot und Trace nur bei Fehlschlag (oben), Ablage unter tmp/playwright/

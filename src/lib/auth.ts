@@ -2,8 +2,9 @@ import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { clearHandover, clearSent } from './draft'
 import { clearAllPhotos } from './photos'
 import { supabase } from './supabase'
+import { CaptchaError, getCaptchaToken } from './turnstile'
 
-export type AuthErrorKind = 'invalid_email' | 'invalid_code' | 'rate_limited' | 'offline' | 'unavailable'
+export type AuthErrorKind = 'invalid_email' | 'invalid_code' | 'rate_limited' | 'offline' | 'unavailable' | 'captcha'
 
 export class AuthError extends Error {
   constructor(readonly kind: AuthErrorKind) {
@@ -33,8 +34,19 @@ function transient(error: ServiceError): AuthError | null {
 // Supabase meldet falsche, abgelaufene und benutzte Codes nicht verlässlich getrennt (`otp_expired`), deshalb eine Art.
 const verifyFailure = (error: ServiceError) => transient(error) ?? new AuthError('invalid_code')
 
+// `captcha_failed` hat Vorrang vor der Statusauswertung. Antwortet Auth mit 5xx, verwirft der Client den Code (AuthRetryableFetchError): dann bleibt es „unavailable“ (live zu messen, ts1).
 const requestFailure = (error: ServiceError) =>
-  transient(error) ?? new AuthError(error.code === 'email_address_invalid' ? 'invalid_email' : 'unavailable')
+  error.code === 'captcha_failed' ? new AuthError('captcha') : (transient(error) ?? new AuthError(error.code === 'email_address_invalid' ? 'invalid_email' : 'unavailable'))
+
+/** Frisches Turnstile-Token für eine Anfrage. Ein nicht ladbares Skript heißt offline, eine gescheiterte Prüfung `captcha`. */
+async function captchaToken(): Promise<string> {
+  try {
+    return await getCaptchaToken()
+  } catch (e) {
+    const kind = e instanceof CaptchaError ? e.kind : 'unavailable'
+    throw new AuthError(kind === 'offline' ? 'offline' : kind === 'failed' ? 'captcha' : 'unavailable')
+  }
+}
 
 /**
  * Schickt eine Mail mit Link und Code. Das Konto entsteht beim Anfordern (unbestätigt); die Anmeldung gilt erst mit Code oder Link.
@@ -43,7 +55,7 @@ const requestFailure = (error: ServiceError) =>
 export async function requestSignIn(email: string): Promise<void> {
   const address = email.trim()
   if (!EMAIL.test(address)) throw new AuthError('invalid_email')
-  const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: returnUrl() } })
+  const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: returnUrl(), captchaToken: await captchaToken() } })
   if (error) throw requestFailure(error)
 }
 

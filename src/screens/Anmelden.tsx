@@ -16,6 +16,7 @@ const text: Record<AuthErrorKind, string> = {
   rate_limited: 'Zu viele Versuche. Warte einen Moment und versuche es dann noch einmal.',
   offline: 'Du bist offline. Prüfe deine Verbindung und versuche es noch einmal.',
   unavailable: 'Das hat nicht geklappt. Versuche es gleich noch einmal.',
+  captcha: 'Die Sicherheitsprüfung hat nicht geklappt. Versuche es noch einmal.',
 }
 const linkText = 'Der Link ist abgelaufen oder wurde schon benutzt. Fordere einen neuen Code an.'
 
