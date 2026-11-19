@@ -1,0 +1,392 @@
+Commit: c05678a8f1c7e8ae471727a7a9aff460dcf7bc8e
+Arbeitsbaum sauber: ja
+Befehl: npm run check
+Argumente: []
+Schalter: []
+Start: 2026-11-19T19:29:46.071Z
+---
+
+> movenow@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:deno && vitest run --project unit --reporter=default --reporter=json --outputFile=tmp/reports/vitest-unit.json
+
+
+> movenow@0.1.0 lint
+> eslint .
+
+
+> movenow@0.1.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json
+
+
+> movenow@0.1.0 check:deno
+> deno check supabase/functions/_shared/pricing/index.ts supabase/functions/route/index.ts supabase/functions/quote/index.ts supabase/functions/photo-cleanup/index.ts supabase/functions/accept/index.ts supabase/functions/admin-contact/index.ts supabase/functions/outbox-send/index.ts supabase/functions/photo-publish/index.ts supabase/functions/photo-receipt/index.ts supabase/functions/job-photo/index.ts supabase/functions/admin-photo/index.ts supabase/functions/offer-confirm/index.ts supabase/functions/change-propose/index.ts supabase/functions/change-decide/index.ts supabase/functions/cancel-customer/index.ts supabase/functions/cancel-partner/index.ts supabase/functions/admin-correct/index.ts supabase/functions/delete-account/index.ts scripts/measure-photo.ts tests/unit/golden-deno.ts tests/unit/money-deno.ts && deno run --allow-read tests/unit/golden-deno.ts && deno run tests/unit/money-deno.ts
+
+[0m[32mCheck[0m supabase/functions/_shared/pricing/index.ts
+[0m[32mCheck[0m supabase/functions/route/index.ts
+[0m[32mCheck[0m supabase/functions/quote/index.ts
+[0m[32mCheck[0m supabase/functions/photo-cleanup/index.ts
+[0m[32mCheck[0m supabase/functions/accept/index.ts
+[0m[32mCheck[0m supabase/functions/admin-contact/index.ts
+[0m[32mCheck[0m supabase/functions/outbox-send/index.ts
+[0m[32mCheck[0m supabase/functions/photo-publish/index.ts
+[0m[32mCheck[0m supabase/functions/photo-receipt/index.ts
+[0m[32mCheck[0m supabase/functions/job-photo/index.ts
+[0m[32mCheck[0m supabase/functions/admin-photo/index.ts
+[0m[32mCheck[0m supabase/functions/offer-confirm/index.ts
+[0m[32mCheck[0m supabase/functions/change-propose/index.ts
+[0m[32mCheck[0m supabase/functions/change-decide/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-customer/index.ts
+[0m[32mCheck[0m supabase/functions/cancel-partner/index.ts
+[0m[32mCheck[0m supabase/functions/admin-correct/index.ts
+[0m[32mCheck[0m supabase/functions/delete-account/index.ts
+[0m[32mCheck[0m scripts/measure-photo.ts
+[0m[32mCheck[0m tests/unit/golden-deno.ts
+[0m[32mCheck[0m tests/unit/money-deno.ts
+Deno: 60/60 Golden-Fälle bestanden
+Deno: 24/24 Betragsfälle bestanden
+
+ RUN  v5.0.5 C:/Users/gesch/Music/MoveNow
+
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/turnstile.test.ts (11 tests) 82ms
+ ✓ |unit| tests/unit/sys-abnahme.test.ts (18 tests) 147ms
+ ✓ |unit| tests/unit/redproof-deploy.test.ts (8 tests) 189ms
+ ✓ |unit| tests/unit/outbox-handler.test.ts (27 tests) 122ms
+ ✓ |unit| tests/unit/cancel-partner-handler.test.ts (17 tests) 86ms
+ ✓ |unit| tests/unit/pricing.test.ts (85 tests) 114ms
+ ✓ |unit| tests/unit/route.test.ts (33 tests) 170ms
+ ✓ |unit| tests/unit/flow-limits.test.ts (3 tests) 114ms
+ ✓ |unit| tests/unit/change-handlers.test.ts (21 tests) 125ms
+ ✓ |unit| tests/unit/turnstile-client.test.ts (8 tests) 523ms
+ ✓ |unit| tests/unit/draft.test.ts (48 tests) 104ms
+ ✓ |unit| tests/unit/jobs-client.test.ts (48 tests) 89ms
+ ✓ |unit| tests/unit/partner-jobs.test.ts (89 tests) 98ms
+ ✓ |unit| tests/unit/cancel-handler.test.ts (13 tests) 82ms
+ ✓ |unit| tests/unit/photo-handlers.test.ts (29 tests) 102ms
+ ✓ |unit| tests/unit/admin-correct-handler.test.ts (9 tests) 69ms
+ ✓ |unit| tests/unit/accept.test.ts (12 tests) 90ms
+ ✓ |unit| tests/unit/sys-docs-importe.test.ts (12 tests) 89ms
+ ✓ |unit| tests/unit/quote.test.ts (60 tests) 440ms
+ ✓ |unit| tests/unit/delete-account-handler.test.ts (11 tests) 58ms
+ ✓ |unit| tests/unit/partner-docs.test.ts (22 tests) 62ms
+ ✓ |unit| tests/unit/partner-register.test.ts (47 tests) 36ms
+ ✓ |unit| tests/unit/redproof-migrations.test.ts (21 tests) 60ms
+ ✓ |unit| tests/unit/partner-journal.test.ts (22 tests) 81ms
+ ✓ |unit| tests/unit/offer-confirm.test.ts (4 tests) 78ms
+ ✓ |unit| tests/unit/redproof-lib.test.ts (65 tests) 1097ms
+ ✓ |unit| tests/unit/photos.test.ts (17 tests) 29ms
+ ✓ |unit| tests/unit/sys-fertig.test.ts (50 tests) 1119ms
+   ✓ Merge-Gate: pruefeFertig (47)
+     ✓ R3 (24)
+       ✓ stageNachweise legt die genannten, von .gitignore ausgenommenen Logs in den Index, sonst nichts (kein git add -f von Hand) 353ms
+   ✓ n12b-3: neueRlsDateien erkennt eine Umbenennung als neue Datei (1)
+     ✓ umbenannte (auch byte-gleiche) rls-Datei ist neu, geänderte und unveränderte nicht 735ms
+ ✓ |unit| tests/unit/pricing.property.test.ts (11 tests) 1070ms
+ ✓ |unit| tests/unit/quote-helpers.test.ts (19 tests) 54ms
+ ✓ |unit| tests/unit/auth-token.test.ts (31 tests) 80ms
+ ✓ |unit| tests/unit/cancel-client.test.ts (17 tests) 61ms
+ ✓ |unit| tests/unit/uploads.test.ts (16 tests) 30ms
+ ✓ |unit| tests/unit/change.test.ts (12 tests) 36ms
+ ✓ |unit| tests/unit/photos-uploads-extra.test.ts (11 tests) 24ms
+ ✓ |unit| tests/unit/journal-csv.test.ts (106 tests) 41ms
+ ✓ |unit| tests/unit/flow.test.ts (50 tests) 17ms
+ ✓ |unit| tests/unit/photo-process.test.ts (8 tests) 903ms
+   ✓ processPhoto (8)
+     ✓ verkleinert auf eine lange Kante von höchstens 1600 px (Quer- und Hochformat), kleinere Bilder bleiben unverändert 832ms
+ ✓ |unit| tests/unit/account-client.test.ts (12 tests) 33ms
+ ✓ |unit| tests/unit/seed-prod.test.ts (6 tests) 10ms
+ ✓ |unit| tests/unit/fee-staffel.test.ts (26 tests) 13ms
+ ✓ |unit| tests/unit/brevo.test.ts (3 tests) 55ms
+ ✓ |unit| tests/unit/quote-checks.test.ts (14 tests) 16ms
+ ✓ |unit| tests/unit/sys-stufe.test.ts (18 tests) 13ms
+ ✓ |unit| tests/unit/commission-csv.test.ts (6 tests) 14ms
+ ✓ |unit| tests/unit/draft-extra.test.ts (27 tests) 28ms
+ ✓ |unit| tests/unit/positiv-register.test.ts (7 tests) 20ms
+ ✓ |unit| tests/unit/dev-reset.test.ts (10 tests) 15ms
+ ✓ |unit| tests/unit/preview.test.ts (5 tests) 11ms
+ ✓ |unit| tests/unit/preview-helpers.test.ts (12 tests) 16ms
+ ✓ |unit| tests/unit/mfa-client.test.ts (21 tests) 25ms
+ ✓ |unit| tests/unit/auth.test.ts (59 tests) 24ms
+ ✓ |unit| tests/unit/partner-cancel.test.ts (31 tests) 18ms
+ ✓ |unit| tests/unit/client-lib.test.ts (16 tests) 17ms
+ ✓ |unit| tests/unit/partner-change.test.ts (19 tests) 18ms
+ ✓ |unit| tests/unit/partner-my-jobs.test.ts (52 tests) 22ms
+ ✓ |unit| tests/unit/screens.test.ts (28 tests) 110ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-bericht-lib.test.ts (3 tests) 6ms
+ ✓ |unit| tests/unit/cleanup-vault.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/money.test.ts (34 tests) 12ms
+ ✓ |unit| tests/unit/arrival.test.ts (3 tests) 4ms
+ ✓ |unit| tests/unit/route-text.test.ts (3 tests) 4ms
+ ✓ |unit| tests/unit/db-must.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/commission.test.ts (7 tests) 7ms
+ ✓ |unit| tests/unit/admin-correct-db.test.ts (2 tests) 5ms
+ ✓ |unit| tests/unit/outbox-db.test.ts (9 tests) 8ms
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u4/033-e2e.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u4/bericht.json', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/gesendet.test.ts (6 tests) 32ms
+ ✓ |unit| tests/unit/staffel-mock.test.ts (4 tests) 5ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-session.test.ts (13 tests) 3384ms
+   ✓ Berater je Schritt (agents.jsonl) (2)
+     ✓ der Hook stempelt jede Zeile mit dem Branch des Projektordners (ohne Git: null) 677ms
+   ✓ Sitzungsprotokoll session.mjs (8)
+     ✓ SessionStart ohne Modellfeld hält Transkript und Feldnamen fest (Beleg für das fehlende Feld) 544ms
+     ✓ ein späteres Ereignis derselben Sitzung trägt den Transkript-Pfad nach, eine andere Sitzung nicht 743ms
+     ✓ falsches Modell: /schritt wird geblockt 315ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-gate-loesch.test.ts (51 tests) 3823ms
+   ✓ Lösch-Gate (Trockenlauf mit Attrappe, nichts wird gestartet) (19)
+     ✓ gebundene Datei nach der Freigabe geändert, Skript unverändert: blockiert 408ms
+     ✓ Urteil gesperrt: blockiert 539ms
+     ✓ passende Freigabe: würde durchlassen (Exit 0), startet nichts, schreibt kein Log 503ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-run.test.ts (19 tests) 4740ms
+   ✓ Test-Startprogramm run.mjs (14)
+     ✓ ein absichtlich roter Befehl ergibt EXIT ungleich 0 im Prozess und im Log, Kopf mit Hash, Sauber-Angabe und Befehl 1008ms
+     ✓ sys1-3: Testschalter (MV_ und E2E_, ohne MV_LAUF, Namen groß) stehen sortiert im Log-Kopf und in runs.jsonl 844ms
+     ✓ ein zweiter Lauf überschreibt das erste Log nicht 726ms
+   ✓ Lauf-Sperre von run.mjs (5)
+     ✓ Sperre eines beendeten Prozesses wird freigegeben: der Lauf läuft (Exit 3 des Fixtures) und räumt die Sperre ab 464ms
+     ✓ ein Lauf ohne vorhandene Sperre hinterlässt keine 374ms
+warning: in the working copy of 'docs/proofx/b.md', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-gate-db.test.ts (34 tests) 4849ms
+   ✓ Datenbank-Gate (Trockenlauf mit Attrappe, keine DB, kein Push) (17)
+     ✓ Freigabe für anderen Pfad: blockiert 356ms
+     ✓ Modell nicht Fable: blockiert 538ms
+     ✓ Urteilszeile fehlt: blockiert 389ms
+     ✓ antrag schreibt Pfad und Hash, zweiter Antrag überschreibt nicht 323ms
+   ✓ AM5: Startmarke vor dem Push, Nachtrag der Marken nach einem gelungenen Push (9)
+     ✓ H1: die Attrappe schreibt nie in einen Ordner unter tmp/proof (aufgelöst, ohne Groß/Klein) 928ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-fingerabdruck.test.ts (4 tests) 4581ms
+   ✓ Fingerabdruck je Suite (in einem Wegwerf-Repo) (4)
+     ✓ Doku-Änderungen ändern keinen Fingerabdruck (check ist „alles außer docs und Markdown“) 2039ms
+     ✓ Änderung unter src ändert check und e2e, nicht rls 887ms
+     ✓ Änderung an einer Migration ändert check und rls, nicht e2e 725ms
+     ✓ gleicher Stand, gleicher Hash; package.json zählt für alle drei 926ms
+warning: in the working copy of 'src/neu.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u4/x.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-guard-nachweise.test.ts (96 tests) 8567ms
+   ✓ Guard: Löschen und Verschieben unter tmp/proof (96)
+     ✓ verweigert: rm -rf tmp/proof 415ms
+     ✓ verweigert: del tmp\proof\*abnahme* 533ms
+     ✓ verweigert: Remove-Item -LiteralPath tmp\proof\sys1-abnahme-2.md 365ms
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STAND.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/gruen.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u2/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/alt.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.json.bak', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/bericht.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u3/weg.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/a.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/proof/u4/bericht.json', LF will be replaced by CRLF the next time Git touches it
+ ✓ |unit| tests/unit/sys-sauber.test.ts (17 tests) 9838ms
+   ✓ sauber() (17)
+     ✓ unverändertes Repo ist sauber, unverfolgte Datei unter docs/ ebenfalls (beide Formen) 2253ms
+     ✓ Zustand nach `npm run bericht` (neue Nachweise per add -f, gruen.json und bericht.md neu geschrieben, gestaged): nur mit nachweiseImIndex sauber 697ms
+     ✓ bericht.json des eigenen Schritts als M im Index ist mit nachweiseImIndex sauber 599ms
+     ✓ bericht.json eines anderen Schritts als M (N1) ist unsauber, auch mit nachweiseImIndex 511ms
+     ✓ bericht.json.bak als M (Endverankerung) ist unsauber, auch mit nachweiseImIndex 525ms
+     ✓ neue gestagte Datei unter docs/proofx/ ist unsauber, auch mit nachweiseImIndex 485ms
+     ✓ neuer gestagter Code (A) ist unsauber, auch mit nachweiseImIndex 449ms
+     ✓ gestagete Änderung eines alten Nachweises ist unsauber, auch mit nachweiseImIndex 433ms
+     ✓ ungestagete Änderung an gruen.json ist unsauber, auch mit nachweiseImIndex 402ms
+     ✓ gestagt und danach weiter geändert (MM) ist unsauber, auch mit nachweiseImIndex 439ms
+     ✓ neu gestagt und danach geändert (AM) ist unsauber, auch mit nachweiseImIndex 539ms
+     ✓ gelöschter Nachweis (D ) ist unsauber, auch mit nachweiseImIndex 424ms
+     ✓ umbenannter Nachweis (R ) ist unsauber, auch mit nachweiseImIndex 431ms
+     ✓ gestagte Doku außerhalb von docs/proof/ ist unsauber, auch mit nachweiseImIndex 444ms
+     ✓ gestagter Code ist unsauber, auch mit nachweiseImIndex 405ms
+     ✓ unverfolgter Code ist unsauber, auch mit nachweiseImIndex 385ms
+     ✓ Nachweis im Index plus ungestagte Codeänderung (nicht die erste Zeile) ist unsauber, auch mit nachweiseImIndex 411ms
+ ✓ |unit| tests/unit/sys-guard.test.ts (403 tests) 29342ms
+   ✓ Wächter-Hook guard.mjs: verweigert (Exit 2 mit Grund) (54)
+     ✓ Test am Start-Programm vorbei: & npm run test:e2e 408ms
+     ✓ Test am Start-Programm vorbei: time npm test 477ms
+     ✓ Test am Start-Programm vorbei: npx vitest run --project unit 451ms
+     ✓ Write auf Läufe, Logs, Protokolle und .git 813ms
+     ✓ Freigabe und Abnahme nur von advisor-report 565ms
+   ✓ u1b M18: verschachtelte Shells (35)
+     ✓ Skriptdateien: der Inhalt wird mitgeprüft, nicht lesbar heißt verweigert 502ms
+     ✓ Skriptdateien mit Optionswerten, Hüllen, Leerzeichen im Pfad und ohne Endung (Abnahme AM1) 461ms
+   ✓ u1b Lösch-Gate im Guard (42)
+     ✓ Write und Edit auf docs/freigaben immer verweigert, loesch-freigabe in tmp/proof nur von advisor-report, loesch-lauf nie 309ms
+   ✓ u1b Abnahme Runde 2: Befehlsersetzung, Umleitungen, Skriptpfade (31)
+     ✓ Skriptdateien: harmlose in denselben Formen gehen durch, absolute Pfade ohne Endung und Pfade mit Leerzeichen in Hüllen werden gelesen 481ms
+
+ Test Files  76 passed (76)
+      Tests  2175 passed (2175)
+   Start at  20:30:09
+   Duration  29.71s (tests 84%, import 11%, transform 4%, worker 1%)
+
+JSON report written to C:/Users/gesch/Music/MoveNow/tmp/reports/vitest-unit.json
+
+---
+Dauer: 53 s
+EXIT=0

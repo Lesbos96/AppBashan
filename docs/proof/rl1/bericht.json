@@ -1,0 +1,74 @@
+{
+  "schritt": "rl1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 193
+  },
+  "sitzung": "65cb38b2-85d8-474d-83af-311e02b2ef0a",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 1
+  },
+  "hash": "c05678a8f1c7e8ae471727a7a9aff460dcf7bc8e",
+  "stand": "aeaa6a22a7e9fc1bcdbb96d5a29b3c082a3fe64fd9b6b95916ac083ec0303834",
+  "mainVorher": "189c380b34e8c414daccf42076bbe0f6935e7e07",
+  "commits": 3,
+  "geaendert": {
+    "docs": 6,
+    "src": 2,
+    "supabase/functions": 2,
+    "tests/rls": 1,
+    "tests/unit": 3
+  },
+  "laeufe": {
+    "check": {
+      "nr": 10,
+      "exit": 0,
+      "tests": "2175 passed (2175)",
+      "sek": 53,
+      "hash": "c05678a8f1c7e8ae471727a7a9aff460dcf7bc8e",
+      "schritt": "rl1",
+      "log": "docs\\proof\\rl1\\010-check.log"
+    },
+    "rls": {
+      "nr": 12,
+      "exit": 0,
+      "tests": "414 passed (414)",
+      "sek": 1373.4,
+      "hash": "c05678a8f1c7e8ae471727a7a9aff460dcf7bc8e",
+      "schritt": "rl1",
+      "log": "docs\\proof\\rl1\\012-rls.log"
+    },
+    "e2e": {
+      "nr": 11,
+      "exit": 0,
+      "tests": "732 passed (12.0m)",
+      "sek": 722.8,
+      "hash": "c05678a8f1c7e8ae471727a7a9aff460dcf7bc8e",
+      "schritt": "rl1",
+      "log": "docs\\proof\\rl1\\011-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 12,
+    "rot": 4
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs/proof/rl1/rl1-abnahme-1.md",
+    "quelle": "tmp/proof/rl1-abnahme-1.md",
+    "sha256": "d126407480714a496217a5b65435803c61c6015a403c04ca9d767a33b773bc5f",
+    "runde": 1,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\rl1\\loesch-lauf.jsonl",
+    "docs\\proof\\rl1\\rl1-abnahme-1.md",
+    "docs\\proof\\rl1\\rl1-plan.md"
+  ]
+}
