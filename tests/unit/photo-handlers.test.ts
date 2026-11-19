@@ -249,6 +249,16 @@ describe('photo-receipt Rate-Limit', () => {
     expect(d.logs).toEqual([{ event: 'photo_receipt_limiter', code: 'limiter_unavailable' }])
   })
 
+  it('Zähler fällt nach dem Tor aus (zweiter Aufruf): 503, Aufrufe nur Zähler, Tor, Zähler, festes Log, nichts verarbeitet', async () => {
+    let n = 0
+    const d = receiptDeps({ takeTokens: async () => (d.calls.push('take'), ++n === 2 ? Promise.reject(new Error(`secret ${R}`)) : true) })
+    const res = await handleReceipt(rec(), d)
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ error: 'limiter_unavailable' })
+    expect(d.calls).toEqual(['take', 'check', 'take'])
+    expect(d.logs).toEqual([{ event: 'photo_receipt_limiter', code: 'limiter_unavailable' }])
+  })
+
   it('Tor-Fehler verbraucht nur den Minuten-Zähler, nie den der Anfrage (kein Verbrauch fremder Anfragen)', async () => {
     const d = receiptDeps({ check: async () => Promise.reject(new DbError('not_found')) })
     expect((await handleReceipt(rec(), d)).status).toBe(404)
