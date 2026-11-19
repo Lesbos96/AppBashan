@@ -95,7 +95,7 @@ for (let i = 0; i < 80 && !done; i++) {
   const body = await res.json()
   // Kontofehler bei Brevo (401, 402, 403, 429): die Function hat den Lauf abgebrochen und die Zeilen ohne Versuch zurückgegeben; die Probe kann so nicht gelingen
   if (Number(body.paused) > 0) {
-    console.error(`Brevo meldet einen Kontofehler (${Object.keys(body.provider ?? {}).join(', ') || 'ohne Kürzel'}): ${body.paused} Zeilen warten, Schlüssel, Freigabe und Kontingent in Brevo prüfen. Vault bleibt unverändert.`)
+    console.error(`Brevo meldet einen Kontofehler (${Object.keys(body.provider ?? {}).filter((k) => /^\d{3}:[a-z_-]{1,40}$/.test(k)).join(', ') || 'ohne Kürzel'}): ${body.paused} Zeilen warten, Schlüssel, Freigabe und Kontingent in Brevo prüfen. Vault bleibt unverändert.`)
     process.exit(1)
   }
   for (const k of Object.keys(total)) total[k] += Number(body[k]) || 0

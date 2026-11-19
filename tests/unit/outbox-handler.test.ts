@@ -143,6 +143,22 @@ describe('outbox-send Kontofehler des Anbieters (mail2, GOLIVE 48)', () => {
     expect(d.marks.map(([, ok, e]) => `${ok}:${e}`)).toEqual(Array(4).fill('false:smtp_account'))
   })
 
+  it('scheitert beim Kontofehler auch das Zurückgeben (mark), bleibt die Antwort 200 und jede Zeile wird versucht; kein Adress-Text im Log', async () => {
+    const d = deps(claimed(), {
+      send: async () => { throw new MailError(true, 401, 'unauthorized') },
+      mark: async (id, ok, error) => {
+        d.marks.push([id, ok, error])
+        throw new Error('db down')
+      },
+    })
+    const res = await call(d)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ sent: 0, failed: 0, paused: 4 })
+    expect(d.marks).toHaveLength(4)
+    expect(d.logs.map((l) => l.event)).toEqual(['outbox_account_error', ...Array(4).fill('outbox_mark_failed')])
+    expect(JSON.stringify(d.logs)).not.toContain('example.com')
+  })
+
   it('kein Kontofehler: 400 und 404 sind Fehler der Zeile, 500, 503 und Netz sind vorübergehend; der Lauf geht weiter', async () => {
     const statuses = [400, 404, 500, 503, null]
     const d = deps(statuses.map((_, i) => mk('listing_new', 'partner', { id: i + 1, ownerId: `p${i + 1}@example.com` })), {
