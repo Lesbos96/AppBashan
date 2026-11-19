@@ -40,7 +40,8 @@ if (!/^[0-9a-f]{64}$/.test(secret)) throw new Error('OUTBOX_SECRET hat nicht das
 const functionUrl = `${url.replace(/\/$/, '')}/functions/v1/outbox-send`
 if (!/^https:\/\/[a-z0-9.-]+\/functions\/v1\/outbox-send$/.test(functionUrl)) throw new Error('Die Projekt-URL hat nicht das erwartete Format.')
 
-// 0. Der Schutz kennt nur reservierte Endungen: eine fällige Zeile an eine andere Adresse (Kunde über das Konto, Firma über contact_email) ginge als echte Mail hinaus.
+// 0. Der Schutz kennt nur reservierte Endungen: eine fällige Zeile an eine andere Adresse (Kunde und Firma: Anmeldeadresse des Kontos) ginge als echte Mail hinaus.
+//    Das Inhaber-Konto der Firma wird wie in outbox_claim gewählt (ältester Inhaber, nie staff).
 supabase(
   'db',
   'query',
@@ -48,11 +49,15 @@ supabase(
   `do $$ begin
      if exists (
        select 1 from public.outbox o
-       left join auth.users u on o.recipient_kind = 'customer' and u.id = o.recipient_id
-       left join public.partners p on o.recipient_kind = 'partner' and p.id = o.recipient_id
+       left join lateral (
+         select m.user_id from public.partner_members m
+         where o.recipient_kind = 'partner' and m.partner_id = o.recipient_id and m.role = 'owner'
+         order by m.created_at, m.user_id limit 1
+       ) ow on true
+       join auth.users u on u.id = case when o.recipient_kind = 'customer' then o.recipient_id else ow.user_id end
        where private.outbox_is_due(o)
-         and ((o.recipient_kind = 'customer' and u.email !~* '[.](test|invalid|example|localhost)$')
-           or (o.recipient_kind = 'partner' and p.contact_email !~* '[.](test|invalid|example|localhost)$'))
+         and o.recipient_kind in ('customer', 'partner')
+         and u.email !~* '[.](test|invalid|example|localhost)$'
      ) then raise exception 'echte_adresse_wartet'; end if;
    end $$;`,
 )
@@ -88,6 +93,11 @@ for (let i = 0; i < 80 && !done; i++) {
     process.exit(1)
   }
   const body = await res.json()
+  // Kontofehler bei Brevo (401, 402, 403, 429): die Function hat den Lauf abgebrochen und die Zeilen ohne Versuch zurückgegeben; die Probe kann so nicht gelingen
+  if (Number(body.paused) > 0) {
+    console.error(`Brevo meldet einen Kontofehler (${Object.keys(body.provider ?? {}).join(', ') || 'ohne Kürzel'}): ${body.paused} Zeilen warten, Schlüssel, Freigabe und Kontingent in Brevo prüfen. Vault bleibt unverändert.`)
+    process.exit(1)
+  }
   for (const k of Object.keys(total)) total[k] += Number(body[k]) || 0
   // nur Zähler je „Status:Kürzel“ (die Function liefert nie Adresse oder Text)
   for (const [k, v] of Object.entries(body.provider ?? {})) if (/^(\d{3}|netz):[a-z_-]{1,40}$/.test(k)) provider[k] = (provider[k] ?? 0) + (Number(v) || 0)

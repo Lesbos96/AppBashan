@@ -1887,7 +1887,7 @@ export type Database = {
         Returns: {
           id: number
           kind: string
-          partner_email: string
+          owner_id: string
           recipient_id: string
           recipient_kind: string
           request_id: string

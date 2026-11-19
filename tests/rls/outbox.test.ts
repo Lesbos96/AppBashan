@@ -130,4 +130,84 @@ describe('outbox_claim und outbox_mark', () => {
     err(r['claim als Konto'], '42501')
     err(r['mark als anon'], '42501')
   })
+
+  it('mail2: no_recipient macht die Zeile sofort endgültig (ohne claimed_at); smtp_account gibt sie ohne Versuch zurück, auch beim fünften; ein Erfolg löscht den Code', () => {
+    const claimed = (key: string) => `=(select claimed_at is not null from public.outbox where dedupe_key = 'o36:${key}')`
+    const mark = (key: string, ok: boolean, code: string | null) => svc(`mark ${key}`, `perform public.outbox_mark(${id(key)}, ${ok}, ${code ? `'${code}'` : 'null'})`)
+    const steps: Step[] = [
+      mark('nr', false, 'no_recipient'),
+      mark('a1', false, 'smtp_account'),
+      mark('a3', false, 'smtp_account'),
+      mark('a5', false, 'smtp_account'),
+      mark('a0', false, 'smtp_account'),
+      mark('okr', true, null),
+      mark('ok5', true, 'smtp_account'),
+      ...['nr', 'a1', 'a3', 'a5', 'a0', 'okr', 'ok5'].map((k): Step => ({ name: k, sql: st(k) })),
+      { name: 'nr claimed_at', sql: claimed('nr') },
+      { name: 'a1 claimed_at', sql: claimed('a1') },
+    ]
+    const setup = `${ISOLATE} ${['nr', 'a1', 'okr'].map((k) => row(k, 'sending', 1, '1 minute')).join(' ')} ${row('a3', 'sending', 3, '1 minute')} ${row('a5', 'sending', 5, '1 minute')} ${row('a0', 'sending', 0, '1 minute')} ${row('ok5', 'sending', 5, '1 minute')}
+      update public.outbox set last_error = 'smtp_account' where dedupe_key = 'o36:okr';`
+    const r = probes(setup, steps)
+    expect(['nr', 'a1', 'a3', 'a5', 'a0', 'okr', 'ok5'].map((k) => r[k])).toEqual([
+      '= failed:1:no_recipient', // sofort endgültig, kein weiterer Versuch nötig
+      '= pending:0:smtp_account', // der Versuch zählt nicht
+      '= pending:2:smtp_account',
+      '= pending:4:smtp_account', // auch beim fünften Versuch nicht failed
+      '= pending:0:smtp_account', // nie unter null
+      '= sent:1:', // Erfolg löscht den Code
+      '= sent:5:', // ok gewinnt vor dem Code
+    ])
+    expect(r['nr claimed_at']).toBe('= false')
+    expect(r['a1 claimed_at']).toBe('= true')
+  })
+
+  it('mail2: nach smtp_account gilt der Abstand 15 Min. × 4^(Versuche − 1) mit den verbleibenden Versuchen (0 und 1: 15 Min., 2: 60 Min., 4: 16 Std.); die Lease und das Limit von fünf Versuchen bleiben', () => {
+    const due = (key: string) => `=(select private.outbox_is_due(o) from public.outbox o where o.dedupe_key = 'o36:${key}')`
+    const age = (key: string, ago: string) => ({ name: `${key} ${ago}`, sql: `update public.outbox set claimed_at = now() - interval '${ago}' where dedupe_key = 'o36:${key}'` })
+    const cases: [string, string, boolean][] = [
+      ['d0', '14 minutes', false], ['d0', '16 minutes', true], ['d1', '14 minutes', false], ['d1', '16 minutes', true],
+      ['d2', '59 minutes', false], ['d2', '61 minutes', true], ['d4', '15 hours', false], ['d4', '17 hours', true],
+    ]
+    const steps: Step[] = [
+      ...['d0', 'd1', 'd2', 'd4'].map((k) => svc(`mark ${k}`, `perform public.outbox_mark(${id(k)}, false, 'smtp_account')`)),
+      { name: 'sofort d1', sql: due('d1') },
+      ...cases.flatMap(([k, ago]): Step[] => [age(k, ago), { name: `${k} ${ago}?`, sql: due(k) }]),
+    ]
+    const setup = `${ISOLATE} ${row('d0', 'sending', 0, '1 minute')} ${row('d1', 'sending', 1, '1 minute')} ${row('d2', 'sending', 3, '1 minute')} ${row('d4', 'sending', 5, '1 minute')}`
+    const r = probes(setup, steps)
+    expect(r['sofort d1']).toBe('= false') // gerade zurückgegeben: erst nach dem Abstand wieder dran
+    for (const [k, ago, soll] of cases) expect(r[`${k} ${ago}?`], `${k} ${ago}`).toBe(`= ${soll}`)
+  })
+
+  it('mail2: outbox_claim nennt das Inhaber-Konto der Firma (ältester Inhaber, nie staff, nie contact_email); ohne Inhaber leer; Rechte nur für service_role', () => {
+    const user = (key: string) => `insert into auth.users (id, email, aud, role) values ('${key}', '${key}@example.com', 'authenticated', 'authenticated');`
+    const ids = { sa: crypto.randomUUID(), oa: crypto.randomUUID(), ob: crypto.randomUUID(), sb: crypto.randomUUID() }
+    const partner = (n: string) => `insert into public.partners (name, legal_form, small_business, address_street, address_postcode, address_city, contact_name, contact_phone, contact_email, terms_version, terms_accepted_at)
+      values ('Mail2 ${n}', 'gmbh', true, 'Str 1', '1010', 'Wien', 'Max', '12345', 'kontakt-${n}@example.com', '1', now());
+      select set_config('app.m76_${n}', (select id::text from public.partners where name = 'Mail2 ${n}'), true);`
+    const member = (n: string, user: string, role: string, ago: string) =>
+      `insert into public.partner_members (partner_id, user_id, role, created_at) values (current_setting('app.m76_${n}')::uuid, '${user}', '${role}', now() - interval '${ago}');`
+    const put = (n: string) => `insert into public.outbox (kind, recipient_kind, recipient_id, dedupe_key) values ('listing_new', 'partner', current_setting('app.m76_${n}')::uuid, 'm76:${n}');`
+    const setup = `${ISOLATE} ${Object.values(ids).map((u) => user(u)).join(' ')} ${partner('a')} ${partner('b')} ${partner('c')}
+      ${member('a', ids.sa, 'staff', '3 days')} ${member('a', ids.oa, 'owner', '2 days')} ${member('a', ids.ob, 'owner', '1 day')} ${member('b', ids.sb, 'staff', '1 day')} ${put('a')} ${put('b')} ${put('c')}`
+    const pick = (n: string) => `select owner_id from c where recipient_id = current_setting('app.m76_${n}')::uuid`
+    const r = probes(setup, [
+      svc('owner_id je Firma', `=(with c as (select * from public.outbox_claim(50)) select coalesce((${pick('a')}) = '${ids.oa}', false)::text || ',' || coalesce((${pick('b')}) is null, false)::text || ',' || coalesce((${pick('c')}) is null, false)::text)`),
+      { name: 'Rechte', sql: `=has_function_privilege('service_role', 'public.outbox_claim(integer)', 'execute')::text || ',' || has_function_privilege('authenticated', 'public.outbox_claim(integer)', 'execute')::text || ',' || has_function_privilege('anon', 'public.outbox_claim(integer)', 'execute')::text` },
+      { name: 'als anon', as: 'anon', sql: `perform public.outbox_claim(1)` },
+    ])
+    expect(r['owner_id je Firma']).toBe('= true,true,true')
+    expect(r['Rechte']).toBe('= true,false,false')
+    err(r['als anon'], '42501')
+  })
+})
+
+// Die Form des Fehlers, auf die der Versand sich stützt (mail2): ein nicht vorhandenes Konto ist 404 user_not_found, nichts anderes zählt als „kein Empfänger“.
+describe('Auth-Lookup live (mail2)', () => {
+  it('getUserById einer unbekannten ID: AuthApiError 404 user_not_found', async () => {
+    const { service } = await import('../support/db.ts')
+    const { error } = await service.auth.admin.getUserById(crypto.randomUUID())
+    expect([error?.name, error?.status, error?.code]).toEqual(['AuthApiError', 404, 'user_not_found'])
+  })
 })

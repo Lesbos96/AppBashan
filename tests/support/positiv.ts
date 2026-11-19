@@ -457,7 +457,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
   photo_publish_dispatch: { als: 'owner', welt: 'betrieb', ausfuehren: '', ergebnis: 'wert', typ: 'int4', aufruf: () => 'public.photo_publish_dispatch()' },
   outbox_claim: {
     als: 'service_role', welt: 'betrieb', ausfuehren: 's', ergebnis: 'zeilen',
-    spalten: { id: 'int8', kind: 'text', partner_email: 'text', recipient_id: 'uuid', recipient_kind: 'text', request_id: 'uuid' },
+    spalten: { id: 'int8', kind: 'text', owner_id: 'uuid', recipient_id: 'uuid', recipient_kind: 'text', request_id: 'uuid' },
     aufruf: () => 'public.outbox_claim(5)',
   },
   // void: mit fünf oder mehr fremden offenen Zeilen auf Dev bleibt 'a' ungeclaimt und mark ist ein Leeraufruf; die Wirkung belegt outbox.test.ts.

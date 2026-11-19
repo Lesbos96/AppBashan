@@ -222,13 +222,14 @@ export async function handleAdminContact(req: Request, deps: ContactDeps): Promi
 
 // outbox-send ----------------------------------------------------------------------------------------------------------------
 export type { Mail }
-/** `recipientId` ist nur beim Betreiber (`recipientKind` operator) leer; `requestId` nur dort bedeutsam (Prüfung des Kunden der Anfrage). */
-export type OutboxRow = { id: number; kind: string; recipientKind: string; recipientId: string | null; requestId: string | null; partnerEmail: string | null }
+/** `recipientId` ist nur beim Betreiber (`recipientKind` operator) leer; `requestId` nur dort bedeutsam (Prüfung des Kunden der Anfrage); `ownerId` (Inhaber-Konto) nur bei einer Firma, `null` ohne Inhaber. */
+export type OutboxRow = { id: number; kind: string; recipientKind: string; recipientId: string | null; requestId: string | null; ownerId: string | null }
 export type OutboxDeps = {
   secret: string
   claim(limit: number): Promise<OutboxRow[]>
   mark(id: number, ok: boolean, error: string | null): Promise<void>
-  customerEmail(userId: string): Promise<string | null>
+  /** Anmeldeadresse eines Kontos (Kunde oder Inhaber einer Firma). `null` nur, wenn es das Konto nicht gibt oder es keine Adresse hat; jeder Lesefehler wirft (Wiederholung). */
+  accountEmail(userId: string): Promise<string | null>
   /** Adresse des Kunden der Anfrage (nur mit `devGuard`: die Betreiber-Mail zu einem Testkonto wird nicht versendet). */
   requestCustomerEmail(requestId: string): Promise<string | null>
   /** Die Ankunftszeit der Anfrage („Unterwegs“) ist erreicht: die Mail „Dein Partner ist unterwegs“ wäre nur noch veraltet. */
@@ -293,7 +294,11 @@ function safeCode(e: unknown): string {
   return 'smtp_error'
 }
 
-/** Versand wartender Mails. Aufruf nur mit dem geheimen Header (pg_net aus outbox_dispatch); ein Fehler zählt als Versuch, nach 5 gilt `failed`. */
+// Kontofehler des Anbieters: Schlüssel ungültig (401), Konto nicht freigegeben oder gesperrt (403), Kontingent leer (402), Rate-Limit (429). Er trifft jede Mail gleich:
+// der Lauf bricht ab, die Zeilen gehen ohne verbrauchten Versuch zurück (outbox_mark smtp_account), statt dass ein Kontofehler alle wartenden Mails nach fünf Läufen löscht.
+const ACCOUNT_STATUS = new Set([401, 402, 403, 429])
+
+/** Versand wartender Mails. Aufruf nur mit dem geheimen Header (pg_net aus outbox_dispatch); ein Fehler zählt als Versuch, nach 5 gilt `failed`; ein Kontofehler des Anbieters zählt nicht. */
 export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' })
   const got = req.headers.get('x-outbox-secret') ?? ''
@@ -304,6 +309,7 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
   let failed = 0
   let skipped = 0
   let expired = 0
+  let paused = 0
   // Diagnose des Anbieters: Zähler je „Status:Kürzel“ der Fehler (nie Adresse, nie Text), steht in der Antwort für den berechtigten Aufrufer und im Log
   const provider: Record<string, number> = {}
   // Markieren ist vom Versand getrennt: Ist die Mail raus und nur das Markieren scheitert, zählt das nicht als Versandfehler und es folgt keine
@@ -315,13 +321,15 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
       deps.log({ event: 'outbox_mark_failed', id, code: 'mark_failed' })
     }
   }
-  for (const row of await deps.claim(25)) {
+  const batch = await deps.claim(25)
+  for (const [i, row] of batch.entries()) {
     try {
       const t = TEXTS[row.kind]
+      // Firma: Anmeldeadresse des Inhaber-Kontos (bestätigt), nie die frei änderbare contact_email (mail2). Kein Konto: no_recipient; jeder Lesefehler wirft.
       const to =
-        row.recipientKind === 'partner' ? row.partnerEmail
+        row.recipientKind === 'partner' ? (row.ownerId ? await deps.accountEmail(row.ownerId) : null)
         : row.recipientKind === 'operator' ? deps.operatorEmail
-        : row.recipientId ? await deps.customerEmail(row.recipientId) : null
+        : row.recipientId ? await deps.accountEmail(row.recipientId) : null
       if (!t || !to) throw new Error(!t ? 'unknown_kind' : 'no_recipient')
       // „Unterwegs“ nach der Ankunftszeit nicht mehr senden: die Zeile ist endgültig verfallen (failed, expired)
       if (row.kind === 'en_route' && row.requestId && (await deps.enRouteExpired(row.requestId))) {
@@ -342,6 +350,15 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
       }
       await send({ to, subject: t.subject, text: t.text(deps.appUrl, row.kind === 'completion_ask' ? await deps.completionDays() : 0) })
     } catch (e) {
+      if (e instanceof MailError && e.status !== null && ACCOUNT_STATUS.has(e.status)) {
+        const key = `${e.status}:${e.code ?? '-'}`
+        provider[key] = (provider[key] ?? 0) + 1
+        const rest = batch.slice(i)
+        paused = rest.length
+        deps.log({ event: 'outbox_account_error', status: e.status, provider: e.code, paused })
+        for (const r of rest) await mark(r.id, false, 'smtp_account')
+        break
+      }
       failed++
       const code = safeCode(e)
       if (e instanceof MailError) {
@@ -355,5 +372,5 @@ export async function handleOutbox(req: Request, deps: OutboxDeps): Promise<Resp
     sent++
     await mark(row.id, true, null)
   }
-  return json(200, { sent, failed, skipped, expired, ...(Object.keys(provider).length > 0 ? { provider } : {}) })
+  return json(200, { sent, failed, skipped, expired, ...(paused > 0 ? { paused } : {}), ...(Object.keys(provider).length > 0 ? { provider } : {}) })
 }

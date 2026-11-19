@@ -282,9 +282,9 @@ describe('outbox-send photo_failed', () => {
     const sent: { to: string; subject: string; text: string }[] = []
     const res = await handleOutbox(post('https://x.test/outbox', '{}', { 'x-outbox-secret': 'o' }), {
       secret: 'o',
-      claim: async () => [{ id: 1, kind: 'photo_failed', recipientKind: 'customer', recipientId: 'u', requestId: null, partnerEmail: null }],
+      claim: async () => [{ id: 1, kind: 'photo_failed', recipientKind: 'customer', recipientId: 'u', requestId: null, ownerId: null }],
       mark: async () => {},
-      customerEmail: async () => 'kunde@example.com',
+      accountEmail: async () => 'kunde@example.com',
       requestCustomerEmail: async () => 'kunde@example.com',
       completionDays: async () => 7,
       send: async (m) => void sent.push(m),

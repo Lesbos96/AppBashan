@@ -104,7 +104,7 @@ export const contactDb =(db: Db): Pick<ContactDeps, 'getUser' | 'contact'> => ({
   },
 })
 
-export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerEmail' | 'requestCustomerEmail' | 'enRouteExpired' | 'completionDays'> => ({
+export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'accountEmail' | 'requestCustomerEmail' | 'enRouteExpired' | 'completionDays'> => ({
   // Die Ankunftszeit ist erreicht (oder fehlt): „Dein Partner ist unterwegs“ wäre veraltet. Ein Lesefehler wirft und zählt als Versuch.
   async enRouteExpired(requestId) {
     const rows = must(await db.from('service_requests').select('en_route_eta').eq('id', requestId).limit(1))
@@ -124,21 +124,29 @@ export const outboxDb = (db: Db): Pick<OutboxDeps, 'claim' | 'mark' | 'customerE
   },
   async claim(limit) {
     const rows = must(await db.rpc('outbox_claim', { p_limit: limit }))
-    return rows.map((r) => ({ id: Number(r.id), kind: r.kind, recipientKind: r.recipient_kind, recipientId: r.recipient_id, requestId: r.request_id, partnerEmail: r.partner_email }))
+    return rows.map((r) => ({ id: Number(r.id), kind: r.kind, recipientKind: r.recipient_kind, recipientId: r.recipient_id, requestId: r.request_id, ownerId: r.owner_id }))
   },
   async mark(id, ok, error) {
     const { error: e } = await db.rpc('outbox_mark', { p_id: id, p_ok: ok, p_error: error as never })
     if (e) throw new DbError(e.message)
   },
-  async customerEmail(userId) {
-    const { data } = await db.auth.admin.getUserById(userId)
-    return data.user?.email ?? null
-  },
+  accountEmail: (userId) => accountEmail(db, userId),
   async requestCustomerEmail(requestId) {
     const rows = must(await db.from('service_requests').select('customer_id').eq('id', requestId).limit(1))
     const customer = rows[0]?.customer_id
-    if (!customer) return null
-    const { data } = await db.auth.admin.getUserById(customer)
-    return data.user?.email ?? null
+    return customer ? accountEmail(db, customer) : null
   },
 })
+
+/**
+ * Anmeldeadresse eines Kontos (Kunde oder Inhaber der Firma). Nur „das Konto gibt es nicht“ (404 user_not_found) ist ein Ergebnis (null → no_recipient);
+ * jeder andere Lesefehler (429, 5xx, Netz) wirft und ist ein normaler Fehlversuch mit Wiederholung, nie ein verlorener Empfänger.
+ */
+async function accountEmail(db: Db, userId: string): Promise<string | null> {
+  const { data, error } = await db.auth.admin.getUserById(userId)
+  if (error) {
+    if (error.status === 404 && error.code === 'user_not_found') return null
+    throw new DbError('auth_read')
+  }
+  return data.user?.email ?? null
+}

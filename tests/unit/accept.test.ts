@@ -137,9 +137,9 @@ describe('admin-contact', () => {
 
 describe('outbox-send', () => {
   const rows: OutboxRow[] = [
-    { id: 1, kind: 'request_accepted', recipientKind: 'customer', recipientId: 'c1', requestId: null, partnerEmail: null },
-    { id: 2, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p1', requestId: null, partnerEmail: 'firma@example.com' },
-    { id: 3, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p2', requestId: null, partnerEmail: null },
+    { id: 1, kind: 'request_accepted', recipientKind: 'customer', recipientId: 'c1', requestId: null, ownerId: null },
+    { id: 2, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p1', requestId: null, ownerId: 'inhaber1' },
+    { id: 3, kind: 'listing_new', recipientKind: 'partner', recipientId: 'p2', requestId: null, ownerId: null },
   ]
   const mk = () => {
     const marks: [number, boolean][] = []
@@ -151,7 +151,7 @@ describe('outbox-send', () => {
         secret: 'geheim',
         claim: async () => rows,
         mark: async (id: number, ok: boolean) => { marks.push([id, ok]) },
-        customerEmail: async () => 'kunde@example.com',
+        accountEmail: async (id: string) => (id === 'c1' ? 'kunde@example.com' : 'firma@example.com'),
         requestCustomerEmail: async () => 'kunde@example.com',
         completionDays: async () => 7,
         send: async (m: { to: string; subject: string; text: string }) => { sent.push(m) },
