@@ -30,6 +30,7 @@ test.describe('Anmeldung', () => {
     await page.goto('/anmelden')
     await expect(page.getByLabel('E-Mail')).toBeVisible()
     expect((await captchaState(page)).loads).toBe(0)
+    await expect(page.getByRole('dialog')).toHaveCount(0) // der ruhende Host ist kein Dialog für Screenreader und Rollen-Abfragen (101 e2e-Tests zählen Dialoge)
 
     await sendCode(page)
     await expect(page.getByLabel('Code')).toBeVisible()

@@ -4,7 +4,8 @@ import { Button } from './Button'
 
 /**
  * Heimat des Turnstile-Widgets (einmal in der Shell). Ein natives `<dialog>`, das im Ruhezustand geschlossen, aber per CSS als unsichtbarer,
- * nicht bedienbarer Punkt dargestellt wird (der iframe bleibt dabei im Dokument und lädt nie neu; es zählt nicht als offener Dialog).
+ * nicht bedienbarer Punkt dargestellt wird (der iframe bleibt dabei im Dokument und lädt nie neu; es zählt nicht als offener Dialog und
+ * ist per `aria-hidden` auch aus dem Zugänglichkeitsbaum, sonst sähen Screenreader und `getByRole('dialog')` einen zweiten Dialog).
  * Verlangt Cloudflare eine Eingabe, wird dasselbe Element modal als Karte am unteren Rand gezeigt; als Modal liegt es auch über offenen
  * Sheets (Adresssuche). Fokusfalle, Esc („Abbrechen“) und Fokus zurück zum Auslöser kommen vom Browser.
  */
@@ -23,6 +24,7 @@ export function CaptchaHost() {
     <dialog
       ref={dialog}
       inert={!open}
+      aria-hidden={open ? undefined : true}
       aria-label="Sicherheitsprüfung"
       onCancel={(e) => {
         e.preventDefault()
