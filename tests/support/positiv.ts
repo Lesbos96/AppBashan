@@ -147,7 +147,7 @@ export const SETUP: Record<Welt, (c: Ctx) => string> = {
     ${accepted(c, R.j1, ago('2 hours'))} ${accepted(c, R.j2, ago('2 hours'), 'b')} ${accepted(c, R.j3, ago('2 hours'), 'b')}
     ${accepted(c, R.j4)} ${receipt(R.j4)} ${accepted(c, R.j5)} ${receipt(R.j5)} select ${proposeSql(R.j5)}; ${keep('r_j5', `select id from public.price_revisions where request_id = '${R.j5}' and source = 'change_order' and status = 'proposed'`)}
     ${accepted(c, R.c1, later('5 days'), 'b')} ${accepted(c, R.c2, later('5 days'))} ${accepted(c, R.c3, ago('2 hours'), 'b')}
-    ${accepted(c, R.j6, 'now()')}`,
+    ${accepted(c, R.j6, 'now()', 'b')}`, // Firma b (4 offene Aufträge): Firma a hat mit q0 schon 5, `partner_accept` stieße an partner_job_limit
   verwaltung: () => `${BASE}
     ${register(U.pn, 'n')}
     ${asUser(U.pa, 'aal2', `insert into public.partner_documents (id, kind) values ('${DOC}', 'other');`)}
@@ -261,7 +261,7 @@ export const REGISTER: { [N in Exclude<Name, keyof typeof AUSNAHMEN>]: Eintrag<N
     aufruf: () => `public.job_contact('${R.j1}')`,
   },
   start_job: { ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.start_job('${R.j1}')` },
-  set_en_route: { ...partnerA, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'wert', typ: 'timestamptz', aufruf: () => `public.set_en_route('${R.j6}', 30)` },
+  set_en_route: { als: 'authenticated', user: U.pb, aal: 'aal2', welt: 'auftrag', ausfuehren: 'u', ergebnis: 'wert', typ: 'timestamptz', aufruf: () => `public.set_en_route('${R.j6}', 30)` },
   report_not_done: { ...cust, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'void', aufruf: () => `public.report_not_done('${R.j2}')` },
   reported_jobs: {
     ...admin2, welt: 'auftrag', ausfuehren: 'u', ergebnis: 'zeilen', gegen: fremd,

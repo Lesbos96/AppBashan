@@ -479,6 +479,7 @@ describe('Rollen', () => {
       'report_not_done(uuid)',
       'reported_jobs()', // S9h-3: nur admin mit aal2 sieht Zeilen (is_admin und aal2 in der Funktion)
       'send_offer(uuid,integer)',
+      'set_en_route(uuid,integer)', // mail1: aal2, Firma active/payment_hold und aktive Zuordnung in der Funktion, liefert nur die Ankunftszeit, nie die Gebühr
       'start_job(uuid)',
       'withdraw_change(uuid)',
       'withdraw_offer(uuid)',
