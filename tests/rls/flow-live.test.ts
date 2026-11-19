@@ -540,4 +540,30 @@ describe('Journal: Summen aus my_commissions und aus der Datei, Rechte, Gebühr 
     expect(key(after.data)).toEqual(before)
     ist(`PAYMENT_HOLD | Zeilen vorher=${before.length} nachher=${key(after.data).length} (gleich)`)
   })
+
+  // rl1 (OFFEN S9d-4): Zähler an photo-receipt. Letzter Block: er erschöpft den Minuten-Zähler von Firma a, spätere Uploads von pa liefen sonst in derselben Minute 429.
+  // W5 ist angenommen, Firma a hat die aktive Zuordnung: ohne den Zähler gäbe der Aufruf 200 (neues JPEG) bzw. 422 (Müll), nie 429. Welcher Zähler greift, belegen die Unit-Tests.
+  live('photo-receipt Limit: Müll-Uploads bis 429 (höchstens 45), dann ein gültiges JPEG: 429 ohne Beleg-Zeile und ohne neues Objekt im Bucket', async () => {
+    const dbNow = () => String(ownerSql(`select clock_timestamp()::text as t`)[0]?.t)
+    const objectsSince = (t: string) => Number(ownerSql(`select count(*) as n from storage.objects where bucket_id = 'job-photos' and created_at >= '${t}'`)[0]?.n)
+    const rowsBefore = photosOf(W5).length
+    const t0 = dbNow()
+    const garbage = new TextEncoder().encode('kein bild')
+    let calls = 0
+    let last: Res = { status: 0, body: {} }
+    while (calls < 45 && last.status !== 429) {
+      last = await upload(pa.jwt2, W5, garbage)
+      calls++
+      if (last.status !== 429) expect(last, JSON.stringify(last)).toMatchObject({ status: 422, body: { error: 'not_jpeg' } })
+    }
+    expect(last, `nach ${calls} Aufrufen`).toMatchObject({ status: 429, body: { error: 'rate_limited' } })
+    const t1 = dbNow()
+    const jpg = await new Image(16, 16).fill(Image.rgbToColor(250, 20, 20)).encodeJPEG({ quality: 80 })
+    const limited = await upload(pa.jwt2, W5, jpg)
+    expect(limited, JSON.stringify(limited)).toMatchObject({ status: 429, body: { error: 'rate_limited' } })
+    expect(photosOf(W5)).toHaveLength(rowsBefore)
+    expect(objectsSince(t1)).toBe(0)
+    expect(objectsSince(t0)).toBe(0)
+    ist(`W5 | Beleg-Limit | 429 nach ${calls} Aufrufen; gültiges JPEG: 429, Belegzeilen ${rowsBefore} -> ${photosOf(W5).length}, neue Objekte 0`)
+  })
 })

@@ -36,8 +36,10 @@ Die Frage 1 vom 2026-11-19 (ts1, Turnstile Site Key in `daten.md`) ist beantwort
 
 Die Einrichtung von Turnstile auf Dev (ts1: `.env.local`, Function-Secret, Auth-Captcha) ist erledigt und gemessen (Passwort-Anmeldung und Mail-Anforderung ohne Token: 400 `captcha_failed`).
 
+Die Frage 1 vom 2026-11-19 (ts1, genügt GOLIVE 18 für die Partner-Registrierung) ist beantwortet (ENTSCHEIDUNGEN Nr. 217).
+
 ## Offene Fragen
-1. **Genügt GOLIVE 18 (Captcha am Anmeldeweg) für die offene Partner-Registrierung (GOLIVE 26, ts1, Stand 2026-11-19)?** `register_partner` und die Dokument-Uploads laufen nur mit Konto; ein Konto entsteht nur über die Anmeldung, die seit ts1 das Captcha trägt. Rate-Limit und Dokumentgrenzen fehlen weiter. Empfehlung: ja, Punkt 26 auf die Rate-Limit- und Upload-Grenzen verengen (kein eigenes Captcha am Formular). Antwort im Chat: „1 ja“ oder „1 nein“ (dann bekommt das Formular ein eigenes Token, eigener Schritt).
+Keine.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

@@ -1,11 +1,14 @@
 # MoveNow · Stand
 
-Stand 2026-11-19, nach Schritt ts1 (R3: Turnstile an `route` und an der Anmeldung, Dev mit Cloudflare-Testschlüsseln); davor mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-19, nach Schritt rl1 (R3: Rate-Limit für `photo-receipt`); davor ts1 (Turnstile an `route` und an der Anmeldung, Dev mit Cloudflare-Testschlüsseln), mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+
+## Rate-Limit Belege (rl1, ENTSCHEIDUNGEN 217, Plan und Auflagen `tmp/proof/rl1-plan.md`)
+- `photo-receipt` zählt mit `take_rate_tokens` vor dem Lesen des Bodys (keine Migration): Konto je Minute 20 vor dem Tor, danach Anfrage je Tag 24 und Konto je Tag 300 (Konstante `RECEIPT_LIMITS`, `photo/handlers.ts`). Überschreitung 429 `rate_limited` ohne Upload und Beleg, Zähler fällt aus 503 `limiter_unavailable`. Wiederholung desselben Bildes zählt mit, das Budget trägt sie. Die Function braucht jetzt `RATE_LIMIT_SECRET` (GOLIVE 9).
+- Dev: `photo-receipt` v17, `photo-publish` v15, `job-photo` v17, `admin-photo` v17 deployt, 401-Smoke bestanden. Live belegt in `tests/rls/flow-live.test.ts` (letzter Block). Beks hat GOLIVE 18 für GOLIVE 26 bestätigt (Nr. 217). Offen: OFFEN rl1-1 (`job-photo` ohne Zähler), rl1-2.
 
 ## Turnstile (ts1, ENTSCHEIDUNGEN 216, Plan und Auflagen `tmp/proof/ts1-plan.md`)
 - Die Function `route` verlangt im Body `captcha` und prüft es bei Cloudflare (nach der Eingabeprüfung, vor dem Zähler): fehlend oder abgelehnt 403 `captcha_failed`, Cloudflare nicht erreichbar 503 `captcha_unavailable`. Die Anmeldung (`signInWithOtp`) trägt `captchaToken` über die eingebaute Captcha-Funktion von Supabase; `verifyOtp` und Sitzungserneuerung brauchen keins. Ein globales Widget (`CaptchaHost` in der Shell, `src/lib/turnstile.ts`) holt je Aufruf ein frisches Token; die Karte „Kurze Sicherheitsprüfung“ erscheint nur, wenn Cloudflare eine Eingabe verlangt.
 - Dev: `route` v17, `quote` v104 deployt; Secret `TURNSTILE_SECRET_KEY`, Auth-Captcha an (Cloudflare-Testschlüssel „Always passes“; `.env.local` hat `NEXT_PUBLIC_TURNSTILE_SITE_KEY`). Gemessen: Passwort-Anmeldung und Mail-Anforderung ohne Token 400 `captcha_failed`; das Testsecret nimmt jedes Token an, „abgelehntes Token → 403“ beweisen nur die Unit-Tests. Echtes Cloudflare-Skript im Browser gegen Dev: Code anfordern und Adresssuche gehen im unsichtbaren Weg.
-- Abnahmen: Lösch-Freigabe der vier Skripte (`docs/freigaben/ts1-loesch-freigabe-1.md`; sie laufen mit dem neuen Hash erst nach grünem `rls`), Abnahme Runden 1 und 2 (`tmp/proof/ts1-abnahme-*.md`, hoch 0), Bildsicht `tmp/proof/ts1-review.md`.
 - Offen: OFFEN ts1-1 (Garbage-Tokens, Probe mit erzwungener Eingabe, `golive-check` mit Dummy-Proben, weitere Auth-Einstiege). Produktion: GOLIVE 13, 18, 49 bis 52 (echte Schlüssel, nie die Testwerte; Dummy-Token muss dort scheitern). Andere Branches sind bei rls und Live-Skripten rot, bis sie auf `ts1` rebasen (Dev verlangt Captcha-Token bei Passwort- und Mail-Anmeldung).
 
 ## Wo wir stehen
@@ -14,11 +17,11 @@ Stand 2026-11-19, nach Schritt ts1 (R3: Turnstile an `route` und an der Anmeldun
 - Dev-Betrieb: Cron `outbox-dispatch` scharf, Secrets `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_BETREIBER`, `APP_URL`, `OUTBOX_SECRET`, `DEV_MAIL_GUARD=1` stehen (der Schalter gehört nie in Produktion). Dev-Reset (dev1): `npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe`, dann `loeschen`, nur auf Anforderung (Nr. 195). Jede neue Funktion braucht ein `grant execute` nur für ihren Aufrufer (`daten.md`). Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung, GOLIVE 34 und die Rest-Punkte von GOLIVE 46 bis 48 erledigt sind.
 
 ## Nächster Schritt
-1. GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Rate-Limit `photo-receipt` (S9d-4).
-2. Kleine Reste: OFFEN ts1-1, mail2-1, mail1-1, mail1-5, ui2-2 bis ui2-5, bl1-1 bis bl1-3, rj1-3, fh1-2.
+1. GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Grenzen für `register_partner` und Dokument-Uploads (GOLIVE 26) · `job-photo` (OFFEN rl1-1).
+2. Kleine Reste: OFFEN ts1-1, mail2-1, mail1-1, mail1-5, ui2-2 bis ui2-5, bl1-1 bis bl1-3, rj1-3, fh1-2, rl1-2.
 
 ## Wartet auf Beks
-- BEKS Frage 1 (genügt GOLIVE 18 für die Partner-Registrierung, GOLIVE 26?). Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
+- Keine offene Frage in `docs/BEKS.md`. Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
 - Rechtstexte (GOLIVE 33, 51), Brevo-Produktivkonto und Domain (GOLIVE 42 bis 45), ORS-Vertrag, Hosting, Turnstile-Konto (GOLIVE 49), Produktivprojekt; einmal `/advisor off` (`docs/BEKS_EINRICHTUNG.md`).
 
 ## Hinweise, die jede Session braucht

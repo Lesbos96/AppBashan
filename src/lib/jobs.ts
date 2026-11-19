@@ -29,6 +29,7 @@ export type JobErrorKind =
   | 'bad_input'
   | 'receipt_limit'
   | 'bad_photo'
+  | 'rate_limited'
   // Partner, Absage (s9i-7b2, src/lib/partnerCancel.ts)
   | 'under_review'
   | 'late_reason'
@@ -69,6 +70,7 @@ export const jobErrorText: Record<JobErrorKind, string> = {
   bad_input: 'Prüfe deine Angaben. Mit diesen Werten geht es nicht.',
   receipt_limit: 'Zu diesem Auftrag gibt es schon die höchste Zahl an Belegfotos (8).',
   bad_photo: 'Dieses Foto lässt sich nicht verwenden. Nimm ein anderes JPEG, PNG oder WebP.',
+  rate_limited: 'Es wurden gerade zu viele Fotos hochgeladen. Warte etwas und versuche es dann noch einmal.',
   under_review: 'Für diesen Auftrag läuft eine Prüfung. Das geht gerade nicht.',
   late_reason: 'Der Termin hat schon begonnen. Jetzt ist nur noch der Grund „Vor Ort anders als gebucht“ möglich.',
   no_call_out: 'Für diese Absage gibt es keine Pauschale mehr.',

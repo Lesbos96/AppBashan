@@ -140,7 +140,7 @@ describe('Aufrufe', () => {
     expect(init.headers).toMatchObject({ authorization: 'Bearer tok', 'content-type': 'image/jpeg' })
     fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ id: 'x' }) })
     await expect(uploadReceipt(R, new File(['x'], 'a.png'))).rejects.toMatchObject({ kind: 'unavailable' })
-    for (const [code, kind] of [['not_jpeg', 'bad_photo'], ['receipt_limit', 'receipt_limit'], ['request_closed', 'closed'], ['partner_not_active', 'gone'], ['unbekannt', 'unavailable']] as const) {
+    for (const [code, kind] of [['not_jpeg', 'bad_photo'], ['receipt_limit', 'receipt_limit'], ['rate_limited', 'rate_limited'], ['limiter_unavailable', 'unavailable'], ['request_closed', 'closed'], ['partner_not_active', 'gone'], ['unbekannt', 'unavailable']] as const) {
       fetchMock.mockResolvedValue({ ok: false, json: () => Promise.resolve({ error: code }) })
       await expect(uploadReceipt(R, new File(['x'], 'a.png'))).rejects.toMatchObject({ kind })
     }

@@ -7,12 +7,14 @@ import {
   handleJobPhoto,
   handlePublish,
   handleReceipt,
+  RECEIPT_LIMITS,
   type AdminPhotoDeps,
   type JobPhotoDeps,
   type PublishDeps,
   type ReceiptDeps,
 } from '../../supabase/functions/_shared/photo/handlers.ts'
 import { PhotoError } from '../../supabase/functions/_shared/photo/process.ts'
+import type { RateCheck } from '../../supabase/functions/_shared/route/handler.ts'
 
 const J = '11111111-1111-4111-8111-111111111111'
 const R = '22222222-2222-4222-8222-222222222222'
@@ -112,20 +114,41 @@ describe('photo-publish', () => {
 })
 
 // photo-receipt -------------------------------------------------------------------------------------------------------------
-function receiptDeps(over: Partial<ReceiptDeps> = {}): ReceiptDeps & { calls: string[]; seen: unknown[] } {
+function receiptDeps(over: Partial<ReceiptDeps> = {}): ReceiptDeps & { calls: string[]; seen: unknown[]; taken: RateCheck[][]; logs: unknown[] } {
   const calls: string[] = []
   const seen: unknown[] = []
+  const taken: RateCheck[][] = []
+  const logs: unknown[] = []
   return {
     calls,
     seen,
+    taken,
+    logs,
     allowedOrigins: [],
     getUser: async () => ({ id: 'u1', aal: 'aal2' }),
+    hmac: async (t) => `h(${t})`,
+    takeTokens: async (c) => (calls.push('take'), taken.push(c), true),
     check: async (...a) => void (calls.push('check'), seen.push(a)),
     process: async () => (calls.push('process'), OUT),
     upload: async () => (calls.push('upload'), COPY),
     add: async (...a) => (calls.push('add'), seen.push(a), 'photo-1'),
-    log: () => {},
+    log: (e) => void logs.push(e),
     ...over,
+  }
+}
+/** Zählt wie `take_rate_tokens` (0008): jeder Aufruf zählt, beim ersten überschrittenen Zähler Abbruch, die übrigen bleiben unberührt. */
+function counting(): { take: ReceiptDeps['takeTokens']; hits: Map<string, number> } {
+  const hits = new Map<string, number>()
+  return {
+    hits,
+    take: async (checks) => {
+      for (const c of checks) {
+        const n = (hits.get(c.bucket) ?? 0) + 1
+        hits.set(c.bucket, n)
+        if (n > c.max) return false
+      }
+      return true
+    },
   }
 }
 const rec = (query = `?request=${R}`, body: BodyInit | null = JPEG, headers: Record<string, string> = { authorization: 'Bearer t' }) =>
@@ -137,7 +160,7 @@ describe('photo-receipt', () => {
     const res = await handleReceipt(rec(), d)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ id: 'photo-1' })
-    expect(d.calls).toEqual(['check', 'process', 'upload', 'add'])
+    expect(d.calls).toEqual(['take', 'check', 'take', 'process', 'upload', 'add'])
     expect(d.seen[0]).toEqual(['u1', 'aal2', R])
     expect(d.seen[1]).toEqual(['u1', 'aal2', R, COPY, OUT.sha256])
   })
@@ -161,7 +184,7 @@ describe('photo-receipt', () => {
       const d = receiptDeps({ check: async () => Promise.reject(new DbError(code)) })
       const res = await handleReceipt(rec(), d)
       expect(res.status, code).toBe(status)
-      expect(d.calls).toEqual([])
+      expect(d.calls).toEqual(['take']) // nur der Minuten-Zähler vor dem Tor; danach kein Zähler, nichts gelesen
     }
   })
 
@@ -173,6 +196,100 @@ describe('photo-receipt', () => {
     expect(d.calls).not.toContain('upload')
     const big = await handleReceipt(rec(`?request=${R}`, JPEG, { authorization: 'Bearer t', 'content-length': String(11 * 1024 * 1024) }), receiptDeps())
     expect(big.status).toBe(413)
+  })
+})
+
+// photo-receipt: Rate-Limit (rl1, OFFEN S9d-4) ------------------------------------------------------------------------------
+describe('photo-receipt Rate-Limit', () => {
+  const L = RECEIPT_LIMITS
+  const names = (d: { taken: RateCheck[][] }) => d.taken.map((c) => c.map((x) => x.bucket.split(':').slice(0, 2).join(':')))
+
+  it('zwei Aufrufe des Zählers: Konto je Minute vor dem Tor, Anfrage und Konto je Tag danach (Anfrage zuerst); Eimer nur als Hash, Grenzen aus RECEIPT_LIMITS', async () => {
+    const d = receiptDeps()
+    expect((await handleReceipt(rec(), d)).status).toBe(200)
+    expect(names(d)).toEqual([['receipt:min'], ['receiptreq:day', 'receipt:day']])
+    expect(d.taken[0]).toEqual([{ bucket: 'receipt:min:h(user|u1)', max: L.userMinute, window_seconds: 60 }])
+    expect(d.taken[1]).toEqual([
+      { bucket: `receiptreq:day:h(receipt-request|${R})`, max: L.requestDay, window_seconds: 86400 },
+      { bucket: 'receipt:day:h(user|u1)', max: L.userDay, window_seconds: 86400 },
+    ])
+  })
+
+  it('Grenzen: 24 je Anfrage sind 3 mal die 8 Belege des Auftrags; Konto je Minute und je Tag darüber', () => {
+    expect(L).toEqual({ userMinute: 20, requestDay: 24, userDay: 300 })
+    expect(L.requestDay).toBe(3 * 8)
+    expect(L.userMinute).toBeLessThan(L.requestDay)
+    expect(L.userDay).toBeGreaterThan(L.requestDay)
+  })
+
+  it('Minuten-Limit überschritten: 429 rate_limited, das Tor wird nicht angefasst, nichts gelesen, verarbeitet oder hochgeladen', async () => {
+    const d = receiptDeps({ takeTokens: async (c) => (d.calls.push('take'), d.taken.push(c), false) })
+    const res = await handleReceipt(rec(), d)
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: 'rate_limited' })
+    expect(d.calls).toEqual(['take'])
+    expect(d.logs).toEqual([])
+  })
+
+  it('Tageslimit überschritten (nach dem Tor): 429 ohne process, upload und add', async () => {
+    let n = 0
+    const d = receiptDeps({ takeTokens: async (c) => (d.calls.push('take'), d.taken.push(c), ++n < 2) })
+    const res = await handleReceipt(rec(), d)
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: 'rate_limited' })
+    expect(d.calls).toEqual(['take', 'check', 'take'])
+  })
+
+  it('Zähler fällt aus: 503 limiter_unavailable (fail closed), festes Log ohne Hash und Konto, nichts verarbeitet', async () => {
+    const d = receiptDeps({ takeTokens: async () => Promise.reject(new Error(`secret ${R} h(user|u1)`)) })
+    const res = await handleReceipt(rec(), d)
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ error: 'limiter_unavailable' })
+    expect(d.calls).toEqual([])
+    expect(d.logs).toEqual([{ event: 'photo_receipt_limiter', code: 'limiter_unavailable' }])
+  })
+
+  it('Tor-Fehler verbraucht nur den Minuten-Zähler, nie den der Anfrage (kein Verbrauch fremder Anfragen)', async () => {
+    const d = receiptDeps({ check: async () => Promise.reject(new DbError('not_found')) })
+    expect((await handleReceipt(rec(), d)).status).toBe(404)
+    expect(names(d)).toEqual([['receipt:min']])
+  })
+
+  it('Anfrage-Zähler überschritten: der Konto-Tageszähler bleibt unberührt (Reihenfolge)', async () => {
+    const c = counting()
+    const d = receiptDeps({ takeTokens: (cs) => c.take(cs.filter((x) => !x.bucket.startsWith('receipt:min'))) }) // Minuten-Zähler hier ausgeblendet: 25 Aufrufe in einer Minute
+    for (let i = 0; i <= L.requestDay; i++) await handleReceipt(rec(), d)
+    expect(c.hits.get(`receiptreq:day:h(receipt-request|${R})`)).toBe(L.requestDay + 1)
+    expect(c.hits.get('receipt:day:h(user|u1)')).toBe(L.requestDay) // der 25. Aufruf endet am Anfrage-Zähler
+  })
+
+  it('ungültige Eingabe und fehlendes Token verbrauchen keinen Zähler', async () => {
+    const d = receiptDeps()
+    await handleReceipt(rec('?request=x'), d)
+    await handleReceipt(rec(`?request=${R}`, JPEG, {}), d)
+    expect(d.taken).toEqual([])
+  })
+
+  it('Wiederholung nicht fälschlich blockiert: 8 verschiedene Belege plus Wiederholung der achten Datei plus zwei abgelehnte Dateien liegen im Budget (echte Konstanten, Zähler wie take_rate_tokens)', async () => {
+    const c = counting()
+    const ids = new Map<string, string>()
+    let bad = false
+    const d = receiptDeps({
+      takeTokens: c.take,
+      process: async () => (bad ? Promise.reject(new PhotoError('not_jpeg')) : { ...OUT, sha256: String(fileNo) }),
+      // wie photo_receipt_add (0073): gleicher Hash liefert die vorhandene Id
+      add: async (_u, _a, _r, _p, sha) => (ids.has(sha) ? ids.get(sha)! : (ids.set(sha, `photo-${ids.size + 1}`), ids.get(sha)!)),
+    })
+    let fileNo = 0
+    const statuses: number[] = []
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 8]) {
+      fileNo = n
+      statuses.push((await handleReceipt(rec(), d)).status)
+    }
+    bad = true
+    for (let i = 0; i < 2; i++) statuses.push((await handleReceipt(rec(), d)).status)
+    expect(statuses).toEqual([200, 200, 200, 200, 200, 200, 200, 200, 200, 422, 422])
+    expect(ids.size).toBe(8)
   })
 })
 
