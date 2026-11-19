@@ -1,0 +1,98 @@
+{
+  "schritt": "mail1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Hook",
+  "modelle": {
+    "claude-sonnet-5-5": 1
+  },
+  "sitzung": "bad68dcd-8e91-4ef2-b12f-d627c1d63ccd",
+  "berater": {
+    "Explore": 2,
+    "advisor": 1,
+    "advisor-report": 7,
+    "reviewer": 1
+  },
+  "hash": "daa905e11ff694f829aa820a312641571246347a",
+  "stand": "9435c9da87b2fed1c6bd8a72006d047d4f95b7959313ce8c3df7eee347557ef3",
+  "mainVorher": "6780476173b2d2e37f22e0b557d5805ae215a46c",
+  "commits": 14,
+  "geaendert": {
+    "docs": 7,
+    "andere": 5,
+    "scripts": 2,
+    "src": 5,
+    "supabase/functions": 5,
+    "supabase/migrations": 2,
+    "tests/e2e": 3,
+    "tests/rls": 5,
+    "tests/unit": 6
+  },
+  "laeufe": {
+    "check": {
+      "nr": 43,
+      "exit": 0,
+      "tests": "2117 passed (2117)",
+      "sek": 50.9,
+      "hash": "5cedf20380b0b68d3692535099e4d9aea1bd7e85",
+      "schritt": "mail1",
+      "log": "docs\\proof\\mail1\\043-check.log"
+    },
+    "rls": {
+      "nr": 45,
+      "exit": 0,
+      "tests": "403 passed (403)",
+      "sek": 1382.6,
+      "hash": "5cedf20380b0b68d3692535099e4d9aea1bd7e85",
+      "schritt": "mail1",
+      "log": "docs\\proof\\mail1\\045-rls.log"
+    },
+    "e2e": {
+      "nr": 46,
+      "exit": 0,
+      "tests": "723 passed (12.8m)",
+      "sek": 772.2,
+      "hash": "daa905e11ff694f829aa820a312641571246347a",
+      "schritt": "mail1",
+      "log": "docs\\proof\\mail1\\046-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 46,
+    "rot": 12
+  },
+  "migrationen": [
+    {
+      "pfad": "supabase/migrations/20261118071002_0074_mail1_unterwegs.sql",
+      "sha256": "470fb62520bfc0049ae90f0e2f413f6775d2b8391fcd3c4310c46723f3192ade"
+    },
+    {
+      "pfad": "supabase/migrations/20261118074249_0075_mail1_faellig.sql",
+      "sha256": "6f718b88cb7447501a41d71139c4512af1077905a8539119f8df95e1478b251d"
+    }
+  ],
+  "abnahme": {
+    "datei": "docs/proof/mail1/mail1-abnahme-2.md",
+    "quelle": "tmp/proof/mail1-abnahme-2.md",
+    "sha256": "f6e95ddadac33b8ecb3ba2186ac903b49b9fe133c22a69163c3036d4139f86f2",
+    "runde": 2,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\mail1\\db-antrag-1.json",
+    "docs\\proof\\mail1\\db-antrag-2.json",
+    "docs\\proof\\mail1\\db-antrag-3.json",
+    "docs\\proof\\mail1\\db-freigabe-1.md",
+    "docs\\proof\\mail1\\db-freigabe-2.md",
+    "docs\\proof\\mail1\\db-freigabe-3.md",
+    "docs\\proof\\mail1\\loesch-freigabe-1.md",
+    "docs\\proof\\mail1\\loesch-freigabe-2.md",
+    "docs\\proof\\mail1\\loesch-lauf.jsonl",
+    "docs\\proof\\mail1\\mail1-abnahme-1.md",
+    "docs\\proof\\mail1\\mail1-abnahme-2.md",
+    "docs\\proof\\mail1\\mail1-review.md"
+  ]
+}
