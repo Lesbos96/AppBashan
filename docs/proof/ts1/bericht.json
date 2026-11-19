@@ -1,0 +1,82 @@
+{
+  "schritt": "ts1",
+  "stufe": "R3",
+  "gate": "bestanden",
+  "gruende": [],
+  "modell": "claude-sonnet-5-5",
+  "modellQuelle": "Transkript",
+  "modelle": {
+    "claude-sonnet-5-5": 588
+  },
+  "sitzung": "5ed73093-9740-4107-9822-e547f1bd3f53",
+  "berater": {
+    "advisor": 1,
+    "advisor-report": 3,
+    "reviewer": 1
+  },
+  "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+  "stand": "b6c7138ea0f95dbbdd4e9f58254e4b247245f3d698d197642bc9a5b5159eb74c",
+  "mainVorher": "f241af14523355f232024eb0ed14eaa3d313d501",
+  "commits": 7,
+  "geaendert": {
+    ".claude": 1,
+    "andere": 5,
+    "docs": 7,
+    "scripts": 5,
+    "src": 6,
+    "supabase/functions": 3,
+    "tests/e2e": 5,
+    "tests/rls": 3,
+    "tests/unit": 5
+  },
+  "laeufe": {
+    "check": {
+      "nr": 30,
+      "exit": 0,
+      "tests": "2165 passed (2165)",
+      "sek": 62.7,
+      "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+      "schritt": "ts1",
+      "log": "docs\\proof\\ts1\\030-check.log"
+    },
+    "rls": {
+      "nr": 32,
+      "exit": 0,
+      "tests": "413 passed (413)",
+      "sek": 1232.2,
+      "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+      "schritt": "ts1",
+      "log": "docs\\proof\\ts1\\032-rls.log"
+    },
+    "e2e": {
+      "nr": 31,
+      "exit": 0,
+      "tests": "732 passed (12.2m)",
+      "sek": 731.4,
+      "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+      "schritt": "ts1",
+      "log": "docs\\proof\\ts1\\031-e2e.log"
+    }
+  },
+  "versuche": {
+    "gesamt": 32,
+    "rot": 8
+  },
+  "migrationen": [],
+  "abnahme": {
+    "datei": "docs/proof/ts1/ts1-abnahme-2.md",
+    "quelle": "tmp/proof/ts1-abnahme-2.md",
+    "sha256": "5b2b88de8cce5ee1ea1bf3bd1286b64922cf424c1546330f8bd72ba0474e2260",
+    "runde": 2,
+    "hoch": 0,
+    "modell": "claude-fable-5-2"
+  },
+  "kopien": [
+    "docs\\proof\\ts1\\loesch-freigabe-1.md",
+    "docs\\proof\\ts1\\loesch-lauf.jsonl",
+    "docs\\proof\\ts1\\ts1-abnahme-1.md",
+    "docs\\proof\\ts1\\ts1-abnahme-2.md",
+    "docs\\proof\\ts1\\ts1-plan.md",
+    "docs\\proof\\ts1\\ts1-review.md"
+  ]
+}

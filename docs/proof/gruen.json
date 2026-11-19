@@ -1,20 +1,20 @@
 {
   "check": {
-    "abdruck": "e25de3c854b5d8f101e8f857244cf5e0a4b4ee09f2ff0563c7a3fcb59e903b35",
-    "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
-    "schritt": "mail2",
-    "zeit": "2026-11-19T04:18:03.730Z"
+    "abdruck": "b6c7138ea0f95dbbdd4e9f58254e4b247245f3d698d197642bc9a5b5159eb74c",
+    "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+    "schritt": "ts1",
+    "zeit": "2026-11-19T17:22:10.555Z"
   },
   "rls": {
-    "abdruck": "9a246f3743771dac2dfc6d724d49af4fbeddba6dae5170c1ae026b8bc146b63c",
-    "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
-    "schritt": "mail2",
-    "zeit": "2026-11-19T04:55:02.847Z"
+    "abdruck": "c15ba274327a69440eb890a24aeae60336507d1303a03f0a53519c0ee528e87c",
+    "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+    "schritt": "ts1",
+    "zeit": "2026-11-19T17:35:34.180Z"
   },
   "e2e": {
-    "abdruck": "848a91dfc1fc7ba7e01cab0eeb5c96e75a75eb2674d685b9e3b1364fa30d940b",
-    "hash": "8d51473fd1383c335e8ed7405265c1e0e588dfec",
-    "schritt": "mail2",
-    "zeit": "2026-11-19T04:18:56.210Z"
+    "abdruck": "e3a4cf71824553927ece81526a95fa41777665165d186a57620e6325600b05de",
+    "hash": "fb76685091a155ee442e2eeb1dca008ea6d10f92",
+    "schritt": "ts1",
+    "zeit": "2026-11-19T17:23:16.259Z"
   }
 }
