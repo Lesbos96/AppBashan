@@ -3,6 +3,7 @@ import { Button } from '../../components/Button'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
 import { Field, GroupedList } from '../../components/Surfaces'
+import { windowLabel } from '../../lib/arrival'
 import { formatEuro } from '../../lib/money'
 import {
   acceptListing,
@@ -16,7 +17,6 @@ import {
   scopeLines,
   sendOffer,
   serviceLabel,
-  windowLabel,
   withdrawOffer,
   type Listing,
   type MyOffer,

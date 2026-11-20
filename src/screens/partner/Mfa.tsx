@@ -81,13 +81,10 @@ function Code({ factorId, notice, onDone }: { factorId: string; notice: string; 
       <Button type="submit" disabled={c.busy}>
         {c.busy ? 'Wird geprüft …' : 'Bestätigen'}
       </Button>
-      <p className="m-0 px-4 text-footnote text-text-secondary">
-        Gerät verloren oder keinen Zugriff auf die App? Wir setzen den Faktor nach einer Prüfung zurück. Unsere Kontaktdaten stehen im{' '}
-        <LegalLink to="/recht/impressum" className="text-accent underline">
-          Impressum
-        </LegalLink>
-        .
-      </p>
+      <p className="m-0 px-4 text-footnote text-text-secondary">Gerät verloren oder keinen Zugriff auf die App? Wir setzen den Faktor nach einer Prüfung zurück. Unsere Kontaktdaten findest du im Impressum:</p>
+      <LegalLink to="/recht/impressum" className="press -mt-4 flex min-h-11 items-center px-4 text-footnote text-accent underline">
+        Impressum
+      </LegalLink>
     </form>
   )
 }

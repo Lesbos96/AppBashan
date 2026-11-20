@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Illustration } from '../components/Illustration'
 import { InfoLink } from '../components/InfoLink'
+import { LegalFooter } from '../components/Legal'
 import { NavBar } from '../components/Bars'
 import { ErrorState, Loading } from '../components/States'
 import { rememberShown } from '../lib/draft'
@@ -53,6 +54,9 @@ function Formular({ tariffs }: { tariffs: Record<string, number> }) {
             </div>
           }
         />
+        <div className="mt-6">
+          <LegalFooter />
+        </div>
       </div>
       <PreisLeiste preview={preview} onOpen={() => setSheet(true)} canContinue onContinue={() => {
         rememberShown('montage', shownOf(preview))

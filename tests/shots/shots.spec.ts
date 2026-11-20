@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
-import { expect, test } from '../e2e/backend'
+import { expect, mockRpc, rest, test } from '../e2e/backend'
+import { factor, openPartner } from '../e2e/mfa-helpers'
 import { CODE, EMAIL, HASH, mockAuth, signInWithCode, type AuthMock } from '../e2e/auth-helpers'
 import { fillEntruempelungBeispiel, fillKuecheBeispiel, weiter } from '../e2e/dienste-helpers'
 import { anonymousPrices, answer, cors, fillContact, mockQuote, pickDate, price, range, toSummary, type Reply } from '../e2e/anfrage-helpers'
@@ -19,6 +20,38 @@ const codeStep = (mock?: AuthMock, submit = false) => async (page: Page) => {
   await page.getByLabel('Code').fill(CODE)
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
   await expect(page.getByRole('alert')).toBeVisible()
+}
+
+const AUFTRAG_ID = '0b8f1c3e-5d2a-4e7b-9a61-3c4d5e6f7a8b'
+
+/** Auftragsdetail des Kunden mit gemockter Zeile; `seen` ist ein Text, der danach sichtbar sein muss. */
+const auftragDetail = (over: Record<string, unknown>, seen: string) => async (page: Page) => {
+  await mockAuth(page)
+  await page.route('**/rest/v1/service_requests**', (r) =>
+    rest(r, [
+      {
+        id: AUFTRAG_ID,
+        service: 'move',
+        preferred_date: '2026-12-15',
+        termin_at: '2099-12-15T07:00:00Z',
+        en_route_eta: null,
+        not_done_reported_at: null,
+        not_done_resolved_at: null,
+        cancel_fee_waived: false,
+        from_address: 'Neubaugasse 12, 1070 Wien',
+        to_address: 'Praterstraße 30, 1020 Wien',
+        created_at: '2026-11-05T10:00:00Z',
+        price_revisions: { snapshot: price(68961) },
+        ...over,
+      },
+    ]),
+  )
+  await page.route('**/rest/v1/price_revisions**', (r) => rest(r, []))
+  await mockRpc(page, 'my_report_info', () => [{ can_report: false, report_until: null }])
+  await page.goto('/anmelden?next=%2Fauftraege')
+  await signInWithCode(page)
+  await page.goto(`/auftraege/${AUFTRAG_ID}`)
+  await expect(page.getByText(seen).first()).toBeVisible()
 }
 
 // Wächst mit jedem Screen ab S3. `onboarded: false` startet wie beim ersten Besuch.
@@ -445,6 +478,19 @@ const anfrageRoutes: (typeof routes)[number][] = [
       await signInWithCode(page)
       await page.goto('/auftraege')
       await expect(page.getByText('Aktiv · 3')).toBeVisible()
+    },
+  },
+  { name: 'auftrag-angefragt', path: '/', steps: auftragDetail({ status: 'requested', time_window: 'morning' }, '8 bis 11') },
+  { name: 'auftrag-angenommen-fenster', path: '/', steps: auftragDetail({ status: 'accepted', time_window: 'morning' }, 'Ankunft zwischen') },
+  { name: 'auftrag-angenommen-flexibel', path: '/', steps: auftragDetail({ status: 'accepted', time_window: 'flexible' }, 'Die Firma nennt dir die genaue Uhrzeit.') },
+  { name: 'auftrag-unterwegs', path: '/', steps: auftragDetail({ status: 'accepted', time_window: 'afternoon', en_route_eta: '2099-12-15T13:40:00Z' }, 'Die Firma ist unterwegs') },
+  {
+    name: 'partner-mfa-code',
+    path: '/',
+    expectedError: failed,
+    steps: async (page) => {
+      await openPartner(page, { factors: [factor('v1', 'verified')] })
+      await expect(page.getByRole('heading', { name: 'Code eingeben' })).toBeVisible()
     },
   },
 ]

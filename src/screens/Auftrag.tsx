@@ -3,9 +3,10 @@ import { Navigate, useParams } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
 import { StatusChip } from '../components/Controls'
+import { LegalFooter } from '../components/Legal'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
-import { arrivalText, enRouteText } from '../lib/arrival'
+import { arrivalText, enRouteText, windowTimes } from '../lib/arrival'
 import { CancelError, cancelErrorText, cancelRequest, feeText, previewCancel, snapshotStorno, timeline } from '../lib/cancel'
 import { terminStarted } from '../lib/jobs'
 import { states, titles } from '../lib/orders'
@@ -22,8 +23,6 @@ import { dayText } from './anfrage/format'
 
 const COLUMNS = 'id, service, status, preferred_date, termin_at, not_done_reported_at, not_done_resolved_at, cancel_fee_waived, en_route_eta, time_window, from_address, to_address, price_revisions!service_requests_current_revision(snapshot)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const NBSP = String.fromCharCode(160)
-const windows: Record<string, string> = { morning: `8 bis 11${NBSP}Uhr`, midday: `11 bis 14${NBSP}Uhr`, afternoon: `14 bis 18${NBSP}Uhr`, flexible: `ganzer Tag ab 8${NBSP}Uhr` }
 
 /** Die Karte der Aktion verschwindet: der Fokus geht beim Erscheinen des Hinweises auf ihn statt auf body (der Auftrag lädt neu, der Hinweis entsteht neu). */
 const focusOnMount = (el: HTMLElement | null) => el?.focus()
@@ -68,7 +67,10 @@ function Detail({ userId, id }: { userId: string; id: string }) {
   const live = r.status === 'accepted' || r.status === 'in_progress'
   const started = live && terminStarted(r.termin_at)
   const arrival = arrivalText(r.time_window, 'kunde')
-  const when = [dayText(r.preferred_date), r.time_window ? windows[r.time_window] : undefined].filter(Boolean).join(' · ')
+  // Läuft der Auftrag und hat das Fenster Uhrzeiten, nennt die Ankunftszeile sie schon; „Flexibel“ hat dort keine
+  const times = live && r.time_window !== 'flexible' && arrival ? null : windowTimes(r.time_window)
+  // Der Punkt bleibt mit der Uhrzeit zusammen: er hängt nie allein am Zeilenende
+  const when = times ? [dayText(r.preferred_date), times].filter(Boolean).join(` ·${String.fromCharCode(160)}`) : dayText(r.preferred_date)
 
   return (
     <div className="flex flex-col gap-3 px-5 pt-2 pb-8">
@@ -122,6 +124,7 @@ function Detail({ userId, id }: { userId: string; id: string }) {
         </p>
       )}
       {r.status === 'accepted' && !started && !r.not_done_reported_at && <Cancel id={r.id} storno={r.cancel_fee_waived ? [] : snapshotStorno(r.price_revisions?.snapshot)} onDone={() => done()} />}
+      <LegalFooter />
     </div>
   )
 }

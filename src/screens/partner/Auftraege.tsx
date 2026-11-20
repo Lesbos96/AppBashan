@@ -3,7 +3,7 @@ import { Button } from '../../components/Button'
 import { Segmented, StatusChip } from '../../components/Controls'
 import { Sheet } from '../../components/Sheet'
 import { ErrorState, Loading } from '../../components/States'
-import { arrivalText, enRouteText } from '../../lib/arrival'
+import { arrivalText, enRouteText, windowLabel } from '../../lib/arrival'
 import { JobError, jobErrorText, retryable, viennaTime } from '../../lib/jobs'
 import { formatEuro } from '../../lib/money'
 import {
@@ -18,7 +18,6 @@ import {
   startJob,
   contactLocked,
   telHref,
-  windowLabel,
   type Contact,
   type Job,
   type JobStatus,

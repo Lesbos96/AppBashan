@@ -1,6 +1,27 @@
 const NBSP = String.fromCharCode(160)
 
-const RANGE: Record<string, [number, number]> = { morning: [8, 11], midday: [11, 14], afternoon: [14, 18] }
+/** Die einzige Quelle der Fensterzeiten: Name und Stunden (von, bis) je Zeitfenster. */
+const WINDOWS: Record<string, { name: string; from: number; to: number }> = {
+  morning: { name: 'Vormittag', from: 8, to: 11 },
+  midday: { name: 'Mittag', from: 11, to: 14 },
+  afternoon: { name: 'Nachmittag', from: 14, to: 18 },
+}
+const FLEXIBLE = ['ganzer', 'Tag', 'ab', '8', 'Uhr'].join(NBSP)
+
+const own = (w: string | null | undefined) => (w && Object.hasOwn(WINDOWS, w) ? WINDOWS[w] : undefined)
+
+/** „8 bis 11 Uhr“, bei „Flexibel“ „ganzer Tag ab 8 Uhr“ (geschützte Leerzeichen: die Angabe bricht nie mittendrin um); `null` bei unbekanntem oder fehlendem Fenster. */
+export function windowTimes(timeWindow: string | null | undefined): string | null {
+  if (timeWindow === 'flexible') return FLEXIBLE
+  const w = own(timeWindow)
+  return w ? `${w.from} bis ${w.to}${NBSP}Uhr` : null
+}
+
+/** „Vormittag, 8 bis 11 Uhr“, bei „Flexibel“ „ganzer Tag ab 8 Uhr“; `null` bei unbekanntem oder fehlendem Fenster. */
+export function windowLabel(timeWindow: string | null | undefined): string | null {
+  const w = own(timeWindow)
+  return w ? `${w.name}, ${windowTimes(timeWindow)}` : windowTimes(timeWindow)
+}
 
 const clock = new Intl.DateTimeFormat('de-AT', { hour: 'numeric', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Vienna' })
 
@@ -13,6 +34,6 @@ export function enRouteText(eta: Date, side: 'kunde' | 'firma'): string {
 /** Ankunftsfenster = das vom Kunden gewählte und von der Firma angenommene Zeitfenster. „Flexibel“ hat keins: nur ein Hinweis, je nach Seite. `null` bei unbekanntem oder fehlendem Fenster. */
 export function arrivalText(timeWindow: string | null | undefined, side: 'kunde' | 'firma'): string | null {
   if (timeWindow === 'flexible') return side === 'kunde' ? 'Die Firma nennt dir die genaue Uhrzeit.' : 'Kunde ist flexibel – Uhrzeit mit dem Kunden abstimmen.'
-  const r = timeWindow ? RANGE[timeWindow] : undefined
-  return r ? `Ankunft zwischen ${r[0]} und ${r[1]}${NBSP}Uhr` : null
+  const w = own(timeWindow)
+  return w ? `Ankunft zwischen ${w.from} und ${w.to}${NBSP}Uhr` : null
 }

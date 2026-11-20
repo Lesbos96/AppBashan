@@ -6,6 +6,7 @@ import { ActionBar, Progress } from '../../components/Bars'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { Illustration } from '../../components/Illustration'
+import { LegalFooter } from '../../components/Legal'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList, StepRow, SwitchRow } from '../../components/Surfaces'
 import { type ClearanceFlow, clearanceSteps, useClearanceFlow } from '../../lib/flow'
@@ -246,6 +247,9 @@ function Formular({ tariffs }: { tariffs: Record<string, number> }) {
             </>
           )}
         </motion.div>
+        <div className="mt-6">
+          <LegalFooter />
+        </div>
       </div>
 
       <ActionBar>

@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate } from 'react-router'
 import { ActionBar, Progress } from '../../components/Bars'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
+import { LegalFooter } from '../../components/Legal'
 import { ErrorState, Loading } from '../../components/States'
 import { AmountRow, GroupedList } from '../../components/Surfaces'
 import { rememberShown } from '../../lib/draft'
@@ -146,6 +147,9 @@ function Inhalt({ tariffs }: { tariffs: Record<string, number> }) {
             </Link>
           </>
         )}
+        <div className="mt-6">
+          <LegalFooter />
+        </div>
       </div>
 
       <ActionBar>

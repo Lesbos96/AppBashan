@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Segmented } from '../components/Controls'
 import { Icon } from '../components/Icon'
+import { LegalFooter } from '../components/Legal'
 import { Sheet } from '../components/Sheet'
 import { ErrorState, Loading } from '../components/States'
 import { Card, GroupedList, StepRow, SwitchRow, ValueRow } from '../components/Surfaces'
@@ -215,6 +216,9 @@ function Formular({ service, tariffs }: { service: Service; tariffs: Record<stri
             <SwitchRow label="Einpackservice" sub="Persönliches Angebot" icon="boxes" tileClassName="bg-[#B39A68]" checked={flow.packing} onChange={(packing) => update({ packing })} switchLabel="Einpackservice anfragen" />
           </GroupedList>
         </Step>
+        <div className="mt-6">
+          <LegalFooter />
+        </div>
       </div>
 
       <PreisLeiste preview={preview} onOpen={() => setSheet('price')} canContinue={!!flow.from?.point && !!flow.to?.point && !calc.loading} onContinue={() => {

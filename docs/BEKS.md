@@ -40,9 +40,10 @@ Die Frage 1 vom 2026-11-19 (ts1, genügt GOLIVE 18 für die Partner-Registrierun
 
 Die Frage 1 vom 2026-11-20 (rl3, GOLIVE 26 ohne Zählergrenze) ist beantwortet (ENTSCHEIDUNGEN Nr. 220).
 
+Die Fragen 1 und 2 vom 2026-11-20 (legal1, Partnerbedingungen lesbar; Partner-Datenschutz als Abschnitt) sind beantwortet (ENTSCHEIDUNGEN Nr. 222).
+
 ## Offene Fragen
-1. **legal1, Partnerbedingungen: wer darf sie lesen?** Die Partnerbedingungen nennen die Provision, Kunden sehen sie nirgends (`geld.md`). Gebaut ist: Seite nur mit Anmeldung (`/recht/partnerbedingungen`, eigener Chunk), Link nur in der Partner-Registrierung, nicht in der Fußzeile und nicht im Profil. Restrisiko: Jede angemeldete Person, auch eine Kundin, kann die Adresse aufrufen; der Text nennt keine Prozentsätze, nur dass es eine Provision gibt. Die P2B-Verordnung verlangt, dass Geschäftskunden ihre Bedingungen auch vor Vertragsschluss leicht finden; ob eine Anmeldung dafür genügt, klärt der Anwalt. Empfehlung: **so lassen, bis der Anwalt antwortet;** danach entweder öffentlich ohne Prozentsätze (die Staffel zeigt nur die App den Partnern) oder die Sperre bleibt.
-2. **legal1, Datenschutz für Partnerbetriebe: eigene Seite?** Die App zeigt eine Datenschutzerklärung (Kundentext). Der Entwurf für Partnerbetriebe (`docs/legal/entwurf/datenschutz-partner.md`, Stand vor dem Partnerteil, veraltet) und der Partnervertrag (`partnervertrag.md`) sind keine Seiten. Empfehlung: **ja, eigene Seite `/recht/datenschutz-partner`, verlinkt in der Registrierung, sobald der Anwalt den Text hat;** bis dahin steht in der Kunden-Erklärung ein `[ANWALT]`-Hinweis. Ohne deine Antwort bleibt es dabei.
+Keine.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

@@ -165,8 +165,6 @@ export function scopeLines(service: Listing['service'], inputs: unknown): string
 }
 
 export const serviceLabel: Record<Listing['service'], string> = { transport: 'Transport', move: 'Umzug', clearance: 'Entrümpelung', assembly: 'Montage' }
-const WINDOW: Record<string, string> = { morning: 'Vormittag, 8 bis 11 Uhr', midday: 'Mittag, 11 bis 14 Uhr', afternoon: 'Nachmittag, 14 bis 18 Uhr', flexible: 'ganzer Tag ab 8 Uhr' }
-export const windowLabel = (w: string | null) => own(WINDOW, w) ?? null
 
 /** Kalendertag wie gespeichert (ohne Zeitzonen-Umrechnung): „Mi., 2. Dezember 2026“. */
 export function dayLabel(iso: string | null): string | null {

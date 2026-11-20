@@ -135,13 +135,22 @@ test.describe('Ankunft', { tag: '@breit' }, () => {
     await mock(page, state())
     await open(page)
     await expect(page.getByText(`Ankunft zwischen 8 und 11${NBSP}Uhr`)).toBeVisible()
+    await expect(page.getByText(`8 bis 11${NBSP}Uhr`), 'ui3: das Fenster steht nur einmal da').toHaveCount(0)
     await expect(ankunft(page)).toHaveCount(0)
   })
 
-  test('Flexibel: nur der Hinweis, kein Fenster (web1-5)', async ({ page }) => {
+  test('noch nicht angenommen: das Fenster steht in der Datumszeile, keine Ankunftszeile (ui3)', async ({ page }) => {
+    await mock(page, state({ status: 'requested' }))
+    await open(page)
+    await expect(page.getByText(`15. Dezember 2026 · 8 bis 11${NBSP}Uhr`)).toBeVisible()
+    await expect(page.getByText(/Ankunft zwischen/)).toHaveCount(0)
+  })
+
+  test('Flexibel: Fensterzeile „ganzer Tag“ und der Hinweis, keine Ankunftszeit (web1-5)', async ({ page }) => {
     await mock(page, state({ timeWindow: 'flexible' }))
     await open(page)
     await expect(page.getByText('Die Firma nennt dir die genaue Uhrzeit.')).toBeVisible()
+    await expect(page.getByText(/ganzer\sTag\sab\s8\sUhr/)).toBeVisible()
     await expect(page.getByText(/Ankunft zwischen/)).toHaveCount(0)
   })
 

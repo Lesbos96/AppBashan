@@ -150,7 +150,7 @@ const tile = (icon: string | undefined, className = 'bg-primary') =>
   )
 
 const rowText = ({ label, sub }: RowLabel) => (
-  <span className="flex min-w-0 flex-1 flex-col gap-px">
+  <span className="flex flex-auto flex-col gap-px">
     <span className="text-body">{label}</span>
     {sub && <span className="text-[13px]/4 text-text-secondary">{sub}</span>}
   </span>
@@ -173,11 +173,12 @@ export function StepRow({
   ...text
 }: RowLabel & { value: number; min: number; max: number; step?: number; display: string; onChange: (v: number) => void; labelDown: string; labelUp: string }) {
   return (
-    <li className={`${rowInset(text.icon, text.dotClassName)} flex items-center gap-3 pr-3 pl-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
+    // Reicht die Breite (320 px) nicht für Label, Wert und Pille, rutschen Wert und Pille in eine eigene Zeile, statt sich zu überlagern
+    <li className={`${rowInset(text.icon, text.dotClassName)} flex flex-wrap items-center gap-x-3 gap-y-1 py-1 pr-3 pl-4 ${text.sub ? 'min-h-[60px]' : 'min-h-[52px]'}`}>
       {tile(text.icon, text.tileClassName)}
       {dotTile(text.dotClassName)}
       {rowText(text)}
-      <output className="whitespace-nowrap text-headline tabular-nums">{display}</output>
+      <output className="ml-auto whitespace-nowrap text-headline tabular-nums">{display}</output>
       <StepPill
         labelDown={labelDown}
         labelUp={labelUp}

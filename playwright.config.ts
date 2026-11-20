@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const sizes = [
+  [320, 640],
   [390, 844],
   [430, 932],
   [768, 1024],

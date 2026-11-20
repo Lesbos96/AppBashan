@@ -5,6 +5,7 @@ import { Button } from '../../components/Button'
 import { Sheet } from '../../components/Sheet'
 import { Segmented } from '../../components/Controls'
 import { Icon } from '../../components/Icon'
+import { LegalFooter } from '../../components/Legal'
 import { Card } from '../../components/Surfaces'
 import { type Path, type TimeWindow, services, timeWindows, useTermin, viennaToday } from '../../lib/draft'
 import { readFlow } from '../../lib/flow'
@@ -138,6 +139,7 @@ export function Termin({ path }: { path: Path }) {
             <p className="m-0 text-[13px]/[18px] text-text-secondary">Die Startzeit stimmst du mit dem Partner ab. Ohne Prüfung der Verfügbarkeit.</p>
           </div>
         </Card>
+        <LegalFooter />
       </div>
       <Sheet open={searching} onClose={() => setSearching(false)} title="Adresse" detents={[0.7, 0.92]}>
         {searching && (

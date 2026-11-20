@@ -206,6 +206,7 @@ test.describe('Anmeldung mit Faktor', { tag: '@breit' }, () => {
     await expect(code(page)).toBeVisible()
     expect((await box(code(page))).height).toBeGreaterThanOrEqual(44)
     expect((await box(confirm(page))).height).toBeGreaterThanOrEqual(44)
+    expect((await box(page.getByRole('link', { name: 'Impressum' }))).height, 'ui3: Impressum-Link mit 44-px-Ziel').toBeGreaterThanOrEqual(44)
     await noOverflow(page)
     await code(page).focus()
     await page.keyboard.type(await freshCode(f.secret))
