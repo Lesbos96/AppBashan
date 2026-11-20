@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { LegalLink } from '../../components/Legal'
 import { Button } from '../../components/Button'
 import { ErrorState, Loading } from '../../components/States'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
@@ -83,9 +83,9 @@ function Code({ factorId, notice, onDone }: { factorId: string; notice: string; 
       </Button>
       <p className="m-0 px-4 text-footnote text-text-secondary">
         Gerät verloren oder keinen Zugriff auf die App? Wir setzen den Faktor nach einer Prüfung zurück. Unsere Kontaktdaten stehen im{' '}
-        <Link to="/profil/impressum" className="text-accent underline">
+        <LegalLink to="/recht/impressum" className="text-accent underline">
           Impressum
-        </Link>
+        </LegalLink>
         .
       </p>
     </form>

@@ -98,7 +98,7 @@ test.describe('App-Shell', { tag: '@breit' }, () => {
 
   test('Alle Seiten: keine Konsolenfehler, kein horizontaler Überlauf', async ({ page }) => {
     const errors = collectErrors(page)
-    for (const path of ['/', '/auftraege', '/profil', '/profil/preise', '/profil/datenschutz', '/profil/impressum', '/umzug', '/gibt-es-nicht']) {
+    for (const path of ['/', '/auftraege', '/profil', '/profil/preise', '/recht/datenschutz', '/recht/impressum', '/recht/agb', '/umzug', '/gibt-es-nicht']) {
       await page.goto(path, { waitUntil: 'networkidle' })
       const overflow = await page.evaluate<boolean>('document.documentElement.scrollWidth > document.documentElement.clientWidth')
       expect(overflow, path).toBe(false)
@@ -113,14 +113,29 @@ test.describe('App-Shell', { tag: '@breit' }, () => {
     await expect(page.getByRole('heading', { name: 'Start', level: 1 })).toBeVisible()
   })
 
-  test('Datenschutz und Impressum sind als Platzhalter markiert', async ({ page }) => {
+  test('Rechtsseiten tragen den Entwurfshinweis und führen von der Fußzeile zurück', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
     for (const [path, title] of [
-      ['/profil/datenschutz', 'Datenschutz'],
-      ['/profil/impressum', 'Impressum & AGB'],
+      ['/recht/datenschutz', 'Datenschutz'],
+      ['/recht/impressum', 'Impressum'],
+      ['/recht/agb', 'AGB'],
     ]) {
       await page.goto(path!)
       await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible()
-      await expect(page.getByText(/^Platzhalter:/)).toBeVisible()
+      await expect(page.getByText('Entwurf – noch nicht rechtlich geprüft')).toBeVisible()
     }
+    // von der Startseite: Fußzeile → Impressum → Zurück auf die Startseite
+    await page.goto('/')
+    await page.getByRole('navigation', { name: 'Rechtliches' }).getByRole('link', { name: 'Impressum' }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Impressum', level: 1 })).toBeVisible()
+    await page.getByRole('link', { name: 'Zurück' }).press('Enter')
+    await expect(page.getByRole('heading', { name: 'Start', level: 1 })).toBeVisible()
+  })
+
+  test('Partnerbedingungen nennen die Provision: ohne Sitzung zur Anmeldung, nie in der Fußzeile', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('movenow.onboarded', '1'))
+    await page.goto('/recht/partnerbedingungen')
+    await expect(page).toHaveURL(/\/anmelden$/)
+    await expect(page.getByRole('navigation', { name: 'Rechtliches' }).getByRole('link', { name: /Partnerbedingungen/ })).toHaveCount(0)
   })
 })

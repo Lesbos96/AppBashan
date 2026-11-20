@@ -29,7 +29,9 @@ const { Profil } = await import('../../src/screens/Profil')
 const { Onboarding } = await import('../../src/screens/Onboarding')
 const { Anmelden } = await import('../../src/screens/Anmelden')
 const { Auftraege } = await import('../../src/screens/Auftraege')
-const { Datenschutz, Impressum, Folgt } = await import('../../src/screens/Seiten')
+const { Folgt } = await import('../../src/screens/Seiten')
+const { Agb, Datenschutz, Impressum } = await import('../../src/screens/Recht')
+const { Partnerbedingungen } = await import('../../src/screens/RechtPartner')
 const { Gesendet } = await import('../../src/screens/anfrage/Gesendet')
 
 const store = () => {
@@ -102,13 +104,41 @@ describe('Ruhige Screens', () => {
     ['Onboarding', Onboarding, '/willkommen'],
     ['Profil (abgemeldet)', Profil, '/profil'],
     ['Profil mit offenem Info-Sheet „Wie rechnet MoveNow?“ (Ladezustand)', Profil, '/profil/preise'],
-    ['Datenschutz', Datenschutz, '/profil/datenschutz'],
-    ['Impressum', Impressum, '/profil/impressum'],
   ])('%s rendert ohne Netz und hält die Kunden-Regeln ein', (_, Screen, at) => {
     const html = render(h(Screen), at)
     expect(html.length).toBeGreaterThan(200)
     expectCustomerRules(html)
     expect(fromCalls).toEqual([]) // kein Datenbankzugriff im ersten Render
+  })
+
+  // Die Rechtstexte nennen Wörter wie „Plattform“ und „Stornogebühr“ rechtmäßig; die Kunden-Regel gilt hier nur für die Gebühr von MoveNow.
+  it.each<[string, ComponentType, string]>([
+    ['Impressum', Impressum, '/recht/impressum'],
+    ['AGB', Agb, '/recht/agb'],
+    ['Datenschutz', Datenschutz, '/recht/datenschutz'],
+    ['Partnerbedingungen', Partnerbedingungen, '/recht/partnerbedingungen'],
+  ])('Rechtsseite %s: Entwurfshinweis, markierte Lücken, kein Rohtext, keine internen Verweise', (name, Screen, at) => {
+    const html = render(h(Screen), at)
+    const t = text(html)
+    expect(t).toContain('Entwurf – noch nicht rechtlich geprüft')
+    expect(t).toContain('[ANWALT')
+    expect(t).not.toMatch(/\[OFFEN|\[BEKS|docs\/|src\/|supabase\/|Nachtauftrag|noch nicht gebaut/)
+    expect(t).not.toMatch(/\*\*|\|---/)
+    expect(html).toContain(`<h1`)
+    // Kunden sehen die Gebühr nirgends; nur die Partnerbedingungen nennen die Provision
+    if (name !== 'Partnerbedingungen') expect(t).not.toMatch(/plattformgebühr|provision|15\s?%|movenow-gebühr/i)
+  })
+
+  it.each<[string, ComponentType, string]>([
+    ['Start', Start, '/'],
+    ['Onboarding', Onboarding, '/willkommen'],
+    ['Anmelden', Anmelden, '/anmelden'],
+    ['Datenschutz', Datenschutz, '/recht/datenschutz'],
+  ])('Fußzeile auf %s: Impressum, AGB und Datenschutz, nie die Partnerbedingungen', (_, Screen, at) => {
+    currentSession = null
+    const html = render(h(Screen), at)
+    for (const to of ['/recht/impressum', '/recht/agb', '/recht/datenschutz']) expect(html).toContain(`href="${to}"`)
+    expect(html).not.toContain('href="/recht/partnerbedingungen"')
   })
 
   it('Start bietet die vier Services der Phase 1 an', () => {

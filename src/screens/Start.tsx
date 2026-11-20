@@ -2,6 +2,7 @@ import { NavBar } from '../components/Bars'
 import { Backdrop } from '../components/Backdrop'
 import { Icon } from '../components/Icon'
 import { Illustration } from '../components/Illustration'
+import { LegalFooter } from '../components/Legal'
 import { ServiceCard } from '../components/Surfaces'
 
 const services = [
@@ -52,6 +53,9 @@ export function Start() {
         </div>
 
         <p className="m-0 mt-3 text-center text-footnote text-text-secondary">Richtpreis ohne Konto. Anmelden erst beim Absenden.</p>
+        <div className="mt-2">
+          <LegalFooter />
+        </div>
       </div>
     </main>
   )

@@ -149,6 +149,10 @@ export function Registrierung({ onDone }: { onDone: () => void }) {
         </div>
         <Hint id="partner-terms-hint" text={errors.terms} />
         <p className="m-0 px-4 text-footnote text-text-secondary">Die Partnerbedingungen sind ein Entwurf und werden vor dem Start verbindlich festgelegt.</p>
+        {/* eigener Tab, damit die Eingaben im Formular erhalten bleiben */}
+        <a href="/recht/partnerbedingungen" target="_blank" rel="noreferrer" className="press flex min-h-11 items-center px-4 text-footnote text-accent underline">
+          Partnerbedingungen lesen<span className="sr-only"> (öffnet in neuem Tab)</span>
+        </a>
       </section>
 
       <p className="m-0 px-4 text-footnote text-text-secondary">Nach dem Absenden kannst du die Registrierung nicht zurückziehen. Eine abgelehnte Registrierung ist endgültig. Mit einer Firma kannst du dein Konto nicht mehr in der App löschen.</p>

@@ -100,8 +100,19 @@ const routes: { name: string; path: string; onboarded?: false; mock?: { routeSta
   },
   { name: 'profil', path: '/profil' },
   { name: 'preise', path: '/profil/preise', fit: false, ready: (page) => expect(page.getByText('Montage & Demontage')).toBeVisible() },
-  { name: 'datenschutz', path: '/profil/datenschutz' },
-  { name: 'impressum', path: '/profil/impressum' },
+  { name: 'datenschutz', path: '/recht/datenschutz' },
+  { name: 'impressum', path: '/recht/impressum' },
+  { name: 'agb', path: '/recht/agb' },
+  {
+    // nur mit Sitzung erreichbar (nennt die Provision, Kunden sehen sie nirgends)
+    name: 'partnerbedingungen',
+    path: '/anmelden?next=%2Frecht%2Fpartnerbedingungen',
+    steps: async (page) => {
+      await mockAuth(page)
+      await signInWithCode(page)
+      await expect(page.getByRole('heading', { name: 'Partnerbedingungen', level: 1 })).toBeVisible()
+    },
+  },
   // `route` ist gemockt (feste Beispielantwort): keine Aussage über echte Kilometer
   { name: 'transport', path: '/transport', mock: {}, ready: (page) => expect(page.getByRole('heading', { name: 'Was muss mit?' })).toBeVisible() },
   {

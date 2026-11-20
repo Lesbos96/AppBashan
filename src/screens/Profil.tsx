@@ -76,8 +76,9 @@ export function Profil() {
 
         <GroupedList title="Info">
           <ListRow icon="calculator" label="Wie rechnet MoveNow?" to="/profil/preise" />
-          <ListRow icon="lock" tileClassName="bg-[#4a5f63]" label="Datenschutz" to="/profil/datenschutz" />
-          <ListRow icon="document" tileClassName="bg-[#4a5f63]" label="Impressum & AGB" to="/profil/impressum" />
+          <ListRow icon="document" tileClassName="bg-[#4a5f63]" label="Impressum" to="/recht/impressum" />
+          <ListRow icon="document" tileClassName="bg-[#4a5f63]" label="AGB" to="/recht/agb" />
+          <ListRow icon="lock" tileClassName="bg-[#4a5f63]" label="Datenschutz" to="/recht/datenschutz" />
         </GroupedList>
 
         {session && (

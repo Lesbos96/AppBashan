@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { NavBar } from '../components/Bars'
 import { Button } from '../components/Button'
+import { LegalFooter } from '../components/Legal'
 import { Field, GroupedList } from '../components/Surfaces'
 import { AuthError, digitsOnly, rememberNext, requestSignIn, takeNext, verifyCode, verifyLink, type AuthErrorKind } from '../lib/auth'
 import { restoreDraft } from '../lib/draft'
@@ -201,6 +202,7 @@ export function Anmelden() {
             <Button onClick={() => void navigate(takeNext(), { replace: true })}>Weiter</Button>
           </div>
         )}
+        <LegalFooter />
       </div>
     </main>
   )

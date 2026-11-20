@@ -5,6 +5,7 @@ import { Backdrop } from '../components/Backdrop'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { Illustration } from '../components/Illustration'
+import { LegalFooter } from '../components/Legal'
 import { finishOnboarding } from '../lib/onboarding'
 
 const pages = [
@@ -83,6 +84,9 @@ export function Onboarding() {
         </div>
         <div className="mt-auto pt-6">
           <Button onClick={() => (last ? done() : setIndex(index + 1))}>{last ? 'Los geht’s' : 'Weiter'}</Button>
+          <div className="pt-2">
+            <LegalFooter />
+          </div>
         </div>
       </section>
     </main>

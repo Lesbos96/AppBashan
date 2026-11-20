@@ -5,11 +5,11 @@ import { hasOnboarded } from '../lib/onboarding'
 import { supabase } from '../lib/supabase'
 import { Onboarding } from '../screens/Onboarding'
 import { Profil } from '../screens/Profil'
-import { Datenschutz, Fehler, Folgt, Impressum } from '../screens/Seiten'
+import { Fehler, Folgt } from '../screens/Seiten'
 import { Start } from '../screens/Start'
 import { Shell, type Handle } from './Shell'
 
-// Flows laden erst beim ersten Aufruf (eigene Chunks); Start, Profil, Info-Sheet, Onboarding und Rechtstexte bleiben im Einstiegs-Chunk.
+// Flows und Rechtstexte laden erst beim ersten Aufruf (eigene Chunks); Start, Profil, Info-Sheet und Onboarding bleiben im Einstiegs-Chunk.
 // Vite teilt gemeinsame Module (Preismodul, Entwurf, Anfrage) selbst auf. Der Router wartet vor dem Seitenwechsel auf den Chunk,
 // die Seitenübergänge der Shell bleiben deshalb unverändert.
 const screens = {
@@ -24,6 +24,8 @@ const screens = {
   auftraege: () => import('../screens/Auftraege'),
   auftrag: () => import('../screens/Auftrag'),
   partner: () => import('../screens/Partner'),
+  recht: () => import('../screens/Recht'),
+  rechtPartner: () => import('../screens/RechtPartner'),
 }
 
 const page = (path: string, element: RouteObject['element'], handle: Handle, extra?: Partial<RouteObject>): RouteObject => ({ path, element, handle, ...extra })
@@ -67,8 +69,10 @@ export const router = createBrowserRouter([
       page('profil', <Profil />, { key: 'profil', title: 'Profil', root: true }),
       page('profil/preise', <Profil />, { key: 'profil', title: 'Wie rechnet MoveNow?', root: true }),
       page('profil/konto-loeschen', <Profil />, { key: 'profil', title: 'Konto löschen', root: true }),
-      page('profil/datenschutz', <Datenschutz />, { key: 'datenschutz', title: 'Datenschutz' }),
-      page('profil/impressum', <Impressum />, { key: 'impressum', title: 'Impressum & AGB' }),
+      lazyPage('recht/impressum', async () => { const { Impressum } = await screens.recht(); return <Impressum /> }, { key: 'impressum', title: 'Impressum' }),
+      lazyPage('recht/agb', async () => { const { Agb } = await screens.recht(); return <Agb /> }, { key: 'agb', title: 'Allgemeine Geschäftsbedingungen' }),
+      lazyPage('recht/partnerbedingungen', async () => { const { Partnerbedingungen } = await screens.rechtPartner(); return <Partnerbedingungen /> }, { key: 'partnerbedingungen', title: 'Partnerbedingungen' }, { loader: requireSession }),
+      lazyPage('recht/datenschutz', async () => { const { Datenschutz } = await screens.recht(); return <Datenschutz /> }, { key: 'datenschutz', title: 'Datenschutz' }),
       page('willkommen', <Onboarding />, { key: 'willkommen', title: 'Willkommen', bar: false }),
       lazyPage('transport', async () => { const { Konfigurator } = await screens.konfigurator(); return <Konfigurator service="transport" /> }, { key: 'transport', title: 'Möbeltransport', bar: false }),
       lazyPage('umzug', async () => { const { Konfigurator } = await screens.konfigurator(); return <Konfigurator service="move" /> }, { key: 'umzug', title: 'Umzug', bar: false }),

@@ -1,6 +1,6 @@
 # MoveNow · Fragen an Beks
 
-Stand 2026-11-19 (nach mail2). Antworte im Chat mit den Nummern, zum Beispiel „1 ja, 2 nein, 3 ja“. Beantwortete Fragen werden hier gelöscht und in `docs/ENTSCHEIDUNGEN.md` eingetragen. Höchstens 15 Fragen; Weiteres steht in `docs/OFFEN.md`.
+Stand 2026-11-20 (nach legal1). Antworte im Chat mit den Nummern, zum Beispiel „1 ja, 2 nein, 3 ja“. Beantwortete Fragen werden hier gelöscht und in `docs/ENTSCHEIDUNGEN.md` eingetragen. Höchstens 15 Fragen; Weiteres steht in `docs/OFFEN.md`.
 
 Die 15 Fragen vom 2026-11-14 sind beantwortet (ENTSCHEIDUNGEN Nr. 148 bis 162); ihre Folgearbeiten stehen in `docs/OFFEN.md`.
 
@@ -38,8 +38,11 @@ Die Einrichtung von Turnstile auf Dev (ts1: `.env.local`, Function-Secret, Auth-
 
 Die Frage 1 vom 2026-11-19 (ts1, genügt GOLIVE 18 für die Partner-Registrierung) ist beantwortet (ENTSCHEIDUNGEN Nr. 217).
 
+Die Frage 1 vom 2026-11-20 (rl3, GOLIVE 26 ohne Zählergrenze) ist beantwortet (ENTSCHEIDUNGEN Nr. 220).
+
 ## Offene Fragen
-1. **rl3, GOLIVE 26, Zählergrenze für `register_partner` und die Dokument-Uploads.** Beide Wege laufen direkt über PostgREST und Storage ohne Edge Function. Je Konto sind sie hart begrenzt: 1 Firma, 23 Bezirke, 5 Dokumente à 10 MiB (zusammen 50 MiB); Fehlaufrufe schreiben nichts (ENTSCHEIDUNGEN Nr. 219, Test `tests/rls/partner-limits.test.ts`). Eine Zählergrenze davor bräuchte einen Rechteumbau ohne verhinderten Schaden. Du hattest „Rate-Limit“ genannt. Empfehlung: **ja, GOLIVE 26 gilt als erledigt, keine Zählergrenze.** Die Bremse ist die Kontenanlage (GOLIVE 53 prüft die Auth-Limits im Produktivprojekt). Bis zu deiner Antwort gilt der Punkt für `booking_open` als offen.
+1. **legal1, Partnerbedingungen: wer darf sie lesen?** Die Partnerbedingungen nennen die Provision, Kunden sehen sie nirgends (`geld.md`). Gebaut ist: Seite nur mit Anmeldung (`/recht/partnerbedingungen`, eigener Chunk), Link nur in der Partner-Registrierung, nicht in der Fußzeile und nicht im Profil. Restrisiko: Jede angemeldete Person, auch eine Kundin, kann die Adresse aufrufen; der Text nennt keine Prozentsätze, nur dass es eine Provision gibt. Die P2B-Verordnung verlangt, dass Geschäftskunden ihre Bedingungen auch vor Vertragsschluss leicht finden; ob eine Anmeldung dafür genügt, klärt der Anwalt. Empfehlung: **so lassen, bis der Anwalt antwortet;** danach entweder öffentlich ohne Prozentsätze (die Staffel zeigt nur die App den Partnern) oder die Sperre bleibt.
+2. **legal1, Datenschutz für Partnerbetriebe: eigene Seite?** Die App zeigt eine Datenschutzerklärung (Kundentext). Der Entwurf für Partnerbetriebe (`docs/legal/entwurf/datenschutz-partner.md`, Stand vor dem Partnerteil, veraltet) und der Partnervertrag (`partnervertrag.md`) sind keine Seiten. Empfehlung: **ja, eigene Seite `/recht/datenschutz-partner`, verlinkt in der Registrierung, sobald der Anwalt den Text hat;** bis dahin steht in der Kunden-Erklärung ein `[ANWALT]`-Hinweis. Ohne deine Antwort bleibt es dabei.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).

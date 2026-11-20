@@ -174,7 +174,7 @@ test.describe('Seitentitel (2.4.2)', { tag: '@breit' }, () => {
       ['/', 'Start · MoveNow'],
       ['/profil', 'Profil · MoveNow'],
       ['/profil/preise', 'Wie rechnet MoveNow? · MoveNow'],
-      ['/profil/datenschutz', 'Datenschutz · MoveNow'],
+      ['/recht/datenschutz', 'Datenschutz · MoveNow'],
       ['/anmelden', 'Anmelden · MoveNow'],
       ['/umzug', 'Umzug · MoveNow'],
       ['/montage/termin', 'Montage: Termin · MoveNow'],

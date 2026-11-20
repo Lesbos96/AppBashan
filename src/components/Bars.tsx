@@ -88,7 +88,7 @@ export function NavBar({ title, back, trailing }: { title: string; back?: { to: 
       </div>
       <div className="h-[calc(44px+var(--safe-top))]" />
       <div ref={marker} className="px-5">
-        <h1 className="m-0 text-large-title">{title}</h1>
+        <h1 className="m-0 text-large-title break-words">{title}</h1>
       </div>
     </header>
   )

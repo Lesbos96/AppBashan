@@ -5,6 +5,7 @@ import { ActionBar, NavBar } from '../../components/Bars'
 import { Button } from '../../components/Button'
 import { Illustration } from '../../components/Illustration'
 import { ErrorState, Loading } from '../../components/States'
+import { LegalLink } from '../../components/Legal'
 import { Card, Field, GroupedList } from '../../components/Surfaces'
 import { leaveAccount } from '../../lib/auth'
 import { type Path, finishDraft, readContact, writeContact, readShownFull, readTermin, rememberShown, services, stashDraft, timeWindows } from '../../lib/draft'
@@ -410,13 +411,13 @@ function Inhalt({ path, tariffs, version, terms, bookingOpen }: { path: Path; ta
           <input type="checkbox" checked={consent} onChange={(e) => setConsentFor(e.target.checked ? accountId : '')} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
           <span className="text-subhead">
             Ich sende eine unverbindliche Anfrage. Der Partner prüft und bestätigt Termin und Preis. Es gelten{' '}
-            <Link to="/profil/impressum" className="py-3.5 text-accent underline">
+            <LegalLink to="/recht/agb" className="inline-block py-3.5 text-accent underline">
               AGB
-            </Link>{' '}
+            </LegalLink>{' '}
             und{' '}
-            <Link to="/profil/datenschutz" className="py-3.5 text-accent underline">
+            <LegalLink to="/recht/datenschutz" className="inline-block py-3.5 text-accent underline">
               Datenschutz
-            </Link>
+            </LegalLink>
             .
           </span>
         </label>
