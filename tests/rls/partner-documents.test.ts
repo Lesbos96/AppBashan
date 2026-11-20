@@ -153,7 +153,9 @@ describe.skipIf(reason !== null)('Partner-Dokumente mit echten aal2-Token', () =
     expect((await up(a.jwt2, path, PDF)).error).not.toBeNull()
     expect(await exists(path)).toBe(false)
     // rl3: auch die signierte Upload-URL gibt es für einen Pfad ohne eigene Zeile nicht (die INSERT-Policy gilt dort ebenso)
-    expect((await withToken(a.jwt2).storage.from(BUCKET).createSignedUploadUrl(path)).error).not.toBeNull()
+    const signed = await withToken(a.jwt2).storage.from(BUCKET).createSignedUploadUrl(path)
+    expect(signed.data).toBeNull()
+    expect(status(signed.error)).toBe('403')
   }, 60_000)
 
   // Der Fall, den `partner_document_slot` abwehrt: eine fremde Sitzung auf einen freien Platz von A (Zeile da, Datei fehlt)
