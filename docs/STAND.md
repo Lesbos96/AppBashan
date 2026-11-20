@@ -1,14 +1,16 @@
 # MoveNow · Stand
 
-Stand 2026-11-20, nach Schritt rl2 (R3: Rate-Limit für `job-photo`); davor rl1 (`photo-receipt`), ts1 (Turnstile an `route` und an der Anmeldung, Dev mit Cloudflare-Testschlüsseln), mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
+Stand 2026-11-20, nach Schritt rl3 (R3: Grenzen für `register_partner` und Dokument-Uploads, ohne Zählergrenze); davor rl2 (`job-photo`), rl1 (`photo-receipt`), ts1 (Turnstile an `route` und an der Anmeldung, Dev mit Cloudflare-Testschlüsseln), mail2 (R3: Mail-Pflichtpunkte vor `booking_open`, Migration 0076), mail1, ui2, web1, bl1 (0073), rs1, rj1, dev1, ui1, sys2. Diese Datei schreibt jeder Schritt am Ende neu (höchstens 40 Zeilen).
 
-## Rate-Limit job-photo (rl2, ENTSCHEIDUNGEN 218, Plan und Auflagen `tmp/proof/rl2-plan.md`)
+## Grenzen Registrierung und Dokumente (rl3, ENTSCHEIDUNGEN 219, Plan und Auflagen `tmp/proof/rl3-plan.md`)
+- `register_partner` und die Dokument-Uploads laufen direkt über PostgREST und Storage, ohne Function. Je Konto hart begrenzt: 1 Firma, 23 Bezirke, 5 Dokumente à 10 MiB (50 MiB), Fehlaufrufe schreiben nichts. Keine Zählergrenze, keine Migration, kein Function-Deploy (nichts geändert). Neu: `tests/rls/partner-limits.test.ts` (Rot per `MV_RL3_OHNE_GRENZEN`), signierte Upload-URL in `partner-documents.test.ts`. Die Aufrufrate je Konto ist nicht begrenzt (OFFEN rl3-1, GOLIVE 53).
+- GOLIVE 26 ist durch Strukturgrenzen erledigt, gilt für `booking_open` aber als offen, bis Beks BEKS Frage 1 bestätigt.
+
+## Rate-Limit job-photo und Belege (rl2/rl1, ENTSCHEIDUNGEN 218, 217, Pläne `tmp/proof/rl2-plan.md`, `rl1-plan.md`)
 - `job-photo` zählt mit `take_rate_tokens` einmal je Aufruf nach der Token-Prüfung, vor Body und Abfrage (keine Migration): Konto je Minute 60 (`JOB_PHOTO_LIMITS`, Eimer `jobphoto:min`, getrennt von `receipt:min`). Jeder Aufruf mit gültigem Token zählt (auch 400 und fremde ID). 429 `rate_limited` ohne Wirkung, Zähler fällt aus 503 `limiter_unavailable`, beide mit CORS-Kopf. Kein Tages- und kein Auftragszähler (Begründung Nr. 218). Die Function braucht `RATE_LIMIT_SECRET` (GOLIVE 9). Client: `rate_limited` in beiden `CODES`, keine Wiederholung; `Nachtrag.tsx` und `Anfragen.tsx` zeigen weiter ihren festen Hinweis.
 - Dev: `job-photo` v18, `photo-receipt` v18, `photo-publish` v16, `admin-photo` v18 deployt, 401-Smoke bestanden. Live belegt: letzter Block in `tests/rls/flow-live.test.ts` (Kunde: 60 Aufrufe 200, dann 429 ohne URL; Firma a 200). Offen: OFFEN rl2-1, rl1-2.
 
-## Rate-Limit Belege (rl1, ENTSCHEIDUNGEN 217, Plan und Auflagen `tmp/proof/rl1-plan.md`)
-- `photo-receipt` zählt mit `take_rate_tokens` vor dem Lesen des Bodys (keine Migration): Konto je Minute 20 vor dem Tor, danach Anfrage je Tag 24 und Konto je Tag 300 (Konstante `RECEIPT_LIMITS`, `photo/handlers.ts`). Überschreitung 429 `rate_limited` ohne Upload und Beleg, Zähler fällt aus 503 `limiter_unavailable`. Wiederholung desselben Bildes zählt mit, das Budget trägt sie. Die Function braucht jetzt `RATE_LIMIT_SECRET` (GOLIVE 9).
-- Live belegt in `tests/rls/flow-live.test.ts` (vorletzter Block). Beks hat GOLIVE 18 für GOLIVE 26 bestätigt (Nr. 217). Offen: OFFEN rl1-2.
+- `photo-receipt` (rl1): Konto je Minute 20, Anfrage je Tag 24, Konto je Tag 300 (`RECEIPT_LIMITS`, `photo/handlers.ts`), gleiche Fehlerarten, live belegt im vorletzten Block von `flow-live.test.ts`. Offen: OFFEN rl1-2.
 
 ## Turnstile (ts1, ENTSCHEIDUNGEN 216, Plan und Auflagen `tmp/proof/ts1-plan.md`)
 - Die Function `route` verlangt im Body `captcha` und prüft es bei Cloudflare (nach der Eingabeprüfung, vor dem Zähler): fehlend oder abgelehnt 403 `captcha_failed`, Cloudflare nicht erreichbar 503 `captcha_unavailable`. Die Anmeldung (`signInWithOtp`) trägt `captchaToken` über die eingebaute Captcha-Funktion von Supabase; `verifyOtp` und Sitzungserneuerung brauchen keins. Ein globales Widget (`CaptchaHost` in der Shell, `src/lib/turnstile.ts`) holt je Aufruf ein frisches Token; die Karte „Kurze Sicherheitsprüfung“ erscheint nur, wenn Cloudflare eine Eingabe verlangt.
@@ -21,11 +23,11 @@ Stand 2026-11-20, nach Schritt rl2 (R3: Rate-Limit für `job-photo`); davor rl1 
 - Dev-Betrieb: Cron `outbox-dispatch` scharf, Secrets `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_BETREIBER`, `APP_URL`, `OUTBOX_SECRET`, `DEV_MAIL_GUARD=1` stehen (der Schalter gehört nie in Produktion). Dev-Reset (dev1): `npm run loesch -- scripts/dev-testdaten-zuruecksetzen.mjs probe`, dann `loeschen`, nur auf Anforderung (Nr. 195). Jede neue Funktion braucht ein `grant execute` nur für ihren Aufrufer (`daten.md`). Buchungsschalter `booking_open`: in Produktion aus, bis Rechtsklärung, GOLIVE 34 und die Rest-Punkte von GOLIVE 46 bis 48 erledigt sind.
 
 ## Nächster Schritt
-1. GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte · Grenzen für `register_partner` und Dokument-Uploads (GOLIVE 26).
-2. Kleine Reste: OFFEN ts1-1, mail2-1, mail1-1, mail1-5, ui2-2 bis ui2-5, bl1-1 bis bl1-3, rj1-3, fh1-2, rl1-2, rl2-1.
+1. GOLIVE 46 und 48 (mit Beks) · Produktivprojekt (OFFEN sys2-1) · Hosting · Rechtstexte.
+2. Kleine Reste: OFFEN ts1-1, mail2-1, mail1-1, mail1-5, ui2-2 bis ui2-5, bl1-1 bis bl1-3, rj1-3, fh1-2, rl1-2, rl2-1, rl3-1.
 
 ## Wartet auf Beks
-- Keine offene Frage in `docs/BEKS.md`. Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
+- BEKS Frage 1 (rl3): GOLIVE 26 ohne Zählergrenze als erledigt bestätigen. Prüfen, ob die Probe-Mail im Postfach von `MAIL_BETREIBER` ankam.
 - Rechtstexte (GOLIVE 33, 51), Brevo-Produktivkonto und Domain (GOLIVE 42 bis 45), ORS-Vertrag, Hosting, Turnstile-Konto (GOLIVE 49), Produktivprojekt; einmal `/advisor off` (`docs/BEKS_EINRICHTUNG.md`).
 
 ## Hinweise, die jede Session braucht

@@ -39,7 +39,7 @@ Die Einrichtung von Turnstile auf Dev (ts1: `.env.local`, Function-Secret, Auth-
 Die Frage 1 vom 2026-11-19 (ts1, genügt GOLIVE 18 für die Partner-Registrierung) ist beantwortet (ENTSCHEIDUNGEN Nr. 217).
 
 ## Offene Fragen
-Keine.
+1. **rl3, GOLIVE 26, Zählergrenze für `register_partner` und die Dokument-Uploads.** Beide Wege laufen direkt über PostgREST und Storage ohne Edge Function. Je Konto sind sie hart begrenzt: 1 Firma, 23 Bezirke, 5 Dokumente à 10 MiB (zusammen 50 MiB); Fehlaufrufe schreiben nichts (ENTSCHEIDUNGEN Nr. 219, Test `tests/rls/partner-limits.test.ts`). Eine Zählergrenze davor bräuchte einen Rechteumbau ohne verhinderten Schaden. Du hattest „Rate-Limit“ genannt. Empfehlung: **ja, GOLIVE 26 gilt als erledigt, keine Zählergrenze.** Die Bremse ist die Kontenanlage (GOLIVE 53 prüft die Auth-Limits im Produktivprojekt). Bis zu deiner Antwort gilt der Punkt für `booking_open` als offen.
 
 ## Hinweise
 - Der Satz „rls läuft gegen die lebende Dev-Datenbank“ gilt, weil Dev Testreste behält und sich ändert; `e2e` nutzt Mocks (OFFEN S9i7c2-4).
